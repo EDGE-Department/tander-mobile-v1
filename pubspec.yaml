@@ -1,0 +1,78 @@
+name: tander_flutter_v3
+description: "Tander — Dating & wellness app for Filipino seniors 60+"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management & DI
+  flutter_riverpod: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Network
+  dio: ^5.7.0
+
+  # Real-time
+  stomp_dart_client: ^2.0.0
+
+  # WebRTC
+  flutter_webrtc: ^0.12.2
+
+  # Push notifications
+  firebase_core: ^3.8.1
+  firebase_messaging: ^15.2.1
+  flutter_local_notifications: ^18.0.1
+  flutter_callkit_incoming: ^2.0.4+1
+
+  # Storage
+  shared_preferences: ^2.3.3
+  flutter_secure_storage: ^9.2.2
+
+  # Media
+  image_picker: ^1.1.2
+  record: ^5.1.2
+  audioplayers: ^6.1.0
+
+  # UI
+  phosphor_flutter: ^2.1.0
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+  cached_network_image: ^3.4.1
+
+  # Serialization
+  json_annotation: ^4.9.0
+  freezed_annotation: ^2.4.4
+
+  # Logging
+  logger: ^2.5.0
+
+  # Utilities
+  intl: ^0.19.0
+  permission_handler: ^11.3.1
+  path_provider: ^2.1.4
+  connectivity_plus: ^6.1.0
+  wakelock_plus: ^1.2.8
+  url_launcher: ^6.3.1
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
+  build_runner: ^2.4.13
+  json_serializable: ^6.8.0
+  freezed: ^2.5.7
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/images/
