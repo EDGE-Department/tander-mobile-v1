@@ -156,19 +156,23 @@ class _PostPhotoGrid extends StatelessWidget {
             return Stack(
               fit: StackFit.expand,
               children: [
-                CachedNetworkImage(
-                  imageUrl: displayUrls[index],
+                Image.network(
+                  displayUrls[index],
                   fit: BoxFit.cover,
-                  placeholder: (_, _) => Container(
-                    color: AppColors.subtle,
-                  ),
-                  errorWidget: (_, _, _) => Container(
-                    color: AppColors.subtle,
-                    child: const Icon(
-                      Icons.broken_image_outlined,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+                  loadingBuilder: (_, child, progress) {
+                    if (progress == null) return child;
+                    return Container(color: AppColors.subtle);
+                  },
+                  errorBuilder: (_, error, _) {
+                    debugPrint('Image load failed: $error');
+                    return Container(
+                      color: AppColors.subtle,
+                      child: const Icon(
+                        Icons.broken_image_outlined,
+                        color: AppColors.textMuted,
+                      ),
+                    );
+                  },
                 ),
                 if (index == 3 && urls.length > 4)
                   Container(
