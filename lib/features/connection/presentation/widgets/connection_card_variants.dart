@@ -67,11 +67,10 @@ class SentCard extends StatelessWidget {
 
   Widget _buildPhoto() {
     if (connection.otherPhotoUrl != null) {
-      return CachedNetworkImage(
-        imageUrl: connection.otherPhotoUrl!,
+      return Image.network(
+        connection.otherPhotoUrl!,
         fit: BoxFit.cover,
-        placeholder: (_, _) => connectionPhotoPlaceholder(),
-        errorWidget: (_, _, _) => connectionPhotoPlaceholder(),
+        errorBuilder: (_, _, _) => connectionPhotoPlaceholder(),
       );
     }
     return connectionPhotoPlaceholder();
@@ -256,11 +255,10 @@ class FriendRow extends StatelessWidget {
         child: AspectRatio(
           aspectRatio: 1,
           child: connection.otherPhotoUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: connection.otherPhotoUrl!,
+              ? Image.network(
+                  connection.otherPhotoUrl!,
                   fit: BoxFit.cover,
-                  placeholder: (_, _) => connectionPhotoPlaceholder(),
-                  errorWidget: (_, _, _) => connectionPhotoPlaceholder(),
+                  errorBuilder: (_, _, _) => connectionPhotoPlaceholder(),
                 )
               : connectionPhotoPlaceholder(),
         ),
