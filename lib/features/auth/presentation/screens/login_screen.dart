@@ -1,33 +1,23 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/auth/session_manager.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_radius.dart';
-import 'package:tander_flutter_v3/core/theme/app_shadows.dart';
-import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
+import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_form_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
-// ── Constants ──────────────────────────────────────────────────────
-
-const double _logoSize = 48;
-const double _maxFormWidth = 420;
-const int _minPasswordLength = 6;
-
-/// Login screen — warm gradient background with decorative orbs and
-/// a centered form card.
+/// Login screen matching the web's mobile layout pixel-for-pixel.
 ///
-/// Carbon-copy of the web login page adapted for mobile. Uses
-/// [ConsumerStatefulWidget] for [TextEditingController] lifecycle
-/// management and auth state listening.
+/// Structure: gradient header (dark warm -> teal) with logo, wordmark,
+/// "Welcome Back" heading, online badge, then a white form panel that
+/// overlaps the header by 24px with `rounded-t-[36px]`.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -41,8 +31,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
+  final _scrollController = ScrollController();
+  late final SimulatedOnlineCount _onlineCount;
 
   bool _isPasswordVisible = false;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _onlineCount = SimulatedOnlineCount();
+  }
 
   @override
   void dispose() {
@@ -50,30 +49,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _passwordController.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
+    _scrollController.dispose();
+    _onlineCount.dispose();
     super.dispose();
-  }
-
-  // ── Validation ──────────────────────────────────────────────────
-
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter your email address';
-    }
-    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!emailPattern.hasMatch(value.trim())) {
-      return 'Please enter a valid email address';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your password';
-    }
-    if (value.length < _minPasswordLength) {
-      return 'Password must be at least $_minPasswordLength characters';
-    }
-    return null;
   }
 
   // ── Actions ─────────────────────────────────────────────────────
@@ -88,52 +66,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _togglePasswordVisibility() {
-    setState(() {
-      _isPasswordVisible = !_isPasswordVisible;
-    });
+    setState(() => _isPasswordVisible = !_isPasswordVisible);
   }
 
-  // ── Build ───────────────────────────────────────────────────────
+  void _toggleRememberMe() {
+    setState(() => _rememberMe = !_rememberMe);
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    _listenToAuthState();
-
-    final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState is AuthLoading;
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          const LoginGradientBackground(),
-          const LoginDecorativeOrbs(),
-          // Scrollable content
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.xl,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: _maxFormWidth),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildBrandHeader(),
-                      const SizedBox(height: AppSpacing.xl),
-                      _buildFormCard(isLoading: isLoading),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildSignUpPrompt(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _navigateToForgotPassword() {
+    context.push(AppRoutes.forgotPassword);
   }
 
   // ── Auth state listener ─────────────────────────────────────────
@@ -145,14 +86,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context.go(AppRoutes.home);
         case AuthOnboarding(:final phase):
           _navigateToOnboardingPhase(phase);
-        case AuthError(:final exception):
-          TanderToastOverlay.show(
-            context,
-            TanderToastData(
-              message: exception.userMessage,
-              variant: TanderToastVariant.error,
-            ),
-          );
+        case AuthError():
+          // Error is displayed inline via the form card banner.
+          // Scroll to top so the user sees it.
+          _scrollToTop();
         case AuthInitial():
         case AuthLoading():
         case AuthUnauthenticated():
@@ -175,198 +112,193 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     context.go(route);
   }
 
-  // ── Brand header ────────────────────────────────────────────────
-
-  Widget _buildBrandHeader() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(
-          'assets/icons/tander_logo.png',
-          width: _logoSize,
-          height: _logoSize,
-          semanticLabel: 'Tander logo',
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text('Tander', style: AppTypography.h1),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Welcome back',
-          style: AppTypography.h2,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(
-          'Sign in to continue your journey',
-          style: AppTypography.body.copyWith(color: AppColors.textMuted),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: AppDurations.entrance,
+        curve: AppCurves.premiumEase,
+      );
+    }
   }
 
-  // ── Form card ───────────────────────────────────────────────────
+  // ── Build ───────────────────────────────────────────────────────
 
-  Widget _buildFormCard({required bool isLoading}) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: AppRadius.borderXl,
-        boxShadow: AppShadows.warmLg,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildEmailField(),
-              const SizedBox(height: AppSpacing.md),
-              _buildPasswordField(),
-              const SizedBox(height: AppSpacing.xs),
-              _buildForgotPasswordLink(),
-              const SizedBox(height: AppSpacing.lg),
-              _buildSignInButton(isLoading: isLoading),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  @override
+  Widget build(BuildContext context) {
+    _listenToAuthState();
 
-  Widget _buildEmailField() {
-    return TanderTextField(
-      label: 'Email',
-      hint: 'name@email.com',
-      controller: _emailController,
-      focusNode: _emailFocusNode,
-      keyboardType: TextInputType.emailAddress,
-      textInputAction: TextInputAction.next,
-      prefixIcon: Icons.email_outlined,
-      validator: _validateEmail,
-    );
-  }
+    final authState = ref.watch(authNotifierProvider);
+    final isLoading = authState is AuthLoading;
+    final errorMessage = authState is AuthError
+        ? authState.exception.userMessage
+        : null;
 
-  /// Password field with tappable visibility toggle.
-  ///
-  /// [TanderTextField.suffixIcon] renders a static icon without tap
-  /// handling, so we build the password row using a [Stack] that
-  /// layers a positioned [IconButton] over the field's suffix area.
-  Widget _buildPasswordField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('Password', style: AppTypography.label),
-        const SizedBox(height: AppSpacing.xs),
-        Stack(
-          alignment: Alignment.centerRight,
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final headerHeight = resolveHeaderHeight(screenHeight);
+
+    return Scaffold(
+      backgroundColor: AppColors.card,
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
           children: [
-            TanderTextField(
-              hint: 'Enter your password',
-              controller: _passwordController,
-              focusNode: _passwordFocusNode,
-              obscureText: !_isPasswordVisible,
-              textInputAction: TextInputAction.done,
-              prefixIcon: Icons.lock_outline,
-              validator: _validatePassword,
+            // ── Gradient header ──────────────────────────────
+            _HeaderSection(
+              headerHeight: headerHeight,
+              onlineCount: _onlineCount,
             ),
-            Positioned(
-              right: AppSpacing.xxs,
-              child: SizedBox(
-                width: AppSpacing.touchMinimum,
-                height: AppSpacing.touchMinimum,
-                child: IconButton(
-                  onPressed: _togglePasswordVisibility,
-                  icon: Icon(
-                    _isPasswordVisible
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                    size: 20,
-                    color: AppColors.textMuted,
-                  ),
-                  tooltip: _isPasswordVisible
-                      ? 'Hide password'
-                      : 'Show password',
-                  padding: EdgeInsets.zero,
+
+            // ── Form panel (overlaps header by -24px) ────────
+            Transform.translate(
+              offset: const Offset(0, -headerOverlap),
+              child: ValueListenableBuilder<int>(
+                valueListenable: _onlineCount,
+                builder: (_, count, _) => LoginFormCard(
+                  formKey: _formKey,
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  emailFocusNode: _emailFocusNode,
+                  passwordFocusNode: _passwordFocusNode,
+                  isPasswordVisible: _isPasswordVisible,
+                  rememberMe: _rememberMe,
+                  isLoading: isLoading,
+                  errorMessage: errorMessage,
+                  onTogglePassword: _togglePasswordVisibility,
+                  onToggleRememberMe: _toggleRememberMe,
+                  onSubmit: _submitForm,
+                  onForgotPassword: _navigateToForgotPassword,
+                  onlineCount: count,
                 ),
               ),
             ),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildForgotPasswordLink() {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: GestureDetector(
-        onTap: () => context.push(AppRoutes.forgotPassword),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
-          child: Text(
-            'Forgot password?',
-            style: AppTypography.bodySm.copyWith(
-              color: AppColors.primaryAccessible,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
       ),
     );
   }
 
-  Widget _buildSignInButton({required bool isLoading}) {
-    return TanderButton(
-      label: 'Sign In',
-      onPressed: isLoading ? null : _submitForm,
-      isLoading: isLoading,
-      icon: Icons.arrow_forward_rounded,
-      iconPosition: IconPosition.trailing,
-    );
+  @override
+  void debugFillProperties(
+    DiagnosticPropertiesBuilder properties,
+  ) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<bool>(
+        'isPasswordVisible',
+        _isPasswordVisible,
+      ))
+      ..add(DiagnosticsProperty<bool>('rememberMe', _rememberMe));
   }
+}
 
-  // ── Sign-up prompt ──────────────────────────────────────────────
+// ── Header section ──────────────────────────────────────────────────
 
-  Widget _buildSignUpPrompt() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Flexible(
-          child: Text(
-            "Don't have an account? ",
-            style: AppTypography.bodySm.copyWith(
-              color: AppColors.textMuted,
-            ),
-          ),
-        ),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            // Registration is download-only per web — a deep link or
-            // store redirect could be wired here in the future.
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.xxs,
-              horizontal: AppSpacing.xxs,
-            ),
-            child: Text(
-              'Sign up',
-              style: AppTypography.bodySm.copyWith(
-                color: AppColors.primaryAccessible,
-                fontWeight: FontWeight.w700,
+/// The gradient header containing logo, wordmark, "Welcome Back"
+/// heading, subtext, Tagalog line, and online count badge.
+///
+/// Matches the web's `lg:hidden` mobile header block.
+class _HeaderSection extends StatelessWidget {
+  const _HeaderSection({
+    required this.headerHeight,
+    required this.onlineCount,
+  });
+
+  final double headerHeight;
+  final SimulatedOnlineCount onlineCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: headerHeight + headerOverlap, // Extra space for overlap
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          LoginHeaderBackground(headerHeight: headerHeight + headerOverlap),
+
+          // Content overlay
+          Positioned.fill(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Logo + wordmark
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/icons/tander_logo.png',
+                          width: 32,
+                          height: 32,
+                          semanticLabel: 'Tander logo',
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Tander',
+                          style: AppTypography.h2.copyWith(
+                            fontSize: 20,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // "Welcome Back" heading
+                    Text(
+                      'Welcome Back',
+                      style: AppTypography.h1.copyWith(
+                        fontSize: 27,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Subheading
+                    Text(
+                      'Your community is waiting for you',
+                      style: AppTypography.bodySm.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Tagalog line
+                    Text(
+                      'Nandito na kami \u00B7 We\u2019re here',
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Online count badge
+                    ValueListenableBuilder<int>(
+                      valueListenable: onlineCount,
+                      builder: (_, count, _) => OnlineCountBadge(count: count),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:tander_flutter_v3/app/router/router_listenable.dart';
 import 'package:tander_flutter_v3/app/screens/not_found_screen.dart';
 import 'package:tander_flutter_v3/app/widgets/app_shell.dart';
-import 'package:tander_flutter_v3/app/widgets/placeholder_screen.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/screens/call_screen.dart';
 import 'package:tander_flutter_v3/features/community/presentation/screens/community_post_screen.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/screens/tandy_screen.dart';
@@ -20,6 +19,10 @@ import 'package:tander_flutter_v3/features/auth/presentation/screens/photo_setup
 import 'package:tander_flutter_v3/features/auth/presentation/screens/profile_setup_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/screens/connection_screen.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/screens/discover_profile_screen.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/screens/discover_screen.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/screens/profile_screen.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/screens/user_profile_screen.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/screens/call_history_screen.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/screens/message_thread_screen.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/screens/messages_screen.dart';
@@ -186,8 +189,7 @@ final _routes = <RouteBase>[
     routes: <RouteBase>[
       GoRoute(
         path: AppRoutes.discover,
-        builder: (_, _) =>
-            const PlaceholderScreen(label: 'Discover'), // Phase 7
+        builder: (_, _) => const DiscoverScreen(),
       ),
       GoRoute(
         path: AppRoutes.connection,
@@ -222,8 +224,7 @@ final _routes = <RouteBase>[
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (_, _) =>
-            const PlaceholderScreen(label: 'Profile'), // Phase 6
+        builder: (_, _) => const ProfileScreen(),
         routes: <RouteBase>[
           GoRoute(
             path: 'edit',
@@ -269,8 +270,8 @@ final _routes = <RouteBase>[
   // -- Deep navigation ------------------------------------------------------
   GoRoute(
     path: '/discover/profile/:userId',
-    builder: (_, state) => PlaceholderScreen(
-      label: 'Discover Profile ${state.pathParameters['userId'] ?? ''}',
+    builder: (_, state) => DiscoverProfileScreen(
+      userId: state.pathParameters['userId'] ?? '',
     ),
   ),
   GoRoute(
@@ -283,8 +284,6 @@ final _routes = <RouteBase>[
   ),
   GoRoute(
     path: '/user/:userId',
-    builder: (_, state) => PlaceholderScreen(
-      label: 'User ${state.pathParameters['userId'] ?? ''}',
-    ),
+    builder: (_, _) => const UserProfileScreen(),
   ),
 ];
