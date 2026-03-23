@@ -1,7 +1,9 @@
 /// Main discover screen — pixel-perfect port of tander-web discover-page.tsx.
 ///
-/// PHONE: single column, full-screen card stack with tab switcher.
-/// TABLET (shortestSide > 600): two columns side-by-side (future).
+/// MOBILE (width < 1024): single column, tab switcher (Discover | Community).
+/// DESKTOP (width >= 1024): two panels side-by-side, both always visible.
+///   Left: Discover panel (45%, max 520px).
+///   Right: Community panel (flex-1, scrollable).
 library;
 
 import 'package:flutter/material.dart';
@@ -9,20 +11,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_curves.dart';
-import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
-import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/community/presentation/widgets/create_post_sheet.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/states/discover_state.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/widgets/community_feed_panel.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_action_buttons.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_desktop_parts.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_empty_state.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_filters_sheet.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_mobile_header.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_panel_header.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/swipe_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
-enum _DiscoverTab { discover, community }
+/// Breakpoint matching the web `lg:` prefix (1024px).
+const double _desktopBreakpoint = 1024;
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -32,8 +38,10 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
-  _DiscoverTab _activeTab = _DiscoverTab.discover;
+  DiscoverTab _activeTab = DiscoverTab.discover;
   double _dragProgress = 0;
+
+  // ── Actions ─────────────────────────────────────────────────────────
 
   void _openFiltersSheet() {
     final notifier = ref.read(discoverNotifierProvider.notifier);
@@ -44,197 +52,128 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
+  void _openCreatePostSheet() {
+    CreatePostSheet.show(
+      context: context,
+      onPostCreated: () {},
+    );
+  }
+
   void _navigateToProfile(String userId) {
     context.push(AppRoutes.discoverProfile(userId));
   }
 
+  // ── Build ───────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isDesktop = screenWidth >= _desktopBreakpoint;
     final discoverState = ref.watch(discoverNotifierProvider);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(discoverState),
-            _buildTabSwitcher(),
-            Expanded(
-              child: _activeTab == _DiscoverTab.discover
-                  ? _buildDiscoverContent(discoverState)
-                  : _buildCommunityPlaceholder(),
-            ),
-          ],
-        ),
+        child: isDesktop
+            ? _buildDesktopLayout(discoverState)
+            : _buildMobileLayout(discoverState),
       ),
     );
   }
 
-  // ── Header ──────────────────────────────────────────────────────────
+  // ── Desktop: two panels side-by-side ────────────────────────────────
 
-  Widget _buildHeader(DiscoverState discoverState) {
-    final int remainingCount =
-        discoverState is DiscoverLoaded ? discoverState.remainingCount : 0;
+  Widget _buildDesktopLayout(DiscoverState discoverState) {
+    final remainingCount = _remainingCount(discoverState);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Left panel: Discover (45%, max 520px)
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: SizedBox(
+            width: MediaQuery.sizeOf(context).width * 0.45,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  Text(
-                    _activeTab == _DiscoverTab.discover
-                        ? 'Discover' : 'Community',
-                    style: AppTypography.h1,
+                DiscoverPanelHeader(
+                  icon: const Icon(
+                    Icons.favorite,
+                    size: 18,
+                    color: AppColors.textInverse,
                   ),
-                  if (_activeTab == _DiscoverTab.discover &&
-                      remainingCount > 0) ...[
-                    const SizedBox(width: 10),
-                    DiscoverRemainingBadge(count: remainingCount),
-                  ],
-                ]),
-                const SizedBox(height: 2),
-                Text(
-                  _activeTab == _DiscoverTab.discover
-                      ? 'Find your someone special'
-                      : 'Stories from your neighbors',
-                  style: AppTypography.bodySm.copyWith(
-                    color: AppColors.textMuted, fontWeight: FontWeight.w500,
+                  iconGradient: const LinearGradient(
+                    colors: [Color(0xFFF07020), Color(0xFFE67E22)],
                   ),
+                  title: 'Discover',
+                  subtitle: remainingCount > 0
+                      ? '$remainingCount people nearby'
+                      : 'Find your someone special',
+                  action: DesktopFilterButton(onTap: _openFiltersSheet),
                 ),
+                Expanded(child: _buildDiscoverContent(discoverState)),
               ],
             ),
           ),
-          if (_activeTab == _DiscoverTab.discover) _buildFilterButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterButton() {
-    return Semantics(
-      button: true,
-      label: 'Open filters',
-      child: GestureDetector(
-        onTap: _openFiltersSheet,
-        child: Container(
-          width: AppSpacing.touchComfortable,
-          height: AppSpacing.touchComfortable,
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: AppRadius.borderLg,
-            border: Border.all(color: AppColors.border),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.tune,
-            size: 20, color: AppColors.textMuted,
-          ),
         ),
-      ),
-    );
-  }
-
-  // ── Tab switcher ────────────────────────────────────────────────────
-
-  Widget _buildTabSwitcher() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg, vertical: AppSpacing.xs,
-      ),
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AppColors.subtle,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(children: [
-          _tabButton(
-            isSelected: _activeTab == _DiscoverTab.discover,
-            activeIcon: Icons.favorite,
-            inactiveIcon: Icons.favorite,
-            label: 'Discover',
-            onTap: () => setState(() => _activeTab = _DiscoverTab.discover),
-          ),
-          const SizedBox(width: 6),
-          _tabButton(
-            isSelected: _activeTab == _DiscoverTab.community,
-            activeIcon: Icons.groups,
-            inactiveIcon: Icons.groups,
-            label: 'Community',
-            onTap: () => setState(() => _activeTab = _DiscoverTab.community),
-          ),
-        ]),
-      ),
-    );
-  }
-
-  Widget _tabButton({
-    required bool isSelected,
-    required IconData activeIcon,
-    required IconData inactiveIcon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: AppDurations.base,
-          curve: AppCurves.premiumEase,
-          height: 40,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: isSelected
-                ? const LinearGradient(
-                    colors: [Color(0xFFF07020), Color(0xFFE67E22)])
-                : null,
-            boxShadow: isSelected
-                ? const [BoxShadow(
-                    color: Color(0x61E67E22), blurRadius: 14,
-                    offset: Offset(0, 3))]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        const DiscoverVerticalDivider(),
+        // Right panel: Community (flex-1, scrollable)
+        Expanded(
+          child: Column(
             children: [
-              Icon(isSelected ? activeIcon : inactiveIcon, size: 16,
-                color: isSelected ? AppColors.textInverse : AppColors.textMuted),
-              const SizedBox(width: 8),
-              Text(label, style: AppTypography.label.copyWith(
-                color: isSelected ? AppColors.textInverse : AppColors.textMuted,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                fontSize: 15,
-              )),
+              DiscoverPanelHeader(
+                icon: const Icon(
+                  Icons.groups,
+                  size: 18,
+                  color: AppColors.textInverse,
+                ),
+                iconGradient: const LinearGradient(
+                  colors: [Color(0xFF0A7068), Color(0xFF0F9D94)],
+                ),
+                title: 'Community',
+                subtitle: 'Stories from your neighbors',
+                action: DesktopNewPostButton(onTap: _openCreatePostSheet),
+              ),
+              const Expanded(child: CommunityFeedPanel()),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 
-  // ── Discover content ────────────────────────────────────────────────
+  // ── Mobile: tab switcher, single column ─────────────────────────────
+
+  Widget _buildMobileLayout(DiscoverState discoverState) {
+    return Column(
+      children: [
+        DiscoverMobileHeader(
+          activeTab: _activeTab,
+          remainingCount: _remainingCount(discoverState),
+          onOpenFilters: _openFiltersSheet,
+          onCreatePost: _openCreatePostSheet,
+        ),
+        DiscoverTabSwitcher(
+          activeTab: _activeTab,
+          onTabChanged: (tab) => setState(() => _activeTab = tab),
+        ),
+        Expanded(
+          child: _activeTab == DiscoverTab.discover
+              ? _buildDiscoverContent(discoverState)
+              : const CommunityFeedPanel(),
+        ),
+      ],
+    );
+  }
+
+  // ── Discover content (shared between layouts) ───────────────────────
 
   Widget _buildDiscoverContent(DiscoverState discoverState) {
     return switch (discoverState) {
       DiscoverLoading() => _buildSkeletonLoader(),
       DiscoverError(:final exception) =>
         _buildErrorState(exception.userMessage),
-      DiscoverEmpty() => _buildEmptyState(),
+      DiscoverEmpty() => DiscoverEmptyState(onOpenFilters: _openFiltersSheet),
       DiscoverLoaded() => _buildCardStack(discoverState),
     };
   }
@@ -242,19 +181,37 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildSkeletonLoader() {
     return const Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg, vertical: AppSpacing.md,
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
       ),
-      child: Column(children: [
-        Expanded(child: SkeletonCard(variant: SkeletonVariant.fullCard)),
-        SizedBox(height: AppSpacing.lg),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          SkeletonCard(variant: SkeletonVariant.circle, width: 60, height: 60),
-          SizedBox(width: AppSpacing.lg),
-          SkeletonCard(variant: SkeletonVariant.circle, width: 76, height: 76),
-          SizedBox(width: AppSpacing.lg),
-          SkeletonCard(variant: SkeletonVariant.circle, width: 60, height: 60),
-        ]),
-      ]),
+      child: Column(
+        children: [
+          Expanded(child: SkeletonCard(variant: SkeletonVariant.fullCard)),
+          SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SkeletonCard(
+                variant: SkeletonVariant.circle,
+                width: 60,
+                height: 60,
+              ),
+              SizedBox(width: AppSpacing.lg),
+              SkeletonCard(
+                variant: SkeletonVariant.circle,
+                width: 76,
+                height: 76,
+              ),
+              SizedBox(width: AppSpacing.lg),
+              SkeletonCard(
+                variant: SkeletonVariant.circle,
+                width: 60,
+                height: 60,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -274,88 +231,74 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: EmptyState(
-          icon: Icons.favorite,
-          title: "You've seen everyone!",
-          description:
-              'New people join every day. We will let you know when '
-              'someone new is nearby.',
-          actionLabel: 'Adjust filters',
-          onAction: _openFiltersSheet,
-        ),
-      ),
-    );
-  }
-
   Widget _buildCardStack(DiscoverLoaded loadedState) {
     final visibleStack = loadedState.visibleStack;
-    if (visibleStack.isEmpty) return _buildEmptyState();
+    if (visibleStack.isEmpty) {
+      return DiscoverEmptyState(onOpenFilters: _openFiltersSheet);
+    }
 
     final absProgress = _dragProgress.abs();
     final notifier = ref.read(discoverNotifierProvider.notifier);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Column(children: [
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Stack(clipBehavior: Clip.none, children: [
-              if (visibleStack.length > 2)
-                DiscoverGhostCard(
-                  scale: 0.91 + absProgress * 0.05,
-                  translateY: 20 - absProgress * 20,
-                  opacity: 0.70,
-                ),
-              if (visibleStack.length > 1)
-                DiscoverGhostCard(
-                  scale: 0.95 + absProgress * 0.05,
-                  translateY: 12 - absProgress * 12,
-                  opacity: 0.85,
-                ),
-              Positioned.fill(
-                child: SwipeCard(
-                  key: ValueKey(visibleStack.first.userId),
-                  candidate: visibleStack.first,
-                  onLikeComplete: notifier.likeCurrentProfile,
-                  onPassComplete: notifier.passCurrentProfile,
-                  onDragProgress: (progress) =>
-                      setState(() => _dragProgress = progress),
-                  onViewProfile: () =>
-                      _navigateToProfile(visibleStack.first.userId),
-                ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  if (visibleStack.length > 2)
+                    DiscoverGhostCard(
+                      scale: 0.91 + absProgress * 0.05,
+                      translateY: 20 - absProgress * 20,
+                      opacity: 0.70,
+                    ),
+                  if (visibleStack.length > 1)
+                    DiscoverGhostCard(
+                      scale: 0.95 + absProgress * 0.05,
+                      translateY: 12 - absProgress * 12,
+                      opacity: 0.85,
+                    ),
+                  Positioned.fill(
+                    child: SwipeCard(
+                      key: ValueKey(visibleStack.first.userId),
+                      candidate: visibleStack.first,
+                      onLikeComplete: notifier.likeCurrentProfile,
+                      onPassComplete: notifier.passCurrentProfile,
+                      onDragProgress: (progress) =>
+                          setState(() => _dragProgress = progress),
+                      onViewProfile: () =>
+                          _navigateToProfile(visibleStack.first.userId),
+                    ),
+                  ),
+                ],
               ),
-            ]),
+            ),
           ),
-        ),
-        DiscoverActionButtons(
-          candidate: visibleStack.first,
-          onPass: notifier.passCurrentProfile,
-          onLike: notifier.likeCurrentProfile,
-          onViewProfile: () =>
-              _navigateToProfile(visibleStack.first.userId),
-        ),
-        DiscoverProgressDots(
-          totalCount: loadedState.profiles.length,
-          currentIndex: loadedState.currentIndex,
-        ),
-      ]),
+          DiscoverActionButtons(
+            candidate: visibleStack.first,
+            onPass: notifier.passCurrentProfile,
+            onLike: notifier.likeCurrentProfile,
+            onViewProfile: () =>
+                _navigateToProfile(visibleStack.first.userId),
+          ),
+          DiscoverProgressDots(
+            totalCount: loadedState.profiles.length,
+            currentIndex: loadedState.currentIndex,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildCommunityPlaceholder() {
-    return const Center(
-      child: EmptyState(
-        icon: Icons.groups,
-        title: 'Coming Soon',
-        description:
-            'Community stories from your neighbors are on the way. '
-            'Stay tuned!',
-      ),
-    );
+  // ── Helpers ─────────────────────────────────────────────────────────
+
+  int _remainingCount(DiscoverState discoverState) {
+    return discoverState is DiscoverLoaded
+        ? discoverState.remainingCount
+        : 0;
   }
 }
