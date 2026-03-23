@@ -238,7 +238,7 @@ final class SessionManager {
   /// We also persist the new refresh token from the response body.
   Future<void> _callRefreshEndpoint(String refreshToken) async {
     final response = await _dioClient.post<Map<String, Object?>>(
-      '/api/auth/refresh-token',
+      '/auth/refresh-token',
       data: {'refreshToken': refreshToken},
     );
 

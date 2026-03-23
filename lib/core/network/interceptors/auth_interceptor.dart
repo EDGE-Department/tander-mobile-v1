@@ -8,7 +8,7 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 ///
 /// **Request side**: reads the access token from [SecureStorage] and sets the
 /// `Authorization: Bearer {token}` header. Public auth endpoints (paths
-/// starting with `/api/auth/` except `/api/auth/refresh-token`) are skipped
+/// starting with `/auth/` except `/auth/refresh-token`) are skipped
 /// because they must not carry a bearer token — doing so causes the backend
 /// JWT filter to reject the request.
 ///
@@ -71,8 +71,8 @@ final class AuthInterceptor extends Interceptor {
   /// token. The refresh-token endpoint is excluded from this check because
   /// it legitimately sends the (old) access token.
   bool _isPublicAuthEndpoint(String path) {
-    if (!path.startsWith('/api/auth/')) return false;
-    if (path.startsWith('/api/auth/refresh-token')) return false;
+    if (!path.startsWith('/auth/')) return false;
+    if (path.startsWith('/auth/refresh-token')) return false;
     return true;
   }
 

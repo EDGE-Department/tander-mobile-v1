@@ -16,7 +16,7 @@ typedef OnSessionExpired = void Function();
 /// itself fails, all queued requests are rejected and [onSessionExpired] is
 /// called so the app can redirect to the login screen.
 ///
-/// Auth endpoints (`/api/auth/*`) are never retried — they are public and
+/// Auth endpoints (`/auth/*`) are never retried — they are public and
 /// a 401 on them indicates bad credentials, not an expired token.
 final class TokenRefreshInterceptor extends Interceptor {
   TokenRefreshInterceptor({
@@ -107,7 +107,7 @@ final class TokenRefreshInterceptor extends Interceptor {
     }
   }
 
-  /// Calls `POST /api/auth/refresh-token` with the stored refresh token.
+  /// Calls `POST /auth/refresh-token` with the stored refresh token.
   /// Returns the new access token on success.
   Future<String> _performTokenRefresh() async {
     final refreshTokenResult = await _secureStorage.readRefreshToken();
@@ -123,7 +123,7 @@ final class TokenRefreshInterceptor extends Interceptor {
     );
 
     final response = await _dio.post<Map<String, Object?>>(
-      '/api/auth/refresh-token',
+      '/auth/refresh-token',
       data: {'refreshToken': refreshToken},
     );
 
@@ -237,7 +237,7 @@ final class TokenRefreshInterceptor extends Interceptor {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  bool _isAuthEndpoint(String path) => path.startsWith('/api/auth/');
+  bool _isAuthEndpoint(String path) => path.startsWith('/auth/');
 }
 
 // ---------------------------------------------------------------------------

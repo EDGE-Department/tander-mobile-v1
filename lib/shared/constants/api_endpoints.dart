@@ -4,18 +4,18 @@
 /// static methods that return `String`.  No trailing slashes.
 abstract final class ApiEndpoints {
   // ── Auth ─────────────────────────────────────────────────────────────
-  static const String login = '/api/auth/login';
-  static const String register = '/api/auth/register';
-  static const String refreshToken = '/api/auth/refresh-token';
-  static const String forgotPassword = '/api/auth/forgot-password';
-  static const String verifyResetOtp = '/api/auth/verify-reset-otp';
-  static const String resetPassword = '/api/auth/reset-password';
-  static const String resendVerification = '/api/auth/resend-verification';
-  static const String sendOtp = '/api/auth/send-otp';
-  static const String verifyOtp = '/api/auth/verify-otp';
-  static const String checkEmail = '/api/auth/check-email';
-  static const String checkUsername = '/api/auth/check-username';
-  static const String idVerification = '/api/auth/id-verification';
+  static const String login = '/auth/login';
+  static const String register = '/auth/register';
+  static const String refreshToken = '/auth/refresh-token';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String verifyResetOtp = '/auth/verify-reset-otp';
+  static const String resetPassword = '/auth/reset-password';
+  static const String resendVerification = '/auth/resend-verification';
+  static const String sendOtp = '/auth/send-otp';
+  static const String verifyOtp = '/auth/verify-otp';
+  static const String checkEmail = '/auth/check-email';
+  static const String checkUsername = '/auth/check-username';
+  static const String idVerification = '/auth/id-verification';
 
   // ── Profile ──────────────────────────────────────────────────────────
   static const String userMe = '/user/me';
