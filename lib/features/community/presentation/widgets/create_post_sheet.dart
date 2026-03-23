@@ -26,16 +26,55 @@ class CreatePostSheet extends ConsumerStatefulWidget {
 
   final VoidCallback onPostCreated;
 
-  /// Present the create-post sheet modally.
+  /// Present the create-post as a centered dialog modal.
+  /// Uses showDialog so it renders on top of ALL content (including split panels).
   static Future<void> show({
     required BuildContext context,
     required VoidCallback onPostCreated,
   }) {
-    return TanderBottomSheet.show(
+    return showDialog<void>(
       context: context,
-      title: 'New Post',
-      maxHeightFraction: 0.85,
-      child: CreatePostSheet(onPostCreated: onPostCreated),
+      barrierColor: Colors.black54,
+      builder: (_) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520, maxHeight: 600),
+          child: Material(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(24),
+            clipBehavior: Clip.antiAlias,
+            elevation: 8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      Text(
+                        'New Post',
+                        style: AppTypography.h3,
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                // Body
+                Flexible(
+                  child: CreatePostSheet(onPostCreated: () {
+                    onPostCreated();
+                    Navigator.of(context).pop();
+                  }),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

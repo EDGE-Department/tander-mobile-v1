@@ -17,6 +17,7 @@ import 'package:tander_flutter_v3/features/community/presentation/states/communi
 import 'package:tander_flutter_v3/features/community/presentation/widgets/create_post_sheet.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/daily_prompt_card.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/post_card.dart';
+import 'package:tander_flutter_v3/features/community/presentation/screens/community_post_screen.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
@@ -143,8 +144,10 @@ class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
                       child: PostCard(
                         post: post,
                         onViewPost: () {
-                          context.push(
-                            AppRoutes.communityPost(post.postId),
+                          _showPostDetailModal(
+                            context,
+                            ref,
+                            postId: post.postId,
                           );
                         },
                         onToggleReaction: () {
@@ -159,6 +162,51 @@ class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
               ),
     };
   }
+}
+
+/// Opens a post detail + comments as a centered modal dialog.
+void _showPostDetailModal(
+  BuildContext context,
+  WidgetRef ref, {
+  required String postId,
+}) {
+  final numericId = int.tryParse(postId) ?? 0;
+  showDialog<void>(
+    context: context,
+    barrierColor: Colors.black54,
+    builder: (_) => Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560, maxHeight: 700),
+        child: Material(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(24),
+          clipBehavior: Clip.antiAlias,
+          elevation: 8,
+          child: Column(
+            children: [
+              // Close header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const Text('Post', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: CommunityPostScreen(postId: numericId),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _PanelLoadingSkeleton extends StatelessWidget {
