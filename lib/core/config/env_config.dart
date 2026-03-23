@@ -12,15 +12,15 @@ final class EnvConfig {
   }
 
   static String get apiBaseUrl => switch (_current) {
-        AppEnvironment.dev => 'http://10.0.2.2:8080',
-        AppEnvironment.staging => 'https://staging-api.tander.app',
-        AppEnvironment.production => 'https://api.tander.app',
+        AppEnvironment.dev => 'https://api.tanderconnect.com',
+        AppEnvironment.staging => 'https://api.tanderconnect.com',
+        AppEnvironment.production => 'https://api.tanderconnect.com',
       };
 
   static String get wsUrl => switch (_current) {
-        AppEnvironment.dev => 'ws://10.0.2.2:8080/ws',
-        AppEnvironment.staging => 'wss://staging-api.tander.app/ws',
-        AppEnvironment.production => 'wss://api.tander.app/ws',
+        AppEnvironment.dev => 'wss://api.tanderconnect.com/ws',
+        AppEnvironment.staging => 'wss://api.tanderconnect.com/ws',
+        AppEnvironment.production => 'wss://api.tanderconnect.com/ws',
       };
 
   static bool get isDebug => _current == AppEnvironment.dev;
