@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 /// Animated constellation background matching the web's LoginConstellationSVG.
 ///
 /// Renders twinkling star nodes connected by dim hairlines, with a central
-/// hub that pulses. Simplified from the web's 20-node SVG to a Flutter
-/// CustomPainter with AnimationController-driven twinkle.
+/// hub that pulses with a mega bloom effect. Includes breathing nebula clouds
+/// (orange and teal ellipses with large blur).
 class LoginConstellation extends StatefulWidget {
   const LoginConstellation({super.key});
 
@@ -65,6 +65,8 @@ class _Edge {
   final int to;
 }
 
+const _hubIndex = 7;
+
 const _stars = <_Star>[
   _Star(0.12, 0.18, 2.5, 0.00, Color(0xE6FFA05A)), // warm orange
   _Star(0.25, 0.30, 1.8, 0.15, Color(0xBFFFFFFF)), // white
@@ -73,7 +75,7 @@ const _stars = <_Star>[
   _Star(0.30, 0.48, 1.5, 0.22, Color(0x8CFFFFFF)), // dim white
   _Star(0.42, 0.38, 2.0, 0.11, Color(0xB3FFFFFF)), // white
   _Star(0.38, 0.51, 2.5, 0.19, Color(0xCCFFFFFF)), // white
-  _Star(0.50, 0.51, 5.0, 0.00, Color(0xFFFFFFFF)), // hub (brightest)
+  _Star(0.50, 0.51, 6.0, 0.00, Color(0xFFFFFFFF)), // hub (brightest, larger)
   _Star(0.62, 0.51, 2.5, 0.19, Color(0xCCFFFFFF)), // white
   _Star(0.58, 0.38, 2.0, 0.11, Color(0xB3FFFFFF)), // white
   _Star(0.78, 0.22, 2.0, 0.08, Color(0xD996E6E1)), // teal
@@ -103,12 +105,50 @@ class _ConstellationPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    _paintNebulaClouds(canvas, size);
+    _paintEdges(canvas, size);
+    _paintStars(canvas, size);
+    _paintHubBloom(canvas, size);
+    _paintHubPulseRings(canvas, size);
+  }
+
+  void _paintNebulaClouds(Canvas canvas, Size size) {
+    // Breathing opacity: slow sine wave
+    final breathe = 0.6 + 0.4 * math.sin(progress * math.pi * 2 * 0.5);
+
+    // Orange nebula cloud — top-left quadrant
+    final orangePaint = Paint()
+      ..color = const Color(0xFFF97316).withValues(alpha: 0.06 * breathe)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.22, size.height * 0.30),
+        width: size.width * 0.40,
+        height: size.height * 0.25,
+      ),
+      orangePaint,
+    );
+
+    // Teal nebula cloud — bottom-right quadrant
+    final tealPaint = Paint()
+      ..color = const Color(0xFF14B8A6).withValues(alpha: 0.06 * breathe)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.78, size.height * 0.55),
+        width: size.width * 0.38,
+        height: size.height * 0.22,
+      ),
+      tealPaint,
+    );
+  }
+
+  void _paintEdges(Canvas canvas, Size size) {
     final edgePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12)
-      ..strokeWidth = 0.65
+      ..color = Colors.white.withValues(alpha: 0.15)
+      ..strokeWidth = 0.7
       ..style = PaintingStyle.stroke;
 
-    // Draw edges
     for (final edge in _edges) {
       final from = _stars[edge.from];
       final to = _stars[edge.to];
@@ -118,42 +158,66 @@ class _ConstellationPainter extends CustomPainter {
         edgePaint,
       );
     }
+  }
 
-    // Draw stars with twinkle
-    for (final star in _stars) {
+  void _paintStars(Canvas canvas, Size size) {
+    for (var index = 0; index < _stars.length; index++) {
+      final star = _stars[index];
+      final isHub = index == _hubIndex;
+
       final twinklePhase = ((progress + star.phase) % 1.0);
-      // Sine wave for smooth twinkle: 0.22 to 1.0
-      final twinkle = 0.22 + 0.78 * ((math.sin(twinklePhase * math.pi * 2) + 1) / 2);
-      final scaledRadius = star.radius * (0.92 + 0.15 * twinkle);
+      // Brighter base: 0.35 min twinkle (up from 0.22)
+      final twinkle = isHub
+          ? 1.0
+          : 0.35 +
+              0.65 * ((math.sin(twinklePhase * math.pi * 2) + 1) / 2);
+
+      final scaledRadius = isHub
+          ? star.radius * 1.15
+          : star.radius * (0.92 + 0.15 * twinkle);
 
       final starPaint = Paint()
         ..color = star.color.withValues(alpha: star.color.a * twinkle)
-        ..maskFilter = star.radius >= 2.5
-            ? const MaskFilter.blur(BlurStyle.normal, 3.0)
-            : const MaskFilter.blur(BlurStyle.normal, 1.5);
+        ..maskFilter = isHub
+            ? const MaskFilter.blur(BlurStyle.normal, 8.0)
+            : star.radius >= 2.5
+                ? const MaskFilter.blur(BlurStyle.normal, 3.5)
+                : const MaskFilter.blur(BlurStyle.normal, 1.8);
 
-      canvas.drawCircle(
-        Offset(star.x * size.width, star.y * size.height),
-        scaledRadius,
-        starPaint,
-      );
+      final center = Offset(star.x * size.width, star.y * size.height);
+      canvas.drawCircle(center, scaledRadius, starPaint);
 
       // Core dot (sharper)
       final corePaint = Paint()
         ..color = star.color.withValues(alpha: star.color.a * twinkle);
-      canvas.drawCircle(
-        Offset(star.x * size.width, star.y * size.height),
-        star.radius * 0.5,
-        corePaint,
-      );
+      canvas.drawCircle(center, star.radius * 0.5, corePaint);
     }
+  }
 
-    // Hub pulse rings
-    final hubX = _stars[7].x * size.width;
-    final hubY = _stars[7].y * size.height;
+  void _paintHubBloom(Canvas canvas, Size size) {
+    final hub = _stars[_hubIndex];
+    final hubCenter = Offset(hub.x * size.width, hub.y * size.height);
 
-    for (var i = 0; i < 3; i++) {
-      final ringPhase = ((progress * (1.0 + i * 0.3) + i * 0.33) % 1.0);
+    // Mega bloom: large soft glow behind hub
+    final bloomPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.12)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
+    canvas.drawCircle(hubCenter, 18, bloomPaint);
+
+    // Secondary warm bloom
+    final warmBloomPaint = Paint()
+      ..color = const Color(0xFFFFA05A).withValues(alpha: 0.08)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
+    canvas.drawCircle(hubCenter, 26, warmBloomPaint);
+  }
+
+  void _paintHubPulseRings(Canvas canvas, Size size) {
+    final hubX = _stars[_hubIndex].x * size.width;
+    final hubY = _stars[_hubIndex].y * size.height;
+
+    for (var ringIndex = 0; ringIndex < 3; ringIndex++) {
+      final ringPhase =
+          ((progress * (1.0 + ringIndex * 0.3) + ringIndex * 0.33) % 1.0);
       final ringRadius = 6 + ringPhase * 56;
       final ringOpacity = 0.68 * (1 - ringPhase);
 

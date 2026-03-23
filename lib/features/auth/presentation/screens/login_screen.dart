@@ -187,7 +187,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         horizontal: 32,
                         vertical: 40,
                       ),
-                      child: formCard,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: const Color(0xFFEDE8E0),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 60,
+                              offset: Offset(0, 20),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(32),
+                        child: formCard,
+                      ),
                     ),
                   ),
                 ),

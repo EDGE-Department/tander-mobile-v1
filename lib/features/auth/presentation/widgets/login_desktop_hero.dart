@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
-import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_connection_showcase.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_constellation.dart';
 
 /// Desktop/landscape left panel for the login screen.
 ///
 /// Matches the web's `lg:flex lg:w-[60%]` hero panel with:
-/// - Auth gradient background (#F07040 → #E86035 → #2EC878 → #20BF68)
+/// - Auth gradient background (#F07040 -> #E86035 -> #2EC878 -> #20BF68)
 /// - VividAurora blobs + constellation + social orbs
 /// - "60+" watermark, "MADE FOR FILIPINO SENIORS 60+" label
 /// - Large "Tander" wordmark
-/// - "Connect with fellow seniors who understand your world" tagline
+/// - Filipino values marquee
+/// - Connection showcase card + testimonials
 /// - Trust badges: "2,400+ members", "ID-verified"
 /// - Copyright notice
 class DesktopHeroPanel extends StatelessWidget {
@@ -38,28 +39,24 @@ class DesktopHeroPanel extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Aurora blobs
           _buildAuroraBlobs(),
-          // Constellation
           const LoginConstellation(),
-          // Bottom vignette
           _buildVignette(),
-          // 60+ watermark
           _buildWatermark(context),
-          // Content
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top bar: logo + online badge
                   _buildTopBar(),
                   const Spacer(),
-                  // Hero content
                   _buildHeroContent(context),
+                  const SizedBox(height: 12),
+                  const _FilipinoValuesMarquee(),
+                  const SizedBox(height: 24),
+                  const ConnectionShowcase(),
                   const Spacer(),
-                  // Trust badges + copyright
                   _buildFooter(),
                 ],
               ),
@@ -262,7 +259,7 @@ class DesktopHeroPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Trust badges
-        Wrap(
+        const Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
@@ -272,7 +269,7 @@ class DesktopHeroPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          '© 2026 Tander. All rights reserved.',
+          '\u00A9 2026 Tander. All rights reserved.',
           style: TextStyle(
             fontSize: 12,
             color: Colors.white.withValues(alpha: 0.40),
@@ -282,6 +279,89 @@ class DesktopHeroPanel extends StatelessWidget {
     );
   }
 }
+
+// ── Filipino Values Marquee ─────────────────────────────────────────
+
+const _marqueeText =
+    'PAGMAMAHAL \u00B7 TIWALA \u00B7 SAMA-SAMA \u00B7 TAHANAN '
+    '\u00B7 KWENTUHAN \u00B7 MALASAKIT';
+
+class _FilipinoValuesMarquee extends StatefulWidget {
+  const _FilipinoValuesMarquee();
+
+  @override
+  State<_FilipinoValuesMarquee> createState() => _FilipinoValuesMarqueeState();
+}
+
+class _FilipinoValuesMarqueeState extends State<_FilipinoValuesMarquee>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 36),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 18,
+      child: ClipRect(
+        child: AnimatedBuilder(
+          animation: _scrollController,
+          builder: (_, _) => _MarqueeContent(
+            progress: _scrollController.value,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MarqueeContent extends StatelessWidget {
+  const _MarqueeContent({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyle = TextStyle(
+      fontSize: 9,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.28 * 9,
+      color: Colors.white.withValues(alpha: 0.20),
+    );
+
+    // Duplicate text for seamless loop
+    const fullText = '$_marqueeText     $_marqueeText     ';
+
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        final offset = -progress * constraints.maxWidth;
+        return Transform.translate(
+          offset: Offset(offset, 0),
+          child: Row(
+            children: [
+              Text(fullText, style: textStyle, maxLines: 1),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Trust Badge ─────────────────────────────────────────────────────
 
 class _TrustBadge extends StatelessWidget {
   const _TrustBadge({required this.icon, required this.label});
