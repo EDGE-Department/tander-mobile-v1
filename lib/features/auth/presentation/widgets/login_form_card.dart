@@ -97,13 +97,7 @@ class LoginFormCard extends StatelessWidget {
                   offset: Offset(0, 40),
                 ),
               ]
-            : const [
-                BoxShadow(
-                  color: Color(0x1F000000),
-                  blurRadius: 28,
-                  offset: Offset(0, -8),
-                ),
-              ],
+            : null, // Phone: no outer shadow — overlap handles depth
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
