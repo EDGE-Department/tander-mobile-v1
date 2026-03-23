@@ -1,25 +1,24 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 
 // ── Constants ────────────────────────────────────────────────────────
 
-/// Header gradient start: dark warm tone matching web's `--gradient-auth-bg`.
-const Color _gradientStart = AppColors.darkWarm;
+/// Web: --gradient-auth-bg: linear-gradient(135deg, #F07040 0%, #E86035 30%, #2EC878 70%, #20BF68 100%)
+const _authGradientColors = [
+  Color(0xFFF07040),
+  Color(0xFFE86035),
+  Color(0xFF2EC878),
+  Color(0xFF20BF68),
+];
+const _authGradientStops = [0.0, 0.30, 0.70, 1.0];
 
-/// Header gradient end: secondary teal.
-const Color _gradientEnd = AppColors.secondary;
-
-/// Minimum height of the header region (matches web `minHeight: 268`).
 const double _headerMinHeight = 268;
-
-/// Maximum height of the header region (matches web `maxHeight: 316`).
 const double _headerMaxHeight = 316;
-
-/// Header's fraction of screen height, clamped between min/max.
 const double _headerHeightFraction = 0.38;
 
 /// How far the form panel overlaps the header (web `-mt-6` = 24px).
@@ -27,10 +26,6 @@ const double headerOverlap = 24;
 
 // ── Header gradient background ──────────────────────────────────────
 
-/// Full-width gradient header for the mobile login screen.
-///
-/// Matches the web's mobile header section: dark-warm to teal gradient
-/// with decorative translucent orbs and a faint "60+" watermark.
 class LoginHeaderBackground extends StatelessWidget {
   const LoginHeaderBackground({required this.headerHeight, super.key});
 
@@ -41,64 +36,165 @@ class LoginHeaderBackground extends StatelessWidget {
     return SizedBox(
       height: headerHeight,
       width: double.infinity,
-      child: const Stack(
+      child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-          // Gradient fill
-          Positioned.fill(
+          // Auth gradient (135deg, orange→green)
+          const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [_gradientStart, _gradientEnd],
+                  begin: Alignment(-1, -1),
+                  end: Alignment(1, 1),
+                  colors: _authGradientColors,
+                  stops: _authGradientStops,
                 ),
               ),
             ),
           ),
 
-          // Decorative orbs
-          _HeaderOrbs(),
+          // Vivid aurora: warm orange blob top-left
+          Positioned(
+            top: -headerHeight * 0.08,
+            left: -headerHeight * 0.05,
+            child: Container(
+              width: headerHeight * 0.5,
+              height: headerHeight * 0.45,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(headerHeight * 0.45),
+                  topRight: Radius.circular(headerHeight * 0.55),
+                  bottomLeft: Radius.circular(headerHeight * 0.50),
+                  bottomRight: Radius.circular(headerHeight * 0.50),
+                ),
+                gradient: const RadialGradient(
+                  colors: [
+                    Color(0x70FF8C46), // rgba(255,140,70,0.44)
+                    Color(0x38F06432), // rgba(240,100,50,0.22)
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.45, 0.70],
+                ),
+              ),
+            ),
+          ),
+
+          // Vivid aurora: teal blob bottom-right
+          Positioned(
+            bottom: -headerHeight * 0.05,
+            right: -headerHeight * 0.08,
+            child: Container(
+              width: headerHeight * 0.45,
+              height: headerHeight * 0.40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(headerHeight * 0.50),
+                  topRight: Radius.circular(headerHeight * 0.40),
+                  bottomLeft: Radius.circular(headerHeight * 0.60),
+                  bottomRight: Radius.circular(headerHeight * 0.40),
+                ),
+                gradient: const RadialGradient(
+                  colors: [
+                    Color(0x472EC88C), // rgba(46,200,140,0.28)
+                    Color(0x240FA094), // rgba(15,160,148,0.14)
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.45, 0.70],
+                ),
+              ),
+            ),
+          ),
+
+          // Bottom vignette
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: headerHeight * 0.4,
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Color(0x59781E05), // rgba(120,30,5,0.35)
+                    Color(0x1F501405), // rgba(80,20,5,0.12)
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.25, 0.50],
+                ),
+              ),
+            ),
+          ),
+
+          // Corner highlight
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(-0.76, -0.84),
+                  radius: 0.4,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.18),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Social orbs (Heart, ChatCircle, Star)
+          const _SocialOrbs(),
 
           // "60+" watermark
-          _SixtyPlusWatermark(),
+          const _SixtyPlusWatermark(),
         ],
       ),
     );
   }
 }
 
-/// Calculates the header height from screen size, clamped to web's range.
 double resolveHeaderHeight(double screenHeight) {
   return (screenHeight * _headerHeightFraction)
       .clamp(_headerMinHeight, _headerMaxHeight);
 }
 
-// ── Decorative orbs ─────────────────────────────────────────────────
+// ── Social orbs (Heart, ChatCircle, Star) ───────────────────────────
 
-/// Translucent floating orbs that add depth to the gradient header,
-/// matching the web's `<SocialOrbs />` component.
-class _HeaderOrbs extends StatelessWidget {
-  const _HeaderOrbs();
+class _SocialOrbs extends StatelessWidget {
+  const _SocialOrbs();
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-
-    return IgnorePointer(
+    return const IgnorePointer(
       child: Stack(
         children: [
-          _Orb(
-            diameter: screenWidth * 0.5,
-            color: AppColors.primary.withValues(alpha: 0.10),
-            top: -screenWidth * 0.1,
-            left: -screenWidth * 0.12,
+          // Heart — top-left, warm peach glow
+          _FloatingOrb(
+            left: 0.12,
+            top: 0.14,
+            icon: PhosphorIconsFill.heart,
+            size: 28,
+            color: Color(0xFFFFB088),
+            glowColor: Color(0x73FFB088),
           ),
-          _Orb(
-            diameter: screenWidth * 0.35,
-            color: AppColors.secondary.withValues(alpha: 0.08),
-            top: 40,
-            right: -screenWidth * 0.08,
+          // ChatCircle — top-center, white glow
+          _FloatingOrb(
+            left: 0.44,
+            top: 0.07,
+            icon: PhosphorIconsFill.chatCircle,
+            size: 24,
+            color: Color(0xE6FFFFFF),
+            glowColor: Color(0x59FFFFFF),
+          ),
+          // Star — top-right, gold glow
+          _FloatingOrb(
+            left: 0.74,
+            top: 0.13,
+            icon: PhosphorIconsFill.star,
+            size: 22,
+            color: Color(0xFFFFE17A),
+            glowColor: Color(0x66FFE17A),
           ),
         ],
       ),
@@ -106,37 +202,35 @@ class _HeaderOrbs extends StatelessWidget {
   }
 }
 
-/// Single translucent circular gradient orb, absolutely positioned.
-class _Orb extends StatelessWidget {
-  const _Orb({
-    required this.diameter,
+class _FloatingOrb extends StatelessWidget {
+  const _FloatingOrb({
+    required this.left,
+    required this.top,
+    required this.icon,
+    required this.size,
     required this.color,
-    this.top,
-    this.left,
-    this.right,
+    required this.glowColor,
   });
 
-  final double diameter;
+  final double left;
+  final double top;
+  final IconData icon;
+  final double size;
   final Color color;
-  final double? top;
-  final double? left;
-  final double? right;
+  final Color glowColor;
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: top,
-      left: left,
-      right: right,
-      child: Container(
-        width: diameter,
-        height: diameter,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [color, color.withValues(alpha: 0)],
-          ),
-        ),
+      left: MediaQuery.sizeOf(context).width * left - size / 2,
+      top: MediaQuery.sizeOf(context).height * 0.38 * top,
+      child: Icon(
+        icon,
+        size: size,
+        color: color,
+        shadows: [
+          Shadow(color: glowColor, blurRadius: 10),
+        ],
       ),
     );
   }
@@ -144,8 +238,6 @@ class _Orb extends StatelessWidget {
 
 // ── "60+" watermark ─────────────────────────────────────────────────
 
-/// Faint "60+" text centered in the header, matching the web's
-/// `clamp(140px, 55vw, 240px)` at 3.5% opacity.
 class _SixtyPlusWatermark extends StatelessWidget {
   const _SixtyPlusWatermark();
 
@@ -157,7 +249,7 @@ class _SixtyPlusWatermark extends StatelessWidget {
     return Positioned.fill(
       child: Center(
         child: Transform.translate(
-          offset: const Offset(0, 10),
+          offset: Offset(0, fontSize * 0.10),
           child: Text(
             '60+',
             style: TextStyle(
@@ -174,11 +266,8 @@ class _SixtyPlusWatermark extends StatelessWidget {
   }
 }
 
-// ── Online count ping dot ───────────────────────────────────────────
+// ── Online count badge ──────────────────────────────────────────────
 
-/// Animated emerald ping dot + online count text.
-///
-/// Matches the web's pulse animation on the green indicator dot.
 class OnlineCountBadge extends StatefulWidget {
   const OnlineCountBadge({
     required this.count,
@@ -187,9 +276,6 @@ class OnlineCountBadge extends StatefulWidget {
   });
 
   final int count;
-
-  /// When `true`, uses primary-tinted styling for the form panel.
-  /// When `false`, uses white/transparent styling for the header.
   final bool isLightBackground;
 
   @override
@@ -237,21 +323,19 @@ class _OnlineCountBadgeState extends State<OnlineCountBadge>
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: isLight
-              ? const Color(0x38E67E22) // rgba(230,126,34,0.22)
+              ? const Color(0x38E67E22)
               : Colors.white.withValues(alpha: 0.20),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Ping dot
           SizedBox(
             width: 8,
             height: 8,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Animated ping ring
                 AnimatedBuilder(
                   animation: _pingController,
                   builder: (_, _) => Transform.scale(
@@ -263,19 +347,18 @@ class _OnlineCountBadgeState extends State<OnlineCountBadge>
                         height: 8,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFF6EE7B7), // emerald-300
+                          color: Color(0xFF6EE7B7),
                         ),
                       ),
                     ),
                   ),
                 ),
-                // Static dot
                 Container(
                   width: 6,
                   height: 6,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Color(0xFF34D399), // emerald-400
+                    color: Color(0xFF34D399),
                   ),
                 ),
               ],
@@ -301,14 +384,9 @@ class _OnlineCountBadgeState extends State<OnlineCountBadge>
 
 // ── Simulated online count ──────────────────────────────────────────
 
-/// Generates a slowly-drifting simulated online count between
-/// [_minCount] and [_maxCount], matching the web's hook.
 const int _minCount = 127;
 const int _maxCount = 284;
 
-/// Produces a stream-like ticker that fluctuates an integer to simulate
-/// a live online count. Returns the count as a [ValueNotifier] so
-/// multiple widgets can share the same value without extra rebuilds.
 class SimulatedOnlineCount extends ValueNotifier<int> {
   SimulatedOnlineCount()
       : super(_minCount + math.Random().nextInt(_maxCount - _minCount)) {
@@ -320,7 +398,7 @@ class SimulatedOnlineCount extends ValueNotifier<int> {
       Duration(milliseconds: 3000 + math.Random().nextInt(4000)),
       () {
         if (!hasListeners) return;
-        final delta = math.Random().nextInt(7) - 3; // -3..+3
+        final delta = math.Random().nextInt(7) - 3;
         value = (value + delta).clamp(_minCount, _maxCount);
         _tick();
       },
