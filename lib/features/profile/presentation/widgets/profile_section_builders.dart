@@ -1,0 +1,173 @@
+/// Data holders and pure builder functions for profile sections.
+///
+/// Contains: [CompletionTipData], [FactRowData], [buildSnapshotItems],
+/// [buildDetailItems], [buildCompletionTips].
+library;
+
+import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
+
+// ── Data holders ───────────────────────────────────────────────────────
+
+/// Data holder for a completion tip.
+class CompletionTipData {
+  const CompletionTipData({
+    required this.label,
+    required this.actionLabel,
+    required this.boost,
+    required this.onTap,
+  });
+
+  final String label;
+  final String actionLabel;
+  final String boost;
+  final VoidCallback onTap;
+}
+
+/// Data holder for a snapshot/detail fact row.
+class FactRowData {
+  const FactRowData({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+}
+
+// ── Builder functions ──────────────────────────────────────────────────
+
+/// Builds snapshot items (location, age, gender, looking for).
+List<FactRowData> buildSnapshotItems({
+  required String displayLocation,
+  required int? age,
+  required String? gender,
+  required String? lookingFor,
+}) {
+  return [
+    if (displayLocation.isNotEmpty)
+      FactRowData(
+        icon: PhosphorIconsFill.mapPin,
+        label: 'Location',
+        value: displayLocation,
+      ),
+    if (age != null)
+      FactRowData(
+        icon: PhosphorIconsFill.calendar,
+        label: 'Age',
+        value: '$age years old',
+      ),
+    if (gender != null)
+      FactRowData(
+        icon: PhosphorIconsFill.users,
+        label: 'Gender',
+        value: gender,
+      ),
+    if (lookingFor != null)
+      FactRowData(
+        icon: PhosphorIconsFill.heart,
+        label: 'Looking for',
+        value: lookingFor,
+      ),
+  ];
+}
+
+/// Builds detail items (hobby, civil status, religion, etc.).
+List<FactRowData> buildDetailItems(UserProfile profile) {
+  return [
+    if (profile.hobby != null && profile.hobby!.trim().isNotEmpty)
+      FactRowData(
+        icon: PhosphorIconsFill.heart,
+        label: 'Hobby',
+        value: profile.hobby!.trim(),
+      ),
+    if (profile.civilStatus != null &&
+        profile.civilStatus!.trim().isNotEmpty)
+      FactRowData(
+        icon: PhosphorIconsFill.users,
+        label: 'Civil status',
+        value: ProfileHelpers.toTitleCase(
+          profile.civilStatus!.replaceAll('_', ' '),
+        ),
+      ),
+    if (profile.religion != null && profile.religion!.trim().isNotEmpty)
+      FactRowData(
+        icon: PhosphorIconsFill.heart,
+        label: 'Religion',
+        value: profile.religion!.trim(),
+      ),
+    if (profile.maritalStatus != null &&
+        profile.maritalStatus!.trim().isNotEmpty)
+      FactRowData(
+        icon: PhosphorIconsFill.users,
+        label: 'Marital status',
+        value: ProfileHelpers.toTitleCase(
+          profile.maritalStatus!.replaceAll('_', ' '),
+        ),
+      ),
+    if (profile.languages.isNotEmpty)
+      FactRowData(
+        icon: PhosphorIconsFill.translate,
+        label: 'Languages',
+        value: profile.languages.join(', '),
+      ),
+    if (profile.numberOfChildren != null)
+      FactRowData(
+        icon: PhosphorIconsFill.users,
+        label: 'Children',
+        value: '${profile.numberOfChildren}',
+      ),
+  ];
+}
+
+/// Builds completion tip list.
+List<CompletionTipData> buildCompletionTips({
+  required bool hasBio,
+  required int photoCount,
+  required int interestCount,
+  required bool hasGender,
+}) {
+  return [
+    if (!hasBio)
+      CompletionTipData(
+        label: 'Write a short introduction',
+        actionLabel: 'Add bio',
+        boost: '+20%',
+        onTap: () {
+          // TODO(#124): Open edit sheet
+        },
+      ),
+    if (photoCount < minPhotosForBonus)
+      CompletionTipData(
+        label: 'Add more photos',
+        actionLabel: 'Upload',
+        boost: '+20%',
+        onTap: () {
+          // TODO(#124): Open photos sheet
+        },
+      ),
+    if (interestCount < minInterestsForCompletion)
+      CompletionTipData(
+        label: 'Add interests',
+        actionLabel: 'Choose',
+        boost: '+15%',
+        onTap: () {
+          // TODO(#124): Open edit sheet
+        },
+      ),
+    if (!hasGender)
+      CompletionTipData(
+        label: 'Complete the basics',
+        actionLabel: 'Update',
+        boost: '+10%',
+        onTap: () {
+          // TODO(#124): Open edit sheet
+        },
+      ),
+  ];
+}

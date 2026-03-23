@@ -1,6 +1,5 @@
 /// Sent and Friend card variants for the Connections screen.
-///
-/// Separated from connection_card.dart to keep each file under 400 lines.
+/// Matches web connection-cards.tsx SentCard and FriendRow.
 library;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -16,7 +15,7 @@ import 'package:tander_flutter_v3/features/connection/presentation/widgets/conne
 
 // ── Sent Card ───────────────────────────────────────────────────────
 
-/// Photo-grid card for an outgoing connection request with cancel action.
+/// Photo-grid card for outgoing connection request with cancel action.
 class SentCard extends StatelessWidget {
   const SentCard({
     required this.connection,
@@ -178,21 +177,25 @@ class SentCard extends StatelessWidget {
       padding: const EdgeInsets.all(6),
       child: GestureDetector(
         onTap: isLoading ? null : onCancel,
-        child: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.subtle,
-            borderRadius: AppRadius.borderLg,
-            border: Border.all(
-              color: AppColors.border.withValues(alpha: 0.60),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 150),
+          opacity: isLoading ? 0.50 : 1.0,
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.subtle,
+              borderRadius: AppRadius.borderLg,
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.60),
+              ),
             ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'Cancel',
-            style: AppTypography.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
+            alignment: Alignment.center,
+            child: Text(
+              'Cancel',
+              style: AppTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+              ),
             ),
           ),
         ),
@@ -360,28 +363,31 @@ class _CircleAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: backgroundColor ?? color,
-          shape: BoxShape.circle,
-          border: borderColor != null ? Border.all(color: borderColor!) : null,
-          boxShadow: backgroundColor == null ? AppShadows.warmXs : null,
-        ),
-        child: Center(
-          child: Icon(
-            icon,
-            size: 18,
-            color: backgroundColor != null ? color : Colors.white,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 150),
+        opacity: onTap == null ? 0.50 : 1.0,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: backgroundColor ?? color,
+            shape: BoxShape.circle,
+            border:
+                borderColor != null ? Border.all(color: borderColor!) : null,
+            boxShadow: backgroundColor == null ? AppShadows.warmXs : null,
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              size: 18,
+              color: backgroundColor != null ? color : Colors.white,
+            ),
           ),
         ),
       ),
     );
   }
 }
-
-// ── Shared placeholder ──────────────────────────────────────────────
 
 Widget _photoPlaceholder() {
   return Container(

@@ -9,7 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
+import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_hero.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_screen_sections.dart';
@@ -25,7 +28,7 @@ class ProfileScreen extends ConsumerWidget {
     // final profileAsync = ref.watch(myProfileNotifierProvider);
     // return profileAsync.when(
     //   loading: () => _buildLoading(),
-    //   error: (error, _) => _buildError(ref),
+    //   error: (error, _) => _buildError(),
     //   data: (profile) => ProfileLoadedBody(profile: profile),
     // );
 
@@ -54,6 +57,52 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+/// Error state widget for the profile screen.
+class _ProfileError extends StatelessWidget {
+  const _ProfileError();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 380),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.xl,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: AppRadius.borderLg,
+            border: Border.all(
+              color: AppColors.danger.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Unable to load your profile',
+                style: AppTypography.h3,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Please refresh the page and try again.',
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.textMuted,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Loaded state body for the profile screen.
 ///
 /// Public so the screen can instantiate it once the provider is wired.
@@ -73,8 +122,10 @@ class ProfileLoadedBody extends StatelessWidget {
         ? ProfileHelpers.toTitleCase(profile.gender!)
         : null;
     final interests = profile.interests
-        .where((interest) =>
-            interest.trim().length > 1 && !interest.startsWith('['))
+        .where(
+          (interest) =>
+              interest.trim().length > 1 && !interest.startsWith('['),
+        )
         .toList();
 
     final completionPercent =
@@ -119,57 +170,106 @@ class ProfileLoadedBody extends StatelessWidget {
             lookingFor: lookingFor,
             onChangePhoto: _noOp,
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const ProfileActionRow(
-                  onEdit: _noOp,
-                  onPhotos: _noOp,
-                  onSettings: _noOp,
-                  onHelp: _noOp,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                ProfileMetricRow(
-                  completionPercent: completionPercent,
-                  photoCount: gallery.length,
-                  interestCount: interests.length,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                if (!isProfileComplete && completionTips.isNotEmpty) ...[
-                  ProfileCompletionSection(
-                    completionPercent: completionPercent,
-                    tips: completionTips,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
-                ProfilePhotosSection(
-                  gallery: gallery,
-                  displayName: displayName,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                ProfileAboutSection(
-                  bio: bio,
-                  hasBio: hasBio,
-                  snapshotItems: snapshotItems,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                ProfileInterestsSection(
-                  interests: interests,
-                  hasInterests: hasInterests,
-                  detailItems: detailItems,
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-              ],
-            ),
+          _ProfileContent(
+            gallery: gallery,
+            displayName: displayName,
+            completionPercent: completionPercent,
+            isProfileComplete: isProfileComplete,
+            interests: interests,
+            bio: bio,
+            hasBio: hasBio,
+            hasInterests: hasInterests,
+            snapshotItems: snapshotItems,
+            detailItems: detailItems,
+            completionTips: completionTips,
           ),
         ],
       ),
     );
   }
 
-  // Placeholder callback until sheets are wired.
+  static void _noOp() {
+    // TODO(#124): Wire to sheet callbacks once data layer ships.
+  }
+}
+
+/// Content sections below the hero, adapts to phone vs tablet.
+class _ProfileContent extends StatelessWidget {
+  const _ProfileContent({
+    required this.gallery,
+    required this.displayName,
+    required this.completionPercent,
+    required this.isProfileComplete,
+    required this.interests,
+    required this.bio,
+    required this.hasBio,
+    required this.hasInterests,
+    required this.snapshotItems,
+    required this.detailItems,
+    required this.completionTips,
+  });
+
+  final List<String> gallery;
+  final String displayName;
+  final int completionPercent;
+  final bool isProfileComplete;
+  final List<String> interests;
+  final String bio;
+  final bool hasBio;
+  final bool hasInterests;
+  final List<FactRowData> snapshotItems;
+  final List<FactRowData> detailItems;
+  final List<CompletionTipData> completionTips;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const ProfileActionRow(
+            onEdit: _noOp,
+            onPhotos: _noOp,
+            onSettings: _noOp,
+            onHelp: _noOp,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          ProfileMetricRow(
+            completionPercent: completionPercent,
+            photoCount: gallery.length,
+            interestCount: interests.length,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (!isProfileComplete && completionTips.isNotEmpty) ...[
+            ProfileCompletionSection(
+              completionPercent: completionPercent,
+              tips: completionTips,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          ProfilePhotosSection(
+            gallery: gallery,
+            displayName: displayName,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ProfileAboutSection(
+            bio: bio,
+            hasBio: hasBio,
+            snapshotItems: snapshotItems,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ProfileInterestsSection(
+            interests: interests,
+            hasInterests: hasInterests,
+            detailItems: detailItems,
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+        ],
+      ),
+    );
+  }
+
   static void _noOp() {
     // TODO(#124): Wire to sheet callbacks once data layer ships.
   }

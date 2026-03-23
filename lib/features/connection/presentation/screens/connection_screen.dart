@@ -1,6 +1,6 @@
 /// Connection screen with segmented tab bar (Requests / Sent / Friends).
 ///
-/// Matches the web connection-page.tsx:
+/// Matches web connection-page.tsx:
 /// - Animated pill indicator with gradient + spring physics
 /// - Stats pills in header (pending count, friends count)
 /// - Staggered card entrance animations (45 ms delay, 220 ms duration)
@@ -21,6 +21,7 @@ import 'package:tander_flutter_v3/features/connection/presentation/notifiers/con
 import 'package:tander_flutter_v3/features/connection/presentation/states/connection_state.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_card.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_card_variants.dart';
+import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_friends_panel.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_header.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
@@ -86,7 +87,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
           connections: loadedState.sentRequests.items,
           onRefresh: _refreshAll,
         ),
-      ConnectionTab.connected => _FriendsPanel(
+      ConnectionTab.connected => ConnectionFriendsPanel(
           connections: loadedState.connectedFriends.items,
           onRefresh: _refreshAll,
         ),
@@ -203,68 +204,6 @@ class _SentPanel extends ConsumerWidget {
               onCancel: () => ref
                   .read(connectionNotifierProvider.notifier)
                   .cancelRequest(connection.connectionId),
-              onViewProfile: () => context
-                  .push(AppRoutes.userProfile(connection.otherUserId)),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ── Friends Panel ───────────────────────────────────────────────────
-
-class _FriendsPanel extends ConsumerWidget {
-  const _FriendsPanel({
-    required this.connections,
-    required this.onRefresh,
-  });
-
-  final List<ConnectionSummary> connections;
-  final Future<void> Function() onRefresh;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (connections.isEmpty) {
-      return Center(
-        child: EmptyState(
-          title: 'No friends yet',
-          description:
-              'Accept requests or explore Discover to start building '
-              'your circle.',
-          icon: Icons.people_outline,
-          actionLabel: 'Explore Discover',
-          onAction: () => context.go(AppRoutes.discover),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      color: AppColors.primary,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        itemCount: connections.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-        itemBuilder: (context, index) {
-          final connection = connections[index];
-          return _StaggeredEntrance(
-            index: index,
-            delayMilliseconds: 50,
-            child: FriendRow(
-              connection: connection,
-              isLoading: _isMutating(ref, connection.connectionId),
-              onMessage: () {
-                if (connection.conversationId != null) {
-                  context.push(
-                    AppRoutes.messageThread(connection.conversationId!),
-                  );
-                }
-              },
-              onRemove: () => ref
-                  .read(connectionNotifierProvider.notifier)
-                  .removeConnection(connection.connectionId),
               onViewProfile: () => context
                   .push(AppRoutes.userProfile(connection.otherUserId)),
             ),

@@ -1,6 +1,7 @@
 /// Header and segmented tab bar for the connection screen.
 ///
 /// Extracted from connection_screen.dart to keep each file under 400 lines.
+/// Matches connection-page.tsx: gradient icon, stats pills, animated tab bar.
 library;
 
 import 'package:flutter/material.dart' hide ConnectionState;
@@ -15,12 +16,16 @@ import 'package:tander_flutter_v3/shared/widgets/tander_badge.dart';
 
 // ── Tab enum ────────────────────────────────────────────────────────
 
-/// The three connection tabs — matches the web's ActiveTab type.
+/// The three connection tabs -- matches the web's ActiveTab type.
 enum ConnectionTab { incoming, sent, connected }
 
 // ── Header ──────────────────────────────────────────────────────────
 
 /// Icon, title, stat pills, and segmented tab bar above the connection lists.
+///
+/// Web parity: gradient icon (135deg, #0F9D94 -> #0a7c74) in 48px
+/// rounded-2xl container, Users icon 24px, "Connections" title, stats pills,
+/// segmented tab bar with animated gradient pill.
 class ConnectionHeader extends StatelessWidget {
   const ConnectionHeader({
     required this.activeTab,
@@ -37,32 +42,59 @@ class ConnectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final (pendingCount, friendsCount) = _resolveCounts();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.md,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTitleRow(),
-          if (pendingCount > 0 || friendsCount > 0) ...[
-            const SizedBox(height: AppSpacing.md),
-            _buildStatsPills(
-              pendingCount: pendingCount,
-              friendsCount: friendsCount,
+    return Stack(
+      children: [
+        // Radial gradient background glow (web: radial-gradient ellipse)
+        Positioned(
+          top: -80,
+          left: 0,
+          right: 0,
+          height: 290,
+          child: IgnorePointer(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topCenter,
+                  radius: 1.2,
+                  colors: [
+                    Color(0x1F0F9D94), // rgba(15,157,148,.12)
+                    Color(0x12E67E22), // rgba(230,126,34,.07)
+                    Color(0x00000000),
+                  ],
+                  stops: [0.0, 0.45, 0.70],
+                ),
+              ),
             ),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          ConnectionSegmentedTabBar(
-            activeTab: activeTab,
-            onTabChanged: onTabChanged,
-            connectionState: connectionState,
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg + 4, // pt-10 (40px) minus SafeArea
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTitleRow(),
+              if (pendingCount > 0 || friendsCount > 0) ...[
+                const SizedBox(height: AppSpacing.md),
+                _buildStatsPills(
+                  pendingCount: pendingCount,
+                  friendsCount: friendsCount,
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              ConnectionSegmentedTabBar(
+                activeTab: activeTab,
+                onTabChanged: onTabChanged,
+                connectionState: connectionState,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -77,6 +109,7 @@ class ConnectionHeader extends StatelessWidget {
   Widget _buildTitleRow() {
     return Row(
       children: [
+        // Web: 48px rounded-2xl gradient icon container
         Container(
           width: 48,
           height: 48,
@@ -112,6 +145,7 @@ class ConnectionHeader extends StatelessWidget {
     );
   }
 
+  /// Web: stats pills with primary/8 bg and secondary/8 bg
   Widget _buildStatsPills({
     required int pendingCount,
     required int friendsCount,
@@ -127,7 +161,8 @@ class ConnectionHeader extends StatelessWidget {
           ),
         if (friendsCount > 0)
           TanderBadge(
-            label: '$friendsCount ${friendsCount == 1 ? 'friend' : 'friends'}',
+            label:
+                '$friendsCount ${friendsCount == 1 ? 'friend' : 'friends'}',
             variant: TanderBadgeVariant.secondary,
             icon: Icons.people,
           ),
@@ -140,8 +175,9 @@ class ConnectionHeader extends StatelessWidget {
 
 /// Rounded segmented control with animated gradient pill indicator.
 ///
-/// Spring stiffness 420, damping 32 from the web — approximated via a
-/// 250 ms cubic-bezier transition on the container decoration.
+/// Web: rounded-[18px] border bg-subtle p-1.5, tabs min-h 44px px-5
+/// radius-[12px], active gradient(135deg, #F07020 -> #E67E22) white text,
+/// shadow 0 3px 12px rgba(230,126,34,0.35), spring stiffness 420 damping 32.
 class ConnectionSegmentedTabBar extends StatelessWidget {
   const ConnectionSegmentedTabBar({
     required this.activeTab,
@@ -163,7 +199,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(6), // p-1.5
       decoration: BoxDecoration(
         color: AppColors.subtle,
         borderRadius: BorderRadius.circular(18),
@@ -192,7 +228,8 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: const Cubic(0.22, 1.0, 0.36, 1.0),
-        constraints: const BoxConstraints(minHeight: AppSpacing.touchMinimum),
+        constraints:
+            const BoxConstraints(minHeight: AppSpacing.touchMinimum),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
           gradient: isActive ? _tabPillGradient : null,
@@ -200,7 +237,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
           boxShadow: isActive
               ? const [
                   BoxShadow(
-                    color: Color(0x59E67E22),
+                    color: Color(0x59E67E22), // rgba(230,126,34,0.35)
                     blurRadius: 12,
                     offset: Offset(0, 3),
                   ),
@@ -231,6 +268,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
     );
   }
 
+  /// Web: h-5 min-w-[20px] rounded-full bg-white/20
   Widget _buildActiveCountBadge(int count) {
     return Container(
       constraints: const BoxConstraints(minWidth: 20),
@@ -252,6 +290,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
     );
   }
 
+  /// Web: h-2 w-2 rounded-full bg-primary
   Widget _buildInactiveDot() {
     return Container(
       width: 8,
@@ -277,6 +316,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
 // ── Header Divider ──────────────────────────────────────────────────
 
 /// Gradient divider line between the header and tab panels.
+/// Web: h-px mx-6 linear-gradient(90deg, transparent 0%, border 20%, border 80%, transparent 100%)
 class ConnectionHeaderDivider extends StatelessWidget {
   const ConnectionHeaderDivider({super.key});
 
@@ -288,8 +328,13 @@ class ConnectionHeaderDivider extends StatelessWidget {
         height: 1,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.transparent, AppColors.border, Colors.transparent],
-            stops: [0.0, 0.5, 1.0],
+            colors: [
+              Colors.transparent,
+              AppColors.border,
+              AppColors.border,
+              Colors.transparent,
+            ],
+            stops: [0.0, 0.2, 0.8, 1.0],
           ),
         ),
       ),
