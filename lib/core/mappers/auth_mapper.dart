@@ -17,9 +17,8 @@ abstract final class AuthMapper {
   /// - `profilePhotoUrl` -> `null`
   static AuthSession mapToAuthSession(Map<String, Object?> userMeJson) {
     final userId = _parseUserId(userMeJson['id']);
-    final email = _requireString(userMeJson['email'], fieldName: 'email');
-    final username =
-        _requireString(userMeJson['username'], fieldName: 'username');
+    final email = _parseOptionalString(userMeJson['email']) ?? '';
+    final username = _parseOptionalString(userMeJson['username']) ?? '';
 
     final registrationPhase =
         _parseRegistrationPhase(userMeJson['registrationPhase']);
