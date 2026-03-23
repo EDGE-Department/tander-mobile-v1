@@ -1,5 +1,8 @@
-/// Friends panel with search for the Connection screen.
-/// Extracted to keep connection_screen.dart under 400 lines.
+/// Friends (connected) panel with search for the Connection screen.
+///
+/// Extracted from connection_screen.dart to keep each file under 400 lines.
+/// Matches web ConnectedPanel: search input, filtered friend rows,
+/// section label with count, staggered entrance animations.
 library;
 
 import 'package:flutter/material.dart';
@@ -12,21 +15,24 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/notifiers/connection_notifier.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_card_variants.dart';
+import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_shared_ui.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
-import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 
 /// Friends tab content with search input and pull-to-refresh.
 ///
 /// Web: search input (rounded-2xl border bg-card), filtered friend rows,
+/// section label "{N} friends" with gradient divider,
 /// "No friends matching" empty text when search has no results.
 class ConnectionFriendsPanel extends ConsumerStatefulWidget {
   const ConnectionFriendsPanel({
     required this.connections,
+    required this.totalCount,
     required this.onRefresh,
     super.key,
   });
 
   final List<ConnectionSummary> connections;
+  final int totalCount;
   final Future<void> Function() onRefresh;
 
   @override
@@ -52,12 +58,12 @@ class _ConnectionFriendsPanelState
   Widget build(BuildContext context) {
     if (widget.connections.isEmpty) {
       return Center(
-        child: EmptyState(
+        child: TabEmptyState(
+          icon: Icons.people,
           title: 'No friends yet',
           description:
               'Accept requests or explore Discover to start building '
               'your circle.',
-          icon: Icons.people_outline,
           actionLabel: 'Explore Discover',
           onAction: () => context.go(AppRoutes.discover),
         ),
@@ -95,11 +101,25 @@ class _ConnectionFriendsPanelState
                 ),
               ),
             )
-          else
+          else ...[
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
-                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: SectionLabel(
+                  count: filteredItems.length,
+                  noun: 'friend',
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
                 AppSpacing.lg,
                 AppSpacing.lg,
               ),
@@ -109,32 +129,41 @@ class _ConnectionFriendsPanelState
                     const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, index) {
                   final connection = filteredItems[index];
-                  return FriendRow(
-                    connection: connection,
-                    isLoading: _isMutating(ref, connection.connectionId),
-                    onMessage: () {
-                      if (connection.conversationId != null) {
-                        context.push(
-                          AppRoutes.messageThread(
-                            connection.conversationId!,
-                          ),
-                        );
-                      }
-                    },
-                    onRemove: () => ref
-                        .read(connectionNotifierProvider.notifier)
-                        .removeConnection(connection.connectionId),
-                    onViewProfile: () => context
-                        .push(AppRoutes.userProfile(connection.otherUserId)),
+                  return StaggeredEntrance(
+                    index: index,
+                    delayMilliseconds: 50,
+                    child: FriendRow(
+                      connection: connection,
+                      isLoading:
+                          _isMutating(ref, connection.connectionId),
+                      onMessage: () {
+                        if (connection.conversationId != null) {
+                          context.push(
+                            AppRoutes.messageThread(
+                              connection.conversationId!,
+                            ),
+                          );
+                        }
+                      },
+                      onRemove: () => ref
+                          .read(connectionNotifierProvider.notifier)
+                          .removeConnection(connection.connectionId),
+                      onViewProfile: () => context.push(
+                        AppRoutes.userProfile(connection.otherUserId),
+                      ),
+                    ),
                   );
                 },
               ),
             ),
+          ],
         ],
       ),
     );
   }
 
+  /// Web: rounded-2xl border bg-card, MagnifyingGlass 15px left,
+  /// focus ring secondary/20, text-sm
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
@@ -147,7 +176,7 @@ class _ConnectionFriendsPanelState
           ),
           prefixIcon: const Icon(
             Icons.search,
-            size: 18,
+            size: 15,
             color: AppColors.textMuted,
           ),
           border: OutlineInputBorder(

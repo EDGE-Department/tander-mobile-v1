@@ -43,7 +43,7 @@ class SentCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildPhotoSection(),
+          Expanded(child: _buildPhotoSection()),
           _buildCancelButton(),
         ],
       ),
@@ -53,17 +53,14 @@ class SentCard extends StatelessWidget {
   Widget _buildPhotoSection() {
     return GestureDetector(
       onTap: onViewProfile,
-      child: AspectRatio(
-        aspectRatio: 5 / 4,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildPhoto(),
-            _buildGradientOverlay(),
-            _buildPendingBadge(),
-            _buildNameOverlay(),
-          ],
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildPhoto(),
+          _buildGradientOverlay(),
+          _buildPendingBadge(),
+          _buildNameOverlay(),
+        ],
       ),
     );
   }
@@ -73,13 +70,15 @@ class SentCard extends StatelessWidget {
       return CachedNetworkImage(
         imageUrl: connection.otherPhotoUrl!,
         fit: BoxFit.cover,
-        placeholder: (_, _) => _photoPlaceholder(),
-        errorWidget: (_, _, _) => _photoPlaceholder(),
+        placeholder: (_, _) => connectionPhotoPlaceholder(),
+        errorWidget: (_, _, _) => connectionPhotoPlaceholder(),
       );
     }
-    return _photoPlaceholder();
+    return connectionPhotoPlaceholder();
   }
 
+  /// Web: linear-gradient(to top, rgba(0,0,0,.75) 0%,
+  ///      rgba(0,0,0,.3) 40%, transparent 70%)
   Widget _buildGradientOverlay() {
     return Container(
       decoration: const BoxDecoration(
@@ -93,6 +92,8 @@ class SentCard extends StatelessWidget {
     );
   }
 
+  /// Web: right-2 top-2, Clock 9px bold white, "PENDING" 9px extrabold
+  /// uppercase, bg-black/30, border white/20, rounded-full, backdrop-blur
   Widget _buildPendingBadge() {
     return Positioned(
       right: 8,
@@ -124,6 +125,8 @@ class SentCard extends StatelessWidget {
     );
   }
 
+  /// Web: bottom-2.5 left-2.5 right-2.5, name 13px extrabold white,
+  /// city 10px white/70 with MapPin 8px
   Widget _buildNameOverlay() {
     return Positioned(
       left: 10,
@@ -172,6 +175,7 @@ class SentCard extends StatelessWidget {
     );
   }
 
+  /// Web: p-1.5, min-h-[40px] rounded-2xl border-border/60 bg-subtle
   Widget _buildCancelButton() {
     return Padding(
       padding: const EdgeInsets.all(6),
@@ -206,7 +210,7 @@ class SentCard extends StatelessWidget {
 
 // ── Friend Row ──────────────────────────────────────────────────────
 
-/// Horizontal row for an accepted connection with message + remove actions.
+/// Horizontal row for accepted connection with message + remove actions.
 class FriendRow extends StatelessWidget {
   const FriendRow({
     required this.connection,
@@ -243,6 +247,7 @@ class FriendRow extends StatelessWidget {
     );
   }
 
+  /// Web: w-[88px] flex-shrink-0 cursor-pointer, full-bleed photo
   Widget _buildThumbnail() {
     return GestureDetector(
       onTap: onViewProfile,
@@ -254,15 +259,17 @@ class FriendRow extends StatelessWidget {
               ? CachedNetworkImage(
                   imageUrl: connection.otherPhotoUrl!,
                   fit: BoxFit.cover,
-                  placeholder: (_, _) => _photoPlaceholder(),
-                  errorWidget: (_, _, _) => _photoPlaceholder(),
+                  placeholder: (_, _) => connectionPhotoPlaceholder(),
+                  errorWidget: (_, _, _) => connectionPhotoPlaceholder(),
                 )
-              : _photoPlaceholder(),
+              : connectionPhotoPlaceholder(),
         ),
       ),
     );
   }
 
+  /// Web: px-3.5 py-3.5, name 15px extrabold, "Connected {time}" 11px,
+  /// city 11px with MapPin 9px
   Widget _buildInfo() {
     return Expanded(
       child: GestureDetector(
@@ -315,6 +322,7 @@ class FriendRow extends StatelessWidget {
     );
   }
 
+  /// Web: px-3 py-3, teal circle message button + subtle circle remove button
   Widget _buildActions() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -344,6 +352,7 @@ class FriendRow extends StatelessWidget {
 
 // ── Circle Action Button ────────────────────────────────────────────
 
+/// Web: h-10 w-10 rounded-full, icon centered, shadow-sm on filled variant.
 class _CircleAction extends StatelessWidget {
   const _CircleAction({
     required this.icon,
@@ -389,11 +398,3 @@ class _CircleAction extends StatelessWidget {
   }
 }
 
-Widget _photoPlaceholder() {
-  return Container(
-    color: AppColors.subtle,
-    child: const Center(
-      child: Icon(Icons.person, size: 24, color: AppColors.textMuted),
-    ),
-  );
-}

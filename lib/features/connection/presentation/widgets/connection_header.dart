@@ -44,7 +44,10 @@ class ConnectionHeader extends StatelessWidget {
 
     return Stack(
       children: [
-        // Radial gradient background glow (web: radial-gradient ellipse)
+        // Radial gradient background glow
+        // Web: radial-gradient(ellipse, rgba(15,157,148,.12) 0%,
+        //      rgba(230,126,34,.07) 45%, transparent 70%)
+        // 700px wide, positioned -top-20, h-72
         Positioned(
           top: -80,
           left: 0,
@@ -106,10 +109,10 @@ class ConnectionHeader extends StatelessWidget {
     return (0, 0);
   }
 
+  /// Web: 48px rounded-2xl gradient icon + title column
   Widget _buildTitleRow() {
     return Row(
       children: [
-        // Web: 48px rounded-2xl gradient icon container
         Container(
           width: 48,
           height: 48,
@@ -145,7 +148,7 @@ class ConnectionHeader extends StatelessWidget {
     );
   }
 
-  /// Web: stats pills with primary/8 bg and secondary/8 bg
+  /// Web: stats pills — Heart icon 11px + "{N} pending", Users icon 11px
   Widget _buildStatsPills({
     required int pendingCount,
     required int friendsCount,
@@ -268,7 +271,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
     );
   }
 
-  /// Web: h-5 min-w-[20px] rounded-full bg-white/20
+  /// Web: h-5 min-w-[20px] rounded-full bg-white/20 text-[10px]
   Widget _buildActiveCountBadge(int count) {
     return Container(
       constraints: const BoxConstraints(minWidth: 20),
@@ -290,7 +293,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
     );
   }
 
-  /// Web: h-2 w-2 rounded-full bg-primary
+  /// Web: h-2 w-2 rounded-full bg-primary (8px orange dot)
   Widget _buildInactiveDot() {
     return Container(
       width: 8,
@@ -316,7 +319,8 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
 // ── Header Divider ──────────────────────────────────────────────────
 
 /// Gradient divider line between the header and tab panels.
-/// Web: h-px mx-6 linear-gradient(90deg, transparent 0%, border 20%, border 80%, transparent 100%)
+/// Web: h-px mx-6 linear-gradient(90deg, transparent 0%, border 20%,
+///      border 80%, transparent 100%)
 class ConnectionHeaderDivider extends StatelessWidget {
   const ConnectionHeaderDivider({super.key});
 

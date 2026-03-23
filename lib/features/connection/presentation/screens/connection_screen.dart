@@ -5,7 +5,8 @@
 /// - Stats pills in header (pending count, friends count)
 /// - Staggered card entrance animations (45 ms delay, 220 ms duration)
 /// - Pull-to-refresh on each tab
-/// - Per-tab empty states
+/// - Per-tab empty states with layered concentric circles
+/// - Section label with count + gradient divider line
 library;
 
 import 'package:flutter/material.dart' hide ConnectionState;
@@ -23,8 +24,8 @@ import 'package:tander_flutter_v3/features/connection/presentation/widgets/conne
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_card_variants.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_friends_panel.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_header.dart';
+import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_shared_ui.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
-import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
 // ── Screen ──────────────────────────────────────────────────────────
@@ -81,14 +82,17 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     return switch (_activeTab) {
       ConnectionTab.incoming => _IncomingPanel(
           connections: loadedState.incomingRequests.items,
+          totalCount: loadedState.incomingRequests.totalCount,
           onRefresh: _refreshAll,
         ),
       ConnectionTab.sent => _SentPanel(
           connections: loadedState.sentRequests.items,
+          totalCount: loadedState.sentRequests.totalCount,
           onRefresh: _refreshAll,
         ),
       ConnectionTab.connected => ConnectionFriendsPanel(
           connections: loadedState.connectedFriends.items,
+          totalCount: loadedState.connectedFriends.totalCount,
           onRefresh: _refreshAll,
         ),
     };
@@ -104,22 +108,24 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 class _IncomingPanel extends ConsumerWidget {
   const _IncomingPanel({
     required this.connections,
+    required this.totalCount,
     required this.onRefresh,
   });
 
   final List<ConnectionSummary> connections;
+  final int totalCount;
   final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (connections.isEmpty) {
       return const Center(
-        child: EmptyState(
+        child: TabEmptyState(
+          icon: Icons.favorite,
           title: 'No requests yet',
           description:
               'When someone wants to connect with you, their invitation '
               'will appear here. Love finds its own timing.',
-          icon: Icons.favorite_outline,
         ),
       );
     }
@@ -129,12 +135,15 @@ class _IncomingPanel extends ConsumerWidget {
       color: AppColors.primary,
       child: ListView.separated(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        itemCount: connections.length,
+        itemCount: connections.length + 1,
         separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
         itemBuilder: (context, index) {
-          final connection = connections[index];
-          return _StaggeredEntrance(
-            index: index,
+          if (index == 0) {
+            return SectionLabel(count: totalCount, noun: 'request');
+          }
+          final connection = connections[index - 1];
+          return StaggeredEntrance(
+            index: index - 1,
             child: RequestCard(
               connection: connection,
               isLoading: _isMutating(ref, connection.connectionId),
@@ -144,8 +153,8 @@ class _IncomingPanel extends ConsumerWidget {
               onDecline: () => ref
                   .read(connectionNotifierProvider.notifier)
                   .declineRequest(connection.connectionId),
-              onViewProfile: () => context
-                  .push(AppRoutes.userProfile(connection.otherUserId)),
+              onViewProfile: () =>
+                  context.push(AppRoutes.userProfile(connection.otherUserId)),
             ),
           );
         },
@@ -159,22 +168,24 @@ class _IncomingPanel extends ConsumerWidget {
 class _SentPanel extends ConsumerWidget {
   const _SentPanel({
     required this.connections,
+    required this.totalCount,
     required this.onRefresh,
   });
 
   final List<ConnectionSummary> connections;
+  final int totalCount;
   final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (connections.isEmpty) {
       return Center(
-        child: EmptyState(
+        child: TabEmptyState(
+          icon: Icons.send,
           title: 'No sent requests',
           description:
               "You haven't reached out to anyone yet. "
               'Explore Discover to find someone to connect with.',
-          icon: Icons.send_outlined,
           actionLabel: 'Go to Discover',
           onAction: () => context.go(AppRoutes.discover),
         ),
@@ -184,31 +195,59 @@ class _SentPanel extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: AppColors.primary,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: AppSpacing.sm,
-          crossAxisSpacing: AppSpacing.sm,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: connections.length,
-        itemBuilder: (context, index) {
-          final connection = connections[index];
-          return _StaggeredEntrance(
-            index: index,
-            delayMilliseconds: 60,
-            child: SentCard(
-              connection: connection,
-              isLoading: _isMutating(ref, connection.connectionId),
-              onCancel: () => ref
-                  .read(connectionNotifierProvider.notifier)
-                  .cancelRequest(connection.connectionId),
-              onViewProfile: () => context
-                  .push(AppRoutes.userProfile(connection.otherUserId)),
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.sm,
             ),
-          );
-        },
+            sliver: SliverToBoxAdapter(
+              child: SectionLabel(
+                count: totalCount,
+                noun: 'pending request',
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            sliver: SliverGrid(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final connection = connections[index];
+                  return StaggeredEntrance(
+                    index: index,
+                    delayMilliseconds: 60,
+                    child: SentCard(
+                      connection: connection,
+                      isLoading: _isMutating(ref, connection.connectionId),
+                      onCancel: () => ref
+                          .read(connectionNotifierProvider.notifier)
+                          .cancelRequest(connection.connectionId),
+                      onViewProfile: () => context.push(
+                        AppRoutes.userProfile(connection.otherUserId),
+                      ),
+                    ),
+                  );
+                },
+                childCount: connections.length,
+              ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: AppSpacing.sm,
+                crossAxisSpacing: AppSpacing.sm,
+                childAspectRatio: 0.72,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -220,73 +259,6 @@ bool _isMutating(WidgetRef ref, String connectionId) {
   return ref.watch(connectionNotifierProvider.notifier)
           .mutatingConnectionId ==
       connectionId;
-}
-
-// ── Staggered Entrance Animation ────────────────────────────────────
-
-class _StaggeredEntrance extends StatefulWidget {
-  const _StaggeredEntrance({
-    required this.index,
-    required this.child,
-    this.delayMilliseconds = 45,
-  });
-
-  final int index;
-  final Widget child;
-  final int delayMilliseconds;
-
-  @override
-  State<_StaggeredEntrance> createState() => _StaggeredEntranceState();
-}
-
-class _StaggeredEntranceState extends State<_StaggeredEntrance>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _opacity;
-  late final Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
-    );
-
-    _opacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: AppCurves.premiumEase),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: AppCurves.premiumEase),
-    );
-
-    Future<void>.delayed(
-      Duration(milliseconds: widget.index * widget.delayMilliseconds),
-      () {
-        if (mounted) _controller.forward();
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacity,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
-    );
-  }
 }
 
 // ── Shared UI ───────────────────────────────────────────────────────

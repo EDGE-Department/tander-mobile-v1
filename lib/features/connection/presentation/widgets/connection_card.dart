@@ -107,7 +107,7 @@ class RequestCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Web: truncate text-[15px] font-extrabold leading-snug text-text-strong
+        // Web: truncate text-[15px] font-extrabold leading-snug
         Text(
           formatConnectionDisplayName(
             connection.otherUsername,
@@ -155,7 +155,7 @@ class RequestCard extends StatelessWidget {
     );
   }
 
-  /// Web: inline-flex rounded-full border-secondary/25 bg-secondary/10 px-2.5 py-0.5
+  /// Web: inline-flex rounded-full border-secondary/25 bg-secondary/10
   Widget _buildWantsToConnectBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -279,4 +279,16 @@ class _ActionButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Shared photo placeholder ────────────────────────────────────────
+
+/// Fallback placeholder for connection photos (bg-subtle + person icon).
+Widget connectionPhotoPlaceholder() {
+  return Container(
+    color: AppColors.subtle,
+    child: const Center(
+      child: Icon(Icons.person, size: 24, color: AppColors.textMuted),
+    ),
+  );
 }
