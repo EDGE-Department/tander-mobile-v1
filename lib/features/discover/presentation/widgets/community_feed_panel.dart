@@ -174,7 +174,7 @@ void _showPostDetailModal(
   showDialog<void>(
     context: context,
     barrierColor: Colors.black54,
-    builder: (_) => Center(
+    builder: (dialogContext) => Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560, maxHeight: 700),
         child: Material(
@@ -184,14 +184,13 @@ void _showPostDetailModal(
           elevation: 8,
           child: Column(
             children: [
-              // Close header
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                 child: Row(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
                     ),
                     const Text('Post', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ],

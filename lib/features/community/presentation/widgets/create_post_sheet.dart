@@ -35,7 +35,7 @@ class CreatePostSheet extends ConsumerStatefulWidget {
     return showDialog<void>(
       context: context,
       barrierColor: Colors.black54,
-      builder: (_) => Center(
+      builder: (dialogContext) => Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520, maxHeight: 600),
           child: Material(
@@ -46,28 +46,23 @@ class CreatePostSheet extends ConsumerStatefulWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
                   child: Row(
                     children: [
                       IconButton(
                         icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
                       ),
-                      Text(
-                        'New Post',
-                        style: AppTypography.h3,
-                      ),
+                      Text('New Post', style: AppTypography.h3),
                     ],
                   ),
                 ),
                 const Divider(height: 1),
-                // Body
                 Flexible(
                   child: CreatePostSheet(onPostCreated: () {
                     onPostCreated();
-                    Navigator.of(context).pop();
+                    Navigator.of(dialogContext).pop();
                   }),
                 ),
               ],
