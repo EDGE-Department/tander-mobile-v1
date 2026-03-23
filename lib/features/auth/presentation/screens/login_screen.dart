@@ -10,6 +10,7 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_form_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
@@ -137,40 +138,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final headerHeight = resolveHeaderHeight(screenHeight);
 
+    // Detect tablet landscape: web shows split-panel at lg: (1024px+)
+    final screenSize = MediaQuery.sizeOf(context);
+    final isWideLayout = screenSize.shortestSide > 600 ||
+        (screenSize.width > screenSize.height && screenSize.width > 900);
+
+    final formCard = ValueListenableBuilder<int>(
+      valueListenable: _onlineCount,
+      builder: (_, count, _) => LoginFormCard(
+        formKey: _formKey,
+        emailController: _emailController,
+        passwordController: _passwordController,
+        emailFocusNode: _emailFocusNode,
+        passwordFocusNode: _passwordFocusNode,
+        isPasswordVisible: _isPasswordVisible,
+        rememberMe: _rememberMe,
+        isLoading: isLoading,
+        errorMessage: errorMessage,
+        onTogglePassword: _togglePasswordVisibility,
+        onToggleRememberMe: _toggleRememberMe,
+        onSubmit: _submitForm,
+        onForgotPassword: _navigateToForgotPassword,
+        onlineCount: count,
+      ),
+    );
+
+    if (isWideLayout) {
+      // ── TABLET/LANDSCAPE: split-panel (60% hero + 40% form) ──
+      return Scaffold(
+        body: Row(
+          children: [
+            // Left panel: gradient hero (60%)
+            Expanded(
+              flex: 60,
+              child: DesktopHeroPanel(onlineCount: _onlineCount),
+            ),
+            // Right panel: form card on warm parchment (40%)
+            Expanded(
+              flex: 40,
+              child: Container(
+                color: const Color(0xFFFEFAF4), // warm parchment
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 40,
+                      ),
+                      child: formCard,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── PHONE PORTRAIT: stacked header + form ──
     return Scaffold(
       backgroundColor: AppColors.card,
       body: SingleChildScrollView(
         controller: _scrollController,
         child: Column(
           children: [
-            // ── Gradient header ──────────────────────────────
             _HeaderSection(
               headerHeight: headerHeight,
               onlineCount: _onlineCount,
             ),
-
-            // ── Form panel (overlaps header by -24px) ────────
             Transform.translate(
               offset: const Offset(0, -headerOverlap),
-              child: ValueListenableBuilder<int>(
-                valueListenable: _onlineCount,
-                builder: (_, count, _) => LoginFormCard(
-                  formKey: _formKey,
-                  emailController: _emailController,
-                  passwordController: _passwordController,
-                  emailFocusNode: _emailFocusNode,
-                  passwordFocusNode: _passwordFocusNode,
-                  isPasswordVisible: _isPasswordVisible,
-                  rememberMe: _rememberMe,
-                  isLoading: isLoading,
-                  errorMessage: errorMessage,
-                  onTogglePassword: _togglePasswordVisibility,
-                  onToggleRememberMe: _toggleRememberMe,
-                  onSubmit: _submitForm,
-                  onForgotPassword: _navigateToForgotPassword,
-                  onlineCount: count,
-                ),
-              ),
+              child: formCard,
             ),
           ],
         ),
