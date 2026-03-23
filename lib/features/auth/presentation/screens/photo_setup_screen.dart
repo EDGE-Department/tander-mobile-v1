@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
@@ -21,10 +20,10 @@ import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants — matches web: 4-slot grid (2x2), 5 MB limit
 // ---------------------------------------------------------------------------
 
-const int _maxPhotos = 6;
+const int _maxPhotos = 4;
 const int _gridCrossAxisCount = 2;
 const int _maxFileSizeBytes = 5 * 1024 * 1024;
 
@@ -32,7 +31,10 @@ const int _maxFileSizeBytes = 5 * 1024 * 1024;
 // Screen
 // ---------------------------------------------------------------------------
 
-/// Onboarding step 2 of 3 — photo upload grid (2x3, up to 6 slots).
+/// Onboarding step 2 of 3 — photo upload grid (2x2, up to 4 slots).
+///
+/// Matches the web photo-setup-page.tsx mobile layout: step badge, heading,
+/// 2x2 grid with filled/empty slots, privacy note, continue/skip buttons.
 /// Requires at least 1 photo to continue. Uploads via multipart POST.
 class PhotoSetupScreen extends ConsumerStatefulWidget {
   const PhotoSetupScreen({super.key});
@@ -51,7 +53,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
       _slots.isNotEmpty && _slots.every((slot) => slot.isUploaded);
   bool get _canContinue => _hasAtLeastOnePhoto && _allUploaded;
 
-  // ── Image picking ──────────────────────────────────────────────────
+  // -- Image picking --------------------------------------------------------
 
   Future<void> _showImageSourcePicker() async {
     if (_slots.length >= _maxPhotos) {
@@ -103,9 +105,9 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
         ),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.subtle,
-          borderRadius: AppRadius.borderMd,
+          borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
         child: Row(
           children: [
@@ -138,7 +140,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
       final fileSize = await file.length();
 
       if (fileSize > _maxFileSizeBytes) {
-        _setError('Photo must be under 5 MB.');
+        _setError('Each photo must be under 5 MB.');
         return;
       }
       if (_slots.length >= _maxPhotos) {
@@ -149,7 +151,8 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
       _setError(null);
       final slotIndex = _slots.length;
       setState(() {
-        _slots.add(PhotoSlot(file: file, isUploaded: false, isUploading: true));
+        _slots
+            .add(PhotoSlot(file: file, isUploaded: false, isUploading: true));
       });
       await _uploadPhoto(file, slotIndex);
     } on Exception catch (error, stackTrace) {
@@ -163,7 +166,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
     }
   }
 
-  // ── Upload ─────────────────────────────────────────────────────────
+  // -- Upload ---------------------------------------------------------------
 
   Future<void> _uploadPhoto(File file, int slotIndex) async {
     try {
@@ -201,7 +204,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
     }
   }
 
-  // ── Remove & navigate ──────────────────────────────────────────────
+  // -- Remove & navigate ----------------------------------------------------
 
   void _removeSlot(int index) {
     if (index >= _slots.length) return;
@@ -223,7 +226,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
     if (mounted) setState(() => _errorMessage = message);
   }
 
-  // ── Build ──────────────────────────────────────────────────────────
+  // -- Build ----------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -270,11 +273,14 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
   Widget _buildHeading() {
     return Column(
       children: [
-        Text('Add Your Best Photos',
-            style: AppTypography.h1, textAlign: TextAlign.center),
+        Text(
+          'Add Your Photos',
+          style: AppTypography.h1,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: AppSpacing.xxs),
         Text(
-          'Add at least 1 photo to continue',
+          'Your first photo is your profile picture',
           style: AppTypography.body.copyWith(color: AppColors.textMuted),
           textAlign: TextAlign.center,
         ),
@@ -318,7 +324,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
 
   Widget _buildContinueButton() {
     if (!_hasAtLeastOnePhoto) {
-      return TanderButton(
+      return const TanderButton(
         label: 'Add at least 1 photo to continue',
         onPressed: null,
         variant: TanderButtonVariant.outline,
@@ -327,7 +333,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
       );
     }
     if (!_allUploaded) {
-      return TanderButton(
+      return const TanderButton(
         label: 'Uploading...',
         onPressed: null,
         variant: TanderButtonVariant.outline,
@@ -335,7 +341,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
       );
     }
     return TanderButton(
-      label: 'Continue',
+      label: 'Complete setup',
       onPressed: _onContinue,
       icon: Icons.arrow_forward_rounded,
       iconPosition: IconPosition.trailing,

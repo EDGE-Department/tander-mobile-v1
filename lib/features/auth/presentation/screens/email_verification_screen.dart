@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -20,9 +20,10 @@ const int _resendCooldownSeconds = 60;
 
 /// Email verification screen shown after registration.
 ///
-/// Displays a large email icon, tells the user to check their inbox,
-/// and provides resend + back-to-login actions. Expects route extras:
-/// `{'email': String}` or reads email from the current session.
+/// Matches the web's layout: centered content, envelope icon with pulse ring,
+/// heading with email highlight, resend button, and return-to-login action.
+///
+/// Expects route extras: `{'email': String}` or reads email from context.
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   const EmailVerificationScreen({super.key});
 
@@ -154,40 +155,53 @@ class _EmailVerificationScreenState
     );
   }
 
-  // -- Email icon -----------------------------------------------------------
+  // -- Email icon: 96px circle, gradient bg, pulse ring ---------------------
 
   Widget _buildEmailIcon() {
-    return AnimatedOpacity(
-      opacity: 1.0,
-      duration: AppDurations.entrance,
-      curve: AppCurves.premiumEase,
-      child: Container(
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primaryLight,
-              AppColors.primary.withValues(alpha: 0.15),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Pulse ring
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+        ),
+        // Icon container
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primaryLight,
+                AppColors.primary.withValues(alpha: 0.15),
+              ],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33E67E22),
+                blurRadius: 32,
+                offset: Offset(0, 12),
+              ),
             ],
           ),
-          shape: BoxShape.circle,
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x33E67E22),
-              blurRadius: 32,
-              offset: Offset(0, 12),
-            ),
-          ],
+          child: const Icon(
+            PhosphorIconsDuotone.envelopeSimple,
+            size: 48,
+            color: AppColors.primary,
+          ),
         ),
-        child: const Icon(
-          Icons.email_rounded,
-          size: 48,
-          color: AppColors.primary,
-        ),
-      ),
+      ],
     );
   }
 
@@ -238,7 +252,10 @@ class _EmailVerificationScreenState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_hasResent) _buildResentConfirmation() else _buildResendButton(),
+        if (_hasResent)
+          _buildResentConfirmation()
+        else
+          _buildResendButton(),
         const SizedBox(height: AppSpacing.sm),
         TanderButton(
           label: 'Return to Sign In',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -19,6 +20,9 @@ const String otpTypeRegistration = 'REGISTRATION';
 const String otpTypePasswordReset = 'PASSWORD_RESET';
 
 /// OTP verification screen with 6 individual digit input boxes.
+///
+/// Matches the web's mobile layout: warm gradient background, icon hero,
+/// heading with contact, OTP boxes, progress bar, verify button, resend timer.
 ///
 /// Expects route extras: `{'email': String, 'type': String}`.
 /// Auto-submits when all 6 digits are entered. Includes a resend-code
@@ -237,6 +241,8 @@ class _OtpVerificationScreenState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Step indicator for registration
+        if (_isRegistration) _buildStepIndicator(),
         _buildIconHero(),
         const SizedBox(height: AppSpacing.lg),
         _buildHeading(),
@@ -266,6 +272,61 @@ class _OtpVerificationScreenState
     );
   }
 
+  /// Step indicator matching web: colored bars + "Step 2 of 4"
+  Widget _buildStepIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: Row(
+        children: [
+          Container(
+            height: 6,
+            width: 24,
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.6),
+              borderRadius: AppRadius.borderFull,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            height: 6,
+            width: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: AppRadius.borderFull,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            height: 6,
+            width: 16,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: AppRadius.borderFull,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            height: 6,
+            width: 16,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: AppRadius.borderFull,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Step 2 of 4',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Icon hero: shield icon, teal gradient
   Widget _buildIconHero() {
     return Container(
       width: 72,
@@ -286,7 +347,7 @@ class _OtpVerificationScreenState
         ],
       ),
       child: const Icon(
-        Icons.shield_rounded,
+        PhosphorIconsFill.shieldCheckered,
         size: 36,
         color: AppColors.textInverse,
       ),

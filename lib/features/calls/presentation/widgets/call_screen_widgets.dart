@@ -6,12 +6,14 @@ import 'package:tander_flutter_v3/features/calls/presentation/states/call_state.
 
 // ---------------------------------------------------------------------------
 // Gradient used across call screen layouts
+// bg gradient(160deg, #1A0800 0%, #0D0A06 40%, #06100E 100%)
 // ---------------------------------------------------------------------------
 
 const LinearGradient callBackgroundGradient = LinearGradient(
   begin: Alignment(-0.4, -1),
   end: Alignment(0.4, 1),
   colors: [Color(0xFF1A0800), Color(0xFF0D0A06), Color(0xFF06100E)],
+  stops: [0.0, 0.4, 1.0],
 );
 
 // ---------------------------------------------------------------------------
@@ -33,6 +35,7 @@ String callStatusText(CallState callState) {
 
 // ---------------------------------------------------------------------------
 // Avatar with fallback
+// w-28 h-28(112px) radius-full border 3px white/12, shadow 0 8px 32px rgba(0,0,0,0.40)
 // ---------------------------------------------------------------------------
 
 class CallAvatar extends StatelessWidget {
@@ -54,15 +57,24 @@ class CallAvatar extends StatelessWidget {
       height: radius * 2,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white12, width: 3),
-        boxShadow: const [BoxShadow(blurRadius: 32, color: Colors.black45)],
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.12),
+          width: 3,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 32,
+            color: Color(0x66000000),
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: ClipOval(
         child: photoUrl != null
             ? Image.network(
                 photoUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
+                errorBuilder: (_, _, _) =>
                     _AvatarFallback(displayName: displayName, radius: radius),
               )
             : _AvatarFallback(displayName: displayName, radius: radius),
@@ -97,6 +109,11 @@ class _AvatarFallback extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // Audio layout
+// Ambient glow: radial-gradient(circle, #E67E22 0%, transparent 70%) opacity 0.06
+// Pulse ring (pre-connect): -inset-4 border 2px rgba(230,126,34,0.30), scale 1->1.15 opacity 0.25->0.08 2.5s
+// Connected ring: -inset-3 border-2 green-400/30, glow 3s
+// Name: font-display bold clamp(1.25rem,3vw,1.75rem) white
+// Status: white/50 sm tabular-nums
 // ---------------------------------------------------------------------------
 
 class CallAudioLayout extends StatelessWidget {
@@ -111,52 +128,192 @@ class CallAudioLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CallAvatar(
-            photoUrl: callState.callInfo?.remotePhotoUrl,
-            displayName: displayName,
-            radius: 56,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            displayName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
+    return Stack(
+      children: [
+        // Ambient glow
+        Center(
+          child: Transform.translate(
+            offset: const Offset(0, -40),
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFE67E22).withValues(alpha: 0.06),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.7],
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            callStatusText(callState),
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          if (callState.remoteMedia.isAudioMuted && callState.isConnected) ...[
-            const SizedBox(height: 8),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(PhosphorIconsFill.microphoneSlash,
-                    size: 13, color: Colors.white.withValues(alpha: 0.3)),
-                const SizedBox(width: 6),
-                Text(
-                  '$displayName is muted',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    fontSize: 12,
-                  ),
+        ),
+
+        // Avatar + info
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Avatar with pulse/connected ring
+              _AnimatedAvatarRing(
+                callState: callState,
+                displayName: displayName,
+              ),
+              const SizedBox(height: 16),
+              // Name
+              Text(
+                displayName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              // Status
+              Text(
+                callStatusText(callState),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              // Remote mute indicator
+              if (callState.remoteMedia.isAudioMuted &&
+                  callState.isConnected) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      PhosphorIconsFill.microphoneSlash,
+                      size: 13,
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$displayName is muted',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Animated avatar ring — pulse during pre-connect, green glow when connected
+// ---------------------------------------------------------------------------
+
+class _AnimatedAvatarRing extends StatefulWidget {
+  const _AnimatedAvatarRing({
+    required this.callState,
+    required this.displayName,
+  });
+
+  final CallState callState;
+  final String displayName;
+
+  @override
+  State<_AnimatedAvatarRing> createState() => _AnimatedAvatarRingState();
+}
+
+class _AnimatedAvatarRingState extends State<_AnimatedAvatarRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500),
+    )..repeat();
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0.25, end: 0.08).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPreConnect = widget.callState.isPreConnect;
+    final isConnected = widget.callState.isConnected;
+
+    return SizedBox(
+      width: 144,
+      height: 144,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Pre-connect pulse ring
+          if (isPreConnect)
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (_, _) {
+                return Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Container(
+                    width: 144,
+                    height: 144,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFE67E22)
+                            .withValues(alpha: _opacityAnimation.value),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ],
+
+          // Connected green glow ring
+          if (isConnected)
+            Container(
+              width: 136,
+              height: 136,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFF4ADE80).withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+            ),
+
+          // Avatar
+          CallAvatar(
+            photoUrl: widget.callState.callInfo?.remotePhotoUrl,
+            displayName: widget.displayName,
+            radius: 56,
+          ),
         ],
       ),
     );
@@ -185,10 +342,27 @@ class CallPreConnectOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CallAvatar(
-              photoUrl: callState.callInfo?.remotePhotoUrl,
-              displayName: displayName,
-              radius: 48,
+            // 96px diameter avatar with border
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  width: 2,
+                ),
+              ),
+              child: ClipOval(
+                child: callState.callInfo?.remotePhotoUrl != null
+                    ? Image.network(
+                        callState.callInfo!.remotePhotoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            _AvatarFallback(displayName: displayName, radius: 48),
+                      )
+                    : _AvatarFallback(displayName: displayName, radius: 48),
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -236,6 +410,7 @@ class CallEndedOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // w-20 h-20 rounded-full bg-white/5
             Container(
               width: 80,
               height: 80,
@@ -243,8 +418,11 @@ class CallEndedOverlay extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
-              child: Icon(PhosphorIconsFill.phoneSlash,
-                  size: 36, color: Colors.red.withValues(alpha: 0.8)),
+              child: Icon(
+                PhosphorIconsFill.phoneSlash,
+                size: 36,
+                color: Colors.red.withValues(alpha: 0.8),
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -280,6 +458,7 @@ class CallEndedOverlay extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 20),
+            // Return button: px-8 py-3 bg-white/10 rounded-2xl
             TextButton(
               onPressed: onReturn,
               style: TextButton.styleFrom(
@@ -287,7 +466,8 @@ class CallEndedOverlay extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               child: const Text(
                 'Return',
@@ -307,6 +487,7 @@ class CallEndedOverlay extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // Control buttons
+// Mute/Camera: w-14 h-14(56px) radius-full, muted bg-white text-black, unmuted bg-white/15 text-white
 // ---------------------------------------------------------------------------
 
 class CallControlButton extends StatelessWidget {
@@ -331,7 +512,8 @@ class CallControlButton extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.15),
+          color:
+              isActive ? Colors.white : Colors.white.withValues(alpha: 0.15),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -345,6 +527,7 @@ class CallControlButton extends StatelessWidget {
   }
 }
 
+/// Hangup: w-16 h-16(64px) radius-full bg-red-600, shadow 0 4px 24px rgba(220,38,38,0.35)
 class CallHangupButton extends StatelessWidget {
   const CallHangupButton({required this.onTap, super.key});
 
@@ -357,14 +540,14 @@ class CallHangupButton extends StatelessWidget {
       child: Container(
         width: 64,
         height: 64,
-        decoration: BoxDecoration(
-          color: Colors.red.shade700,
+        decoration: const BoxDecoration(
+          color: Color(0xFFDC2626),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.red.withValues(alpha: 0.35),
+              color: Color(0x59DC2626),
               blurRadius: 24,
-              offset: const Offset(0, 4),
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -378,4 +561,3 @@ class CallHangupButton extends StatelessWidget {
     );
   }
 }
-

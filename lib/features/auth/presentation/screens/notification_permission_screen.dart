@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -15,31 +16,36 @@ import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 
 // ---------------------------------------------------------------------------
-// Benefit items displayed in the feature list.
+// Notification features — matches web NOTIFICATION_FEATURES
 // ---------------------------------------------------------------------------
 
-class _NotificationBenefit {
-  const _NotificationBenefit({
+class _NotificationFeature {
+  const _NotificationFeature({
     required this.icon,
     required this.label,
+    required this.description,
   });
 
   final IconData icon;
   final String label;
+  final String description;
 }
 
-const List<_NotificationBenefit> _benefits = [
-  _NotificationBenefit(
-    icon: Icons.favorite_rounded,
-    label: 'Know when you get a new match',
+const List<_NotificationFeature> _notificationFeatures = [
+  _NotificationFeature(
+    icon: PhosphorIconsFill.chatTeardropDots,
+    label: 'New messages',
+    description: 'Know the moment someone sends you a message',
   ),
-  _NotificationBenefit(
-    icon: Icons.chat_bubble_rounded,
-    label: 'Never miss a message',
+  _NotificationFeature(
+    icon: PhosphorIconsFill.users,
+    label: 'Connection requests',
+    description: 'Be notified when someone wants to connect with you',
   ),
-  _NotificationBenefit(
-    icon: Icons.self_improvement_rounded,
-    label: 'Get reminded about your Tandy wellness sessions',
+  _NotificationFeature(
+    icon: PhosphorIconsFill.heart,
+    label: 'Community activity',
+    description: 'Reactions and comments on your posts',
   ),
 ];
 
@@ -47,9 +53,14 @@ const List<_NotificationBenefit> _benefits = [
 // Screen
 // ---------------------------------------------------------------------------
 
-/// Onboarding step 3 of 3 — requests notification permission via
-/// [permission_handler]. Both "Enable" and "Maybe Later" navigate to
-/// [AppRoutes.home] after refreshing the auth session.
+/// Onboarding step 3 of 3 — requests notification permission.
+///
+/// Matches the web notification-permission-page.tsx mobile layout:
+/// bell icon with ripple, heading, feature list with gradient icon containers,
+/// enable/skip buttons, and footer settings note.
+///
+/// Both "Enable" and "Maybe Later" navigate to [AppRoutes.home] after
+/// refreshing the auth session.
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
 
@@ -62,7 +73,7 @@ class _NotificationPermissionScreenState
     extends ConsumerState<NotificationPermissionScreen> {
   bool _isEnabling = false;
 
-  // ── Actions ─────────────────────────────────────────────────────────
+  // -- Actions --------------------------------------------------------------
 
   Future<void> _enableNotifications() async {
     setState(() => _isEnabling = true);
@@ -98,7 +109,7 @@ class _NotificationPermissionScreenState
     }
   }
 
-  // ── Build ──────────────────────────────────────────────────────────
+  // -- Build ----------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +134,7 @@ class _NotificationPermissionScreenState
                     const SizedBox(height: AppSpacing.lg),
                     _buildHeading(),
                     const SizedBox(height: AppSpacing.lg),
-                    _buildBenefitsList(),
+                    _buildFeatureList(),
                     const SizedBox(height: AppSpacing.xl),
                     _buildEnableButton(),
                     const SizedBox(height: AppSpacing.sm),
@@ -140,6 +151,7 @@ class _NotificationPermissionScreenState
     );
   }
 
+  /// Bell icon: 80x80 rounded-3xl gradient, glow shadow — matches web
   Widget _buildBellIcon() {
     return Center(
       child: Container(
@@ -161,7 +173,7 @@ class _NotificationPermissionScreenState
           ],
         ),
         child: const Icon(
-          Icons.notifications_rounded,
+          PhosphorIconsFill.bell,
           size: 42,
           color: AppColors.textInverse,
         ),
@@ -181,8 +193,7 @@ class _NotificationPermissionScreenState
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Text(
-            'Enable notifications to know when someone likes you, '
-            'sends a message, or wants to connect.',
+            'Never miss a message or new connection request',
             style: AppTypography.body.copyWith(color: AppColors.textMuted),
             textAlign: TextAlign.center,
           ),
@@ -191,12 +202,13 @@ class _NotificationPermissionScreenState
     );
   }
 
-  Widget _buildBenefitsList() {
+  /// Feature list: cards with gradient icon, label, description — matches web
+  Widget _buildFeatureList() {
     return Column(
-      children: _benefits.map((benefit) {
+      children: _notificationFeatures.map((feature) {
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: _BenefitCard(benefit: benefit),
+          child: _FeatureCard(feature: feature),
         );
       }).toList(),
     );
@@ -240,13 +252,13 @@ class _NotificationPermissionScreenState
 }
 
 // ---------------------------------------------------------------------------
-// Benefit card widget
+// Feature card — matches web's feature list items with gradient icon
 // ---------------------------------------------------------------------------
 
-class _BenefitCard extends StatelessWidget {
-  const _BenefitCard({required this.benefit});
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({required this.feature});
 
-  final _NotificationBenefit benefit;
+  final _NotificationFeature feature;
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +272,7 @@ class _BenefitCard extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Gradient icon container: w-11 h-11 (44px) rounded-xl
           Container(
             width: 44,
             height: 44,
@@ -272,25 +285,33 @@ class _BenefitCard extends StatelessWidget {
               borderRadius: AppRadius.borderMd,
             ),
             child: Icon(
-              benefit.icon,
+              feature.icon,
               size: 22,
               color: AppColors.textInverse,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: Text(
-              benefit.label,
-              style: AppTypography.body.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textStrong,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  feature.label,
+                  style: AppTypography.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textStrong,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  feature.description,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const Icon(
-            Icons.check_circle_rounded,
-            size: 22,
-            color: AppColors.success,
           ),
         ],
       ),

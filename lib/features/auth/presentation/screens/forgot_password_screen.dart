@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_shadows.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
@@ -14,10 +14,10 @@ import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
-/// Forgot password screen -- collects user email and sends a reset code.
+/// Forgot password screen — collects user email and sends a reset code.
 ///
-/// Transitions to [OtpVerificationScreen] on success or shows an inline
-/// success confirmation with a link back to login.
+/// Matches the web's mobile layout: warm gradient background, icon hero,
+/// heading, form card with email field, success state with navigation to OTP.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -63,8 +63,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     final repository = ref.read(authRepositoryProvider);
     final email = _emailController.text.trim();
-    final resetResult =
-        await repository.requestPasswordReset(email: email);
+    final resetResult = await repository.requestPasswordReset(email: email);
 
     if (!mounted) return;
 
@@ -123,9 +122,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
-                    child: _isCodeSent
-                        ? _buildSuccessState()
-                        : _buildFormContent(),
+                    child:
+                        _isCodeSent ? _buildSuccessState() : _buildFormContent(),
                   ),
                 ),
               ),
@@ -176,6 +174,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
+  /// Icon hero: w-14 h-14 rounded-[18px] gradient, glow shadow
   Widget _buildIconHero() {
     return Container(
       width: 72,
@@ -190,7 +189,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         boxShadow: AppShadows.warmMd,
       ),
       child: const Icon(
-        Icons.email_outlined,
+        PhosphorIconsFill.envelope,
         size: 36,
         color: AppColors.textInverse,
       ),
@@ -202,7 +201,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Reset Password',
+          'Forgot your password?',
           style: AppTypography.h1,
           textAlign: TextAlign.center,
         ),
@@ -279,51 +278,46 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   // -- Success state --------------------------------------------------------
 
   Widget _buildSuccessState() {
-    return AnimatedOpacity(
-      opacity: 1.0,
-      duration: AppDurations.entrance,
-      curve: AppCurves.premiumEase,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildSuccessIcon(),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Code Sent!',
-            style: AppTypography.h1,
-            textAlign: TextAlign.center,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildSuccessIcon(),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          'Code Sent!',
+          style: AppTypography.h1,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'We sent a 6-digit verification code to',
+          style: AppTypography.body.copyWith(color: AppColors.textMuted),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          _emailController.text.trim(),
+          style: AppTypography.body.copyWith(
+            color: AppColors.textStrong,
+            fontWeight: FontWeight.w700,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'We sent a 6-digit verification code to',
-            style: AppTypography.body.copyWith(color: AppColors.textMuted),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            _emailController.text.trim(),
-            style: AppTypography.body.copyWith(
-              color: AppColors.textStrong,
-              fontWeight: FontWeight.w700,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          TanderButton(
-            label: 'Enter Verification Code',
-            onPressed: _navigateToOtp,
-            icon: Icons.arrow_forward_rounded,
-            iconPosition: IconPosition.trailing,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TanderButton(
-            label: 'Back to Login',
-            onPressed: () => context.go(AppRoutes.login),
-            variant: TanderButtonVariant.ghost,
-            icon: Icons.arrow_back_rounded,
-          ),
-        ],
-      ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        TanderButton(
+          label: 'Enter Verification Code',
+          onPressed: _navigateToOtp,
+          icon: Icons.arrow_forward_rounded,
+          iconPosition: IconPosition.trailing,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        TanderButton(
+          label: 'Back to Login',
+          onPressed: () => context.go(AppRoutes.login),
+          variant: TanderButtonVariant.ghost,
+          icon: Icons.arrow_back_rounded,
+        ),
+      ],
     );
   }
 

@@ -15,9 +15,9 @@ import 'package:tander_flutter_v3/features/calls/presentation/widgets/call_scree
 
 /// Full-screen call page with video renderers, controls, and status overlays.
 ///
-/// Uses warm dark gradient matching Tander brand. Senior-friendly touch
+/// Design: warm dark gradient matching Tander brand. Senior-friendly touch
 /// targets (56px+), large avatar, clear status hierarchy.
-/// Uses wakelock_plus to keep the screen on during active calls.
+/// bg gradient(160deg, #1A0800 0%, #0D0A06 40%, #06100E 100%)
 class CallScreen extends ConsumerStatefulWidget {
   const CallScreen({required this.roomName, super.key});
 
@@ -101,6 +101,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           // Video layout
           if (isVideoCall && _renderersInitialized) ...[
             _RemoteVideoView(renderer: _remoteRenderer),
+            _RemoteVideoOffOverlay(
+              callState: callState,
+              displayName: displayName,
+            ),
             _LocalPipView(
               renderer: _localRenderer,
               isCameraOn: callState.media.isCameraOn,
@@ -114,7 +118,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           // Pre-connect overlay (video only)
           if (callState.isPreConnect && isVideoCall)
             CallPreConnectOverlay(
-                callState: callState, displayName: displayName),
+              callState: callState,
+              displayName: displayName,
+            ),
 
           // Ended overlay
           if (callState.isEnded)
@@ -157,6 +163,51 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 }
 
 // ---------------------------------------------------------------------------
+// Remote video off overlay — shown when connected but remote camera is off
+// ---------------------------------------------------------------------------
+
+class _RemoteVideoOffOverlay extends StatelessWidget {
+  const _RemoteVideoOffOverlay({
+    required this.callState,
+    required this.displayName,
+  });
+
+  final CallState callState;
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!callState.remoteMedia.isVideoOff || !callState.isConnected) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned.fill(
+      child: Container(
+        color: const Color(0xCC000000),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CallAvatar(
+              photoUrl: callState.callInfo?.remotePhotoUrl,
+              displayName: displayName,
+              radius: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Camera is off',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Video sub-widgets (screen-specific, not reusable)
 // ---------------------------------------------------------------------------
 
@@ -176,6 +227,7 @@ class _RemoteVideoView extends StatelessWidget {
   }
 }
 
+/// Local PiP: top-16(64) right-4(16) w-28(112) h-36(144) radius-2xl border-2 white/20
 class _LocalPipView extends StatelessWidget {
   const _LocalPipView({required this.renderer, required this.isCameraOn});
 
@@ -185,28 +237,37 @@ class _LocalPipView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: 80,
+      top: 64,
       right: 16,
       child: Container(
         width: 112,
         height: 144,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white24, width: 2),
-          boxShadow: const [BoxShadow(blurRadius: 16, color: Colors.black45)],
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 2,
+          ),
+          boxShadow: const [
+            BoxShadow(blurRadius: 16, color: Colors.black45),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: isCameraOn
             ? RTCVideoView(
                 renderer,
                 mirror: true,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                objectFit:
+                    RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
               )
-            : const ColoredBox(
-                color: Color(0xCC000000),
+            : ColoredBox(
+                color: const Color(0xCC000000),
                 child: Center(
-                  child: Icon(PhosphorIconsFill.videoCameraSlash,
-                      size: 20, color: Colors.white38),
+                  child: Icon(
+                    PhosphorIconsFill.videoCameraSlash,
+                    size: 20,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
                 ),
               ),
       ),
@@ -216,6 +277,7 @@ class _LocalPipView extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // Call controls bar
+// Controls: gradient(to top, rgba(0,0,0,0.50)->transparent), gap-5(20) pb-10(40) pt-16(64)
 // ---------------------------------------------------------------------------
 
 class _CallControls extends StatelessWidget {
@@ -234,12 +296,15 @@ class _CallControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 64, 24, 48),
+      padding: const EdgeInsets.fromLTRB(24, 64, 24, 40),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.5)],
+          colors: [
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.5),
+          ],
         ),
       ),
       child: Row(
@@ -274,7 +339,7 @@ class _CallControls extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Top bar (screen-specific)
+// Top bar
 // ---------------------------------------------------------------------------
 
 class _CallTopBar extends StatelessWidget {
@@ -292,9 +357,13 @@ class _CallTopBar extends StatelessWidget {
           children: [
             IconButton(
               onPressed: onBack,
-              icon: Icon(PhosphorIconsBold.arrowLeft,
-                  size: 20, color: Colors.white.withValues(alpha: 0.6)),
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              icon: Icon(
+                PhosphorIconsBold.arrowLeft,
+                size: 20,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+              constraints:
+                  const BoxConstraints(minWidth: 44, minHeight: 44),
             ),
             if (callState.isConnected &&
                 callState.callInfo?.callType == CallType.video)

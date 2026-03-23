@@ -21,13 +21,17 @@ import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 /// Onboarding step 1 of 3 — collects first name, last name, date of birth,
-/// gender, and bio. Submits via PUT /user/profile, then navigates to
-/// [AppRoutes.photoSetup].
+/// gender, and bio.
+///
+/// Matches the web profile-setup-page.tsx mobile layout: warm gradient bg,
+/// step badge, heading, form card with fields and continue button.
+/// Submits via PUT /user/profile, then navigates to [AppRoutes.photoSetup].
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
   @override
-  ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+  ConsumerState<ProfileSetupScreen> createState() =>
+      _ProfileSetupScreenState();
 }
 
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
@@ -49,7 +53,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     super.dispose();
   }
 
-  // ── Validation ──────────────────────────────────────────────────────
+  // -- Validation -----------------------------------------------------------
 
   String? _validateFirstName(String? value) {
     if (value == null || value.trim().isEmpty) return 'First name is required';
@@ -71,7 +75,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     return (hasBirthdayPassed ? age : age - 1) >= 18;
   }
 
-  // ── Submit ──────────────────────────────────────────────────────────
+  // -- Submit ---------------------------------------------------------------
 
   Future<void> _submitForm() async {
     setState(() => _apiErrorMessage = null);
@@ -127,7 +131,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  // ── Build ───────────────────────────────────────────────────────────
+  // -- Build ----------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -168,8 +172,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget _buildHeading() {
     return Column(
       children: [
-        Text('Tell Us About You',
-            style: AppTypography.h1, textAlign: TextAlign.center),
+        Text(
+          'Tell Us About You',
+          style: AppTypography.h1,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: AppSpacing.xxs),
         Text(
           'Help others get to know the real you',
