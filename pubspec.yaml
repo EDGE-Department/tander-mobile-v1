@@ -37,7 +37,15 @@ dependencies:
 
   # Media
   image_picker: ^1.1.2
-  record: ^5.1.2
+  record: 5.0.5
+
+dependency_overrides:
+  record_platform_interface: 1.1.0
+  record_linux: 0.7.1
+  record_android: 1.2.1
+  record_darwin: 1.1.1
+  record_web: 1.1.2
+  record_windows: 1.0.2
   audioplayers: ^6.1.0
 
   # UI

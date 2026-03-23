@@ -125,6 +125,11 @@ final class AuthNotifier extends Notifier<AuthState> {
   // Refresh session — after onboarding step or phase change
   // -------------------------------------------------------------------------
 
+  /// Forces transition to [AuthUnauthenticated], used when bootstrap times out.
+  void forceUnauthenticated() {
+    state = const AuthUnauthenticated();
+  }
+
   /// Re-fetches the current user from the server and updates state.
   ///
   /// Useful after completing an onboarding step to check whether the

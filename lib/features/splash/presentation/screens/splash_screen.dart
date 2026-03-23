@@ -50,7 +50,11 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
     super.initState();
     _initializeAnimations();
     _startEntranceSequence();
-    _triggerBootstrap();
+    // Schedule bootstrap after the first frame to avoid modifying providers
+    // during the widget tree build phase.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _triggerBootstrap();
+    });
   }
 
   void _initializeAnimations() {
@@ -122,8 +126,17 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
     final minimumTimer = Future<void>.delayed(_minimumSplashDuration);
 
     // Fire bootstrap -- auth state change triggers GoRouter redirect.
-    final bootstrapFuture =
-        ref.read(authNotifierProvider.notifier).bootstrap();
+    // Timeout after 10s so the splash never hangs forever if backend is down.
+    final bootstrapFuture = ref
+        .read(authNotifierProvider.notifier)
+        .bootstrap()
+        .timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            // Force unauthenticated on timeout so user sees login screen
+            ref.read(authNotifierProvider.notifier).forceUnauthenticated();
+          },
+        );
 
     // Both must complete; GoRouter redirect handles navigation automatically.
     Future.wait<void>([minimumTimer, bootstrapFuture]);
