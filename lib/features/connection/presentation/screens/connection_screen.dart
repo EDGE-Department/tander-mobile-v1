@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
@@ -153,8 +154,10 @@ class _IncomingPanel extends ConsumerWidget {
               onDecline: () => ref
                   .read(connectionNotifierProvider.notifier)
                   .declineRequest(connection.connectionId),
-              onViewProfile: () =>
-                  context.push(AppRoutes.userProfile(connection.otherUserId)),
+              onViewProfile: () => showProfileViewModal(
+                context,
+                userId: connection.otherUserId,
+              ),
             ),
           );
         },
@@ -231,8 +234,9 @@ class _SentPanel extends ConsumerWidget {
                       onCancel: () => ref
                           .read(connectionNotifierProvider.notifier)
                           .cancelRequest(connection.connectionId),
-                      onViewProfile: () => context.push(
-                        AppRoutes.userProfile(connection.otherUserId),
+                      onViewProfile: () => showProfileViewModal(
+                        context,
+                        userId: connection.otherUserId,
                       ),
                     ),
                   );

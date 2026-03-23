@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -148,8 +149,9 @@ class _ConnectionFriendsPanelState
                       onRemove: () => ref
                           .read(connectionNotifierProvider.notifier)
                           .removeConnection(connection.connectionId),
-                      onViewProfile: () => context.push(
-                        AppRoutes.userProfile(connection.otherUserId),
+                      onViewProfile: () => showProfileViewModal(
+                        context,
+                        userId: connection.otherUserId,
                       ),
                     ),
                   );
