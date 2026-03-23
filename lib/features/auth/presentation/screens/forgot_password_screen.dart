@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_radius.dart';
-import 'package:tander_flutter_v3/core/theme/app_shadows.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/forgot_password_components.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/forgot_password_panels.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
-/// Forgot password screen — collects user email and sends a reset code.
+/// Forgot password screen — 1:1 copy of the web's forgot-password-page.
 ///
-/// Matches the web's mobile layout: warm gradient background, icon hero,
-/// heading, form card with email field, success state with navigation to OTP.
+/// Layout:
+///   - **Landscape/tablet** (width >= 1024): split-panel with DesktopHeroPanel
+///     on left (60%) and form card on warm parchment right panel (40%).
+///   - **Phone portrait**: gradient header + overlapping white form panel.
+///
+/// Step 1 sends a verification code. On success, navigates to the OTP screen.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -29,32 +34,54 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailFocusNode = FocusNode();
+  final _phoneFocusNode = FocusNode();
+  late final SimulatedOnlineCount _onlineCount;
 
+  IdentifierMethod _method = IdentifierMethod.email;
   bool _isLoading = false;
   bool _isCodeSent = false;
 
   @override
+  void initState() {
+    super.initState();
+    _onlineCount = SimulatedOnlineCount();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
+    _phoneController.dispose();
     _emailFocusNode.dispose();
+    _phoneFocusNode.dispose();
+    _onlineCount.dispose();
     super.dispose();
   }
 
-  // -- Validation -----------------------------------------------------------
+  // ── Validation ─────────────────────────────────────────────────────
 
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter your email address';
     }
-    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!emailPattern.hasMatch(value.trim())) {
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim())) {
       return 'Enter a valid email address (name@email.com)';
     }
     return null;
   }
 
-  // -- Actions --------------------------------------------------------------
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your phone number';
+    }
+    if (!RegExp(r'^09\d{9}$').hasMatch(value.trim())) {
+      return 'Enter a valid PH number (09XXXXXXXXX)';
+    }
+    return null;
+  }
+
+  // ── Actions ────────────────────────────────────────────────────────
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
@@ -68,12 +95,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (!mounted) return;
 
     resetResult.when(
-      success: (_) {
-        setState(() {
-          _isLoading = false;
-          _isCodeSent = true;
-        });
-      },
+      success: (_) => setState(() {
+        _isLoading = false;
+        _isCodeSent = true;
+      }),
       failure: (exception) {
         setState(() => _isLoading = false);
         TanderToastOverlay.show(
@@ -97,201 +122,214 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  // -- Build ----------------------------------------------------------------
+  void _navigateToLogin() => context.go(AppRoutes.login);
+
+  // ── Build ──────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final isWideLayout = MediaQuery.sizeOf(context).width >= 1024;
+    return isWideLayout ? _buildWideLayout() : _buildPhoneLayout();
+  }
+
+  Widget _buildWideLayout() {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primaryLight, AppColors.secondaryLight],
+      body: Row(
+        children: [
+          Expanded(
+            flex: 60,
+            child: DesktopHeroPanel(onlineCount: _onlineCount),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildBackButton(),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.xl,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child:
-                        _isCodeSent ? _buildSuccessState() : _buildFormContent(),
+          Expanded(
+            flex: 40,
+            child: Container(
+              color: const Color(0xFFFEFAF4),
+              child: SafeArea(
+                left: false,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.xl,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 480),
+                      child: ForgotPasswordFormCard(
+                        isWide: true,
+                        isCodeSent: _isCodeSent,
+                        formContent: _buildFormContent(),
+                        successContent: _buildSuccessContent(),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhoneLayout() {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final headerHeight = resolveHeaderHeight(screenHeight);
+
+    return Scaffold(
+      backgroundColor: AppColors.card,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            ForgotPasswordMobileHeader(
+              headerHeight: headerHeight,
+              onlineCount: _onlineCount,
+            ),
+            Transform.translate(
+              offset: const Offset(0, -headerOverlap),
+              child: ForgotPasswordFormCard(
+                isWide: false,
+                isCodeSent: _isCodeSent,
+                formContent: _buildFormContent(),
+                successContent: _buildSuccessContent(),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // -- Back button ----------------------------------------------------------
-
-  Widget _buildBackButton() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(
-          left: AppSpacing.sm,
-          top: AppSpacing.xs,
-        ),
-        child: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-          iconSize: 24,
-          color: AppColors.textStrong,
-          tooltip: 'Go back',
-          constraints: const BoxConstraints(
-            minWidth: AppSpacing.touchComfortable,
-            minHeight: AppSpacing.touchComfortable,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // -- Form content ---------------------------------------------------------
+  // ── Form content (Step 1) ──────────────────────────────────────────
 
   Widget _buildFormContent() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildIconHero(),
+        BackToSignInPill(onPressed: _navigateToLogin),
+        const SizedBox(height: 20),
+        const ForgotPasswordBrandHeader(),
+        const SizedBox(height: AppSpacing.md),
+        const Center(child: StepIconHero()),
+        const SizedBox(height: AppSpacing.md),
+        const Center(child: StepIndicator()),
         const SizedBox(height: AppSpacing.lg),
-        _buildHeading(),
-        const SizedBox(height: AppSpacing.xl),
-        _buildFormCard(),
+        _buildHeadingBlock(),
+        const SizedBox(height: AppSpacing.lg),
+        _buildIdentifierForm(),
+        const SizedBox(height: AppSpacing.lg),
+        RememberPasswordFooter(onSignIn: _navigateToLogin),
       ],
     );
   }
 
-  /// Icon hero: w-14 h-14 rounded-[18px] gradient, glow shadow
-  Widget _buildIconHero() {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment(-0.7, -1),
-          end: Alignment(0.7, 1),
-          colors: [AppColors.primary, Color(0xFFD06A18)],
-        ),
-        borderRadius: AppRadius.borderXl,
-        boxShadow: AppShadows.warmMd,
-      ),
-      child: const Icon(
-        PhosphorIconsFill.envelope,
-        size: 36,
-        color: AppColors.textInverse,
-      ),
-    );
-  }
-
-  Widget _buildHeading() {
+  Widget _buildHeadingBlock() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           'Forgot your password?',
-          style: AppTypography.h1,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          "Enter your email and we'll send you a code",
-          style: AppTypography.body.copyWith(color: AppColors.textMuted),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFormCard() {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: AppRadius.borderXl,
-        boxShadow: AppShadows.warmLg,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TanderTextField(
-                label: 'Email address',
-                hint: 'name@email.com',
-                controller: _emailController,
-                focusNode: _emailFocusNode,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.done,
-                prefixIcon: Icons.email_outlined,
-                validator: _validateEmail,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              TanderButton(
-                label: 'Send Reset Code',
-                onPressed: _isLoading ? null : _submitForm,
-                isLoading: _isLoading,
-                icon: Icons.arrow_forward_rounded,
-                iconPosition: IconPosition.trailing,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _buildSecurityNote(),
-            ],
+          style: AppTypography.displayLg.copyWith(
+            fontWeight: FontWeight.w800,
+            height: 1.05,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSecurityNote() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(
-          Icons.shield_outlined,
-          size: 14,
-          color: AppColors.secondary,
-        ),
-        const SizedBox(width: AppSpacing.xxs),
+        const SizedBox(height: 10),
         Text(
-          "We'll send a secure 6-digit code",
-          style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+          'Enter your email or phone number to receive a 6-digit code.',
+          style: AppTypography.body.copyWith(
+            fontSize: 15,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Ligtas at madali \u00B7 Safe and easy',
+          style: AppTypography.caption.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            fontStyle: FontStyle.italic,
+            letterSpacing: 0.3,
+            color: AppColors.primaryAccessible.withValues(alpha: 0.65),
+          ),
         ),
       ],
     );
   }
 
-  // -- Success state --------------------------------------------------------
+  Widget _buildIdentifierForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MethodSelector(
+            selectedMethod: _method,
+            onMethodChanged: (method) => setState(() => _method = method),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (_method == IdentifierMethod.email)
+            TanderTextField(
+              label: 'Email address',
+              hint: 'name@email.com',
+              controller: _emailController,
+              focusNode: _emailFocusNode,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              prefixIcon: Icons.email_outlined,
+              validator: _validateEmail,
+            )
+          else
+            TanderTextField(
+              label: 'Phone number',
+              hint: '09XXXXXXXXX',
+              controller: _phoneController,
+              focusNode: _phoneFocusNode,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.done,
+              prefixIcon: Icons.phone,
+              validator: _validatePhone,
+            ),
+          const SizedBox(height: AppSpacing.md),
+          TanderButton(
+            label: 'Send Verification Code',
+            onPressed: _isLoading ? null : _submitForm,
+            isLoading: _isLoading,
+            icon: Icons.arrow_forward,
+            iconPosition: IconPosition.trailing,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          const SecurityNote(),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildSuccessState() {
+  // ── Success content ────────────────────────────────────────────────
+
+  Widget _buildSuccessContent() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildSuccessIcon(),
+        const SuccessIconOrb(),
         const SizedBox(height: AppSpacing.lg),
         Text(
           'Code Sent!',
-          style: AppTypography.h1,
+          style: AppTypography.displayLg.copyWith(
+            fontWeight: FontWeight.w800,
+            height: 1.05,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           'We sent a 6-digit verification code to',
-          style: AppTypography.body.copyWith(color: AppColors.textMuted),
+          style: AppTypography.body.copyWith(
+            fontSize: 15,
+            color: AppColors.textMuted,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xxs),
@@ -307,40 +345,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         TanderButton(
           label: 'Enter Verification Code',
           onPressed: _navigateToOtp,
-          icon: Icons.arrow_forward_rounded,
+          icon: Icons.arrow_forward,
           iconPosition: IconPosition.trailing,
         ),
         const SizedBox(height: AppSpacing.md),
         TanderButton(
-          label: 'Back to Login',
-          onPressed: () => context.go(AppRoutes.login),
+          label: 'Back to Sign In',
+          onPressed: _navigateToLogin,
           variant: TanderButtonVariant.ghost,
-          icon: Icons.arrow_back_rounded,
+          icon: Icons.arrow_back,
         ),
       ],
     );
   }
-
-  Widget _buildSuccessIcon() {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: const BoxDecoration(
-        color: AppColors.successLight,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x3322C55E),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.check_circle_rounded,
-        size: 40,
-        color: AppColors.success,
-      ),
-    );
-  }
 }
+
