@@ -164,45 +164,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
 
     if (isWideLayout) {
-      // ── TABLET/LANDSCAPE: split-panel (60% hero + 40% form) ──
+      // ── TABLET/LANDSCAPE: split-panel (55% hero + 45% form) ──
       return Scaffold(
         body: Row(
           children: [
-            // Left panel: gradient hero (60%)
+            // Left panel: gradient hero (55%)
             Expanded(
-              flex: 60,
+              flex: 55,
               child: DesktopHeroPanel(onlineCount: _onlineCount),
             ),
-            // Right panel: form card on warm parchment (40%)
+            // Right panel: form card on warm parchment (45%)
             Expanded(
-              flex: 40,
+              flex: 45,
               child: Container(
-                color: const Color(0xFFFEFAF4), // warm parchment
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
+                color: const Color(0xFFFEFAF4),
+                child: SafeArea(
+                  left: false,
+                  child: Center(
                     child: SingleChildScrollView(
                       controller: _scrollController,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 40,
+                        horizontal: 24,
+                        vertical: 32,
                       ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: const Color(0xFFEDE8E0),
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x14000000),
-                              blurRadius: 60,
-                              offset: Offset(0, 20),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(32),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
                         child: formCard,
                       ),
                     ),

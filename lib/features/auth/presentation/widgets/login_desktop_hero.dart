@@ -45,19 +45,33 @@ class DesktopHeroPanel extends StatelessWidget {
           _buildWatermark(context),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTopBar(),
-                  const Spacer(),
-                  _buildHeroContent(context),
-                  const SizedBox(height: 12),
-                  const _FilipinoValuesMarquee(),
-                  const SizedBox(height: 24),
-                  const ConnectionShowcase(),
-                  const Spacer(),
-                  _buildFooter(),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32,
+                vertical: 24,
+              ),
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: _buildTopBar()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  SliverToBoxAdapter(child: _buildHeroContent(context)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                  const SliverToBoxAdapter(child: _FilipinoValuesMarquee()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  SliverToBoxAdapter(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 340),
+                      child: const ConnectionShowcase(),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [_buildFooter()],
+                    ),
+                  ),
                 ],
               ),
             ),

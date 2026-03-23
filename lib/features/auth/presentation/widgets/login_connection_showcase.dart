@@ -200,28 +200,32 @@ class _ConnectionCardState extends State<_ConnectionCard>
 
   Widget _buildAvatarRow() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _ProfileAvatar(profile: _profiles[_leftIndex]),
-        const SizedBox(width: 16),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: _isConnected
-              ? const Icon(
-                  Icons.check_circle,
-                  key: ValueKey('check'),
-                  size: 18,
-                  color: Color(0xFF34D399),
-                )
-              : const Icon(
-                  Icons.favorite,
-                  key: ValueKey('heart'),
-                  size: 18,
-                  color: Color(0xFFFCA5A5),
-                ),
+        Expanded(
+          child: _ProfileAvatar(profile: _profiles[_leftIndex]),
         ),
-        const SizedBox(width: 16),
-        _ProfileAvatar(profile: _profiles[_rightIndex]),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _isConnected
+                ? const Icon(
+                    Icons.check_circle,
+                    key: ValueKey('check'),
+                    size: 18,
+                    color: Color(0xFF34D399),
+                  )
+                : const Icon(
+                    Icons.favorite,
+                    key: ValueKey('heart'),
+                    size: 18,
+                    color: Color(0xFFFCA5A5),
+                  ),
+          ),
+        ),
+        Expanded(
+          child: _ProfileAvatar(profile: _profiles[_rightIndex]),
+        ),
       ],
     );
   }
