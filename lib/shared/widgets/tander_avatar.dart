@@ -93,11 +93,11 @@ class TanderAvatar extends StatelessWidget {
 
   Widget _networkImage() {
     return Image.network(
-                  imageUrl!,
+      imageUrl!,
       width: size.diameter,
       height: size.diameter,
       fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => _initialsFallback(),
+      errorBuilder: (_, _, _) => _initialsFallback(),
     );
   }
 
