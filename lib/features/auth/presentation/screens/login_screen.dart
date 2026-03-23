@@ -189,25 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 420),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: const Color(0xFFEDE8E0),
-                              width: 0.5,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x14000000),
-                                blurRadius: 60,
-                                offset: Offset(0, 20),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(28),
-                          child: formCard,
-                        ),
+                        child: formCard,
                       ),
                     ),
                   ),

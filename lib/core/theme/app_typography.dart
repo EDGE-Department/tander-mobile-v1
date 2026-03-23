@@ -23,16 +23,18 @@ abstract final class AppTypography {
 
   // ── Brand wordmark (script/chancery) ─────────────────────────
 
-  /// Cursive script font matching the web's `font-chancery` (Apple Chancery).
-  /// Used for the "Tander" wordmark throughout the app.
+  /// Calligraphic italic script matching the web's `font-chancery`
+  /// (Apple Chancery). Used for the "Tander" wordmark throughout the app.
+  /// Satisfy is the closest Google Fonts match to Apple Chancery's
+  /// calligraphic italic style.
   static TextStyle brandWordmark({
     double fontSize = 24,
     Color color = AppColors.textStrong,
     double letterSpacing = -0.5,
   }) =>
-      GoogleFonts.dancingScript(
+      GoogleFonts.satisfy(
         fontSize: fontSize,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w400,
         color: color,
         letterSpacing: letterSpacing,
         height: 1.0,
