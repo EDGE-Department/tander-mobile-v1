@@ -57,7 +57,9 @@ final class NetworkExceptionHandler {
       401 => AuthException(
           message: _extractMessage(responseBody) ??
               'Your session has expired. Please sign in again.',
-          reason: AuthFailureReason.tokenExpired,
+          reason: _extractCode(responseBody) == 'INVALID_CREDENTIALS'
+              ? AuthFailureReason.invalidCredentials
+              : AuthFailureReason.tokenExpired,
           stackTrace: exception.stackTrace,
         ),
       403 => AuthException(
@@ -154,6 +156,11 @@ final class NetworkExceptionHandler {
   static String? _extractMessage(Map<String, Object?> body) {
     final message = body['message'];
     return message is String && message.isNotEmpty ? message : null;
+  }
+
+  static String? _extractCode(Map<String, Object?> body) {
+    final code = body['code'];
+    return code is String && code.isNotEmpty ? code : null;
   }
 
   static int _extractRetryAfter(Map<String, Object?> body) {
