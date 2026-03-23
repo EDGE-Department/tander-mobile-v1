@@ -31,12 +31,15 @@ class LoginRequestDto {
 class LoginResponseDataDto {
   const LoginResponseDataDto({
     required this.refreshToken,
-    required this.userId,
-    required this.email,
-    required this.username,
-    required this.registrationPhase,
-    required this.emailVerified,
-    required this.idVerified,
+    this.userId,
+    this.email,
+    this.username,
+    this.phoneNumber,
+    this.registrationPhase,
+    this.emailVerified,
+    this.idVerified,
+    this.profileCompleted,
+    this.idVerificationStatus,
     this.profilePhotoUrl,
   });
 
@@ -44,12 +47,15 @@ class LoginResponseDataDto {
       _$LoginResponseDataDtoFromJson(json);
 
   final String refreshToken;
-  final String userId;
-  final String email;
-  final String username;
-  final String registrationPhase;
-  final bool emailVerified;
-  final bool idVerified;
+  final Object? userId; // backend sends int, not String
+  final String? email;
+  final String? username;
+  final String? phoneNumber;
+  final String? registrationPhase;
+  final bool? emailVerified;
+  final bool? idVerified;
+  final bool? profileCompleted;
+  final String? idVerificationStatus;
   final String? profilePhotoUrl;
 
   Map<String, Object?> toJson() => _$LoginResponseDataDtoToJson(this);

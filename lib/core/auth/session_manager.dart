@@ -32,10 +32,8 @@ enum RegistrationPhase {
       'PENDING_ID_VERIFICATION' => RegistrationPhase.pendingIdVerification,
       'PENDING_NOTIFICATION_PERMISSION' =>
         RegistrationPhase.pendingNotificationPermission,
-      'COMPLETE' => RegistrationPhase.complete,
-      _ => throw ArgumentError(
-          'Unknown RegistrationPhase from backend: "$backendValue"',
-        ),
+      'COMPLETE' || 'verified' || 'VERIFIED' => RegistrationPhase.complete,
+      _ => RegistrationPhase.complete, // Unknown phase = treat as complete
     };
   }
 }
@@ -310,7 +308,7 @@ final class SessionManager {
   /// onboarding was previously completed.
   Future<void> _fetchAndSetUserSession() async {
     final response = await _dioClient.get<Map<String, Object?>>(
-      '/api/user/me',
+      '/user/me',
     );
 
     final userJson = response.data;

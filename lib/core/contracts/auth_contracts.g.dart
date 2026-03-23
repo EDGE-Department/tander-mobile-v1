@@ -22,12 +22,15 @@ LoginResponseDataDto _$LoginResponseDataDtoFromJson(
   Map<String, dynamic> json,
 ) => LoginResponseDataDto(
   refreshToken: json['refreshToken'] as String,
-  userId: json['userId'] as String,
-  email: json['email'] as String,
-  username: json['username'] as String,
-  registrationPhase: json['registrationPhase'] as String,
-  emailVerified: json['emailVerified'] as bool,
-  idVerified: json['idVerified'] as bool,
+  userId: json['userId'],
+  email: json['email'] as String?,
+  username: json['username'] as String?,
+  phoneNumber: json['phoneNumber'] as String?,
+  registrationPhase: json['registrationPhase'] as String?,
+  emailVerified: json['emailVerified'] as bool?,
+  idVerified: json['idVerified'] as bool?,
+  profileCompleted: json['profileCompleted'] as bool?,
+  idVerificationStatus: json['idVerificationStatus'] as String?,
   profilePhotoUrl: json['profilePhotoUrl'] as String?,
 );
 
@@ -38,9 +41,12 @@ Map<String, dynamic> _$LoginResponseDataDtoToJson(
   'userId': instance.userId,
   'email': instance.email,
   'username': instance.username,
+  'phoneNumber': instance.phoneNumber,
   'registrationPhase': instance.registrationPhase,
   'emailVerified': instance.emailVerified,
   'idVerified': instance.idVerified,
+  'profileCompleted': instance.profileCompleted,
+  'idVerificationStatus': instance.idVerificationStatus,
   'profilePhotoUrl': instance.profilePhotoUrl,
 };
 
