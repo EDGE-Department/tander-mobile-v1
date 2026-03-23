@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_constellation.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -140,6 +141,9 @@ class LoginHeaderBackground extends StatelessWidget {
               ),
             ),
           ),
+
+          // Constellation (twinkling stars + edges + hub pulse)
+          const LoginConstellation(),
 
           // Social orbs (Heart, ChatCircle, Star)
           const _SocialOrbs(),

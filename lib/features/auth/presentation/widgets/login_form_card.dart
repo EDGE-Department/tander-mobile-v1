@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
@@ -98,19 +99,49 @@ class LoginFormCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _BrandHeader(onlineCount: onlineCount),
+                _BrandHeader(onlineCount: onlineCount)
+                    .animate()
+                    .fadeIn(
+                      duration: 550.ms,
+                      delay: 420.ms,
+                      curve: AppCurves.premiumEase,
+                    )
+                    .slideY(begin: 0.08, curve: AppCurves.premiumEase),
                 const SizedBox(height: 28),
-                const _HeadingBlock(),
+                const _HeadingBlock()
+                    .animate()
+                    .fadeIn(
+                      duration: 550.ms,
+                      delay: 510.ms,
+                      curve: AppCurves.premiumEase,
+                    )
+                    .slideY(begin: 0.08, curve: AppCurves.premiumEase),
                 const SizedBox(height: 24),
                 if (errorMessage != null) ...[
                   _ApiErrorBanner(message: errorMessage!),
                   const SizedBox(height: 16),
                 ],
-                _buildForm(),
+                _buildForm()
+                    .animate()
+                    .fadeIn(
+                      duration: 550.ms,
+                      delay: 600.ms,
+                      curve: AppCurves.premiumEase,
+                    )
+                    .slideY(begin: 0.06, curve: AppCurves.premiumEase),
                 const SizedBox(height: 24),
-                const Divider(color: _dividerColor, height: 1),
+                const Divider(color: _dividerColor, height: 1)
+                    .animate()
+                    .fadeIn(delay: 780.ms, duration: 400.ms),
                 const SizedBox(height: 20),
-                const _DownloadPrompt(),
+                const _DownloadPrompt()
+                    .animate()
+                    .fadeIn(
+                      duration: 550.ms,
+                      delay: 870.ms,
+                      curve: AppCurves.premiumEase,
+                    )
+                    .slideY(begin: 0.08, curve: AppCurves.premiumEase),
               ],
             ),
           ),

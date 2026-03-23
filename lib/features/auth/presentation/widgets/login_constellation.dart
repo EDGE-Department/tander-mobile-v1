@@ -1,0 +1,176 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+/// Animated constellation background matching the web's LoginConstellationSVG.
+///
+/// Renders twinkling star nodes connected by dim hairlines, with a central
+/// hub that pulses. Simplified from the web's 20-node SVG to a Flutter
+/// CustomPainter with AnimationController-driven twinkle.
+class LoginConstellation extends StatefulWidget {
+  const LoginConstellation({super.key});
+
+  @override
+  State<LoginConstellation> createState() => _LoginConstellationState();
+}
+
+class _LoginConstellationState extends State<LoginConstellation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (_, _) => CustomPaint(
+            painter: _ConstellationPainter(progress: _controller.value),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Star node data (normalized 0-1 coordinates, matches web's 600x900 viewBox)
+class _Star {
+  const _Star(this.x, this.y, this.radius, this.phase, this.color);
+  final double x;
+  final double y;
+  final double radius;
+  final double phase; // 0-1 offset for twinkle timing
+  final Color color;
+}
+
+// Edge connecting two star indices
+class _Edge {
+  const _Edge(this.from, this.to);
+  final int from;
+  final int to;
+}
+
+const _stars = <_Star>[
+  _Star(0.12, 0.18, 2.5, 0.00, Color(0xE6FFA05A)), // warm orange
+  _Star(0.25, 0.30, 1.8, 0.15, Color(0xBFFFFFFF)), // white
+  _Star(0.10, 0.45, 3.0, 0.30, Color(0xD9FFB464)), // warm
+  _Star(0.38, 0.22, 2.0, 0.08, Color(0xB3FFFFFF)), // white
+  _Star(0.30, 0.48, 1.5, 0.22, Color(0x8CFFFFFF)), // dim white
+  _Star(0.42, 0.38, 2.0, 0.11, Color(0xB3FFFFFF)), // white
+  _Star(0.38, 0.51, 2.5, 0.19, Color(0xCCFFFFFF)), // white
+  _Star(0.50, 0.51, 5.0, 0.00, Color(0xFFFFFFFF)), // hub (brightest)
+  _Star(0.62, 0.51, 2.5, 0.19, Color(0xCCFFFFFF)), // white
+  _Star(0.58, 0.38, 2.0, 0.11, Color(0xB3FFFFFF)), // white
+  _Star(0.78, 0.22, 2.0, 0.08, Color(0xD996E6E1)), // teal
+  _Star(0.85, 0.43, 2.5, 0.20, Color(0xE678DCD7)), // teal
+  _Star(0.77, 0.59, 3.0, 0.28, Color(0xD964D2CD)), // teal
+  _Star(0.89, 0.17, 1.8, 0.13, Color(0xB3FFFFFF)), // white
+  _Star(0.78, 0.71, 2.0, 0.24, Color(0x8CFFFFFF)), // dim white
+  _Star(0.28, 0.10, 1.5, 0.17, Color(0x8CFFFFFF)), // dim white
+  _Star(0.50, 0.08, 2.0, 0.05, Color(0xA6FFFFFF)), // white
+  _Star(0.72, 0.10, 1.5, 0.25, Color(0xB396E6E1)), // teal
+  _Star(0.14, 0.12, 2.0, 0.03, Color(0xB3FFB464)), // warm
+  _Star(0.86, 0.12, 1.5, 0.20, Color(0xB396E6E1)), // teal
+];
+
+const _edges = <_Edge>[
+  _Edge(0, 1), _Edge(1, 2), _Edge(2, 4), _Edge(0, 3),
+  _Edge(3, 5), _Edge(4, 5), _Edge(5, 6), _Edge(6, 7),
+  _Edge(7, 8), _Edge(8, 9), _Edge(9, 11), _Edge(10, 11),
+  _Edge(11, 12), _Edge(12, 14), _Edge(10, 13),
+  _Edge(18, 15), _Edge(15, 16), _Edge(16, 17), _Edge(17, 19),
+  _Edge(3, 15), _Edge(16, 9), _Edge(17, 13),
+];
+
+class _ConstellationPainter extends CustomPainter {
+  const _ConstellationPainter({required this.progress});
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final edgePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.12)
+      ..strokeWidth = 0.65
+      ..style = PaintingStyle.stroke;
+
+    // Draw edges
+    for (final edge in _edges) {
+      final from = _stars[edge.from];
+      final to = _stars[edge.to];
+      canvas.drawLine(
+        Offset(from.x * size.width, from.y * size.height),
+        Offset(to.x * size.width, to.y * size.height),
+        edgePaint,
+      );
+    }
+
+    // Draw stars with twinkle
+    for (final star in _stars) {
+      final twinklePhase = ((progress + star.phase) % 1.0);
+      // Sine wave for smooth twinkle: 0.22 to 1.0
+      final twinkle = 0.22 + 0.78 * ((math.sin(twinklePhase * math.pi * 2) + 1) / 2);
+      final scaledRadius = star.radius * (0.92 + 0.15 * twinkle);
+
+      final starPaint = Paint()
+        ..color = star.color.withValues(alpha: star.color.a * twinkle)
+        ..maskFilter = star.radius >= 2.5
+            ? const MaskFilter.blur(BlurStyle.normal, 3.0)
+            : const MaskFilter.blur(BlurStyle.normal, 1.5);
+
+      canvas.drawCircle(
+        Offset(star.x * size.width, star.y * size.height),
+        scaledRadius,
+        starPaint,
+      );
+
+      // Core dot (sharper)
+      final corePaint = Paint()
+        ..color = star.color.withValues(alpha: star.color.a * twinkle);
+      canvas.drawCircle(
+        Offset(star.x * size.width, star.y * size.height),
+        star.radius * 0.5,
+        corePaint,
+      );
+    }
+
+    // Hub pulse rings
+    final hubX = _stars[7].x * size.width;
+    final hubY = _stars[7].y * size.height;
+
+    for (var i = 0; i < 3; i++) {
+      final ringPhase = ((progress * (1.0 + i * 0.3) + i * 0.33) % 1.0);
+      final ringRadius = 6 + ringPhase * 56;
+      final ringOpacity = 0.68 * (1 - ringPhase);
+
+      if (ringOpacity > 0.01) {
+        canvas.drawCircle(
+          Offset(hubX, hubY),
+          ringRadius,
+          Paint()
+            ..color = Colors.white.withValues(alpha: ringOpacity)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 * (1 - ringPhase * 0.9),
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ConstellationPainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
