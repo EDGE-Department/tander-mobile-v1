@@ -138,10 +138,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final headerHeight = resolveHeaderHeight(screenHeight);
 
-    // Detect tablet landscape: web shows split-panel at lg: (1024px+)
-    final screenSize = MediaQuery.sizeOf(context);
-    final isWideLayout = screenSize.shortestSide > 600 ||
-        (screenSize.width > screenSize.height && screenSize.width > 900);
+    // Web shows split-panel at lg: (1024px+ width). Only use wide layout
+    // when the screen WIDTH is >= 1024, matching the web's breakpoint exactly.
+    // Tablet portrait (~800px wide) should show the phone stacked layout.
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isWideLayout = screenWidth >= 1024;
 
     final formCard = ValueListenableBuilder<int>(
       valueListenable: _onlineCount,

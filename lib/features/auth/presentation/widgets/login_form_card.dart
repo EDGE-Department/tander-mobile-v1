@@ -73,8 +73,7 @@ class LoginFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.sizeOf(context).shortestSide > 600 ||
-        MediaQuery.sizeOf(context).width > MediaQuery.sizeOf(context).height;
+    final isWide = MediaQuery.sizeOf(context).width >= 1024;
 
     return DecoratedBox(
       decoration: BoxDecoration(
