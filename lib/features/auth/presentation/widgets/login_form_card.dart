@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
@@ -132,7 +131,7 @@ class LoginFormCard extends StatelessWidget {
             hint: 'name@email.com or 09XXXXXXXXX',
             controller: emailController,
             focusNode: emailFocusNode,
-            prefixIcon: PhosphorIconsDuotone.envelopeSimple,
+            prefixIcon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             validator: _validateIdentifier,
@@ -222,7 +221,7 @@ class _BrandHeader extends StatelessWidget {
               ),
               child: const Center(
                 child: Icon(
-                  PhosphorIconsFill.heart,
+                  Icons.favorite,
                   size: 18,
                   color: Colors.white,
                 ),
@@ -330,7 +329,7 @@ class _PrivacyNotice extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Icon(
-          PhosphorIconsFill.shieldCheck,
+          Icons.verified_user,
           size: 13,
           color: AppColors.secondary,
         ),
@@ -365,7 +364,7 @@ class _DownloadPrompt extends StatelessWidget {
           ),
           child: const Center(
             child: Icon(
-              PhosphorIconsFill.deviceMobile,
+              Icons.phone_android,
               size: 18,
               color: AppColors.primary,
             ),

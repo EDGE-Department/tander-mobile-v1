@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 
@@ -173,7 +171,7 @@ class _SocialOrbs extends StatelessWidget {
           _FloatingOrb(
             left: 0.12,
             top: 0.14,
-            icon: PhosphorIconsFill.heart,
+            icon: Icons.favorite,
             size: 28,
             color: Color(0xFFFFB088),
             glowColor: Color(0x73FFB088),
@@ -182,7 +180,7 @@ class _SocialOrbs extends StatelessWidget {
           _FloatingOrb(
             left: 0.44,
             top: 0.07,
-            icon: PhosphorIconsFill.chatCircle,
+            icon: Icons.chat_bubble,
             size: 24,
             color: Color(0xE6FFFFFF),
             glowColor: Color(0x59FFFFFF),
@@ -191,7 +189,7 @@ class _SocialOrbs extends StatelessWidget {
           _FloatingOrb(
             left: 0.74,
             top: 0.13,
-            icon: PhosphorIconsFill.star,
+            icon: Icons.star,
             size: 22,
             color: Color(0xFFFFE17A),
             glowColor: Color(0x66FFE17A),

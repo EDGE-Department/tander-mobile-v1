@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
@@ -182,7 +181,7 @@ class LoginPasswordField extends StatelessWidget {
             prefixIcon: Padding(
               padding: const EdgeInsets.only(left: 16, right: 8),
               child: Icon(
-                PhosphorIconsDuotone.lockSimple,
+                Icons.lock_outline,
                 size: 18,
                 color: AppColors.primary.withValues(alpha: 0.65),
               ),
@@ -194,8 +193,8 @@ class LoginPasswordField extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 12),
                 child: Icon(
                   isPasswordVisible
-                      ? PhosphorIconsRegular.eyeSlash
-                      : PhosphorIconsRegular.eye,
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   size: 20,
                   color: AppColors.primary.withValues(alpha: 0.65),
                 ),
