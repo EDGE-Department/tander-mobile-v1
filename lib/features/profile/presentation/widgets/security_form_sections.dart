@@ -5,7 +5,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -131,7 +130,7 @@ class _PasswordHeader extends StatelessWidget {
             width: 40, height: 40,
             decoration: BoxDecoration(color: AppColors.secondary, borderRadius: AppRadius.borderMd),
             alignment: Alignment.center,
-            child: const Icon(PhosphorIconsFill.key, size: 20, color: AppColors.textInverse),
+            child: const Icon(Icons.key, size: 20, color: AppColors.textInverse),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -182,7 +181,7 @@ class TwoFactorSection extends StatelessWidget {
                 width: 40, height: 40,
                 decoration: BoxDecoration(color: AppColors.secondary, borderRadius: AppRadius.borderMd),
                 alignment: Alignment.center,
-                child: const Icon(PhosphorIconsFill.deviceMobile, size: 20, color: AppColors.textInverse),
+                child: const Icon(Icons.phone_android, size: 20, color: AppColors.textInverse),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -253,7 +252,7 @@ class DataActionCard extends StatelessWidget {
               Text(label, style: AppTypography.label),
               Text(description, style: AppTypography.bodySm.copyWith(color: AppColors.textMuted)),
             ])),
-            const Icon(PhosphorIconsBold.caretRight, size: 16, color: AppColors.textMuted),
+            const Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
           ]),
         ),
       ),
@@ -288,14 +287,14 @@ class DangerDeleteCard extends StatelessWidget {
               width: 40, height: 40,
               decoration: BoxDecoration(color: AppColors.danger, borderRadius: AppRadius.borderMd),
               alignment: Alignment.center,
-              child: const Icon(PhosphorIconsFill.trash, size: 20, color: AppColors.textInverse),
+              child: const Icon(Icons.delete_outline, size: 20, color: AppColors.textInverse),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Delete account', style: AppTypography.label.copyWith(color: AppColors.danger)),
               Text('Permanently remove your account and data', style: AppTypography.bodySm.copyWith(color: AppColors.textMuted)),
             ])),
-            const Icon(PhosphorIconsBold.warning, size: 18, color: AppColors.danger),
+            const Icon(Icons.warning_amber, size: 18, color: AppColors.danger),
           ]),
         ),
       ),

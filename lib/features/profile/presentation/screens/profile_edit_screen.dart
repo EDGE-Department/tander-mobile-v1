@@ -10,7 +10,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
@@ -174,7 +173,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         surfaceTintColor: Colors.transparent,
         title: Text('Edit Profile', style: AppTypography.h3),
         leading: IconButton(
-          icon: const Icon(PhosphorIconsBold.arrowLeft, size: 22),
+          icon: const Icon(Icons.arrow_back, size: 22),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -342,7 +341,7 @@ class _SaveButton extends StatelessWidget {
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(PhosphorIconsBold.check, size: 16,
+                  const Icon(Icons.check, size: 16,
                       color: AppColors.textInverse),
                   const SizedBox(width: AppSpacing.xxs),
                   Text(

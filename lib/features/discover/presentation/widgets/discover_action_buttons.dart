@@ -6,7 +6,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -41,7 +40,7 @@ class DiscoverActionButtons extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _CircleActionButton(
-            icon: PhosphorIconsBold.x,
+            icon: Icons.close,
             iconColor: AppColors.danger,
             size: 60,
             label: 'Pass',
@@ -50,7 +49,7 @@ class DiscoverActionButtons extends StatelessWidget {
           ),
           const SizedBox(width: 20),
           _CircleActionButton(
-            icon: PhosphorIconsFill.heart,
+            icon: Icons.favorite,
             iconColor: AppColors.textInverse,
             size: 76,
             label: 'Connect',
@@ -62,7 +61,7 @@ class DiscoverActionButtons extends StatelessWidget {
           ),
           const SizedBox(width: 20),
           _CircleActionButton(
-            icon: PhosphorIconsRegular.info,
+            icon: Icons.info_outline,
             iconColor: AppColors.secondary,
             size: 60,
             label: 'Profile',
@@ -283,7 +282,7 @@ class DiscoverRemainingBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            PhosphorIconsFill.users,
+            Icons.people,
             size: 11,
             color: AppColors.primaryAccessible,
           ),

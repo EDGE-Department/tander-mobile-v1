@@ -1,6 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -174,7 +173,7 @@ class _PlayButton extends StatelessWidget {
           border: Border.all(color: borderColor, width: 1.5),
         ),
         child: Icon(
-          isPlaying ? PhosphorIconsFill.pause : PhosphorIconsFill.play,
+          isPlaying ? Icons.pause : Icons.play_arrow,
           size: 18,
           color: playColor,
         ),

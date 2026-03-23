@@ -5,7 +5,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -258,7 +257,7 @@ class _FaqTile extends StatelessWidget {
                   duration: AppDurations.fast,
                   curve: AppCurves.premiumEase,
                   child: Icon(
-                    PhosphorIconsBold.caretDown,
+                    Icons.keyboard_arrow_down,
                     size: 18,
                     color: isExpanded
                         ? AppColors.primary
@@ -330,7 +329,7 @@ class _ContactSupportCard extends StatelessWidget {
                   borderRadius: AppRadius.borderMd,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(PhosphorIconsFill.chatTeardropText, size: 20,
+                child: const Icon(Icons.chat_bubble, size: 20,
                     color: AppColors.textInverse),
               ),
               const SizedBox(width: AppSpacing.sm),

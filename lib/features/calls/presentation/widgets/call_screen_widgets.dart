@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/states/call_state.dart';
@@ -191,7 +190,7 @@ class CallAudioLayout extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      PhosphorIconsFill.microphoneSlash,
+                      Icons.mic_off,
                       size: 13,
                       color: Colors.white.withValues(alpha: 0.3),
                     ),
@@ -419,7 +418,7 @@ class CallEndedOverlay extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                PhosphorIconsFill.phoneSlash,
+                Icons.phone_disabled,
                 size: 36,
                 color: Colors.red.withValues(alpha: 0.8),
               ),
@@ -552,7 +551,7 @@ class CallHangupButton extends StatelessWidget {
           ],
         ),
         child: const Icon(
-          PhosphorIconsFill.phoneSlash,
+          Icons.phone_disabled,
           size: 26,
           color: Colors.white,
           semanticLabel: 'End call',

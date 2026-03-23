@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -40,7 +39,7 @@ class ComposerRecordingRow extends StatelessWidget {
               color: AppColors.danger.withValues(alpha: 0.08),
             ),
             child: const Icon(
-              PhosphorIconsBold.x,
+              Icons.close,
               size: 16,
               color: AppColors.danger,
             ),
@@ -103,7 +102,7 @@ class ComposerRecordingRow extends StatelessWidget {
             ),
             child: const Center(
               child: Icon(
-                PhosphorIconsFill.paperPlaneTilt,
+                Icons.send,
                 size: 18,
                 color: Colors.white,
               ),

@@ -7,7 +7,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
@@ -121,7 +120,7 @@ class _SettingsSecurityScreenState
         backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(PhosphorIconsBold.arrowLeft, size: 22),
+          icon: const Icon(Icons.arrow_back, size: 22),
           onPressed: () => context.pop(),
           tooltip: 'Back to settings',
         ),
@@ -156,7 +155,7 @@ class _SettingsSecurityScreenState
             const SectionLabel(label: 'Data'),
             const SizedBox(height: AppSpacing.sm),
             DataActionCard(
-              icon: PhosphorIconsFill.export,
+              icon: Icons.file_download_outlined,
               label: 'Export my data',
               description: 'Download a copy of your personal data',
               onTap: _handleExportData,

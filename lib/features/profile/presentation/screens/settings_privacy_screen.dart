@@ -7,7 +7,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -26,9 +25,9 @@ const List<({String value, String label})> _visibilityOptions = [
 ];
 
 const List<({String id, IconData icon, String label, String description, bool defaultValue})> _privacyToggles = [
-  (id: 'showOnlineStatus', icon: PhosphorIconsFill.eye, label: 'Show online status', description: "Let others see when you're active", defaultValue: true),
-  (id: 'showLastActive', icon: PhosphorIconsFill.eyeSlash, label: 'Show last active', description: 'Display when you were last active', defaultValue: true),
-  (id: 'allowConnectionRequests', icon: PhosphorIconsFill.userList, label: 'Allow connection requests', description: 'Let everyone send you connection requests', defaultValue: true),
+  (id: 'showOnlineStatus', icon: Icons.visibility_outlined, label: 'Show online status', description: "Let others see when you're active", defaultValue: true),
+  (id: 'showLastActive', icon: Icons.visibility_off_outlined, label: 'Show last active', description: 'Display when you were last active', defaultValue: true),
+  (id: 'allowConnectionRequests', icon: Icons.people_outline, label: 'Allow connection requests', description: 'Let everyone send you connection requests', defaultValue: true),
 ];
 
 // ── Screen ──────────────────────────────────────────────────────────────
@@ -66,7 +65,7 @@ class _State extends ConsumerState<SettingsPrivacyScreen> {
         backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(PhosphorIconsBold.arrowLeft, size: 22),
+          icon: const Icon(Icons.arrow_back, size: 22),
           onPressed: () => context.pop(),
           tooltip: 'Back to settings',
         ),

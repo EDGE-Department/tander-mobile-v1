@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -107,13 +106,13 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _SourceOption(
-              icon: PhosphorIconsFill.camera,
+              icon: Icons.camera_alt,
               label: 'Take a photo',
               onTap: () => Navigator.of(context).pop(ImageSource.camera),
             ),
             const SizedBox(height: AppSpacing.xs),
             _SourceOption(
-              icon: PhosphorIconsFill.images,
+              icon: Icons.photo_library,
               label: 'Choose from gallery',
               onTap: () => Navigator.of(context).pop(ImageSource.gallery),
             ),
@@ -170,7 +169,7 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
         backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(PhosphorIconsBold.arrowLeft, size: 22),
+          icon: const Icon(Icons.arrow_back, size: 22),
           onPressed: () => context.pop(),
           tooltip: 'Back to profile',
         ),
@@ -280,7 +279,7 @@ class _FilledSlot extends StatelessWidget {
         Positioned(top: AppSpacing.xs, right: AppSpacing.xs, child: GestureDetector(
           onTap: onRemove,
           child: Container(width: 28, height: 28, decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle), alignment: Alignment.center,
-            child: const Icon(PhosphorIconsBold.trash, size: 13, color: AppColors.textInverse)),
+            child: const Icon(Icons.delete_outline, size: 13, color: AppColors.textInverse)),
         )),
       ]),
     );
@@ -303,7 +302,7 @@ class _EmptySlot extends StatelessWidget {
         child: isUploading
             ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary))))
             : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(PhosphorIconsBold.plus, size: 24, color: AppColors.textMuted),
+                const Icon(Icons.add, size: 24, color: AppColors.textMuted),
                 const SizedBox(height: AppSpacing.xxs),
                 Text('Add Photo', style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600)),
               ]),

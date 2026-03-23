@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -254,9 +253,9 @@ class _DeliveryIcon extends StatelessWidget {
           width: 12, height: 12,
           child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC8BFB6))),
         ),
-      MessageDeliveryState.sent => const Icon(PhosphorIconsBold.check, size: 13, color: Color(0xFFC8BFB6)),
-      MessageDeliveryState.delivered => const Icon(PhosphorIconsBold.checks, size: 13, color: Color(0xFFC8BFB6)),
-      MessageDeliveryState.read => const Icon(PhosphorIconsBold.checks, size: 13, color: _teal),
+      MessageDeliveryState.sent => const Icon(Icons.check, size: 13, color: Color(0xFFC8BFB6)),
+      MessageDeliveryState.delivered => const Icon(Icons.done_all, size: 13, color: Color(0xFFC8BFB6)),
+      MessageDeliveryState.read => const Icon(Icons.done_all, size: 13, color: _teal),
       MessageDeliveryState.failed => Text('!', style: AppTypography.caption.copyWith(color: AppColors.danger, fontWeight: FontWeight.w700)),
     };
   }
@@ -381,7 +380,7 @@ class _ImagePlaceholder extends StatelessWidget {
     return Container(
       width: 200, height: 150,
       color: const Color(0x2EC4A88C),
-      child: const Center(child: Icon(PhosphorIconsBold.image, size: 32)),
+      child: const Center(child: Icon(Icons.image, size: 32)),
     );
   }
 }
@@ -417,7 +416,7 @@ class CallChipWidget extends StatelessWidget {
               Container(
                 width: 36, height: 36,
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: chipColor.withValues(alpha: 0.14)),
-                child: Icon(isMissed ? PhosphorIconsFill.phoneSlash : PhosphorIconsFill.phone, size: 16, color: chipColor),
+                child: Icon(isMissed ? Icons.phone_disabled : Icons.phone, size: 16, color: chipColor),
               ),
               const SizedBox(width: 12),
               Expanded(

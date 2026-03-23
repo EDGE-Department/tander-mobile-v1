@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -347,7 +346,7 @@ class _OtpVerificationScreenState
         ],
       ),
       child: const Icon(
-        PhosphorIconsFill.shieldCheckered,
+        Icons.verified_user,
         size: 36,
         color: AppColors.textInverse,
       ),

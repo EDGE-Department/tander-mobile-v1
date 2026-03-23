@@ -8,7 +8,6 @@ library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
@@ -135,7 +134,7 @@ class ProfileHero extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       child: const Icon(
-                        PhosphorIconsBold.camera,
+                        Icons.camera_alt,
                         size: 14,
                         color: AppColors.textInverse,
                       ),
@@ -222,29 +221,29 @@ class ProfileHero extends StatelessWidget {
             const TanderBadge(
               label: 'Verified',
               variant: TanderBadgeVariant.info,
-              icon: PhosphorIconsFill.shieldCheck,
+              icon: Icons.verified_user,
             ),
           if (displayLocation.isNotEmpty)
             HeroMetaPill(
-              icon: PhosphorIconsFill.mapPin,
+              icon: Icons.location_on,
               iconColor: AppColors.primary,
               label: displayLocation,
             ),
           if (age != null)
             HeroMetaPill(
-              icon: PhosphorIconsFill.calendar,
+              icon: Icons.calendar_today,
               iconColor: AppColors.secondary,
               label: '$age years old',
             ),
           if (gender != null)
             HeroMetaPill(
-              icon: PhosphorIconsFill.users,
+              icon: Icons.people,
               iconColor: AppColors.primary,
               label: gender!,
             ),
           if (lookingFor != null)
             HeroMetaPill(
-              icon: PhosphorIconsFill.heart,
+              icon: Icons.favorite,
               iconColor: AppColors.danger,
               label: lookingFor!,
             ),

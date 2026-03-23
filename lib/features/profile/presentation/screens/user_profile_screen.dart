@@ -7,7 +7,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -203,12 +202,12 @@ class _TopNavBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _NavButton(
-              icon: PhosphorIconsBold.arrowLeft,
+              icon: Icons.arrow_back,
               semanticLabel: 'Go back',
               onTap: onBack,
             ),
             _NavButton(
-              icon: PhosphorIconsBold.dotsThreeVertical,
+              icon: Icons.more_vert,
               semanticLabel: 'More options',
               onTap: onMore,
             ),

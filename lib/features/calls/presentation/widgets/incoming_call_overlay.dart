@@ -4,7 +4,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
@@ -247,7 +246,7 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
                             const Color(0xFFDC2626).withValues(alpha: 0.2),
                         iconColor: Colors.red.shade400,
                         textColor: Colors.red.shade400,
-                        icon: PhosphorIconsFill.phoneSlash,
+                        icon: Icons.phone_disabled,
                         label: 'Decline',
                       ),
                     ),
@@ -279,8 +278,8 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
                         iconColor: Colors.white,
                         textColor: Colors.white,
                         icon: isVideo
-                            ? PhosphorIconsFill.videoCamera
-                            : PhosphorIconsFill.phone,
+                            ? Icons.videocam
+                            : Icons.phone,
                         label: _isAccepting ? 'Connecting...' : 'Accept',
                         boxShadow: BoxShadow(
                           color:

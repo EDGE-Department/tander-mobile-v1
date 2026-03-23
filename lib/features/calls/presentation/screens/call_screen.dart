@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
@@ -264,7 +263,7 @@ class _LocalPipView extends StatelessWidget {
                 color: const Color(0xCC000000),
                 child: Center(
                   child: Icon(
-                    PhosphorIconsFill.videoCameraSlash,
+                    Icons.videocam_off,
                     size: 20,
                     color: Colors.white.withValues(alpha: 0.5),
                   ),
@@ -314,8 +313,8 @@ class _CallControls extends StatelessWidget {
             onTap: callManager.toggleMute,
             isActive: callState.media.isMuted,
             icon: callState.media.isMuted
-                ? PhosphorIconsFill.microphoneSlash
-                : PhosphorIconsFill.microphone,
+                ? Icons.mic_off
+                : Icons.mic,
             label: callState.media.isMuted ? 'Unmute' : 'Mute',
           ),
           if (isVideoCall) ...[
@@ -324,8 +323,8 @@ class _CallControls extends StatelessWidget {
               onTap: callManager.toggleCamera,
               isActive: !callState.media.isCameraOn,
               icon: callState.media.isCameraOn
-                  ? PhosphorIconsFill.videoCamera
-                  : PhosphorIconsFill.videoCameraSlash,
+                  ? Icons.videocam
+                  : Icons.videocam_off,
               label:
                   callState.media.isCameraOn ? 'Camera off' : 'Camera on',
             ),
@@ -358,7 +357,7 @@ class _CallTopBar extends StatelessWidget {
             IconButton(
               onPressed: onBack,
               icon: Icon(
-                PhosphorIconsBold.arrowLeft,
+                Icons.arrow_back,
                 size: 20,
                 color: Colors.white.withValues(alpha: 0.6),
               ),

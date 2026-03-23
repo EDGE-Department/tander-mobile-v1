@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -208,7 +207,7 @@ class _SearchBar extends StatelessWidget {
           hintText: 'Search by name\u2026',
           hintStyle: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
           prefixIcon: const Icon(
-            PhosphorIconsBold.magnifyingGlass,
+            Icons.search,
             size: 15,
             color: Color(0xFFA89C8E),
           ),

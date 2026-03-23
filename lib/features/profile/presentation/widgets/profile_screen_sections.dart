@@ -6,7 +6,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -46,19 +45,19 @@ class ProfileActionRow extends StatelessWidget {
           _PrimaryAction(label: 'Edit profile', onTap: onEdit),
           const SizedBox(width: AppSpacing.xs),
           _SecondaryAction(
-            icon: PhosphorIconsFill.images,
+            icon: Icons.photo_library,
             label: 'Photos',
             onTap: onPhotos,
           ),
           const SizedBox(width: AppSpacing.xs),
           _SecondaryAction(
-            icon: PhosphorIconsFill.gear,
+            icon: Icons.settings,
             label: 'Settings',
             onTap: onSettings,
           ),
           const SizedBox(width: AppSpacing.xs),
           _SecondaryAction(
-            icon: PhosphorIconsFill.question,
+            icon: Icons.help_outline,
             label: 'Help',
             onTap: onHelp,
           ),
@@ -93,7 +92,7 @@ class _PrimaryAction extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              PhosphorIconsBold.pencilSimple,
+              Icons.edit,
               size: 16,
               color: AppColors.textInverse,
             ),

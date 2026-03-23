@@ -5,7 +5,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
@@ -52,25 +51,25 @@ List<FactRowData> buildSnapshotItems({
   return [
     if (displayLocation.isNotEmpty)
       FactRowData(
-        icon: PhosphorIconsFill.mapPin,
+        icon: Icons.location_on,
         label: 'Location',
         value: displayLocation,
       ),
     if (age != null)
       FactRowData(
-        icon: PhosphorIconsFill.calendar,
+        icon: Icons.calendar_today,
         label: 'Age',
         value: '$age years old',
       ),
     if (gender != null)
       FactRowData(
-        icon: PhosphorIconsFill.users,
+        icon: Icons.people,
         label: 'Gender',
         value: gender,
       ),
     if (lookingFor != null)
       FactRowData(
-        icon: PhosphorIconsFill.heart,
+        icon: Icons.favorite,
         label: 'Looking for',
         value: lookingFor,
       ),
@@ -82,14 +81,14 @@ List<FactRowData> buildDetailItems(UserProfile profile) {
   return [
     if (profile.hobby != null && profile.hobby!.trim().isNotEmpty)
       FactRowData(
-        icon: PhosphorIconsFill.heart,
+        icon: Icons.favorite,
         label: 'Hobby',
         value: profile.hobby!.trim(),
       ),
     if (profile.civilStatus != null &&
         profile.civilStatus!.trim().isNotEmpty)
       FactRowData(
-        icon: PhosphorIconsFill.users,
+        icon: Icons.people,
         label: 'Civil status',
         value: ProfileHelpers.toTitleCase(
           profile.civilStatus!.replaceAll('_', ' '),
@@ -97,14 +96,14 @@ List<FactRowData> buildDetailItems(UserProfile profile) {
       ),
     if (profile.religion != null && profile.religion!.trim().isNotEmpty)
       FactRowData(
-        icon: PhosphorIconsFill.heart,
+        icon: Icons.favorite,
         label: 'Religion',
         value: profile.religion!.trim(),
       ),
     if (profile.maritalStatus != null &&
         profile.maritalStatus!.trim().isNotEmpty)
       FactRowData(
-        icon: PhosphorIconsFill.users,
+        icon: Icons.people,
         label: 'Marital status',
         value: ProfileHelpers.toTitleCase(
           profile.maritalStatus!.replaceAll('_', ' '),
@@ -112,13 +111,13 @@ List<FactRowData> buildDetailItems(UserProfile profile) {
       ),
     if (profile.languages.isNotEmpty)
       FactRowData(
-        icon: PhosphorIconsFill.translate,
+        icon: Icons.translate,
         label: 'Languages',
         value: profile.languages.join(', '),
       ),
     if (profile.numberOfChildren != null)
       FactRowData(
-        icon: PhosphorIconsFill.users,
+        icon: Icons.people,
         label: 'Children',
         value: '${profile.numberOfChildren}',
       ),

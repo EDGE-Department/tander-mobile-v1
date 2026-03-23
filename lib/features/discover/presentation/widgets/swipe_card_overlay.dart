@@ -7,7 +7,6 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -37,7 +36,7 @@ class SwipeLikeStamp extends StatelessWidget {
           angle: -20 * math.pi / 180,
           child: _stampContainer(
             borderColor: _likeStampBorder,
-            icon: PhosphorIconsFill.heart,
+            icon: Icons.favorite,
             iconColor: AppColors.success,
             label: 'LIKE',
             labelColor: AppColors.success,
@@ -63,7 +62,7 @@ class SwipeNopeStamp extends StatelessWidget {
           angle: 20 * math.pi / 180,
           child: _stampContainer(
             borderColor: _nopeStampBorder,
-            icon: PhosphorIconsBold.x,
+            icon: Icons.close,
             iconColor: AppColors.danger,
             label: 'NOPE',
             labelColor: AppColors.danger,
@@ -262,7 +261,7 @@ class SwipeProfileOverlay extends StatelessWidget {
     final parts = [candidate.city, candidate.country]
         .where((part) => part != null && part.isNotEmpty).join(', ');
     return Row(children: [
-      const Icon(PhosphorIconsFill.mapPin, size: 13,
+      const Icon(Icons.location_on, size: 13,
         color: AppColors.textInverse),
       const SizedBox(width: 6),
       Flexible(child: Text(parts, style: AppTypography.bodySm.copyWith(

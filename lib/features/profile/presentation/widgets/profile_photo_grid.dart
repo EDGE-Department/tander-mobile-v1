@@ -7,7 +7,6 @@ library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -120,7 +119,7 @@ class _PhotoTile extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(PhosphorIconsFill.camera, size: 10, color: AppColors.textInverse),
+                      const Icon(Icons.camera_alt, size: 10, color: AppColors.textInverse),
                       const SizedBox(width: 3),
                       Text(
                         'Main',
@@ -164,7 +163,7 @@ class _AddPhotoTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(PhosphorIconsDuotone.camera, size: 22, color: AppColors.textMuted),
+            const Icon(Icons.camera_alt, size: 22, color: AppColors.textMuted),
             const SizedBox(height: AppSpacing.xxs),
             Text(
               'Add photo',

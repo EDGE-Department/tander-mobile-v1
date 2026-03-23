@@ -8,7 +8,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -84,7 +83,7 @@ class ActionCard extends StatelessWidget {
               Expanded(
                 child: Text(label, style: AppTypography.label, overflow: TextOverflow.ellipsis),
               ),
-              const Icon(PhosphorIconsBold.caretRight, size: 16, color: AppColors.textMuted),
+              const Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
             ],
           ),
         ),
@@ -193,7 +192,7 @@ class CompletionTip extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               Text(actionLabel, style: AppTypography.label.copyWith(color: AppColors.primary)),
               const SizedBox(width: AppSpacing.xxs),
-              const Icon(PhosphorIconsBold.caretRight, size: 12, color: AppColors.primary),
+              const Icon(Icons.chevron_right, size: 12, color: AppColors.primary),
             ],
           ),
         ),
@@ -274,7 +273,7 @@ class SectionCard extends StatelessWidget {
                     children: [
                       Text(actionLabel!, style: AppTypography.label.copyWith(color: AppColors.primary)),
                       const SizedBox(width: 2),
-                      const Icon(PhosphorIconsBold.caretRight, size: 14, color: AppColors.primary),
+                      const Icon(Icons.chevron_right, size: 14, color: AppColors.primary),
                     ],
                   ),
                 ),
@@ -367,7 +366,7 @@ class EmptyPrompt extends StatelessWidget {
                 children: [
                   Text(actionLabel, style: AppTypography.label.copyWith(color: AppColors.primaryAccessible)),
                   const SizedBox(width: AppSpacing.xxs),
-                  const Icon(PhosphorIconsBold.caretRight, size: 14, color: AppColors.primaryAccessible),
+                  const Icon(Icons.chevron_right, size: 14, color: AppColors.primaryAccessible),
                 ],
               ),
             ),

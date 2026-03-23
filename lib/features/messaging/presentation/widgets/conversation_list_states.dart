@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -34,7 +33,7 @@ class ConversationsEmptyState extends StatelessWidget {
                 ),
                 border: Border.all(color: _orange.withValues(alpha: 0.13), width: 1.5),
               ),
-              child: const Icon(PhosphorIconsDuotone.chatTeardropDots, size: 28, color: _orange),
+              child: const Icon(Icons.chat_bubble_outline, size: 28, color: _orange),
             ),
             const SizedBox(height: 16),
             Text('No messages yet', style: AppTypography.h3.copyWith(fontWeight: FontWeight.w800)),
@@ -179,7 +178,7 @@ class MessagesWelcomePlaceholder extends StatelessWidget {
                   ],
                 ),
                 child: const Icon(
-                  PhosphorIconsDuotone.chatTeardropDots,
+                  Icons.chat_bubble_outline,
                   size: 32,
                   color: _orange,
                 ),

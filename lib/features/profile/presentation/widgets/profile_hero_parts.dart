@@ -6,7 +6,6 @@ library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -77,7 +76,7 @@ class HeroCompletionPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              PhosphorIconsFill.checkCircle,
+              Icons.check_circle,
               size: 12,
               color: AppColors.textInverse,
             ),
@@ -210,7 +209,7 @@ class HeroAvatar extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  PhosphorIconsBold.camera,
+                  Icons.camera_alt,
                   size: 14,
                   color: AppColors.textInverse,
                 ),

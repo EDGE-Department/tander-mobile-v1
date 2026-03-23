@@ -5,7 +5,6 @@ library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -86,7 +85,7 @@ class DiscoverProfileHero extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Icon(
-        PhosphorIconsDuotone.user,
+        Icons.person,
         size: 80,
         color: AppColors.primary.withValues(alpha: 0.5),
       ),
@@ -128,7 +127,7 @@ class DiscoverProfileHero extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: const Icon(
-            PhosphorIconsBold.arrowLeft,
+            Icons.arrow_back,
             size: 20,
             color: AppColors.textInverse,
           ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -161,7 +160,7 @@ class _ThreadHeader extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(PhosphorIconsBold.arrowLeft, size: 20, color: AppColors.primary),
+            icon: const Icon(Icons.arrow_back, size: 20, color: AppColors.primary),
             tooltip: 'Back to conversations',
           ),
           _HeaderAvatar(
@@ -197,14 +196,14 @@ class _ThreadHeader extends StatelessWidget {
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(PhosphorIconsFill.phone, size: 18),
+            icon: const Icon(Icons.phone, size: 18),
             color: AppColors.primary,
             tooltip: 'Voice call',
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(PhosphorIconsFill.videoCamera, size: 18),
+            icon: const Icon(Icons.videocam, size: 18),
             color: _teal,
             tooltip: 'Video call',
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),

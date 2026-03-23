@@ -6,7 +6,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -68,7 +67,7 @@ class _State extends ConsumerState<SettingsDiscoveryScreen> {
         backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(PhosphorIconsBold.arrowLeft, size: 22),
+          icon: const Icon(Icons.arrow_back, size: 22),
           onPressed: () => context.pop(),
           tooltip: 'Back to settings',
         ),
@@ -300,7 +299,7 @@ class _HiddenToggleCard extends StatelessWidget {
               width: 40, height: 40,
               decoration: BoxDecoration(color: AppColors.success, borderRadius: AppRadius.borderMd),
               alignment: Alignment.center,
-              child: const Icon(PhosphorIconsFill.eyeSlash, size: 20, color: AppColors.textInverse),
+              child: const Icon(Icons.visibility_off_outlined, size: 20, color: AppColors.textInverse),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

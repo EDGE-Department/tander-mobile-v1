@@ -8,7 +8,6 @@ library;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -169,7 +168,7 @@ class _DiscoverProfileScreenState
                         label: 'Location',
                         child: Row(
                           children: [
-                            const Icon(PhosphorIconsFill.mapPin, size: 16, color: AppColors.primary),
+                            const Icon(Icons.location_on, size: 16, color: AppColors.primary),
                             const SizedBox(width: AppSpacing.xs),
                             Text(displayLocation, style: AppTypography.body),
                           ],
@@ -302,7 +301,7 @@ class _DiscoverProfileScreenState
                     border: Border.all(color: AppColors.border, width: 2),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(PhosphorIconsBold.x, size: 24, color: AppColors.textMuted),
+                  child: const Icon(Icons.close, size: 24, color: AppColors.textMuted),
                 ),
               ),
             ),
@@ -310,7 +309,7 @@ class _DiscoverProfileScreenState
             Expanded(
               child: TanderButton(
                 label: _isSending ? 'Sending...' : 'Connect',
-                icon: PhosphorIconsBold.userPlus,
+                icon: Icons.person_add,
                 isLoading: _isSending,
                 isDisabled: isDisabled,
                 onPressed: _handleConnect,

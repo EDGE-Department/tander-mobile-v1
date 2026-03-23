@@ -8,7 +8,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -38,35 +37,35 @@ class _NotificationToggleItem {
 const List<_NotificationToggleItem> _toggleItems = [
   _NotificationToggleItem(
     id: 'messages',
-    icon: PhosphorIconsFill.chatTeardropDots,
+    icon: Icons.chat_bubble_outline,
     label: 'New messages',
     description: 'Notify me when I receive a message',
     defaultValue: true,
   ),
   _NotificationToggleItem(
     id: 'connections',
-    icon: PhosphorIconsFill.heart,
+    icon: Icons.favorite,
     label: 'Connection requests',
     description: 'Notify me when someone wants to connect',
     defaultValue: true,
   ),
   _NotificationToggleItem(
     id: 'profileViews',
-    icon: PhosphorIconsFill.userCircle,
+    icon: Icons.account_circle,
     label: 'Profile views',
     description: 'Notify me when someone visits my profile',
     defaultValue: false,
   ),
   _NotificationToggleItem(
     id: 'community',
-    icon: PhosphorIconsFill.megaphone,
+    icon: Icons.campaign,
     label: 'Community activity',
     description: 'Replies and reactions to my posts',
     defaultValue: true,
   ),
   _NotificationToggleItem(
     id: 'tandy',
-    icon: PhosphorIconsFill.bell,
+    icon: Icons.notifications_outlined,
     label: 'Tandy reminders',
     description: 'Daily wellness check-in prompts',
     defaultValue: true,
@@ -119,7 +118,7 @@ class _SettingsNotificationsScreenState
         backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(PhosphorIconsBold.arrowLeft, size: 22),
+          icon: const Icon(Icons.arrow_back, size: 22),
           onPressed: () => context.pop(),
           tooltip: 'Back to settings',
         ),

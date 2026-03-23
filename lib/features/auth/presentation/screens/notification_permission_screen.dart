@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -33,17 +32,17 @@ class _NotificationFeature {
 
 const List<_NotificationFeature> _notificationFeatures = [
   _NotificationFeature(
-    icon: PhosphorIconsFill.chatTeardropDots,
+    icon: Icons.chat_bubble_outline,
     label: 'New messages',
     description: 'Know the moment someone sends you a message',
   ),
   _NotificationFeature(
-    icon: PhosphorIconsFill.users,
+    icon: Icons.people,
     label: 'Connection requests',
     description: 'Be notified when someone wants to connect with you',
   ),
   _NotificationFeature(
-    icon: PhosphorIconsFill.heart,
+    icon: Icons.favorite,
     label: 'Community activity',
     description: 'Reactions and comments on your posts',
   ),
@@ -173,7 +172,7 @@ class _NotificationPermissionScreenState
           ],
         ),
         child: const Icon(
-          PhosphorIconsFill.bell,
+          Icons.notifications_outlined,
           size: 42,
           color: AppColors.textInverse,
         ),

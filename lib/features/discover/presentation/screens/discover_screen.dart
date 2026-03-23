@@ -7,7 +7,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
@@ -139,7 +138,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ),
           alignment: Alignment.center,
           child: const Icon(
-            PhosphorIconsBold.slidersHorizontal,
+            Icons.tune,
             size: 20, color: AppColors.textMuted,
           ),
         ),
@@ -165,16 +164,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         child: Row(children: [
           _tabButton(
             isSelected: _activeTab == _DiscoverTab.discover,
-            activeIcon: PhosphorIconsFill.heart,
-            inactiveIcon: PhosphorIconsRegular.heart,
+            activeIcon: Icons.favorite,
+            inactiveIcon: Icons.favorite,
             label: 'Discover',
             onTap: () => setState(() => _activeTab = _DiscoverTab.discover),
           ),
           const SizedBox(width: 6),
           _tabButton(
             isSelected: _activeTab == _DiscoverTab.community,
-            activeIcon: PhosphorIconsFill.usersThree,
-            inactiveIcon: PhosphorIconsRegular.usersThree,
+            activeIcon: Icons.groups,
+            inactiveIcon: Icons.groups,
             label: 'Community',
             onTap: () => setState(() => _activeTab = _DiscoverTab.community),
           ),
@@ -264,7 +263,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: EmptyState(
-          icon: PhosphorIconsBold.warningCircle,
+          icon: Icons.error_outline,
           title: "Couldn't load profiles",
           description: message,
           actionLabel: 'Try again',
@@ -280,7 +279,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: EmptyState(
-          icon: PhosphorIconsDuotone.heart,
+          icon: Icons.favorite,
           title: "You've seen everyone!",
           description:
               'New people join every day. We will let you know when '
@@ -351,7 +350,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildCommunityPlaceholder() {
     return const Center(
       child: EmptyState(
-        icon: PhosphorIconsDuotone.usersThree,
+        icon: Icons.groups,
         title: 'Coming Soon',
         description:
             'Community stories from your neighbors are on the way. '

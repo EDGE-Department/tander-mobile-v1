@@ -6,7 +6,6 @@ library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -280,33 +279,33 @@ class _DetailChips extends StatelessWidget {
   List<_ChipData> _buildChipList() {
     final List<_ChipData> chips = [];
     if (profile.age != null) {
-      chips.add(_ChipData(PhosphorIconsFill.calendar, 'Age', '${profile.age} years old'));
+      chips.add(_ChipData(Icons.calendar_today, 'Age', '${profile.age} years old'));
     }
     if (profile.city != null || profile.country != null) {
       chips.add(_ChipData(
-        PhosphorIconsFill.globeHemisphereWest,
+        Icons.language,
         'Location',
         [profile.city, profile.country].where((p) => p != null && p.trim().isNotEmpty).join(', '),
       ));
     }
     if (profile.religion != null && profile.religion!.isNotEmpty) {
-      chips.add(_ChipData(PhosphorIconsFill.cross, 'Religion', profile.religion!));
+      chips.add(_ChipData(Icons.church, 'Religion', profile.religion!));
     }
     if (profile.civilStatus != null && profile.civilStatus!.isNotEmpty) {
-      chips.add(_ChipData(PhosphorIconsFill.heart, 'Civil Status', profile.civilStatus!));
+      chips.add(_ChipData(Icons.favorite, 'Civil Status', profile.civilStatus!));
     }
     if (profile.languages.isNotEmpty) {
-      chips.add(_ChipData(PhosphorIconsFill.translate, 'Languages', profile.languages.join(', ')));
+      chips.add(_ChipData(Icons.translate, 'Languages', profile.languages.join(', ')));
     }
     if (profile.maritalStatus != null && profile.maritalStatus!.isNotEmpty) {
-      chips.add(_ChipData(PhosphorIconsFill.heart, 'Status', profile.maritalStatus!));
+      chips.add(_ChipData(Icons.favorite, 'Status', profile.maritalStatus!));
     }
     if (profile.numberOfChildren != null) {
-      chips.add(_ChipData(PhosphorIconsFill.baby, 'Children',
+      chips.add(_ChipData(Icons.child_care, 'Children',
           profile.numberOfChildren == 0 ? 'None' : '${profile.numberOfChildren}'));
     }
     if (profile.lookingFor.isNotEmpty) {
-      chips.add(_ChipData(PhosphorIconsFill.briefcase, 'Looking for', profile.lookingFor.join(', ')));
+      chips.add(_ChipData(Icons.work_outline, 'Looking for', profile.lookingFor.join(', ')));
     }
     return chips;
   }

@@ -6,7 +6,6 @@ library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -84,7 +83,7 @@ class ProfileViewHero extends StatelessWidget {
         height: 112,
         decoration: const BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
         alignment: Alignment.center,
-        child: const Icon(PhosphorIconsDuotone.users, size: 48, color: AppColors.primary),
+        child: const Icon(Icons.people, size: 48, color: AppColors.primary),
       ),
     );
   }
@@ -122,7 +121,7 @@ class ProfileViewHero extends StatelessWidget {
             height: AppSpacing.touchMinimum,
             decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: 0.3)),
             alignment: Alignment.center,
-            child: const Icon(PhosphorIconsBold.x, size: 20, color: AppColors.textInverse),
+            child: const Icon(Icons.close, size: 20, color: AppColors.textInverse),
           ),
         ),
       ),
@@ -139,7 +138,7 @@ class ProfileViewHero extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
           decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), borderRadius: AppRadius.borderFull),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(PhosphorIconsBold.magnifyingGlassPlus, size: 12, color: AppColors.textInverse),
+            const Icon(Icons.zoom_in, size: 12, color: AppColors.textInverse),
             const SizedBox(width: AppSpacing.xxs),
             Text('1 / $count', style: AppTypography.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textInverse)),
           ]),
@@ -169,7 +168,7 @@ class ProfileViewHero extends StatelessWidget {
             if (displayLocation.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.xxs),
               Row(children: [
-                const Icon(PhosphorIconsFill.mapPin, size: 13, color: AppColors.textInverse),
+                const Icon(Icons.location_on, size: 13, color: AppColors.textInverse),
                 const SizedBox(width: AppSpacing.xxs),
                 Flexible(child: Text(displayLocation, style: AppTypography.bodySm.copyWith(
                   color: AppColors.textInverse.withValues(alpha: 0.8), fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis)),
@@ -183,7 +182,7 @@ class ProfileViewHero extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.15), borderRadius: AppRadius.borderFull,
                   border: Border.all(color: Colors.white.withValues(alpha: 0.2))),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(PhosphorIconsFill.sealCheck, size: 11, color: AppColors.textInverse),
+                  const Icon(Icons.verified, size: 11, color: AppColors.textInverse),
                   const SizedBox(width: 3),
                   Text('Verified', style: AppTypography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textInverse)),
                 ]),
@@ -234,7 +233,7 @@ class ProfileViewActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (relationship) {
       ProfileRelationship.connected => _gradientButton(
-          icon: PhosphorIconsFill.chatTeardropDots,
+          icon: Icons.chat_bubble_outline,
           label: 'Message',
           gradient: const LinearGradient(colors: [Color(0xFF0F9D94), Color(0xFF0A7C74)]),
           onTap: onMessage),
@@ -243,12 +242,12 @@ class ProfileViewActionButton extends StatelessWidget {
           decoration: BoxDecoration(color: AppColors.subtle, borderRadius: AppRadius.borderLg, border: Border.all(color: AppColors.border)),
           alignment: Alignment.center,
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(PhosphorIconsBold.clock, size: 16, color: AppColors.textMuted),
+            const Icon(Icons.access_time, size: 16, color: AppColors.textMuted),
             const SizedBox(width: AppSpacing.xs),
             Text('Request Pending', style: AppTypography.label.copyWith(color: AppColors.textMuted)),
           ])),
       ProfileRelationship.none => _gradientButton(
-          icon: PhosphorIconsBold.userPlus,
+          icon: Icons.person_add,
           label: isSendingRequest ? 'Sending...' : 'Connect with $firstName',
           gradient: const LinearGradient(colors: [Color(0xFFF07020), Color(0xFFE67E22)]),
           onTap: isSendingRequest ? null : onConnect,

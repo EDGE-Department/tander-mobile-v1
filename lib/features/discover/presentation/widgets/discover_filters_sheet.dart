@@ -5,7 +5,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/contracts/discover_contracts.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -236,7 +235,7 @@ class _DiscoverFiltersSheetState extends State<DiscoverFiltersSheet> {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(PhosphorIconsBold.check, size: 18, color: AppColors.primary),
+                        const Icon(Icons.check, size: 18, color: AppColors.primary),
                     ],
                   ),
                 ),

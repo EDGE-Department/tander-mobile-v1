@@ -8,7 +8,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -33,7 +32,7 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(PhosphorIconsBold.arrowLeft, size: 22),
+          icon: const Icon(Icons.arrow_back, size: 22),
           onPressed: () => context.pop(),
           tooltip: 'Back to profile',
         ),
@@ -47,21 +46,21 @@ class SettingsScreen extends ConsumerWidget {
             _SectionHeading(label: 'Account'),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
-              icon: PhosphorIconsFill.bell,
+              icon: Icons.notifications_outlined,
               label: 'Notifications',
               onTap: () =>
                   context.push(AppRoutes.profileSettingsNotifications),
             ),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
-              icon: PhosphorIconsFill.eye,
+              icon: Icons.visibility_outlined,
               label: 'Privacy',
               onTap: () =>
                   context.push(AppRoutes.profileSettingsPrivacy),
             ),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
-              icon: PhosphorIconsFill.shieldCheck,
+              icon: Icons.verified_user,
               label: 'Security',
               onTap: () =>
                   context.push(AppRoutes.profileSettingsSecurity),
@@ -71,7 +70,7 @@ class SettingsScreen extends ConsumerWidget {
             _SectionHeading(label: 'Preferences'),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
-              icon: PhosphorIconsFill.compassTool,
+              icon: Icons.explore,
               label: 'Discovery Settings',
               onTap: () =>
                   context.push(AppRoutes.profileSettingsDiscovery),
@@ -81,13 +80,13 @@ class SettingsScreen extends ConsumerWidget {
             _SectionHeading(label: 'Support'),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
-              icon: PhosphorIconsFill.question,
+              icon: Icons.help_outline,
               label: 'Help & FAQ',
               onTap: () => _showHelpSheet(context),
             ),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
-              icon: PhosphorIconsFill.info,
+              icon: Icons.info_outline,
               label: 'About Tander',
               onTap: () => _showAboutDialog(context),
             ),
@@ -221,7 +220,7 @@ class _SignOutCard extends StatelessWidget {
                   borderRadius: AppRadius.borderMd,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(PhosphorIconsFill.signOut, size: 18,
+                child: const Icon(Icons.logout, size: 18,
                     color: AppColors.warning),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -231,7 +230,7 @@ class _SignOutCard extends StatelessWidget {
                   style: AppTypography.label.copyWith(color: AppColors.warning),
                 ),
               ),
-              const Icon(PhosphorIconsBold.caretRight, size: 16,
+              const Icon(Icons.chevron_right, size: 16,
                   color: AppColors.textMuted),
             ],
           ),
@@ -273,7 +272,7 @@ class _DeleteAccountCard extends StatelessWidget {
                   borderRadius: AppRadius.borderMd,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(PhosphorIconsFill.trash, size: 18,
+                child: const Icon(Icons.delete_outline, size: 18,
                     color: AppColors.danger),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -283,7 +282,7 @@ class _DeleteAccountCard extends StatelessWidget {
                   style: AppTypography.label.copyWith(color: AppColors.danger),
                 ),
               ),
-              const Icon(PhosphorIconsBold.warning, size: 16,
+              const Icon(Icons.warning_amber, size: 16,
                   color: AppColors.danger),
             ],
           ),
