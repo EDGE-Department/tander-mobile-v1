@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -93,13 +92,12 @@ class TanderAvatar extends StatelessWidget {
   }
 
   Widget _networkImage() {
-    return CachedNetworkImage(
-      imageUrl: imageUrl!,
+    return Image.network(
+                  imageUrl!,
       width: size.diameter,
       height: size.diameter,
       fit: BoxFit.cover,
-      placeholder: (_, _) => _initialsFallback(),
-      errorWidget: (_, _, _) => _initialsFallback(),
+                  errorBuilder: (_, _, _) => _initialsFallback(),
     );
   }
 

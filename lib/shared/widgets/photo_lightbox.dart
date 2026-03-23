@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -129,17 +128,24 @@ class _PhotoLightboxState extends State<PhotoLightbox> {
       minScale: 1,
       maxScale: 4,
       child: Center(
-        child: CachedNetworkImage(
-          imageUrl: widget.photoUrls[index],
+        child: Image.network(
+          widget.photoUrls[index],
           fit: BoxFit.contain,
-          placeholder: (_, _) => const Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(AppColors.textInverse),
-            ),
-          ),
-          errorWidget: (_, _, _) => const Center(
+          loadingBuilder: (_, child, progress) {
+            if (progress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: progress.expectedTotalBytes != null
+                    ? progress.cumulativeBytesLoaded /
+                        progress.expectedTotalBytes!
+                    : null,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.textInverse,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (_, _, _) => const Center(
             child: Icon(
               Icons.broken_image_outlined,
               size: 48,

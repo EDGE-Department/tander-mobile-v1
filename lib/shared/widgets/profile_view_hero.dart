@@ -4,7 +4,6 @@
 /// under 400 lines.
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -50,11 +49,10 @@ class ProfileViewHero extends StatelessWidget {
           if (hasPhoto)
             GestureDetector(
               onTap: onPhotoTap,
-              child: CachedNetworkImage(
-                imageUrl: photoUrl!,
+              child: Image.network(
+                  photoUrl!,
                 fit: BoxFit.cover,
-                placeholder: (_, _) => Container(color: AppColors.subtle),
-                errorWidget: (_, _, _) => _placeholderBackground(),
+                  errorBuilder: (_, _, _) => _placeholderBackground(),
               ),
             )
           else

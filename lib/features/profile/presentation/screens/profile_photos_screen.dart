@@ -5,7 +5,6 @@
 /// Empty slots offer an add-photo action via [image_picker].
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -266,10 +265,9 @@ class _FilledSlot extends StatelessWidget {
     return ClipRRect(
       borderRadius: AppRadius.borderLg,
       child: Stack(fit: StackFit.expand, children: [
-        CachedNetworkImage(
-          imageUrl: photoUrl, fit: BoxFit.cover,
-          placeholder: (_, _) => Container(color: AppColors.subtle),
-          errorWidget: (_, _, _) => Container(color: AppColors.subtle, alignment: Alignment.center, child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted)),
+        Image.network(
+                  photoUrl, fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(color: AppColors.subtle, alignment: Alignment.center, child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted)),
         ),
         if (isMain) Positioned(bottom: AppSpacing.xs, left: AppSpacing.xs, child: Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),

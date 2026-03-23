@@ -5,7 +5,6 @@
 /// each file under 400 lines.
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -90,11 +89,10 @@ class _PhotoTile extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            CachedNetworkImage(
-              imageUrl: url,
+            Image.network(
+                  url,
               fit: BoxFit.cover,
-              placeholder: (_, _) => Container(color: AppColors.subtle),
-              errorWidget: (_, _, _) => Container(
+                  errorBuilder: (_, _, _) => Container(
                 color: AppColors.subtle,
                 alignment: Alignment.center,
                 child: const Icon(

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
@@ -331,10 +330,9 @@ class _ImageMessage extends StatelessWidget {
     final imageWidget = imageUrl != null
         ? ClipRRect(
             borderRadius: borderRadius,
-            child: CachedNetworkImage(
-              imageUrl: imageUrl, width: 280, fit: BoxFit.cover,
-              placeholder: (_, _) => const _ImagePlaceholder(),
-              errorWidget: (_, _, _) => const _ImagePlaceholder(),
+            child: Image.network(
+                  imageUrl, width: 280, fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const _ImagePlaceholder(),
             ),
           )
         : const _ImagePlaceholder();

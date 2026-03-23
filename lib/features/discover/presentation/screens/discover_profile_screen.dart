@@ -5,7 +5,6 @@
 /// `discover_profile_hero.dart`.
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -260,11 +259,10 @@ class _DiscoverProfileScreenState
       itemBuilder: (context, index) {
         return ClipRRect(
           borderRadius: AppRadius.borderMd,
-          child: CachedNetworkImage(
-            imageUrl: photos[index],
+          child: Image.network(
+                  photos[index],
             fit: BoxFit.cover,
-            placeholder: (_, _) => Container(color: AppColors.subtle),
-            errorWidget: (_, _, _) => Container(
+                  errorBuilder: (_, _, _) => Container(
               color: AppColors.subtle,
               alignment: Alignment.center,
               child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),

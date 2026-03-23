@@ -4,7 +4,6 @@
 /// Extracted from `profile_hero.dart` to keep each file under 400 lines.
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -169,12 +168,10 @@ class HeroAvatar extends StatelessWidget {
             ),
             child: ClipOval(
               child: hasImage
-                  ? CachedNetworkImage(
-                      imageUrl: gallery.first,
+                  ? Image.network(
+                  gallery.first,
                       fit: BoxFit.cover,
-                      placeholder: (_, _) =>
-                          _InitialsFallback(displayName: displayName),
-                      errorWidget: (_, _, _) =>
+                  errorBuilder: (_, _, _) =>
                           _InitialsFallback(displayName: displayName),
                     )
                   : _InitialsFallback(displayName: displayName),

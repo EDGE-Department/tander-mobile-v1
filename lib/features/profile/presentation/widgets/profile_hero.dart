@@ -6,7 +6,6 @@
 /// 180 px cover. A [CompletionRingPainter] draws the progress arc.
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -98,11 +97,10 @@ class ProfileHero extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           if (coverUrl != null && coverUrl.isNotEmpty)
-            CachedNetworkImage(
-              imageUrl: coverUrl,
+            Image.network(
+                  coverUrl,
               fit: BoxFit.cover,
-              placeholder: (_, _) => heroDefaultGradient(),
-              errorWidget: (_, _, _) => heroDefaultGradient(),
+                  errorBuilder: (_, _, _) => heroDefaultGradient(),
             )
           else
             heroDefaultGradient(),

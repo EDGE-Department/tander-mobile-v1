@@ -3,7 +3,6 @@
 /// Extracted from discover_profile_screen.dart to keep files under 400 lines.
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
@@ -57,11 +56,10 @@ class DiscoverProfileHero extends StatelessWidget {
         itemCount: allPhotos.length,
         onPageChanged: onPageChanged,
         itemBuilder: (context, index) {
-          return CachedNetworkImage(
-            imageUrl: allPhotos[index],
+          return Image.network(
+                  allPhotos[index],
             fit: BoxFit.cover,
-            placeholder: (_, _) => Container(color: AppColors.subtle),
-            errorWidget: (_, _, _) => Container(
+                  errorBuilder: (_, _, _) => Container(
               color: AppColors.subtle,
               alignment: Alignment.center,
               child: const Icon(
