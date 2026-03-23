@@ -356,18 +356,22 @@ class _MarqueeContent extends StatelessWidget {
       color: Colors.white.withValues(alpha: 0.20),
     );
 
-    // Duplicate text for seamless loop
-    const fullText = '$_marqueeText     $_marqueeText     ';
-
     return LayoutBuilder(
       builder: (_, constraints) {
-        final offset = -progress * constraints.maxWidth;
+        // Use a large fixed width for the text so we can scroll across it
+        const textWidth = 1200.0;
+        final offset = -progress * textWidth;
         return Transform.translate(
           offset: Offset(offset, 0),
-          child: Row(
-            children: [
-              Text(fullText, style: textStyle, maxLines: 1),
-            ],
+          child: SizedBox(
+            width: textWidth * 2,
+            child: Text(
+              '$_marqueeText     $_marqueeText     $_marqueeText     ',
+              style: textStyle,
+              maxLines: 1,
+              overflow: TextOverflow.visible,
+              softWrap: false,
+            ),
           ),
         );
       },
