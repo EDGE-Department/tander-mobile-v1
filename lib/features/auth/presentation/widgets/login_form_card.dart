@@ -261,7 +261,7 @@ class _BrandHeader extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               'Tander',
-              style: AppTypography.h3.copyWith(
+              style: AppTypography.brandWordmark(
                 fontSize: 16,
                 letterSpacing: -0.3,
               ),

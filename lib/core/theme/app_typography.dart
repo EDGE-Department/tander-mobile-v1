@@ -21,6 +21,23 @@ abstract final class AppTypography {
   static String get bodyFontFamily =>
       GoogleFonts.plusJakartaSans().fontFamily!;
 
+  // ── Brand wordmark (script/chancery) ─────────────────────────
+
+  /// Cursive script font matching the web's `font-chancery` (Apple Chancery).
+  /// Used for the "Tander" wordmark throughout the app.
+  static TextStyle brandWordmark({
+    double fontSize = 24,
+    Color color = AppColors.textStrong,
+    double letterSpacing = -0.5,
+  }) =>
+      GoogleFonts.dancingScript(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: letterSpacing,
+        height: 1.0,
+      );
+
   // ── Display styles (Bricolage Grotesque) ─────────────────────
 
   /// 48 px — hero banners, splash headings.

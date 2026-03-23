@@ -193,7 +193,7 @@ class DesktopHeroPanel extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           'Tander',
-          style: AppTypography.h2.copyWith(
+          style: AppTypography.brandWordmark(
             fontSize: 24,
             color: Colors.white,
             letterSpacing: -0.3,
@@ -224,13 +224,14 @@ class DesktopHeroPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Large "Tander" wordmark
+        // Large "Tander" wordmark — script/chancery font matching web
         Text(
           'Tander',
-          style: AppTypography.displayXl.copyWith(
+          style: AppTypography.brandWordmark(
             fontSize: 80,
             color: Colors.white,
             letterSpacing: -2.4,
+          ).copyWith(
             height: 0.95,
             shadows: const [
               Shadow(
