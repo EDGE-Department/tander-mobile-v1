@@ -47,7 +47,8 @@ class MessagesSidebarContent extends ConsumerWidget {
             ),
             child: switch (conversationsState) {
               ConversationsLoading() => const ConversationsListSkeleton(),
-              ConversationsError(:final exception) => ConversationsErrorView(
+              ConversationsError(:final exception) =>
+                ConversationsErrorView(
                   errorMessage: exception.userMessage,
                   onRetry: () => ref
                       .read(conversationsNotifierProvider.notifier)
@@ -64,6 +65,8 @@ class MessagesSidebarContent extends ConsumerWidget {
     );
   }
 }
+
+// ---- Header --------------------------------------------------------------
 
 class _MessagesHeader extends ConsumerWidget {
   const _MessagesHeader({required this.unreadCount});
@@ -83,29 +86,53 @@ class _MessagesHeader extends ConsumerWidget {
         color: Color(0xFAFFFDF9),
         border: Border(bottom: BorderSide(color: Color(0xCCEDE8DE))),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          _TitleRow(unreadCount: unreadCount),
-          const SizedBox(height: AppSpacing.sm),
-          _SearchBar(
-            onChanged: (query) => ref
-                .read(conversationsNotifierProvider.notifier)
-                .setSearchQuery(query),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _TitleRow(unreadCount: unreadCount),
+              const SizedBox(height: AppSpacing.sm),
+              _SearchBar(
+                onChanged: (query) => ref
+                    .read(conversationsNotifierProvider.notifier)
+                    .setSearchQuery(query),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _FilterTabs(
+                activeTab: activeTab,
+                unreadCount: unreadCount,
+                onTabChanged: (tab) => ref
+                    .read(conversationsNotifierProvider.notifier)
+                    .setFilterTab(tab),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _FilterTabs(
-            activeTab: activeTab,
-            unreadCount: unreadCount,
-            onTabChanged: (tab) => ref
-                .read(conversationsNotifierProvider.notifier)
-                .setFilterTab(tab),
+          // Gradient accent line at bottom (orange -> teal -> transparent)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 1,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0x30E67E22),
+                    Color(0x180F9D94),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+// ---- Title row -----------------------------------------------------------
 
 class _TitleRow extends StatelessWidget {
   const _TitleRow({required this.unreadCount});
@@ -188,6 +215,8 @@ class _TitleRow extends StatelessWidget {
   }
 }
 
+// ---- Search bar ----------------------------------------------------------
+
 class _SearchBar extends StatelessWidget {
   const _SearchBar({required this.onChanged});
 
@@ -205,7 +234,8 @@ class _SearchBar extends StatelessWidget {
         ),
         decoration: InputDecoration(
           hintText: 'Search by name\u2026',
-          hintStyle: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+          hintStyle:
+              AppTypography.bodySm.copyWith(color: AppColors.textMuted),
           prefixIcon: const Icon(
             Icons.search,
             size: 15,
@@ -224,13 +254,16 @@ class _SearchBar extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: _orange.withValues(alpha: 0.31)),
+            borderSide:
+                BorderSide(color: _orange.withValues(alpha: 0.50)),
           ),
         ),
       ),
     );
   }
 }
+
+// ---- Filter tabs ---------------------------------------------------------
 
 class _FilterTabs extends StatelessWidget {
   const _FilterTabs({
@@ -264,6 +297,8 @@ class _FilterTabs extends StatelessWidget {
   }
 }
 
+// ---- Tab chip ------------------------------------------------------------
+
 class _TabChip extends StatelessWidget {
   const _TabChip({
     required this.label,
@@ -283,17 +318,21 @@ class _TabChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? _orange : Colors.white.withValues(alpha: 0.60),
+          color: isActive
+              ? _orange
+              : Colors.white.withValues(alpha: 0.60),
           borderRadius: AppRadius.borderFull,
           border: isActive
               ? null
-              : Border.all(color: const Color(0xE0DCD2C4), width: 1.5),
+              : Border.all(
+                  color: const Color(0xE0DCD2C4), width: 1.5),
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: _orange.withValues(alpha: 0.30),
+                    color: _orange.withValues(alpha: 0.19),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -308,7 +347,9 @@ class _TabChip extends StatelessWidget {
               style: AppTypography.label.copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isActive ? Colors.white : const Color(0xFF7C6E60),
+                color: isActive
+                    ? Colors.white
+                    : const Color(0xFF7C6E60),
               ),
             ),
             if (badgeCount > 0) ...[
@@ -316,7 +357,8 @@ class _TabChip extends StatelessWidget {
               Container(
                 constraints: const BoxConstraints(minWidth: 18),
                 height: 18,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   borderRadius: AppRadius.borderFull,
                   color: isActive
@@ -340,6 +382,8 @@ class _TabChip extends StatelessWidget {
     );
   }
 }
+
+// ---- Conversation list view (loaded state) -------------------------------
 
 class _ConversationListView extends ConsumerWidget {
   const _ConversationListView({
@@ -373,7 +417,8 @@ class _ConversationListView extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Text(
             'No conversations match your search.',
-            style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+            style:
+                AppTypography.bodySm.copyWith(color: AppColors.textMuted),
           ),
         ),
       );
@@ -384,11 +429,12 @@ class _ConversationListView extends ConsumerWidget {
       itemCount: filtered.length,
       itemBuilder: (context, index) => ConversationRow(
         conversation: filtered[index],
-        isActive: activeConversationId == filtered[index].conversationId,
-        onTap: () => onSelectConversation(filtered[index].conversationId),
+        isActive:
+            activeConversationId == filtered[index].conversationId,
+        onTap: () =>
+            onSelectConversation(filtered[index].conversationId),
         entranceDelay: Duration(milliseconds: index * 40),
       ),
     );
   }
 }
-

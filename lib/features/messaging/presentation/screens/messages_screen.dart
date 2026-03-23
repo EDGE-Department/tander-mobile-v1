@@ -7,15 +7,15 @@ import 'package:tander_flutter_v3/features/messaging/presentation/screens/messag
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/conversation_list_states.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/messages_sidebar_widgets.dart';
 
-const double _tabletBreakpoint = 600;
-const double _sidebarWidth = 392;
+const double _desktopBreakpoint = 1024;
+const double _sidebarMaxWidth = 392;
 
 /// Main Messages screen with embedded split-panel messaging.
 ///
-/// **Phone** (shortestSide <= 600): conversation list and thread panel swap
+/// **Mobile** (width < 1024): conversation list and thread panel swap
 /// in-place using state-based visibility. No GoRouter navigation.
 ///
-/// **Tablet** (shortestSide > 600): sidebar 392 px + thread flex-1 side by side.
+/// **Desktop** (width >= 1024): sidebar 392 px + thread flex-1 side by side.
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
@@ -54,18 +54,17 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               padding: const EdgeInsets.all(AppSpacing.sm),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final isTablet = MediaQuery.of(context).size.shortestSide >
-                      _tabletBreakpoint;
+                  final isDesktop = constraints.maxWidth >= _desktopBreakpoint;
 
-                  if (isTablet) {
-                    return _TabletLayout(
+                  if (isDesktop) {
+                    return _DesktopLayout(
                       activeConversationId: _activeConversationId,
                       onSelectConversation: _selectConversation,
                       onClearSelection: _clearSelection,
                     );
                   }
 
-                  return _PhoneLayout(
+                  return _MobileLayout(
                     activeConversationId: _activeConversationId,
                     isThreadOpen: isThreadOpen,
                     onSelectConversation: _selectConversation,
@@ -81,7 +80,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   }
 }
 
-// ─── Atmospheric overlays ─────────────────────────────────────────────────
+// ---- Atmospheric overlays ------------------------------------------------
 
 class _AtmosphericOverlays extends StatelessWidget {
   const _AtmosphericOverlays();
@@ -99,18 +98,21 @@ class _AtmosphericOverlays extends StatelessWidget {
 class _RadialOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    // White glow at 14 %, 10 %
     _paintRadial(
       canvas,
       center: Offset(size.width * 0.14, size.height * 0.10),
       radius: size.width * 0.18,
       color: const Color(0x9EFFFFFF),
     );
+    // Teal glow at 82 %, 12 %
     _paintRadial(
       canvas,
       center: Offset(size.width * 0.82, size.height * 0.12),
       radius: size.width * 0.18,
       color: const Color(0x140F9D94),
     );
+    // Orange glow at 78 %, 82 %
     _paintRadial(
       canvas,
       center: Offset(size.width * 0.78, size.height * 0.82),
@@ -136,10 +138,10 @@ class _RadialOverlayPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ─── Phone layout ─────────────────────────────────────────────────────────
+// ---- Mobile layout -------------------------------------------------------
 
-class _PhoneLayout extends StatelessWidget {
-  const _PhoneLayout({
+class _MobileLayout extends StatelessWidget {
+  const _MobileLayout({
     required this.activeConversationId,
     required this.isThreadOpen,
     required this.onSelectConversation,
@@ -167,10 +169,10 @@ class _PhoneLayout extends StatelessWidget {
   }
 }
 
-// ─── Tablet layout ────────────────────────────────────────────────────────
+// ---- Desktop layout ------------------------------------------------------
 
-class _TabletLayout extends StatelessWidget {
-  const _TabletLayout({
+class _DesktopLayout extends StatelessWidget {
+  const _DesktopLayout({
     required this.activeConversationId,
     required this.onSelectConversation,
     required this.onClearSelection,
@@ -184,8 +186,8 @@ class _TabletLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SizedBox(
-          width: _sidebarWidth,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _sidebarMaxWidth),
           child: _SidebarPanel(
             activeConversationId: activeConversationId,
             onSelectConversation: onSelectConversation,
@@ -205,7 +207,7 @@ class _TabletLayout extends StatelessWidget {
   }
 }
 
-// ─── Sidebar panel (visual container) ─────────────────────────────────────
+// ---- Sidebar panel (visual container) ------------------------------------
 
 class _SidebarPanel extends StatelessWidget {
   const _SidebarPanel({
@@ -249,7 +251,7 @@ class _SidebarPanel extends StatelessWidget {
   }
 }
 
-// ─── Thread panel (visual container) ──────────────────────────────────────
+// ---- Thread panel (visual container) -------------------------------------
 
 class _ThreadPanel extends StatelessWidget {
   const _ThreadPanel({

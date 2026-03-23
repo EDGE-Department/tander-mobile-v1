@@ -83,7 +83,7 @@ class _ConversationRowState extends State<ConversationRow>
   }
 }
 
-// ─── Row content ──────────────────────────────────────────────────────────
+// ---- Row content ---------------------------------------------------------
 
 class _ConversationRowContent extends StatelessWidget {
   const _ConversationRowContent({
@@ -113,7 +113,8 @@ class _ConversationRowContent extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             constraints: const BoxConstraints(minHeight: 68),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isActive ? Colors.white : Colors.transparent,
               borderRadius: AppRadius.borderLg,
@@ -121,6 +122,21 @@ class _ConversationRowContent extends StatelessWidget {
                 left: BorderSide(
                   color: isActive ? _orange : Colors.transparent,
                   width: 3,
+                ),
+                top: BorderSide(
+                  color: isActive
+                      ? _orange.withValues(alpha: 0.18)
+                      : Colors.transparent,
+                ),
+                right: BorderSide(
+                  color: isActive
+                      ? _orange.withValues(alpha: 0.18)
+                      : Colors.transparent,
+                ),
+                bottom: BorderSide(
+                  color: isActive
+                      ? _orange.withValues(alpha: 0.18)
+                      : Colors.transparent,
                 ),
               ),
               boxShadow: isActive
@@ -174,7 +190,7 @@ class _ConversationRowContent extends StatelessWidget {
   }
 }
 
-// ─── Name + time row ──────────────────────────────────────────────────────
+// ---- Name + time row -----------------------------------------------------
 
 class _NameTimeRow extends StatelessWidget {
   const _NameTimeRow({
@@ -240,7 +256,7 @@ class _NameTimeRow extends StatelessWidget {
   }
 }
 
-// ─── Preview + badge row ──────────────────────────────────────────────────
+// ---- Preview + badge row -------------------------------------------------
 
 class _PreviewBadgeRow extends StatelessWidget {
   const _PreviewBadgeRow({
@@ -324,7 +340,7 @@ class _PreviewBadgeRow extends StatelessWidget {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
+// ---- Helpers -------------------------------------------------------------
 
 /// Formats a [DateTime] into a relative time string for conversation previews.
 String formatRelativeTime(DateTime date) {
