@@ -285,9 +285,17 @@ class _HeaderSection extends StatelessWidget {
                         Text(
                           'Tander',
                           style: AppTypography.brandWordmark(
-                            fontSize: 20,
+                            fontSize: 26,
                             color: Colors.white,
                             letterSpacing: -0.3,
+                          ).copyWith(
+                            shadows: const [
+                              Shadow(
+                                color: Color(0x40000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
                         ),
                       ],
