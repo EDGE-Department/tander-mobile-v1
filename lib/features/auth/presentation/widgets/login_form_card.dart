@@ -73,20 +73,38 @@ class LoginFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWide = MediaQuery.sizeOf(context).shortestSide > 600 ||
+        MediaQuery.sizeOf(context).width > MediaQuery.sizeOf(context).height;
+
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(_panelTopRadius),
-          topRight: Radius.circular(_panelTopRadius),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1F000000), // 12% black
-            blurRadius: 28,
-            offset: Offset(0, -8),
-          ),
-        ],
+        borderRadius: isWide
+            ? BorderRadius.circular(_panelTopRadius)
+            : const BorderRadius.only(
+                topLeft: Radius.circular(_panelTopRadius),
+                topRight: Radius.circular(_panelTopRadius),
+              ),
+        boxShadow: isWide
+            ? const [
+                BoxShadow(
+                  color: Color(0x29E6A032),
+                  blurRadius: 60,
+                  offset: Offset(0, 20),
+                ),
+                BoxShadow(
+                  color: Color(0x12000000),
+                  blurRadius: 100,
+                  offset: Offset(0, 40),
+                ),
+              ]
+            : const [
+                BoxShadow(
+                  color: Color(0x1F000000),
+                  blurRadius: 28,
+                  offset: Offset(0, -8),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
