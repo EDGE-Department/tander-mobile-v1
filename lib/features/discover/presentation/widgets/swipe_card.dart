@@ -1,8 +1,8 @@
-/// Tinder-style swipe card -- the signature discover interaction.
+/// Tinder-style swipe card — pixel-perfect port of tander-web swipe-card.tsx.
 ///
 /// Uses [GestureDetector] + [AnimationController] with spring physics
-/// for full control over the drag, fling, and snap-back behaviour.
-/// Overlay widgets (stamps, profile info, photo indicators) are in
+/// for full control over drag, fling, and snap-back behaviour.
+/// Overlay widgets (stamps, profile info, photo indicators) live in
 /// `swipe_card_overlay.dart`.
 library;
 
@@ -18,7 +18,7 @@ import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/swipe_card_overlay.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_avatar.dart';
 
-// ── Constants ─────────────────────────────────────────────────────────
+// ── Constants (from web swipe-card.tsx) ─────────────────────────────────
 
 const double _swipeThresholdPx = 100;
 const double _velocityThresholdPxPerSec = 600;
@@ -26,13 +26,19 @@ const double _maxRotationDeg = 18;
 const double _dragRange = 250;
 const double _stampAppearStart = 25;
 const double _stampAppearEnd = 120;
+const double _dragElastic = 0.18;
 
 const double _snapBackStiffness = 500;
 const double _snapBackDamping = 32;
 const double _entryStiffness = 380;
 const double _entryDamping = 28;
 
-// ── Widget ───────────────────────────────────────────────────────────
+const int _flingDurationMs = 380;
+const int _wiggleDurationMs = 850;
+const int _wiggleDelayMs = 900;
+const double _wiggleAmplitude = 22;
+
+// ── Widget ──────────────────────────────────────────────────────────────
 
 class SwipeCard extends StatefulWidget {
   const SwipeCard({
@@ -109,7 +115,10 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     _entryScale = Tween<double>(begin: 0.94, end: 1.0).animate(
       CurvedAnimation(
         parent: _entryController,
-        curve: _SpringCurve(stiffness: _entryStiffness, damping: _entryDamping),
+        curve: const _SpringCurve(
+          stiffness: _entryStiffness,
+          damping: _entryDamping,
+        ),
       ),
     );
     _entryController.forward();
@@ -118,7 +127,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   void _initWiggleController() {
     _wiggleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 850),
+      duration: const Duration(milliseconds: _wiggleDurationMs),
     )..addListener(_onWiggleTick);
   }
 
@@ -130,10 +139,10 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // ── Hint wiggle ───────────────────────────────────────────────────
+  // ── Hint wiggle (web: x [0,22,-22,0] 850ms delay 900ms) ─────────────
 
   void _scheduleHintWiggle() {
-    Future.delayed(const Duration(milliseconds: 900), () {
+    Future.delayed(const Duration(milliseconds: _wiggleDelayMs), () {
       if (mounted && !_isDragging && !_isFlung) {
         _wiggleController.forward(from: 0);
       }
@@ -145,16 +154,18 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     final double progress = _wiggleController.value;
     double wiggleX;
     if (progress < 0.25) {
-      wiggleX = 22 * (progress / 0.25);
+      wiggleX = _wiggleAmplitude * (progress / 0.25);
     } else if (progress < 0.75) {
-      wiggleX = 22 - 44 * ((progress - 0.25) / 0.5);
+      wiggleX = _wiggleAmplitude -
+          (2 * _wiggleAmplitude) * ((progress - 0.25) / 0.5);
     } else {
-      wiggleX = -22 + 22 * ((progress - 0.75) / 0.25);
+      wiggleX = -_wiggleAmplitude +
+          _wiggleAmplitude * ((progress - 0.75) / 0.25);
     }
     setState(() => _dragX = wiggleX);
   }
 
-  // ── Snap-back ─────────────────────────────────────────────────────
+  // ── Snap-back (web: stiffness 500, damping 32) ───────────────────────
 
   void _onSnapTick() {
     setState(() {
@@ -165,15 +176,17 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   }
 
   void _snapBack() {
-    final spring = SpringDescription(
+    const spring = SpringDescription(
       mass: 1,
       stiffness: _snapBackStiffness,
       damping: _snapBackDamping,
     );
-    _snapController.animateWith(SpringSimulation(spring, _dragX, 0, 0));
+    _snapController.animateWith(
+      SpringSimulation(spring, _dragX, 0, 0),
+    );
   }
 
-  // ── Fling off screen ──────────────────────────────────────────────
+  // ── Fling off screen (web: exit width+300, ease [0.32,0,0.67,0] 380ms)
 
   void _flingOffScreen({required bool isLike}) {
     _isFlung = true;
@@ -181,9 +194,11 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     final targetX = isLike ? screenWidth + 300 : -(screenWidth + 300);
 
     _snapController
-        .animateTo(targetX,
-            duration: const Duration(milliseconds: 380),
-            curve: const Cubic(0.32, 0, 0.67, 0))
+        .animateTo(
+      targetX,
+      duration: const Duration(milliseconds: _flingDurationMs),
+      curve: const Cubic(0.32, 0, 0.67, 0),
+    )
         .then((_) {
       if (!mounted) return;
       if (isLike) {
@@ -194,7 +209,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     });
   }
 
-  // ── Gesture handlers ──────────────────────────────────────────────
+  // ── Gesture handlers ─────────────────────────────────────────────────
 
   void _onPanStart(DragStartDetails details) {
     if (widget.isDisabled || _isFlung) return;
@@ -207,7 +222,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     if (!_isDragging || _isFlung) return;
     setState(() {
       _dragX += details.delta.dx;
-      _dragY += details.delta.dy * 0.18;
+      _dragY += details.delta.dy * _dragElastic;
     });
     widget.onDragProgress((_dragX / 150).clamp(-1.0, 1.0));
   }
@@ -217,7 +232,8 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     _isDragging = false;
     final velocityX = details.velocity.pixelsPerSecond.dx;
 
-    if (_dragX > _swipeThresholdPx || velocityX > _velocityThresholdPxPerSec) {
+    if (_dragX > _swipeThresholdPx ||
+        velocityX > _velocityThresholdPxPerSec) {
       widget.onDragProgress(1);
       _flingOffScreen(isLike: true);
     } else if (_dragX < -_swipeThresholdPx ||
@@ -244,7 +260,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     });
   }
 
-  // ── Build ─────────────────────────────────────────────────────────
+  // ── Build ─────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +297,11 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.xxl),
         boxShadow: const [
-          BoxShadow(color: Color(0x29000000), blurRadius: 24, offset: Offset(0, 8)),
+          BoxShadow(
+            color: Color(0x29000000),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
         ],
       ),
       child: Stack(
@@ -338,7 +358,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   }
 }
 
-/// Custom curve that approximates a spring easing.
+/// Custom curve that approximates a spring easing for the entry animation.
 class _SpringCurve extends Curve {
   const _SpringCurve({required this.stiffness, required this.damping});
   final double stiffness;

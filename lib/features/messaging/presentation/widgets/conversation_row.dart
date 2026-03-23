@@ -4,60 +4,164 @@ import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/messaging/presentation/widgets/conversation_avatar_ring.dart';
 
 const Color _orange = AppColors.primary;
 
-/// A single conversation row showing avatar, name, preview, and unread badge.
-class ConversationRow extends StatelessWidget {
+/// A single conversation row with avatar, name, preview, unread badge,
+/// entrance animation, and active-state styling.
+///
+/// Matches the web `ConversationRow` component pixel-for-pixel.
+class ConversationRow extends StatefulWidget {
   const ConversationRow({
     super.key,
     required this.conversation,
+    required this.isActive,
+    required this.onTap,
+    this.entranceDelay = Duration.zero,
+  });
+
+  final ConversationItem conversation;
+  final bool isActive;
+  final VoidCallback onTap;
+  final Duration entranceDelay;
+
+  @override
+  State<ConversationRow> createState() => _ConversationRowState();
+}
+
+class _ConversationRowState extends State<ConversationRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _entranceController;
+  late final Animation<double> _opacityAnimation;
+  late final Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _opacityAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Cubic(0.22, 1, 0.36, 1),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 6),
+      end: Offset.zero,
+    ).animate(_opacityAnimation);
+
+    Future.delayed(widget.entranceDelay, () {
+      if (mounted) _entranceController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _entranceController,
+      builder: (context, child) => Opacity(
+        opacity: _opacityAnimation.value,
+        child: Transform.translate(
+          offset: _slideAnimation.value,
+          child: child,
+        ),
+      ),
+      child: _ConversationRowContent(
+        conversation: widget.conversation,
+        isActive: widget.isActive,
+        onTap: widget.onTap,
+      ),
+    );
+  }
+}
+
+// ─── Row content ──────────────────────────────────────────────────────────
+
+class _ConversationRowContent extends StatelessWidget {
+  const _ConversationRowContent({
+    required this.conversation,
+    required this.isActive,
     required this.onTap,
   });
 
   final ConversationItem conversation;
+  final bool isActive;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final participant = conversation.participant;
-    final lastMessage = conversation.lastMessage;
-    final hasUnread = conversation.unreadCount > 0 && !conversation.isMuted;
-
-    final previewText = lastMessage == null
-        ? 'Start the conversation'
-        : lastMessage.mediaType == MessageMediaType.image
-            ? 'Photo'
-            : lastMessage.mediaType == MessageMediaType.voice
-                ? 'Voice message'
-                : lastMessage.body ?? '';
+    final hasUnread =
+        conversation.unreadCount > 0 && !conversation.isMuted;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.borderLg,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.borderLg,
           onTap: onTap,
-          child: Container(
+          hoverColor: const Color(0x0FE67E22),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
             constraints: const BoxConstraints(minHeight: 68),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isActive ? Colors.white : Colors.transparent,
+              borderRadius: AppRadius.borderLg,
+              border: Border(
+                left: BorderSide(
+                  color: isActive ? _orange : Colors.transparent,
+                  width: 3,
+                ),
+              ),
+              boxShadow: isActive
+                  ? const [
+                      BoxShadow(
+                        color: Color(0x1AE67E22),
+                        blurRadius: 12,
+                        offset: Offset(0, 2),
+                      ),
+                      BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 3,
+                        offset: Offset(0, 1),
+                      ),
+                    ]
+                  : null,
+            ),
             child: Row(
               children: [
                 ConversationAvatarRing(
-                  photoUrl: participant.profilePhotoUrl,
-                  username: participant.username,
+                  photoUrl: conversation.participant.profilePhotoUrl,
+                  username: conversation.participant.username,
                   hasUnread: hasUnread,
+                  isOnline: conversation.participant.isOnline,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _NameTimeRow(participant: participant, lastMessage: lastMessage, hasUnread: hasUnread),
+                      _NameTimeRow(
+                        participant: conversation.participant,
+                        lastMessage: conversation.lastMessage,
+                        hasUnread: hasUnread,
+                      ),
                       const SizedBox(height: 4),
-                      _PreviewBadgeRow(previewText: previewText, unreadCount: conversation.unreadCount, hasUnread: hasUnread),
+                      _PreviewBadgeRow(
+                        lastMessage: conversation.lastMessage,
+                        unreadCount: conversation.unreadCount,
+                        hasUnread: hasUnread,
+                      ),
                     ],
                   ),
                 ),
@@ -73,7 +177,11 @@ class ConversationRow extends StatelessWidget {
 // ─── Name + time row ──────────────────────────────────────────────────────
 
 class _NameTimeRow extends StatelessWidget {
-  const _NameTimeRow({required this.participant, required this.lastMessage, required this.hasUnread});
+  const _NameTimeRow({
+    required this.participant,
+    required this.lastMessage,
+    required this.hasUnread,
+  });
 
   final ParticipantSummary participant;
   final LastMessagePreview? lastMessage;
@@ -84,20 +192,49 @@ class _NameTimeRow extends StatelessWidget {
     return Row(
       children: [
         if (participant.isOnline) ...[
-          Container(width: 7, height: 7, decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.success)),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.success,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x1F22C55E),
+                  spreadRadius: 3,
+                ),
+              ],
+            ),
+          ),
           const SizedBox(width: 7),
         ],
         Expanded(
           child: Text(
-            participant.username, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: AppTypography.label.copyWith(fontSize: 15.5, fontWeight: hasUnread ? FontWeight.w800 : FontWeight.w600, color: const Color(0xFF1A1209)),
+            participant.username,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.label.copyWith(
+              fontSize: 15.5,
+              fontWeight: hasUnread ? FontWeight.w800 : FontWeight.w600,
+              color: const Color(0xFF1A1209),
+              letterSpacing: -0.015 * 15.5,
+              height: 1.2,
+            ),
           ),
         ),
-        if (lastMessage != null)
+        if (lastMessage != null) ...[
+          const SizedBox(width: 8),
           Text(
             formatRelativeTime(lastMessage!.sentAt),
-            style: AppTypography.caption.copyWith(fontSize: 12, color: hasUnread ? const Color(0xFF904C18) : const Color(0xFF8A7E74), fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w400),
+            style: AppTypography.caption.copyWith(
+              fontSize: 12,
+              color: hasUnread
+                  ? const Color(0xFF904C18)
+                  : const Color(0xFF8A7E74),
+              fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w400,
+            ),
           ),
+        ],
       ],
     );
   }
@@ -106,11 +243,30 @@ class _NameTimeRow extends StatelessWidget {
 // ─── Preview + badge row ──────────────────────────────────────────────────
 
 class _PreviewBadgeRow extends StatelessWidget {
-  const _PreviewBadgeRow({required this.previewText, required this.unreadCount, required this.hasUnread});
+  const _PreviewBadgeRow({
+    required this.lastMessage,
+    required this.unreadCount,
+    required this.hasUnread,
+  });
 
-  final String previewText;
+  final LastMessagePreview? lastMessage;
   final int unreadCount;
   final bool hasUnread;
+
+  String get _previewText {
+    if (lastMessage == null) return 'Start the conversation';
+    if (lastMessage!.mediaType == MessageMediaType.image) return 'Photo';
+    if (lastMessage!.mediaType == MessageMediaType.voice) {
+      return 'Voice message';
+    }
+    final body = lastMessage!.body ?? '';
+    final callPattern =
+        RegExp(r'^\W*(Audio|Video)\s+Call', caseSensitive: false);
+    if (callPattern.hasMatch(body)) {
+      return body.replaceFirst(RegExp(r'^[\W\s]+'), '');
+    }
+    return body;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,68 +274,52 @@ class _PreviewBadgeRow extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            previewText, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: AppTypography.bodySm.copyWith(fontSize: 13.5, color: hasUnread ? const Color(0xFF3A2A1A) : const Color(0xFF7A6E62), fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400),
+            _previewText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodySm.copyWith(
+              fontSize: 13.5,
+              color: hasUnread
+                  ? const Color(0xFF3A2A1A)
+                  : const Color(0xFF7A6E62),
+              fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
+              height: 1.4,
+            ),
           ),
         ),
-        if (hasUnread)
+        if (hasUnread) ...[
+          const SizedBox(width: 8),
           Container(
-            constraints: const BoxConstraints(minWidth: 24), height: 24,
+            constraints: const BoxConstraints(minWidth: 24),
+            height: 24,
             padding: const EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
               borderRadius: AppRadius.borderFull,
-              gradient: const LinearGradient(colors: [_orange, Color(0xFFF59E0B)]),
-              boxShadow: [BoxShadow(color: _orange.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [_orange, Color(0xFFF59E0B)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _orange.withValues(alpha: 0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             alignment: Alignment.center,
             child: Text(
               unreadCount > 99 ? '99+' : '$unreadCount',
-              style: AppTypography.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
+              style: AppTypography.caption.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
             ),
           ),
+        ],
       ],
-    );
-  }
-}
-
-// ─── Avatar ring ──────────────────────────────────────────────────────────
-
-/// Circle avatar with an animated unread gradient ring.
-class ConversationAvatarRing extends StatelessWidget {
-  const ConversationAvatarRing({
-    super.key,
-    required this.photoUrl,
-    required this.username,
-    required this.hasUnread,
-  });
-
-  final String? photoUrl;
-  final String username;
-  final bool hasUnread;
-
-  @override
-  Widget build(BuildContext context) {
-    final avatarChild = CircleAvatar(
-      radius: 24,
-      backgroundColor: const Color(0xFFFEFAF4),
-      backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
-      child: photoUrl == null
-          ? Text(username.isNotEmpty ? username[0].toUpperCase() : '?', style: AppTypography.h3.copyWith(color: _orange))
-          : null,
-    );
-
-    if (!hasUnread) return avatarChild;
-
-    return Container(
-      padding: const EdgeInsets.all(2.5),
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(colors: [_orange, Color(0xFFF7B23C)]),
-      ),
-      child: Container(
-        decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFEFAF4)),
-        child: avatarChild,
-      ),
     );
   }
 }

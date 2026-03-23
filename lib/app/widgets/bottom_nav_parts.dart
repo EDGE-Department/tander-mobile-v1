@@ -6,7 +6,7 @@ import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 
 // ── Tab descriptor ──────────────────────────────────────────────────────────
 
-/// Immutable descriptor for a single bottom-nav tab.
+/// Immutable descriptor for a single navigation tab.
 @immutable
 class NavTabDescriptor {
   const NavTabDescriptor({
@@ -26,7 +26,7 @@ class NavTabDescriptor {
   /// GoRouter path for this tab.
   final String route;
 
-  /// Asset path to the 24x24 icon image.
+  /// Asset path to the tab icon image.
   final String iconAsset;
 
   /// Whether this tab represents the Tandy AI companion.
@@ -35,17 +35,22 @@ class NavTabDescriptor {
 
 // ── Design constants ────────────────────────────────────────────────────────
 
-/// Pixel-spec constants extracted from the web app for the bottom nav bar.
-///
-/// Centralised here to keep both `bottom_nav_bar.dart` and this file
-/// under the 400-line budget.
+/// Pixel-spec constants extracted from the web MobileBottomDock.
 abstract final class NavBarConstants {
-  // ── Dimensions ──────────────────────────────────────────────
-  static const double tabHeight = 48.0;
-  static const double tabHorizontalPadding = 18.0;
-  static const double tabRadius = 14.0;
-  static const double iconSize = 24.0;
-  static const double iconLabelGap = 9.0;
+  // ── Dimensions (mobile dock) ─────────────────────────────────
+  static const double dockBorderRadius = 28.0;
+  static const double dockMargin = 12.0; // mx-3 mb-3 = 12px
+  static const double tabMinSize = 58.0; // min-h 58px min-w 58px
+  static const double tabBorderRadius = 18.0; // rounded-[18px]
+  static const double iconContainerSize = 30.0; // w-[30px] h-[30px]
+  static const double iconSize = 25.0; // iconSize + 4 from web
+  static const double iconLabelGap = 3.0; // gap-[3px]
+  static const double tabPaddingH = 10.0; // px-[10px]
+  static const double tabPaddingV = 8.0; // py-[8px]
+
+  // ── Dimensions (tablet rail) ─────────────────────────────────
+  static const double railWidth = 72.0;
+  static const double railTabSize = 56.0;
 
   // ── Badge ───────────────────────────────────────────────────
   static const double badgeMinWidth = 17.0;
@@ -54,24 +59,44 @@ abstract final class NavBarConstants {
   static const double badgeBorderWidth = 1.5;
   static const double badgeHorizontalPadding = 3.0;
 
-  // ── Colors ──────────────────────────────────────────────────
+  // ── Glass (mobile dock) ──────────────────────────────────────
+  /// Mobile dock background: rgba(255,252,248,0.97).
+  static const Color dockBackground = Color(0xF8FFFCF8);
 
-  /// Glass background: rgba(255,252,248,0.78).
-  static const Color glassBackground = Color(0xC8FFFCF8);
+  /// Mobile dock border: rgba(255,255,255,0.92).
+  static const Color dockBorder = Color(0xEBFFFFFF);
 
-  /// Glass border: rgba(255,255,255,0.84).
-  static const Color glassBorder = Color(0xD6FFFFFF);
+  /// Backdrop blur sigma for mobile dock (48px CSS → ~24 sigma).
+  static const double dockBlurSigma = 24.0;
 
-  // ── Gradients ───────────────────────────────────────────────
+  // ── Glass (tablet rail) ──────────────────────────────────────
+  /// Rail background: rgba(255,252,248,0.78).
+  static const Color railBackground = Color(0xC8FFFCF8);
 
-  /// Active pill: 158deg, #F07020 -> #DF5C08.
+  /// Rail border: rgba(255,255,255,0.84).
+  static const Color railBorder = Color(0xD6FFFFFF);
+
+  static const double railBlurSigma = 32.0;
+
+  // ── Organic blob pill ────────────────────────────────────────
+
+  /// Active pill border radius — organic irregular shape.
+  /// Web: 16px 13px 14px 15px / 15px 16px 13px 14px.
+  static const BorderRadius activePillBorderRadius = BorderRadius.only(
+    topLeft: Radius.circular(16),
+    topRight: Radius.circular(13),
+    bottomRight: Radius.circular(14),
+    bottomLeft: Radius.circular(15),
+  );
+
+  /// Active pill: 158deg, #F07020 → #DF5C08.
   static const LinearGradient activePillGradient = LinearGradient(
     begin: Alignment(-0.37, -0.93),
     end: Alignment(0.37, 0.93),
     colors: [Color(0xFFF07020), Color(0xFFDF5C08)],
   );
 
-  /// Badge: 135deg, #E8650A -> #C9510A.
+  /// Badge: 135deg, #E8650A → #C9510A.
   static const LinearGradient badgeGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -80,19 +105,35 @@ abstract final class NavBarConstants {
 
   // ── Shadows ─────────────────────────────────────────────────
 
-  /// Pill shadow: 0 4px 22px rgba(224,92,8,0.44).
-  static const BoxShadow pillShadow = BoxShadow(
-    color: Color(0x70E05C08),
-    blurRadius: 22,
-    offset: Offset(0, 4),
-  );
+  /// Active pill shadow: 0 4px 22px rgba(224,92,8,0.44),
+  /// 0 1px 4px rgba(224,92,8,0.20).
+  static const List<BoxShadow> activePillShadows = [
+    BoxShadow(
+      color: Color(0x70E05C08),
+      blurRadius: 22,
+      offset: Offset(0, 4),
+    ),
+    BoxShadow(
+      color: Color(0x33E05C08),
+      blurRadius: 4,
+      offset: Offset(0, 1),
+    ),
+  ];
 
-  /// Container shadow: 0 18px 60px rgba(230,126,34,0.14).
-  static const BoxShadow containerOuterShadow = BoxShadow(
-    color: Color(0x24E67E22),
-    blurRadius: 60,
-    offset: Offset(0, 18),
-  );
+  /// Mobile dock box shadow.
+  static const List<BoxShadow> dockShadows = [
+    // inset 0 1.5px 0 rgba(255,255,255,1.00) — simulated via border
+    BoxShadow(
+      color: Color(0x14E67E22),
+      blurRadius: 0,
+      offset: Offset(0, -1),
+    ),
+    BoxShadow(
+      color: Color(0x1C000000),
+      blurRadius: 40,
+      offset: Offset(0, 8),
+    ),
+  ];
 
   // ── Timing ──────────────────────────────────────────────────
 
@@ -107,29 +148,41 @@ abstract final class NavBarConstants {
 
   /// Duration of the active-pill morph animation.
   static const Duration pillAnimationDuration = Duration(milliseconds: 340);
+
+  /// Logo heartbeat cycle: 4.5 s.
+  static const Duration logoHeartbeatDuration = Duration(milliseconds: 4500);
 }
 
 // ── NavActiveBloomHalo ──────────────────────────────────────────────────────
 
-/// Radial orange glow rendered behind the active pill to create
-/// the ambient "bloom" signature from the web design.
+/// Radial orange glow rendered behind the active pill.
+/// Web: radial-gradient(ellipse 78% 68% at 50% 88%,
+///       rgba(240,112,32,0.30), transparent 70%) blur(12px).
 class NavActiveBloomHalo extends StatelessWidget {
   const NavActiveBloomHalo({super.key});
 
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(NavBarConstants.tabRadius + 4),
-          gradient: RadialGradient(
-            center: const Alignment(0.0, 0.88),
-            radius: 0.78,
-            colors: [
-              const Color(0xFFF07020).withValues(alpha: 0.30),
-              const Color(0xFFF07020).withValues(alpha: 0.0),
-            ],
-            stops: const [0.0, 0.70],
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(
+          sigmaX: 12,
+          sigmaY: 12,
+          tileMode: TileMode.decal,
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius:
+                BorderRadius.circular(NavBarConstants.tabBorderRadius + 4),
+            gradient: RadialGradient(
+              center: const Alignment(0.0, 0.88),
+              radius: 0.78,
+              colors: [
+                const Color(0xFFF07020).withValues(alpha: 0.30),
+                const Color(0xFFF07020).withValues(alpha: 0.0),
+              ],
+              stops: const [0.0, 0.70],
+            ),
           ),
         ),
       ),
@@ -143,7 +196,6 @@ class NavActiveBloomHalo extends StatelessWidget {
 class NavUnreadBadge extends StatelessWidget {
   const NavUnreadBadge({required this.count, super.key});
 
-  /// Number of unread items. Values above 99 display as "99+".
   final int count;
 
   @override
@@ -182,10 +234,8 @@ class NavUnreadBadge extends StatelessWidget {
 
 // ── NavTabEntrance ──────────────────────────────────────────────────────────
 
-/// Staggered slide-up + scale + fade entrance wrapper for individual tabs.
-///
-/// Each tab receives a different [delay] to produce the 55 ms stagger
-/// fan-in described in the web spec.
+/// Staggered slide-up + scale + fade entrance for individual tabs.
+/// Each tab receives a different [delay] for the 55 ms stagger fan-in.
 class NavTabEntrance extends StatelessWidget {
   const NavTabEntrance({
     required this.delay,
@@ -194,14 +244,8 @@ class NavTabEntrance extends StatelessWidget {
     super.key,
   });
 
-  /// Offset from the start of the entrance controller at which this tab
-  /// begins its animation.
   final Duration delay;
-
-  /// Shared controller that drives the entire entrance sequence.
   final AnimationController entranceController;
-
-  /// The tab widget to animate in.
   final Widget child;
 
   @override
@@ -258,8 +302,8 @@ class NavTabEntrance extends StatelessWidget {
 
 // ── NavBokehOrbs ────────────────────────────────────────────────────────────
 
-/// Three warm atmospheric light pools drifting behind the nav bar:
-/// orange (200x110, blur 32), teal (150x85, blur 26), gold (130x75, blur 24).
+/// Three warm atmospheric light pools behind the nav bar.
+/// Orange 200x110 blur(32), teal 150x85 blur(26), gold 130x75 blur(24).
 class NavBokehOrbs extends StatelessWidget {
   const NavBokehOrbs({super.key});
 

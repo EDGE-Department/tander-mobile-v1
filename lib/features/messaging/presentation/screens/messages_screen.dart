@@ -1,29 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
-import 'package:tander_flutter_v3/core/theme/app_typography.dart';
-import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/conversations_notifier.dart';
-import 'package:tander_flutter_v3/features/messaging/presentation/states/conversations_state.dart';
+import 'package:tander_flutter_v3/features/messaging/presentation/screens/message_thread_screen.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/conversation_list_states.dart';
-import 'package:tander_flutter_v3/features/messaging/presentation/widgets/conversation_row.dart';
-import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/features/messaging/presentation/widgets/messages_sidebar_widgets.dart';
 
-const Color _orange = AppColors.primary;
+const double _tabletBreakpoint = 600;
+const double _sidebarWidth = 392;
 
-/// Main Messages screen -- conversation list with search and filter tabs.
+/// Main Messages screen with embedded split-panel messaging.
 ///
-/// Background: warm parchment gradient. Senior-first: touch targets >= 68px,
-/// fonts >= 13.5px throughout.
-class MessagesScreen extends ConsumerWidget {
+/// **Phone** (shortestSide <= 600): conversation list and thread panel swap
+/// in-place using state-based visibility. No GoRouter navigation.
+///
+/// **Tablet** (shortestSide > 600): sidebar 392 px + thread flex-1 side by side.
+class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends ConsumerState<MessagesScreen> {
+  String? _activeConversationId;
+
+  void _selectConversation(String conversationId) {
+    setState(() => _activeConversationId = conversationId);
+  }
+
+  void _clearSelection() {
+    setState(() => _activeConversationId = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isThreadOpen = _activeConversationId != null;
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -32,83 +46,34 @@ class MessagesScreen extends ConsumerWidget {
           colors: [Color(0xFFF5ECE2), Color(0xFFEDE1D2)],
         ),
       ),
-      child: const SafeArea(child: _SidebarContent()),
-    );
-  }
-}
-
-// ─── Sidebar content ──────────────────────────────────────────────────────
-
-class _SidebarContent extends ConsumerWidget {
-  const _SidebarContent();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final conversationsState = ref.watch(conversationsNotifierProvider);
-    final unreadCount = switch (conversationsState) {
-      ConversationsLoaded(:final conversations) => conversations
-          .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
-          .length,
-      _ => 0,
-    };
-
-    return Column(
-      children: [
-        _Header(unreadCount: unreadCount),
-        Expanded(
-          child: switch (conversationsState) {
-            ConversationsLoading() => const ConversationsListSkeleton(),
-            ConversationsError(:final exception) => ConversationsErrorView(
-                errorMessage: exception.userMessage,
-                onRetry: () => ref
-                    .read(conversationsNotifierProvider.notifier)
-                    .loadConversations(),
-              ),
-            ConversationsLoaded() => const _ConversationList(),
-          },
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Header ───────────────────────────────────────────────────────────────
-
-class _Header extends ConsumerWidget {
-  const _Header({required this.unreadCount});
-
-  final int unreadCount;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final conversationsState = ref.watch(conversationsNotifierProvider);
-    final activeTab = conversationsState is ConversationsLoaded
-        ? conversationsState.filterTab
-        : ConversationFilterTab.all;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFFDF9),
-        border: Border(bottom: BorderSide(color: Color(0xCCEDE8DE))),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          _TitleRow(unreadCount: unreadCount),
-          const SizedBox(height: AppSpacing.sm),
-          _SearchBar(
-            onChanged: (query) => ref
-                .read(conversationsNotifierProvider.notifier)
-                .setSearchQuery(query),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _FilterTabs(
-            activeTab: activeTab,
-            unreadCount: unreadCount,
-            onTabChanged: (tab) => ref
-                .read(conversationsNotifierProvider.notifier)
-                .setFilterTab(tab),
+          const _AtmosphericOverlays(),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isTablet = MediaQuery.of(context).size.shortestSide >
+                      _tabletBreakpoint;
+
+                  if (isTablet) {
+                    return _TabletLayout(
+                      activeConversationId: _activeConversationId,
+                      onSelectConversation: _selectConversation,
+                      onClearSelection: _clearSelection,
+                    );
+                  }
+
+                  return _PhoneLayout(
+                    activeConversationId: _activeConversationId,
+                    isThreadOpen: isThreadOpen,
+                    onSelectConversation: _selectConversation,
+                    onClearSelection: _clearSelection,
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
@@ -116,270 +81,210 @@ class _Header extends ConsumerWidget {
   }
 }
 
-class _TitleRow extends StatelessWidget {
-  const _TitleRow({required this.unreadCount});
+// ─── Atmospheric overlays ─────────────────────────────────────────────────
 
-  final int unreadCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [_orange, Color(0xFFF7B23C)],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Messages',
-                    style: AppTypography.caption.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF904C18),
-                      letterSpacing: 0.8,
-                      fontSize: 10.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Your Chats',
-                style: AppTypography.h2.copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (unreadCount > 0)
-          Container(
-            constraints: const BoxConstraints(minWidth: 22),
-            height: 22,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              borderRadius: AppRadius.borderFull,
-              gradient: const LinearGradient(
-                colors: [_orange, Color(0xFFD06A18)],
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              unreadCount > 99 ? '99+' : '$unreadCount',
-              style: AppTypography.caption.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ─── Search bar ───────────────────────────────────────────────────────────
-
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.onChanged});
-
-  final ValueChanged<String> onChanged;
+class _AtmosphericOverlays extends StatelessWidget {
+  const _AtmosphericOverlays();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: TextField(
-        onChanged: onChanged,
-        style: AppTypography.bodySm.copyWith(color: AppColors.textStrong),
-        decoration: InputDecoration(
-          hintText: 'Search by name...',
-          hintStyle: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
-          prefixIcon: const Icon(
-            PhosphorIconsBold.magnifyingGlass,
-            size: 15,
-            color: Color(0xFFA89C8E),
-          ),
-          filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.70),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xCCE8E2D8)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xCCE8E2D8)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: _orange.withValues(alpha: 0.3)),
-          ),
-        ),
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: CustomPaint(painter: _RadialOverlayPainter()),
       ),
     );
   }
 }
 
-// ─── Filter tabs ──────────────────────────────────────────────────────────
+class _RadialOverlayPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    _paintRadial(
+      canvas,
+      center: Offset(size.width * 0.14, size.height * 0.10),
+      radius: size.width * 0.18,
+      color: const Color(0x9EFFFFFF),
+    );
+    _paintRadial(
+      canvas,
+      center: Offset(size.width * 0.82, size.height * 0.12),
+      radius: size.width * 0.18,
+      color: const Color(0x140F9D94),
+    );
+    _paintRadial(
+      canvas,
+      center: Offset(size.width * 0.78, size.height * 0.82),
+      radius: size.width * 0.16,
+      color: const Color(0x1EE67E22),
+    );
+  }
 
-class _FilterTabs extends StatelessWidget {
-  const _FilterTabs({
-    required this.activeTab,
-    required this.unreadCount,
-    required this.onTabChanged,
+  void _paintRadial(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required Color color,
+  }) {
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: [color, color.withValues(alpha: 0)],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Phone layout ─────────────────────────────────────────────────────────
+
+class _PhoneLayout extends StatelessWidget {
+  const _PhoneLayout({
+    required this.activeConversationId,
+    required this.isThreadOpen,
+    required this.onSelectConversation,
+    required this.onClearSelection,
   });
 
-  final ConversationFilterTab activeTab;
-  final int unreadCount;
-  final ValueChanged<ConversationFilterTab> onTabChanged;
+  final String? activeConversationId;
+  final bool isThreadOpen;
+  final ValueChanged<String> onSelectConversation;
+  final VoidCallback onClearSelection;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _TabChip(
-          label: 'All',
-          isActive: activeTab == ConversationFilterTab.all,
-          onTap: () => onTabChanged(ConversationFilterTab.all),
-        ),
-        const SizedBox(width: 6),
-        _TabChip(
-          label: 'Unread',
-          isActive: activeTab == ConversationFilterTab.unread,
-          badgeCount: unreadCount,
-          onTap: () => onTabChanged(ConversationFilterTab.unread),
-        ),
-      ],
-    );
-  }
-}
-
-class _TabChip extends StatelessWidget {
-  const _TabChip({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-    this.badgeCount = 0,
-  });
-
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-  final int badgeCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? _orange : Colors.white.withValues(alpha: 0.60),
-          borderRadius: AppRadius.borderFull,
-          border: isActive
-              ? null
-              : Border.all(color: const Color(0xE0DCD2C4), width: 1.5),
-          boxShadow: isActive
-              ? [BoxShadow(color: _orange.withValues(alpha: 0.30), blurRadius: 16, offset: const Offset(0, 6))]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: AppTypography.label.copyWith(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: isActive ? Colors.white : const Color(0xFF7C6E60),
-              ),
-            ),
-            if (badgeCount > 0) ...[
-              const SizedBox(width: 6),
-              Container(
-                constraints: const BoxConstraints(minWidth: 18),
-                height: 18,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: AppRadius.borderFull,
-                  color: isActive
-                      ? Colors.white.withValues(alpha: 0.28)
-                      : _orange.withValues(alpha: 0.13),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  badgeCount > 99 ? '99+' : '$badgeCount',
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: isActive ? Colors.white : _orange,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Conversation list ────────────────────────────────────────────────────
-
-class _ConversationList extends ConsumerWidget {
-  const _ConversationList();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final conversationsState = ref.watch(conversationsNotifierProvider);
-    if (conversationsState is! ConversationsLoaded) {
-      return const SizedBox.shrink();
-    }
-
-    final filtered = conversationsState.filteredConversations;
-    final allConversations = conversationsState.conversations;
-
-    if (allConversations.isEmpty) return const ConversationsEmptyState();
-
-    if (conversationsState.filterTab == ConversationFilterTab.unread &&
-        filtered.isEmpty) {
-      return const ConversationsAllCaughtUp();
-    }
-
-    if (filtered.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Text(
-            'No conversations match your search.',
-            style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
-          ),
-        ),
+    if (isThreadOpen) {
+      return _ThreadPanel(
+        conversationId: activeConversationId!,
+        onBack: onClearSelection,
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(10, 12, 10, 24),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) => ConversationRow(
-        conversation: filtered[index],
-        onTap: () => context.go(
-          AppRoutes.messageThread(filtered[index].conversationId),
+    return _SidebarPanel(
+      activeConversationId: activeConversationId,
+      onSelectConversation: onSelectConversation,
+    );
+  }
+}
+
+// ─── Tablet layout ────────────────────────────────────────────────────────
+
+class _TabletLayout extends StatelessWidget {
+  const _TabletLayout({
+    required this.activeConversationId,
+    required this.onSelectConversation,
+    required this.onClearSelection,
+  });
+
+  final String? activeConversationId;
+  final ValueChanged<String> onSelectConversation;
+  final VoidCallback onClearSelection;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: _sidebarWidth,
+          child: _SidebarPanel(
+            activeConversationId: activeConversationId,
+            onSelectConversation: onSelectConversation,
+          ),
         ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: activeConversationId != null
+              ? _ThreadPanel(
+                  conversationId: activeConversationId!,
+                  onBack: onClearSelection,
+                )
+              : const MessagesWelcomePlaceholder(),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Sidebar panel (visual container) ─────────────────────────────────────
+
+class _SidebarPanel extends StatelessWidget {
+  const _SidebarPanel({
+    required this.activeConversationId,
+    required this.onSelectConversation,
+  });
+
+  final String? activeConversationId;
+  final ValueChanged<String> onSelectConversation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.borderXl,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xF8FFFDF9), Color(0xF8FFF8F0)],
+        ),
+        border: Border.all(color: const Color(0xD9DCCEBC)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14764F21),
+            blurRadius: 32,
+            offset: Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: MessagesSidebarContent(
+        activeConversationId: activeConversationId,
+        onSelectConversation: onSelectConversation,
+      ),
+    );
+  }
+}
+
+// ─── Thread panel (visual container) ──────────────────────────────────────
+
+class _ThreadPanel extends StatelessWidget {
+  const _ThreadPanel({
+    required this.conversationId,
+    required this.onBack,
+  });
+
+  final String conversationId;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.borderXl,
+        color: const Color(0xCCFFFBF6),
+        border: Border.all(color: const Color(0xD9DCCEBC)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14764F21),
+            blurRadius: 32,
+            offset: Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: MessageThreadScreen(
+        key: ValueKey(conversationId),
+        conversationId: conversationId,
+        onBack: onBack,
       ),
     );
   }

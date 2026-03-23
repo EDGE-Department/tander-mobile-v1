@@ -17,10 +17,21 @@ import 'package:tander_flutter_v3/features/messaging/presentation/widgets/thread
 const Color _teal = AppColors.secondary;
 
 /// Full message thread screen. Receives a [conversationId] from the router.
+///
+/// When embedded inside a split-panel layout (e.g. [MessagesScreen]),
+/// pass [onBack] to override the default `context.pop()` behavior.
 class MessageThreadScreen extends ConsumerStatefulWidget {
-  const MessageThreadScreen({super.key, required this.conversationId});
+  const MessageThreadScreen({
+    super.key,
+    required this.conversationId,
+    this.onBack,
+  });
 
   final String conversationId;
+
+  /// Optional callback that replaces `context.pop()` when the user taps back.
+  /// Used by the messages screen to return to the conversation list on phones.
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<MessageThreadScreen> createState() =>
@@ -100,7 +111,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               headerStatus: headerStatus,
               isTyping: isPartnerTyping,
               isOnline: isOnline,
-              onBack: () => context.pop(),
+              onBack: widget.onBack ?? () => context.pop(),
             ),
             Expanded(
               child: _ThreadBody(

@@ -139,3 +139,75 @@ class ConversationsListSkeleton extends StatelessWidget {
     );
   }
 }
+
+// ─── Welcome placeholder (tablet: no conversation selected) ───────────────
+
+/// Shown on tablet when no conversation is selected.
+class MessagesWelcomePlaceholder extends StatelessWidget {
+  const MessagesWelcomePlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF6EFE4),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFFF8EE), Color(0xFFFFF0DE)],
+                  ),
+                  border: Border.all(
+                    color: _orange.withValues(alpha: 0.09),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _orange.withValues(alpha: 0.07),
+                      blurRadius: 28,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  PhosphorIconsDuotone.chatTeardropDots,
+                  size: 32,
+                  color: _orange,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Choose a conversation',
+                style: AppTypography.h3.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
+                  color: const Color(0xFF1F2937),
+                  letterSpacing: -0.03 * 20,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Select someone from the list to start chatting.',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodySm.copyWith(
+                  color: const Color(0xFF7C7165),
+                  height: 1.7,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

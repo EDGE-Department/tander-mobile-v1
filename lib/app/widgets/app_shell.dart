@@ -2,24 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tander_flutter_v3/app/widgets/bottom_nav_bar.dart';
+import 'package:tander_flutter_v3/app/widgets/bottom_nav_parts.dart';
+import 'package:tander_flutter_v3/app/widgets/nav_badge_provider.dart';
+import 'package:tander_flutter_v3/app/widgets/side_nav_rail.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_listener.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/widgets/incoming_call_overlay.dart';
-import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
-/// Shell wrapping all authenticated routes that should display the bottom
-/// navigation bar.
+/// Root scaffold for the authenticated app. Selects between:
+/// - **Phone** (shortestSide <= 600): Scaffold + bottom dock nav
+/// - **Tablet** (shortestSide > 600): Row with side navigation rail + content
 ///
-/// GoRouter's [ShellRoute] passes the nested child widget; this widget
-/// renders the bottom nav and swaps the body. Each tab maps to one of the
-/// five main sections: Discover, Connection, Messages, Tandy, Profile.
-///
-/// Also mounts:
-/// - [callListenerProvider] — global STOMP subscription for incoming calls.
-/// - [IncomingCallOverlay] — full-screen overlay when an incoming call rings.
+/// Mounts the global call listener and incoming call overlay.
 class AppShell extends ConsumerWidget {
   const AppShell({required this.child, super.key});
 
+  /// The routed page injected by GoRouter's ShellRoute.builder.
   final Widget child;
 
   @override
@@ -29,79 +28,132 @@ class AppShell extends ConsumerWidget {
 
     // Watch call state to show/hide the incoming call overlay.
     final callState = ref.watch(callNotifierProvider);
-    final showOverlay = callState.isIncomingRinging;
+    final bool showOverlay = callState.isIncomingRinging;
 
+    final double shortestSide = MediaQuery.sizeOf(context).shortestSide;
+    final bool isTablet = shortestSide > 600;
+
+    return isTablet
+        ? _TabletShell(showOverlay: showOverlay, child: child)
+        : _PhoneShell(showOverlay: showOverlay, child: child);
+  }
+}
+
+// ── Phone layout ────────────────────────────────────────────────────────────
+
+/// Phone: Scaffold with the branded bottom dock nav bar.
+class _PhoneShell extends StatelessWidget {
+  const _PhoneShell({
+    required this.showOverlay,
+    required this.child,
+  });
+
+  final bool showOverlay;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           child,
-
-          // Incoming call overlay — shown above everything
           if (showOverlay)
             const Positioned.fill(child: IncomingCallOverlay()),
         ],
       ),
-      bottomNavigationBar: showOverlay
-          ? null
-          : BottomNavigationBar(
-              currentIndex: _currentIndex(context),
-              onTap: (index) => _onTap(context, index),
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: const Color(0xFFE67E22),
-              unselectedItemColor: const Color(0xFF9CA3AF),
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.explore_outlined),
-                  activeIcon: Icon(Icons.explore),
-                  label: 'Discover',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.favorite_border),
-                  activeIcon: Icon(Icons.favorite),
-                  label: 'Connection',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.chat_bubble_outline),
-                  activeIcon: Icon(Icons.chat_bubble),
-                  label: 'Messages',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.smart_toy_outlined),
-                  activeIcon: Icon(Icons.smart_toy),
-                  label: 'Tandy',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline),
-                  activeIcon: Icon(Icons.person),
-                  label: 'Profile',
-                ),
-              ],
-            ),
+      bottomNavigationBar: showOverlay ? null : const TanderBottomNavBar(),
     );
   }
+}
 
-  int _currentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
+// ── Tablet layout ───────────────────────────────────────────────────────────
 
-    if (location.startsWith(AppRoutes.discover)) return 0;
-    if (location.startsWith(AppRoutes.connection)) return 1;
-    if (location.startsWith(AppRoutes.messages)) return 2;
-    if (location.startsWith(AppRoutes.tandy)) return 3;
-    if (location.startsWith(AppRoutes.profile)) return 4;
+/// Tablet: Row with a glass-morphism side navigation rail on the left.
+class _TabletShell extends ConsumerStatefulWidget {
+  const _TabletShell({
+    required this.showOverlay,
+    required this.child,
+  });
 
+  final bool showOverlay;
+  final Widget child;
+
+  @override
+  ConsumerState<_TabletShell> createState() => _TabletShellState();
+}
+
+class _TabletShellState extends ConsumerState<_TabletShell>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _tandyPulseController;
+  late final Animation<double> _tandyPulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _tandyPulseController = AnimationController(
+      vsync: this,
+      duration: NavBarConstants.tandyPulseDuration,
+    )..repeat();
+
+    _tandyPulseAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 8.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 58,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 8.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 42,
+      ),
+    ]).animate(_tandyPulseController);
+  }
+
+  @override
+  void dispose() {
+    _tandyPulseController.dispose();
+    super.dispose();
+  }
+
+  int _resolveActiveIndex(String location) {
+    for (int index = 0; index < navTabs.length; index++) {
+      final String route = navTabs[index].route;
+      if (location == route || location.startsWith('$route/')) {
+        return index;
+      }
+    }
     return 0;
   }
 
-  void _onTap(BuildContext context, int index) {
-    final destination = switch (index) {
-      0 => AppRoutes.discover,
-      1 => AppRoutes.connection,
-      2 => AppRoutes.messages,
-      3 => AppRoutes.tandy,
-      4 => AppRoutes.profile,
-      _ => AppRoutes.discover,
-    };
+  @override
+  Widget build(BuildContext context) {
+    final String location = GoRouterState.of(context).uri.toString();
+    final int activeIndex = _resolveActiveIndex(location);
+    final EdgeInsets viewPadding = MediaQuery.viewPaddingOf(context);
+    final NavBadgeCounts badgeCounts = ref.watch(navBadgeProvider);
 
-    context.go(destination);
+    return Scaffold(
+      body: Stack(
+        children: [
+          Row(
+            children: [
+              SideNavRail(
+                activeIndex: activeIndex,
+                badgeCounts: badgeCounts,
+                tandyPulseAnimation: _tandyPulseAnimation,
+                topPadding: viewPadding.top,
+                bottomPadding: viewPadding.bottom,
+                onTabTapped: (index) =>
+                    context.go(navTabs[index].route),
+              ),
+              Expanded(child: widget.child),
+            ],
+          ),
+          if (widget.showOverlay)
+            const Positioned.fill(child: IncomingCallOverlay()),
+        ],
+      ),
+    );
   }
 }

@@ -1,5 +1,6 @@
 /// Profile info overlay and stamp widgets for the swipe card.
 ///
+/// Pixel-perfect port of the overlay elements from tander-web swipe-card.tsx.
 /// Extracted from swipe_card.dart to keep files under 400 lines.
 library;
 
@@ -19,7 +20,7 @@ const Color _nopeStampBorder = Color(0xFFC0392B);
 const int _maxInterestChips = 4;
 const int _maxBioLines = 2;
 
-// ── Stamps ──────────────────────────────────────────────────────────
+// ── Stamps ──────────────────────────────────────────────────────────────
 
 class SwipeLikeStamp extends StatelessWidget {
   const SwipeLikeStamp({required this.opacity, super.key});
@@ -87,36 +88,34 @@ Widget _stampContainer({
       borderRadius: AppRadius.borderLg,
       color: borderColor.withValues(alpha: 0.14),
     ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: iconColor),
-        const SizedBox(width: 6),
-        Text(label, style: AppTypography.label.copyWith(
-          color: labelColor, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 3.2,
-        )),
-      ],
-    ),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 16, color: iconColor),
+      const SizedBox(width: 6),
+      Text(label, style: AppTypography.label.copyWith(
+        color: labelColor, fontWeight: FontWeight.w900,
+        fontSize: 18, letterSpacing: 3.2,
+      )),
+    ]),
   );
 }
 
-// ── Bottom gradient ─────────────────────────────────────────────────
+// ── Bottom gradient ─────────────────────────────────────────────────────
 
 class SwipeBottomGradient extends StatelessWidget {
   const SwipeBottomGradient({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
+    return const Positioned.fill(
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
-            stops: const [0.0, 0.35, 0.60, 1.0],
+            stops: [0.0, 0.35, 0.60, 1.0],
             colors: [
-              const Color(0xF2080301), const Color(0xB3080301),
-              const Color(0x47080301), Colors.transparent,
+              Color(0xF2080301), Color(0xB3080301),
+              Color(0x47080301), Colors.transparent,
             ],
           ),
         ),
@@ -125,10 +124,14 @@ class SwipeBottomGradient extends StatelessWidget {
   }
 }
 
-// ── Photo indicators ────────────────────────────────────────────────
+// ── Photo indicators ────────────────────────────────────────────────────
 
 class SwipePhotoIndicators extends StatelessWidget {
-  const SwipePhotoIndicators({required this.photoCount, required this.activeIndex, super.key});
+  const SwipePhotoIndicators({
+    required this.photoCount,
+    required this.activeIndex,
+    super.key,
+  });
   final int photoCount;
   final int activeIndex;
 
@@ -145,10 +148,14 @@ class SwipePhotoIndicators extends StatelessWidget {
               height: 5,
               margin: EdgeInsets.only(right: index < photoCount - 1 ? 4 : 0),
               decoration: BoxDecoration(
-                color: isActive ? Colors.white.withValues(alpha: 0.96) : Colors.white.withValues(alpha: 0.36),
+                color: isActive
+                    ? Colors.white.withValues(alpha: 0.96)
+                    : Colors.white.withValues(alpha: 0.36),
                 borderRadius: AppRadius.borderFull,
                 boxShadow: isActive
-                    ? const [BoxShadow(color: Color(0x51000000), blurRadius: 4, offset: Offset(0, 1))]
+                    ? const [BoxShadow(
+                        color: Color(0x51000000), blurRadius: 4,
+                        offset: Offset(0, 1))]
                     : null,
               ),
             ),
@@ -159,10 +166,14 @@ class SwipePhotoIndicators extends StatelessWidget {
   }
 }
 
-// ── Profile info overlay ────────────────────────────────────────────
+// ── Profile info overlay ────────────────────────────────────────────────
 
 class SwipeProfileOverlay extends StatelessWidget {
-  const SwipeProfileOverlay({required this.candidate, required this.onViewProfile, super.key});
+  const SwipeProfileOverlay({
+    required this.candidate,
+    required this.onViewProfile,
+    super.key,
+  });
   final DiscoveryCandidate candidate;
   final VoidCallback onViewProfile;
 
@@ -195,26 +206,31 @@ class SwipeProfileOverlay extends StatelessWidget {
   }
 
   Widget _buildNameAge() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Flexible(
-          child: Text(candidate.firstName, style: AppTypography.displayLg.copyWith(
-            color: AppColors.textInverse, fontWeight: FontWeight.w800, fontSize: 33, height: 1.0,
-          ), maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        if (candidate.age != null) ...[
-          const SizedBox(width: 10),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 2),
-            child: Text('${candidate.age}', style: AppTypography.h1.copyWith(
-              color: Colors.white.withValues(alpha: 0.78), fontWeight: FontWeight.w300, fontSize: 25, height: 1.0,
-            )),
+    return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Flexible(
+        child: Text(
+          candidate.firstName,
+          style: AppTypography.displayLg.copyWith(
+            color: AppColors.textInverse, fontWeight: FontWeight.w800,
+            fontSize: 33, height: 1.0,
           ),
-        ],
-        if (candidate.isOnline) ...[const SizedBox(width: 10), _onlineBadge()],
+          maxLines: 1, overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      if (candidate.age != null) ...[
+        const SizedBox(width: 10),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: Text('${candidate.age}', style: AppTypography.h1.copyWith(
+            color: Colors.white.withValues(alpha: 0.78),
+            fontWeight: FontWeight.w300, fontSize: 25, height: 1.0,
+          )),
+        ),
       ],
-    );
+      if (candidate.isOnline) ...[
+        const SizedBox(width: 10), _onlineBadge(),
+      ],
+    ]);
   }
 
   Widget _onlineBadge() {
@@ -222,38 +238,61 @@ class SwipeProfileOverlay extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xB32E8B57), borderRadius: AppRadius.borderFull,
+        color: const Color(0xB32E8B57),
+        borderRadius: AppRadius.borderFull,
         border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.textInverse, shape: BoxShape.circle)),
+        Container(
+          width: 6, height: 6,
+          decoration: const BoxDecoration(
+            color: AppColors.textInverse, shape: BoxShape.circle,
+          ),
+        ),
         const SizedBox(width: 6),
-        Text('Online now', style: AppTypography.caption.copyWith(color: AppColors.textInverse, fontWeight: FontWeight.w700, fontSize: 12)),
+        Text('Online now', style: AppTypography.caption.copyWith(
+          color: AppColors.textInverse, fontWeight: FontWeight.w700,
+          fontSize: 12,
+        )),
       ]),
     );
   }
 
   Widget _buildLocation() {
-    final parts = [candidate.city, candidate.country].where((p) => p != null && p.isNotEmpty).join(', ');
+    final parts = [candidate.city, candidate.country]
+        .where((part) => part != null && part.isNotEmpty).join(', ');
     return Row(children: [
-      const Icon(PhosphorIconsFill.mapPin, size: 13, color: AppColors.textInverse),
+      const Icon(PhosphorIconsFill.mapPin, size: 13,
+        color: AppColors.textInverse),
       const SizedBox(width: 6),
-      Flexible(child: Text(parts, style: AppTypography.bodySm.copyWith(color: Colors.white.withValues(alpha: 0.72)), maxLines: 1, overflow: TextOverflow.ellipsis)),
+      Flexible(child: Text(parts, style: AppTypography.bodySm.copyWith(
+        color: Colors.white.withValues(alpha: 0.72),
+      ), maxLines: 1, overflow: TextOverflow.ellipsis)),
     ]);
   }
 
   Widget _buildBio() {
-    return Text(candidate.bio!, style: AppTypography.bodySm.copyWith(
-      color: Colors.white.withValues(alpha: 0.85), fontSize: 15, height: 1.4,
-    ), maxLines: _maxBioLines, overflow: TextOverflow.ellipsis);
+    return Text(
+      candidate.bio!,
+      style: AppTypography.bodySm.copyWith(
+        color: Colors.white.withValues(alpha: 0.85),
+        fontSize: 15, height: 1.4,
+      ),
+      maxLines: _maxBioLines, overflow: TextOverflow.ellipsis,
+    );
   }
 
   Widget _buildInterestChips() {
     final visible = candidate.interests.take(_maxInterestChips).toList();
     final overflowCount = candidate.interests.length - _maxInterestChips;
     return Wrap(spacing: 6, runSpacing: 6, children: [
-      ...visible.map((interest) => _chip(interest, Colors.white.withValues(alpha: 0.16), Colors.white.withValues(alpha: 0.26), AppColors.textInverse)),
-      if (overflowCount > 0) _chip('+$overflowCount', Colors.white.withValues(alpha: 0.10), Colors.transparent, Colors.white.withValues(alpha: 0.65)),
+      ...visible.map((interest) => _chip(
+        interest, Colors.white.withValues(alpha: 0.16),
+        Colors.white.withValues(alpha: 0.26), AppColors.textInverse,
+      )),
+      if (overflowCount > 0)
+        _chip('+$overflowCount', Colors.white.withValues(alpha: 0.10),
+          Colors.transparent, Colors.white.withValues(alpha: 0.65)),
     ]);
   }
 
@@ -262,9 +301,12 @@ class SwipeProfileOverlay extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: bgColor, borderRadius: AppRadius.borderFull,
-        border: borderColor != Colors.transparent ? Border.all(color: borderColor) : null,
+        border: borderColor != Colors.transparent
+            ? Border.all(color: borderColor) : null,
       ),
-      child: Text(text, style: AppTypography.caption.copyWith(color: textColor, fontWeight: FontWeight.w600, fontSize: 12)),
+      child: Text(text, style: AppTypography.caption.copyWith(
+        color: textColor, fontWeight: FontWeight.w600, fontSize: 12,
+      )),
     );
   }
 
@@ -275,12 +317,15 @@ class SwipeProfileOverlay extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         constraints: const BoxConstraints(minHeight: AppSpacing.touchMinimum),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.16), borderRadius: AppRadius.borderFull,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.32), width: 1.5),
+          color: Colors.white.withValues(alpha: 0.16),
+          borderRadius: AppRadius.borderFull,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.32), width: 1.5,
+          ),
         ),
-        child: Text('View full profile \u2192', style: AppTypography.label.copyWith(
-          color: AppColors.textInverse, fontWeight: FontWeight.w700, fontSize: 14,
-        )),
+        child: Text('View full profile \u2192', style: AppTypography.label
+            .copyWith(color: AppColors.textInverse, fontWeight: FontWeight.w700,
+              fontSize: 14)),
       ),
     );
   }

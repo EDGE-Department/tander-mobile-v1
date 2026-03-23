@@ -1,12 +1,12 @@
-/// Main discover screen with two-tab layout: Discover + Community.
+/// Main discover screen — pixel-perfect port of tander-web discover-page.tsx.
 ///
-/// The Discover tab renders a 3-card stack with like/pass actions,
-/// filter button, and remaining-count badge. Community is a
-/// placeholder for Phase 12.
+/// PHONE: single column, full-screen card stack with tab switcher.
+/// TABLET (shortestSide > 600): two columns side-by-side (future).
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -19,6 +19,7 @@ import 'package:tander_flutter_v3/features/discover/presentation/states/discover
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_action_buttons.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_filters_sheet.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/swipe_card.dart';
+import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
@@ -45,7 +46,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   void _navigateToProfile(String userId) {
-    Navigator.of(context).pushNamed('/discover/profile/$userId');
+    context.push(AppRoutes.discoverProfile(userId));
   }
 
   @override
@@ -70,12 +71,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────
+  // ── Header ──────────────────────────────────────────────────────────
 
   Widget _buildHeader(DiscoverState discoverState) {
-    final int remainingCount = discoverState is DiscoverLoaded
-        ? discoverState.remainingCount
-        : 0;
+    final int remainingCount =
+        discoverState is DiscoverLoaded ? discoverState.remainingCount : 0;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -88,29 +88,25 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      _activeTab == _DiscoverTab.discover
-                          ? 'Discover'
-                          : 'Community',
-                      style: AppTypography.h1,
-                    ),
-                    if (_activeTab == _DiscoverTab.discover &&
-                        remainingCount > 0) ...[
-                      const SizedBox(width: 10),
-                      DiscoverRemainingBadge(count: remainingCount),
-                    ],
+                Row(children: [
+                  Text(
+                    _activeTab == _DiscoverTab.discover
+                        ? 'Discover' : 'Community',
+                    style: AppTypography.h1,
+                  ),
+                  if (_activeTab == _DiscoverTab.discover &&
+                      remainingCount > 0) ...[
+                    const SizedBox(width: 10),
+                    DiscoverRemainingBadge(count: remainingCount),
                   ],
-                ),
+                ]),
                 const SizedBox(height: 2),
                 Text(
                   _activeTab == _DiscoverTab.discover
                       ? 'Find your someone special'
                       : 'Stories from your neighbors',
                   style: AppTypography.bodySm.copyWith(
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted, fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -123,40 +119,40 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Widget _buildFilterButton() {
-    return GestureDetector(
-      onTap: _openFiltersSheet,
-      child: Container(
-        width: AppSpacing.touchComfortable,
-        height: AppSpacing.touchComfortable,
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: AppRadius.borderLg,
-          border: Border.all(color: AppColors.border),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: const Icon(
-          PhosphorIconsBold.slidersHorizontal,
-          size: 20,
-          color: AppColors.textMuted,
+    return Semantics(
+      button: true,
+      label: 'Open filters',
+      child: GestureDetector(
+        onTap: _openFiltersSheet,
+        child: Container(
+          width: AppSpacing.touchComfortable,
+          height: AppSpacing.touchComfortable,
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: AppRadius.borderLg,
+            border: Border.all(color: AppColors.border),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            PhosphorIconsBold.slidersHorizontal,
+            size: 20, color: AppColors.textMuted,
+          ),
         ),
       ),
     );
   }
 
-  // ── Tab switcher ──────────────────────────────────────────────────
+  // ── Tab switcher ────────────────────────────────────────────────────
 
   Widget _buildTabSwitcher() {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xs,
+        horizontal: AppSpacing.lg, vertical: AppSpacing.xs,
       ),
       child: Container(
         height: 48,
@@ -166,38 +162,37 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: AppColors.border),
         ),
-        child: Row(
-          children: [
-            _tabButton(
-              tab: _DiscoverTab.discover,
-              icon: PhosphorIconsFill.heart,
-              inactiveIcon: PhosphorIconsRegular.heart,
-              label: 'Discover',
-            ),
-            const SizedBox(width: 6),
-            _tabButton(
-              tab: _DiscoverTab.community,
-              icon: PhosphorIconsFill.usersThree,
-              inactiveIcon: PhosphorIconsRegular.usersThree,
-              label: 'Community',
-            ),
-          ],
-        ),
+        child: Row(children: [
+          _tabButton(
+            isSelected: _activeTab == _DiscoverTab.discover,
+            activeIcon: PhosphorIconsFill.heart,
+            inactiveIcon: PhosphorIconsRegular.heart,
+            label: 'Discover',
+            onTap: () => setState(() => _activeTab = _DiscoverTab.discover),
+          ),
+          const SizedBox(width: 6),
+          _tabButton(
+            isSelected: _activeTab == _DiscoverTab.community,
+            activeIcon: PhosphorIconsFill.usersThree,
+            inactiveIcon: PhosphorIconsRegular.usersThree,
+            label: 'Community',
+            onTap: () => setState(() => _activeTab = _DiscoverTab.community),
+          ),
+        ]),
       ),
     );
   }
 
   Widget _tabButton({
-    required _DiscoverTab tab,
-    required IconData icon,
+    required bool isSelected,
+    required IconData activeIcon,
     required IconData inactiveIcon,
     required String label,
+    required VoidCallback onTap,
   }) {
-    final bool isSelected = _activeTab == tab;
-
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _activeTab = tab),
+        onTap: onTap,
         child: AnimatedContainer(
           duration: AppDurations.base,
           curve: AppCurves.premiumEase,
@@ -206,41 +201,26 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             borderRadius: BorderRadius.circular(16),
             gradient: isSelected
                 ? const LinearGradient(
-                    colors: [Color(0xFFF07020), Color(0xFFE67E22)],
-                  )
+                    colors: [Color(0xFFF07020), Color(0xFFE67E22)])
                 : null,
             boxShadow: isSelected
-                ? const [
-                    BoxShadow(
-                      color: Color(0x61E67E22),
-                      blurRadius: 14,
-                      offset: Offset(0, 3),
-                    ),
-                  ]
+                ? const [BoxShadow(
+                    color: Color(0x61E67E22), blurRadius: 14,
+                    offset: Offset(0, 3))]
                 : null,
           ),
           alignment: Alignment.center,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                isSelected ? icon : inactiveIcon,
-                size: 16,
-                color: isSelected
-                    ? AppColors.textInverse
-                    : AppColors.textMuted,
-              ),
+              Icon(isSelected ? activeIcon : inactiveIcon, size: 16,
+                color: isSelected ? AppColors.textInverse : AppColors.textMuted),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: AppTypography.label.copyWith(
-                  color: isSelected
-                      ? AppColors.textInverse
-                      : AppColors.textMuted,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
+              Text(label, style: AppTypography.label.copyWith(
+                color: isSelected ? AppColors.textInverse : AppColors.textMuted,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 15,
+              )),
             ],
           ),
         ),
@@ -248,12 +228,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  // ── Discover content ──────────────────────────────────────────────
+  // ── Discover content ────────────────────────────────────────────────
 
   Widget _buildDiscoverContent(DiscoverState discoverState) {
     return switch (discoverState) {
       DiscoverLoading() => _buildSkeletonLoader(),
-      DiscoverError(:final exception) => _buildErrorState(exception.userMessage),
+      DiscoverError(:final exception) =>
+        _buildErrorState(exception.userMessage),
       DiscoverEmpty() => _buildEmptyState(),
       DiscoverLoaded() => _buildCardStack(discoverState),
     };
@@ -261,23 +242,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildSkeletonLoader() {
     return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-      child: Column(
-        children: [
-          Expanded(child: SkeletonCard(variant: SkeletonVariant.fullCard)),
-          SizedBox(height: AppSpacing.lg),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SkeletonCard(variant: SkeletonVariant.circle, width: 60, height: 60),
-              SizedBox(width: AppSpacing.lg),
-              SkeletonCard(variant: SkeletonVariant.circle, width: 76, height: 76),
-              SizedBox(width: AppSpacing.lg),
-              SkeletonCard(variant: SkeletonVariant.circle, width: 60, height: 60),
-            ],
-          ),
-        ],
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg, vertical: AppSpacing.md,
       ),
+      child: Column(children: [
+        Expanded(child: SkeletonCard(variant: SkeletonVariant.fullCard)),
+        SizedBox(height: AppSpacing.lg),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          SkeletonCard(variant: SkeletonVariant.circle, width: 60, height: 60),
+          SizedBox(width: AppSpacing.lg),
+          SkeletonCard(variant: SkeletonVariant.circle, width: 76, height: 76),
+          SizedBox(width: AppSpacing.lg),
+          SkeletonCard(variant: SkeletonVariant.circle, width: 60, height: 60),
+        ]),
+      ]),
     );
   }
 
@@ -287,10 +265,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: EmptyState(
           icon: PhosphorIconsBold.warningCircle,
-          title: 'Could not load profiles',
+          title: "Couldn't load profiles",
           description: message,
           actionLabel: 'Try again',
-          onAction: () => ref.read(discoverNotifierProvider.notifier).loadProfiles(),
+          onAction: () =>
+              ref.read(discoverNotifierProvider.notifier).loadProfiles(),
         ),
       ),
     );
@@ -303,7 +282,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         child: EmptyState(
           icon: PhosphorIconsDuotone.heart,
           title: "You've seen everyone!",
-          description: 'New people join every day. We will let you know when someone new is nearby.',
+          description:
+              'New people join every day. We will let you know when '
+              'someone new is nearby.',
           actionLabel: 'Adjust filters',
           onAction: _openFiltersSheet,
         ),
@@ -320,54 +301,50 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  if (visibleStack.length > 2)
-                    DiscoverGhostCard(
-                      scale: 0.91 + absProgress * 0.05,
-                      translateY: 20 - absProgress * 20,
-                      opacity: 0.70,
-                    ),
-                  if (visibleStack.length > 1)
-                    DiscoverGhostCard(
-                      scale: 0.95 + absProgress * 0.05,
-                      translateY: 12 - absProgress * 12,
-                      opacity: 0.85,
-                    ),
-                  Positioned.fill(
-                    child: SwipeCard(
-                      key: ValueKey(visibleStack.first.userId),
-                      candidate: visibleStack.first,
-                      onLikeComplete: notifier.likeCurrentProfile,
-                      onPassComplete: notifier.passCurrentProfile,
-                      onDragProgress: (progress) {
-                        setState(() => _dragProgress = progress);
-                      },
-                      onViewProfile: () => _navigateToProfile(visibleStack.first.userId),
-                    ),
-                  ),
-                ],
+      child: Column(children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Stack(clipBehavior: Clip.none, children: [
+              if (visibleStack.length > 2)
+                DiscoverGhostCard(
+                  scale: 0.91 + absProgress * 0.05,
+                  translateY: 20 - absProgress * 20,
+                  opacity: 0.70,
+                ),
+              if (visibleStack.length > 1)
+                DiscoverGhostCard(
+                  scale: 0.95 + absProgress * 0.05,
+                  translateY: 12 - absProgress * 12,
+                  opacity: 0.85,
+                ),
+              Positioned.fill(
+                child: SwipeCard(
+                  key: ValueKey(visibleStack.first.userId),
+                  candidate: visibleStack.first,
+                  onLikeComplete: notifier.likeCurrentProfile,
+                  onPassComplete: notifier.passCurrentProfile,
+                  onDragProgress: (progress) =>
+                      setState(() => _dragProgress = progress),
+                  onViewProfile: () =>
+                      _navigateToProfile(visibleStack.first.userId),
+                ),
               ),
-            ),
+            ]),
           ),
-          DiscoverActionButtons(
-            candidate: visibleStack.first,
-            onPass: notifier.passCurrentProfile,
-            onLike: notifier.likeCurrentProfile,
-            onViewProfile: () => _navigateToProfile(visibleStack.first.userId),
-          ),
-          DiscoverProgressDots(
-            totalCount: loadedState.profiles.length,
-            currentIndex: loadedState.currentIndex,
-          ),
-        ],
-      ),
+        ),
+        DiscoverActionButtons(
+          candidate: visibleStack.first,
+          onPass: notifier.passCurrentProfile,
+          onLike: notifier.likeCurrentProfile,
+          onViewProfile: () =>
+              _navigateToProfile(visibleStack.first.userId),
+        ),
+        DiscoverProgressDots(
+          totalCount: loadedState.profiles.length,
+          currentIndex: loadedState.currentIndex,
+        ),
+      ]),
     );
   }
 
@@ -376,7 +353,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: EmptyState(
         icon: PhosphorIconsDuotone.usersThree,
         title: 'Coming Soon',
-        description: 'Community stories from your neighbors are on the way. Stay tuned!',
+        description:
+            'Community stories from your neighbors are on the way. '
+            'Stay tuned!',
       ),
     );
   }

@@ -1,5 +1,7 @@
-/// Action buttons and ghost card widgets for the discover card stack.
+/// Action buttons, ghost card, progress dots, and remaining badge
+/// for the discover card stack.
 ///
+/// Pixel-perfect port of the action row from tander-web discover-page.tsx.
 /// Extracted from discover_screen.dart to keep files under 400 lines.
 library;
 
@@ -13,7 +15,8 @@ import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
-// ── Action buttons row ──────────────────────────────────────────────
+// ── Action buttons row ──────────────────────────────────────────────────
+// Web: gap-5, Pass 60x60, Connect 76x76 gradient, Profile 60x60
 
 class DiscoverActionButtons extends StatelessWidget {
   const DiscoverActionButtons({
@@ -71,6 +74,10 @@ class DiscoverActionButtons extends StatelessWidget {
     );
   }
 }
+
+// ── Circle action button ────────────────────────────────────────────────
+// Web: Pass/Profile: bg #fff, border 2.5px #E8E3DA, shadow-md
+// Web: Connect: gradient #F07020 -> #E67E22, shadow 0 6px 20px
 
 class _CircleActionButton extends StatelessWidget {
   const _CircleActionButton({
@@ -136,7 +143,11 @@ class _CircleActionButton extends StatelessWidget {
                       ],
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: isPrimary ? 32 : 26, color: iconColor),
+              child: Icon(
+                icon,
+                size: isPrimary ? 32 : 26,
+                color: iconColor,
+              ),
             ),
           ),
         ),
@@ -154,7 +165,8 @@ class _CircleActionButton extends StatelessWidget {
   }
 }
 
-// ── Ghost card (stacked behind the top card) ────────────────────────
+// ── Ghost card (stacked behind the top card) ────────────────────────────
+// Web: rounded-[28px], border border-border, scale + translateY + blur
 
 class DiscoverGhostCard extends StatelessWidget {
   const DiscoverGhostCard({
@@ -202,7 +214,9 @@ class DiscoverGhostCard extends StatelessWidget {
   }
 }
 
-// ── Progress dots ───────────────────────────────────────────────────
+// ── Progress dots ───────────────────────────────────────────────────────
+// Web: gap-1.5, max 9, current w-7 bg-primary, past w-2 bg-primary/30,
+//      future w-2 bg-border
 
 class DiscoverProgressDots extends StatelessWidget {
   const DiscoverProgressDots({
@@ -248,7 +262,9 @@ class DiscoverProgressDots extends StatelessWidget {
   }
 }
 
-// ── Remaining count badge ───────────────────────────────────────────
+// ── Remaining count badge ───────────────────────────────────────────────
+// Web: px-2.5 py-0.5 rounded-full text-xs font-semibold,
+//      bg-primary-light text-primary-accessible, Users fill 11px
 
 class DiscoverRemainingBadge extends StatelessWidget {
   const DiscoverRemainingBadge({required this.count, super.key});
@@ -266,7 +282,11 @@ class DiscoverRemainingBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(PhosphorIconsFill.users, size: 11, color: AppColors.primaryAccessible),
+          const Icon(
+            PhosphorIconsFill.users,
+            size: 11,
+            color: AppColors.primaryAccessible,
+          ),
           const SizedBox(width: 4),
           Text(
             '$count',
