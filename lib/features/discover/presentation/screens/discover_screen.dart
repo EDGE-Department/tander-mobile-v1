@@ -8,7 +8,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
@@ -23,8 +22,8 @@ import 'package:tander_flutter_v3/features/discover/presentation/widgets/discove
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_mobile_header.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_panel_header.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/swipe_card.dart';
-import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
 /// Breakpoint matching the web `lg:` prefix (1024px).
@@ -59,8 +58,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  void _navigateToProfile(String userId) {
-    context.push(AppRoutes.discoverProfile(userId));
+  void _openProfileModal(String userId) {
+    showProfileViewModal(context, userId: userId);
   }
 
   // ── Build ───────────────────────────────────────────────────────────
@@ -271,7 +270,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       onDragProgress: (progress) =>
                           setState(() => _dragProgress = progress),
                       onViewProfile: () =>
-                          _navigateToProfile(visibleStack.first.userId),
+                          _openProfileModal(visibleStack.first.userId),
                     ),
                   ),
                 ],
@@ -283,7 +282,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             onPass: notifier.passCurrentProfile,
             onLike: notifier.likeCurrentProfile,
             onViewProfile: () =>
-                _navigateToProfile(visibleStack.first.userId),
+                _openProfileModal(visibleStack.first.userId),
           ),
           DiscoverProgressDots(
             totalCount: loadedState.profiles.length,
