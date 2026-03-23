@@ -45,39 +45,41 @@ final class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) {
     return _runSafe('signIn', () async {
+      // 1. Call login endpoint — same as web: POST /auth/login
       final loginResponse = await _remoteDatasource.signIn(
         email: email,
         password: password,
       );
 
+      // 2. Extract Jwt-Token header — same as web
       final accessToken = _extractAccessToken(loginResponse.headers);
 
-      final responseBody = loginResponse.data;
-      if (responseBody == null) {
-        throw const FormatException('Empty response body from login endpoint');
+      // 3. Extract refreshToken from response body — parse manually
+      //    like the web does (no strict DTO, backend sends nullable fields)
+      final body = loginResponse.data;
+      final data = body?['data'];
+      final refreshToken = data is Map<String, Object?>
+          ? data['refreshToken'] as String?
+          : null;
+
+      if (refreshToken == null || refreshToken.isEmpty) {
+        throw const FormatException('Missing refreshToken in login response');
       }
 
-      final loginDto = LoginResponseDto.fromJson(responseBody);
-      final refreshToken = loginDto.data.refreshToken;
-
+      // 4. Save tokens — same as web: setAccessToken + setRefreshToken
       await _localDatasource.saveTokens(
         accessToken: accessToken,
         refreshToken: refreshToken,
       );
-
       await _sessionManager.setTokens(
         accessToken: accessToken,
         refreshToken: refreshToken,
       );
 
+      // 5. Fetch /user/me to get the real userId and profile — same as web
       final session = await _fetchAndMapSession();
       _sessionManager.setSession(session);
       _connectStomp(accessToken);
-
-      AppLogger.info(
-        'Sign-in successful for user ${session.userId}',
-        operation: _tag,
-      );
 
       return session;
     });
