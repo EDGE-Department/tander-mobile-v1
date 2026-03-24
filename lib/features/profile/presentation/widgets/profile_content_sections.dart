@@ -18,7 +18,7 @@ import 'package:tander_flutter_v3/shared/widgets/photo_lightbox.dart';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
-const double _tabletBreakpoint = 600;
+const double _tabletBreakpoint = 500;
 
 const List<ProfileTone> _interestTones = [
   ProfileTone.primary,
@@ -93,7 +93,7 @@ class ProfileAboutSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTablet =
-        MediaQuery.of(context).size.shortestSide >= _tabletBreakpoint;
+        MediaQuery.of(context).size.width >= _tabletBreakpoint;
 
     final aboutCard = _buildAboutCard();
     final snapshotCard = _buildSnapshotCard();
@@ -202,7 +202,7 @@ class ProfileInterestsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTablet =
-        MediaQuery.of(context).size.shortestSide >= _tabletBreakpoint;
+        MediaQuery.of(context).size.width >= _tabletBreakpoint;
 
     final interestsCard = _buildInterestsCard();
     final detailsCard = _buildDetailsCard();
