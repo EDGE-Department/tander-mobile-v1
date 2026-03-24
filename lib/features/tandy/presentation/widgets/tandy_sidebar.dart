@@ -37,6 +37,7 @@ class TandySidebar extends StatelessWidget {
         border: Border(right: BorderSide(color: Color(0xFFEDE8E0))),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           // Avatar hero
           Container(
@@ -64,7 +65,12 @@ class TandySidebar extends StatelessWidget {
                         border: Border.all(color: kTandyOrange.withAlpha(51), width: 2),
                         boxShadow: <BoxShadow>[BoxShadow(color: kTandyOrange.withAlpha(41), blurRadius: 24, offset: const Offset(0, 8))],
                       ),
-                      child: const Icon(Icons.auto_awesome, size: 36, color: kTandyOrange),
+                      child: ClipOval(
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Image.asset('assets/icons/tandy_icon.png', fit: BoxFit.contain),
+                        ),
+                      ),
                     ),
                     Container(
                       width: 14, height: 14,
@@ -101,7 +107,7 @@ class TandySidebar extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                _SidebarFeature(icon: Icons.air, label: 'Breathe', sub: 'Calm your mind \u00B7 4 min', color: kTandyTeal, onTap: onBreatheTap),
+                _SidebarFeature(icon: Icons.spa, label: 'Breathe', sub: 'Calm your mind \u00B7 4 min', color: kTandyTeal, onTap: onBreatheTap),
                 const SizedBox(height: 6),
                 _SidebarFeature(icon: Icons.self_improvement, label: 'Meditate', sub: 'Find stillness \u00B7 5-10 min', color: kTandyPurple, onTap: onMeditateTap),
                 const SizedBox(height: 6),
@@ -186,7 +192,7 @@ class _SidebarChatButton extends StatelessWidget {
               Container(
                 width: 40, height: 40,
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: const LinearGradient(colors: <Color>[Color(0xFFF9BB3C), kTandyOrange])),
-                child: const Icon(Icons.send, size: 17, color: Colors.white),
+                child: const Icon(Icons.near_me, size: 17, color: Colors.white),
               ),
               const SizedBox(width: 12),
               const Expanded(

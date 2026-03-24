@@ -40,11 +40,15 @@ class ProfileViewHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
+    // Web: aspect-ratio 4/5 but capped at max-height 56dvh
+    final maxHeroHeight = MediaQuery.sizeOf(context).height * 0.56;
 
-    return AspectRatio(
-      aspectRatio: 4 / 5,
-      child: Stack(
-        fit: StackFit.expand,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeroHeight),
+      child: AspectRatio(
+        aspectRatio: 4 / 5,
+        child: Stack(
+          fit: StackFit.expand,
         children: [
           if (hasPhoto)
             GestureDetector(
@@ -62,6 +66,7 @@ class ProfileViewHero extends StatelessWidget {
           if (allPhotoCount > 1) _photoCounter(allPhotoCount),
           _nameOverlay(),
         ],
+      ),
       ),
     );
   }

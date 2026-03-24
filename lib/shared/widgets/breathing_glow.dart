@@ -91,7 +91,7 @@ class _BreathingGlowState extends State<BreathingGlow>
               boxShadow: [
                 BoxShadow(
                   color: glowColor.withValues(
-                    alpha: glowColor.a * _opacityAnimation.value,
+                    alpha: (glowColor.a * _opacityAnimation.value).clamp(0.0, 1.0),
                   ),
                   blurRadius: widget.glowRadius,
                   spreadRadius: widget.glowRadius * 0.25,

@@ -18,7 +18,7 @@ class TandyQuickActions extends StatelessWidget {
     return Column(
       children: <Widget>[
         _ActionCard(
-          icon: Icons.air,
+          icon: Icons.spa,
           title: 'Breathing',
           subtitle: 'Calm exercises for anxious moments',
           durationLabel: '5 min',

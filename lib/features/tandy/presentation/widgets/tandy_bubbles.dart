@@ -224,11 +224,12 @@ class TandyBubble extends StatelessWidget {
                             width: 1.5,
                           ),
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.auto_awesome,
-                            size: 18,
-                            color: kTandyOrange,
+                        child: Center(
+                          child: Image.asset(
+                            'assets/icons/tandy_icon.png',
+                            width: 18,
+                            height: 18,
+                            fit: BoxFit.contain,
                           ),
                         ),
                       )

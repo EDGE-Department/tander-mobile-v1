@@ -85,7 +85,12 @@ class _TandyWelcomeCardState extends State<TandyWelcomeCard> {
                             borderRadius: BorderRadius.circular(8),
                             gradient: const LinearGradient(colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDDCB0)]),
                           ),
-                          child: const Icon(Icons.auto_awesome, size: 14, color: kTandyOrange),
+                          child: Image.asset(
+                            'assets/icons/tandy_icon.png',
+                            width: 14,
+                            height: 14,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         const Text(

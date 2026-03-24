@@ -66,10 +66,11 @@ class TandyEmptyState extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  size: 36,
-                  color: kTandyOrange,
+                child: Image.asset(
+                  'assets/icons/tandy_icon.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 16),

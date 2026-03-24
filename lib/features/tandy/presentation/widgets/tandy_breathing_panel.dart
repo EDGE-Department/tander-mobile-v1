@@ -3,32 +3,17 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constellation_bg.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
 
-const List<String> _phaseSequence = <String>['inhale', 'hold', 'exhale', 'rest'];
-
-const Map<String, int> _phaseDurations = <String, int>{
-  'inhale': kBreathingInhaleDuration,
-  'hold': kBreathingHoldDuration,
-  'exhale': kBreathingExhaleDuration,
-  'rest': kBreathingRestDuration,
-};
-
-const Map<String, Color> _phaseColors = <String, Color>{
-  'idle': kTandyTeal,
-  'inhale': kInhaleColor,
-  'hold': kHoldColor,
-  'exhale': kExhaleColor,
-  'rest': kRestColor,
-};
-
-const Map<String, String> _phaseLabels = <String, String>{'idle': 'Ready', 'inhale': 'Breathe In', 'hold': 'Hold', 'exhale': 'Breathe Out', 'rest': 'Rest'};
-
-const Map<String, String> _phaseInstructions = <String, String>{'idle': 'Press play when you are ready', 'inhale': 'Breathe in through your nose', 'hold': 'Hold your breath gently', 'exhale': 'Breathe out through your mouth', 'rest': 'Relax and settle'};
+const List<String> _phaseSequence = ['inhale', 'hold', 'exhale', 'rest'];
+const Map<String, int> _phaseDurations = {'inhale': kBreathingInhaleDuration, 'hold': kBreathingHoldDuration, 'exhale': kBreathingExhaleDuration, 'rest': kBreathingRestDuration};
+const Map<String, Color> _phaseColors = {'idle': kTandyTeal, 'inhale': kInhaleColor, 'hold': kHoldColor, 'exhale': kExhaleColor, 'rest': kRestColor};
+const Map<String, String> _phaseLabels = {'idle': 'Ready', 'inhale': 'Breathe In', 'hold': 'Hold', 'exhale': 'Breathe Out', 'rest': 'Rest'};
+const Map<String, String> _phaseInstructions = {'idle': 'Press play when you are ready', 'inhale': 'Through the nose, slow and steady.', 'hold': 'Stay soft. No strain in the jaw or throat.', 'exhale': 'Out through the mouth, longer than the inhale.', 'rest': 'A brief pause before the next inhale arrives.'};
 
 class TandyBreathingPanel extends StatefulWidget {
   const TandyBreathingPanel({required this.onClose, super.key});
-
   final VoidCallback onClose;
 
   @override
@@ -49,10 +34,7 @@ class _TandyBreathingPanelState extends State<TandyBreathingPanel>
   @override
   void initState() {
     super.initState();
-    _orbController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat(reverse: true);
+    _orbController = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat(reverse: true);
   }
 
   @override
@@ -63,42 +45,18 @@ class _TandyBreathingPanelState extends State<TandyBreathingPanel>
   }
 
   void _start() {
-    setState(() {
-      _isRunning = true;
-      _isComplete = false;
-      _cycleCount = 0;
-      _phaseIndex = 0;
-      _phase = _phaseSequence[0];
-      _secondsLeft = _phaseDurations[_phase]!;
-    });
+    setState(() { _isRunning = true; _isComplete = false; _cycleCount = 0; _phaseIndex = 0; _phase = _phaseSequence[0]; _secondsLeft = _phaseDurations[_phase]!; });
     _startTimer();
   }
 
-  void _pause() {
-    _timer?.cancel();
-    setState(() => _isRunning = false);
-  }
+  void _pause() { _timer?.cancel(); setState(() => _isRunning = false); }
 
-  void _reset() {
-    _timer?.cancel();
-    setState(() {
-      _isRunning = false;
-      _phase = 'idle';
-      _secondsLeft = 0;
-      _cycleCount = 0;
-      _phaseIndex = 0;
-      _isComplete = false;
-    });
-  }
+  void _reset() { _timer?.cancel(); setState(() { _isRunning = false; _phase = 'idle'; _secondsLeft = 0; _cycleCount = 0; _phaseIndex = 0; _isComplete = false; }); }
 
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_secondsLeft > 1) {
-        setState(() => _secondsLeft--);
-      } else {
-        _advancePhase();
-      }
+      if (_secondsLeft > 1) { setState(() => _secondsLeft--); } else { _advancePhase(); }
     });
   }
 
@@ -108,25 +66,11 @@ class _TandyBreathingPanelState extends State<TandyBreathingPanel>
       _cycleCount++;
       if (_cycleCount >= kBreathingTotalCycles) {
         _timer?.cancel();
-        setState(() {
-          _isRunning = false;
-          _phase = 'idle';
-          _secondsLeft = 0;
-          _isComplete = true;
-        });
+        setState(() { _isRunning = false; _phase = 'idle'; _secondsLeft = 0; _isComplete = true; });
         return;
       }
     }
-    setState(() {
-      _phase = _phaseSequence[_phaseIndex];
-      _secondsLeft = _phaseDurations[_phase]!;
-    });
-  }
-
-  String _formatClock(int totalSeconds) {
-    final mins = totalSeconds ~/ 60;
-    final secs = totalSeconds % 60;
-    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    setState(() { _phase = _phaseSequence[_phaseIndex]; _secondsLeft = _phaseDurations[_phase]!; });
   }
 
   int get _totalElapsed {
@@ -137,174 +81,327 @@ class _TandyBreathingPanelState extends State<TandyBreathingPanel>
     return completedCycleSeconds + phaseOffsetSeconds + currentPhaseElapsed;
   }
 
+  String _formatClock(int totalSeconds) {
+    final mins = totalSeconds ~/ 60;
+    final secs = totalSeconds % 60;
+    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final phaseColor = _phaseColors[_phase] ?? kTandyTeal;
-    final phaseLabel = _phaseLabels[_phase] ?? '';
-    final phaseInstruction = _phaseInstructions[_phase] ?? '';
     final remainingTotal = kBreathingSessionDuration - _totalElapsed;
+    final progress = _totalElapsed / kBreathingSessionDuration;
+    final isTablet = MediaQuery.sizeOf(context).width >= 1024;
 
     return Container(
       color: AppColors.canvas,
-      child: SafeArea(
-        child: Column(
-          children: <Widget>[
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-              child: Row(
-                children: <Widget>[
-                  Container(
-                    width: 38, height: 38,
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(11), color: const Color(0xFFFEF0E0)),
-                    child: const Icon(Icons.air, size: 18, color: kTandyOrange),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text('Breathing Exercise', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong)),
-                        Text('4-7-8 technique \u00B7 84 seconds', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: widget.onClose,
-                    icon: const Icon(Icons.close, size: 16),
-                    style: IconButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11), side: const BorderSide(color: AppColors.borderLight)),
-                      backgroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: TandyConstellationBg()),
+          SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                const Divider(height: 1, color: AppColors.borderLight),
+                Expanded(
+                  child: _isComplete
+                      ? _CompletionView(onReset: _reset)
+                      : isTablet
+                          ? _buildTabletLayout(phaseColor, remainingTotal, progress)
+                          : _buildPhoneLayout(phaseColor, remainingTotal, progress),
+                ),
+              ],
             ),
-
-            const Divider(height: 1, color: AppColors.borderLight),
-
-            // Body
-            Expanded(
-              child: _isComplete ? _CompletionView(onReset: _reset) : _BreathingBody(
-                phase: _phase,
-                phaseColor: phaseColor,
-                phaseLabel: phaseLabel,
-                phaseInstruction: phaseInstruction,
-                secondsLeft: _secondsLeft,
-                remainingTotal: remainingTotal,
-                cycleCount: _cycleCount,
-                isRunning: _isRunning,
-                orbController: _orbController,
-                onStart: _start,
-                onPause: _pause,
-                onReset: _reset,
-                formatClock: _formatClock,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class _BreathingBody extends StatelessWidget {
-  const _BreathingBody({
-    required this.phase, required this.phaseColor, required this.phaseLabel,
-    required this.phaseInstruction, required this.secondsLeft, required this.remainingTotal,
-    required this.cycleCount, required this.isRunning, required this.orbController,
-    required this.onStart, required this.onPause, required this.onReset,
-    required this.formatClock,
-  });
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      child: Row(
+        children: [
+          Container(width: 38, height: 38, decoration: BoxDecoration(borderRadius: BorderRadius.circular(11), color: const Color(0xFFFEF0E0)),
+            child: const Icon(Icons.spa, size: 18, color: kTandyOrange)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('4-7-8 Breathing', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong)),
+              const Text('Constellation-guided calm', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            ]),
+          ),
+          // Status badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: kTandyTeal.withAlpha(15), border: Border.all(color: kTandyTeal.withAlpha(40))),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: kTandyTeal)),
+              const SizedBox(width: 6),
+              Text(_isRunning ? 'In session' : 'Ready when you are', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0B7D73))),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close, size: 16),
+            style: IconButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11), side: const BorderSide(color: AppColors.borderLight)), backgroundColor: Colors.white)),
+        ],
+      ),
+    );
+  }
 
-  final String phase;
-  final Color phaseColor;
-  final String phaseLabel;
-  final String phaseInstruction;
-  final int secondsLeft;
-  final int remainingTotal;
-  final int cycleCount;
-  final bool isRunning;
-  final AnimationController orbController;
-  final VoidCallback onStart;
-  final VoidCallback onPause;
-  final VoidCallback onReset;
-  final String Function(int) formatClock;
+  // ── Tablet: two-column layout ──────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            // Orb
-            AnimatedBuilder(
-              animation: orbController,
-              builder: (_, __) {
-                final scale = phase == 'idle'
-                    ? 1.0 + 0.012 * math.sin(orbController.value * math.pi)
-                    : _orbScaleForPhase(phase, orbController.value);
-                return Transform.scale(
-                  scale: scale,
-                  child: Container(
-                    width: 160, height: 160,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: <Color>[phaseColor.withAlpha(204), phaseColor.withAlpha(77)],
-                      ),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(color: phaseColor.withAlpha(77), blurRadius: 40, spreadRadius: 4),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        secondsLeft > 0 ? secondsLeft.toString() : '',
-                        style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 28),
-
-            // Phase label
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                phaseLabel,
-                key: ValueKey(phase),
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: phaseColor, letterSpacing: -0.5),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(phaseInstruction, style: const TextStyle(fontSize: 15, color: AppColors.textBody)),
-            const SizedBox(height: 24),
-
-            // Session info
-            Text('Cycle ${cycleCount + 1} of $kBreathingTotalCycles', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
-            const SizedBox(height: 4),
-            Text(formatClock(remainingTotal.clamp(0, kBreathingSessionDuration)), style: const TextStyle(fontSize: 13, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 32),
-
-            // Controls
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                if (isRunning)
-                  _ControlButton(icon: Icons.pause, onTap: onPause, color: phaseColor)
-                else
-                  _ControlButton(icon: Icons.play_arrow, onTap: onStart, color: phaseColor),
-                const SizedBox(width: 16),
-                _ControlButton(icon: Icons.refresh, onTap: onReset, color: AppColors.textMuted, isOutlined: true),
+  Widget _buildTabletLayout(Color phaseColor, int remainingTotal, double progress) {
+    return Row(
+      children: [
+        // Left: Info panel
+        SizedBox(
+          width: 380,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28),
+            child: _buildInfoPanel(phaseColor, remainingTotal, progress),
+          ),
+        ),
+        // Right: Orb + controls + breathing path
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              children: [
+                _buildOrbSection(phaseColor, orbSize: 200),
+                const SizedBox(height: 28),
+                _buildControls(phaseColor),
+                const SizedBox(height: 32),
+                _buildBreathingPathCard(),
               ],
             ),
-          ],
+          ),
         ),
+      ],
+    );
+  }
+
+  // ── Phone: single-column ───────────────────────────────────────────────
+
+  Widget _buildPhoneLayout(Color phaseColor, int remainingTotal, double progress) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Tag pills
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            _tagPill('4-7-8 Technique'),
+            const SizedBox(width: 8),
+            _tagPill('4 guided cycles'),
+          ]),
+          const SizedBox(height: 20),
+          _buildOrbSection(phaseColor, orbSize: 160),
+          const SizedBox(height: 20),
+          // Session stats row
+          Row(children: [
+            Expanded(child: _statBox('TIME LEFT', _formatClock(remainingTotal.clamp(0, kBreathingSessionDuration)))),
+            const SizedBox(width: 10),
+            Expanded(child: _statBox('CYCLE', '$_cycleCount/$kBreathingTotalCycles')),
+          ]),
+          const SizedBox(height: 12),
+          // Progress bar
+          _buildProgressBar(progress),
+          const SizedBox(height: 24),
+          _buildControls(phaseColor),
+          const SizedBox(height: 24),
+          _buildBreathingPathCard(),
+        ],
       ),
+    );
+  }
+
+  // ── Shared components ──────────────────────────────────────────────────
+
+  Widget _buildInfoPanel(Color phaseColor, int remainingTotal, double progress) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Tag pills
+        Row(children: [
+          _tagPill('4-7-8 Technique'),
+          const SizedBox(width: 8),
+          _tagPill('4 guided cycles'),
+        ]),
+        const SizedBox(height: 20),
+        const Text('Breathe with the orb.\nLet the sky stay still.', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.textStrong, height: 1.2)),
+        const SizedBox(height: 12),
+        const Text('A 4-7-8 flow built around slower exhales and a fixed constellation backdrop.', style: TextStyle(fontSize: 14, color: AppColors.textMuted, height: 1.5)),
+        const SizedBox(height: 24),
+        // Session stats
+        const Text('SESSION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 2, color: AppColors.textMuted)),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: _statBox('TIME LEFT', _formatClock(remainingTotal.clamp(0, kBreathingSessionDuration)))),
+          const SizedBox(width: 10),
+          Expanded(child: _statBox('CYCLE', '$_cycleCount/$kBreathingTotalCycles')),
+        ]),
+        const SizedBox(height: 16),
+        _buildProgressBar(progress),
+      ],
+    );
+  }
+
+  Widget _buildOrbSection(Color phaseColor, {required double orbSize}) {
+    final phaseLabel = _phaseLabels[_phase] ?? '';
+    final phaseInstruction = _phaseInstructions[_phase] ?? '';
+
+    return Column(
+      children: [
+        // Title above orb
+        Text(
+          _phase == 'idle' ? 'Let the orb guide the breath' : phaseLabel,
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: phaseColor, letterSpacing: -0.3),
+        ),
+        const SizedBox(height: 4),
+        Text(phaseInstruction, style: const TextStyle(fontSize: 13, color: AppColors.textMuted), textAlign: TextAlign.center),
+        const SizedBox(height: 24),
+        // Orb
+        AnimatedBuilder(
+          animation: _orbController,
+          builder: (_, __) {
+            final scale = _phase == 'idle'
+                ? 1.0 + 0.012 * math.sin(_orbController.value * math.pi)
+                : _orbScaleForPhase(_phase, _orbController.value);
+            return Transform.scale(
+              scale: scale,
+              child: Container(
+                width: orbSize, height: orbSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(colors: [phaseColor.withAlpha(204), phaseColor.withAlpha(77)]),
+                  boxShadow: [BoxShadow(color: phaseColor.withAlpha(77), blurRadius: 40, spreadRadius: 4)],
+                ),
+                child: Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(
+                      _secondsLeft > 0 ? _secondsLeft.toString() : phaseLabel,
+                      style: TextStyle(fontSize: _secondsLeft > 0 ? 52 : 26, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                    if (_secondsLeft > 0)
+                      Text(phaseLabel.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white70, letterSpacing: 1.5)),
+                  ]),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildControls(Color phaseColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Reset
+        _ControlButton(icon: Icons.refresh, onTap: _reset, color: AppColors.textMuted, isOutlined: true, size: 50),
+        const SizedBox(width: 16),
+        // Play/Pause (large center)
+        _ControlButton(
+          icon: _isRunning ? Icons.pause : Icons.play_arrow,
+          onTap: _isRunning ? _pause : _start,
+          color: phaseColor,
+          size: 72,
+        ),
+        const SizedBox(width: 16),
+        // Cycle counter
+        Container(
+          width: 50, height: 50,
+          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.borderLight)),
+          child: Center(child: Text('$_cycleCount\n/$kBreathingTotalCycles', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody, height: 1.2))),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBreathingPathCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(230),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 20, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('BREATHING PATH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 2, color: AppColors.textMuted)),
+          const SizedBox(height: 14),
+          _pathStep(1, 'Inhale', _phaseInstructions['inhale']!, '${kBreathingInhaleDuration}s', kInhaleColor, _phase == 'inhale'),
+          _pathStep(2, 'Hold', _phaseInstructions['hold']!, '${kBreathingHoldDuration}s', kHoldColor, _phase == 'hold'),
+          _pathStep(3, 'Exhale', _phaseInstructions['exhale']!, '${kBreathingExhaleDuration}s', kExhaleColor, _phase == 'exhale'),
+          _pathStep(4, 'Rest', _phaseInstructions['rest']!, '${kBreathingRestDuration}s', kRestColor, _phase == 'rest'),
+        ],
+      ),
+    );
+  }
+
+  Widget _pathStep(int number, String label, String sub, String duration, Color color, bool isActive) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: isActive ? color : color.withAlpha(30)),
+            child: Center(child: Text('$number', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: isActive ? Colors.white : color))),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: isActive ? color : AppColors.textStrong)),
+            Text(sub, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          ])),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: isActive ? color.withAlpha(20) : const Color(0xFFF5F0EB)),
+            child: Text(duration, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: isActive ? color : AppColors.textMuted)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(double progress) {
+    return Column(
+      children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Session progress', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          Text('${(progress * 100).round()}%', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTandyTeal)),
+        ]),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: LinearProgressIndicator(value: progress.clamp(0.0, 1.0), minHeight: 4, backgroundColor: const Color(0xFFEDE8E0), valueColor: const AlwaysStoppedAnimation(kTandyTeal)),
+        ),
+      ],
+    );
+  }
+
+  Widget _statBox(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.borderLight), color: Colors.white.withAlpha(200)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.5, color: AppColors.textMuted)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textStrong)),
+      ]),
+    );
+  }
+
+  Widget _tagPill(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.borderLight), color: Colors.white.withAlpha(200)),
+      child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textBody)),
     );
   }
 
@@ -320,35 +417,27 @@ class _BreathingBody extends StatelessWidget {
 }
 
 class _ControlButton extends StatelessWidget {
-  const _ControlButton({required this.icon, required this.onTap, required this.color, this.isOutlined = false});
+  const _ControlButton({required this.icon, required this.onTap, required this.color, this.isOutlined = false, this.size = 64});
   final IconData icon;
   final VoidCallback onTap;
   final Color color;
   final bool isOutlined;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     if (isOutlined) {
-      return OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          fixedSize: const Size(56, 56),
-          shape: const CircleBorder(),
-          side: const BorderSide(color: AppColors.borderLight),
-          foregroundColor: color,
-        ),
-        child: Icon(icon, size: 22),
-      );
+      return GestureDetector(onTap: onTap, child: Container(
+        width: size, height: size,
+        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.borderLight), color: Colors.white.withAlpha(200)),
+        child: Icon(icon, size: size * 0.38, color: color),
+      ));
     }
-    return FilledButton(
-      onPressed: onTap,
-      style: FilledButton.styleFrom(
-        fixedSize: const Size(64, 64),
-        shape: const CircleBorder(),
-        backgroundColor: color,
-      ),
-      child: Icon(icon, size: 26, color: Colors.white),
-    );
+    return GestureDetector(onTap: onTap, child: Container(
+      width: size, height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color, boxShadow: [BoxShadow(color: color.withAlpha(80), blurRadius: 20, offset: const Offset(0, 6))]),
+      child: Icon(icon, size: size * 0.40, color: Colors.white),
+    ));
   }
 }
 
@@ -358,41 +447,18 @@ class _CompletionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Container(
-              width: 100, height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: kTandyGreen.withAlpha(20),
-                border: Border.all(color: kTandyGreen.withAlpha(77), width: 2),
-              ),
-              child: const Icon(Icons.check, size: 48, color: kTandyGreen),
-            ),
-            const SizedBox(height: 24),
-            const Text('Session Complete', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textStrong)),
-            const SizedBox(height: 8),
-            const Text('4 cycles \u00B7 84 seconds of calm', style: TextStyle(fontSize: 15, color: AppColors.textMuted)),
-            const SizedBox(height: 8),
-            const Text('Notice how you feel. Carry this stillness forward.', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: AppColors.textBody, height: 1.6)),
-            const SizedBox(height: 28),
-            OutlinedButton(
-              onPressed: onReset,
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: kTandyTeal, width: 2),
-                foregroundColor: kTandyTeal,
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                shape: const StadiumBorder(),
-              ),
-              child: const Text('Do Another Session', style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
-      ),
-    );
+    return Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 100, height: 100, decoration: BoxDecoration(shape: BoxShape.circle, color: kTandyGreen.withAlpha(20), border: Border.all(color: kTandyGreen.withAlpha(77), width: 2)),
+        child: const Icon(Icons.check, size: 48, color: kTandyGreen)),
+      const SizedBox(height: 24),
+      const Text('Session Complete', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textStrong)),
+      const SizedBox(height: 8),
+      const Text('4 cycles \u00B7 84 seconds of calm', style: TextStyle(fontSize: 15, color: AppColors.textMuted)),
+      const SizedBox(height: 8),
+      const Text('Notice how you feel. Carry this stillness forward.', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: AppColors.textBody, height: 1.6)),
+      const SizedBox(height: 28),
+      OutlinedButton(onPressed: onReset, style: OutlinedButton.styleFrom(side: const BorderSide(color: kTandyTeal, width: 2), foregroundColor: kTandyTeal, padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14), shape: const StadiumBorder()),
+        child: const Text('Do Another Session', style: TextStyle(fontWeight: FontWeight.w700))),
+    ])));
   }
 }

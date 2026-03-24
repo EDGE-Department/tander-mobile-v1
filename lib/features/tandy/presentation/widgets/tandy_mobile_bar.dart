@@ -54,9 +54,14 @@ class TandyMobileHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Center(
+                child: Center(
                   child:
-                      Icon(Icons.auto_awesome, size: 22, color: kTandyOrange),
+                      Image.asset(
+                        'assets/icons/tandy_icon.png',
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
+                      ),
                 ),
               ),
               Positioned(
@@ -195,7 +200,7 @@ class TandyMobileFeatureBar extends StatelessWidget {
               const SizedBox(width: 6),
               _buildFeatureCell(
                 label: 'Breathe',
-                icon: Icons.air,
+                icon: Icons.spa,
                 color: kTandyTeal,
                 onTap: onBreatheTap,
               ),

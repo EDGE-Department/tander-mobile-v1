@@ -53,13 +53,22 @@ Future<void> _showMobileSheet(
   required String userId,
   required ProfileRelationship relationship,
 }) {
-  return showModalBottomSheet<void>(
+  return showGeneralDialog<void>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.transparent,
-    builder: (_) => _MobileSheetWrapper(userId: userId, relationship: relationship),
+    barrierDismissible: true,
+    barrierLabel: 'Close profile',
+    barrierColor: Colors.black.withValues(alpha: 0.6),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, _, _) =>
+        _MobileSheetWrapper(userId: userId, relationship: relationship),
+    transitionBuilder: (_, animation, _, child) {
+      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+            .animate(curved),
+        child: child,
+      );
+    },
   );
 }
 
@@ -71,20 +80,20 @@ class _MobileSheetWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxHeight = MediaQuery.sizeOf(context).height * _mobileMaxHeightFraction;
+    final topPadding = MediaQuery.sizeOf(context).height * (1 - _mobileMaxHeightFraction);
 
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.6),
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          constraints: BoxConstraints(maxHeight: maxHeight),
-          decoration: const BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-          ),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Material(
+          color: AppColors.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           clipBehavior: Clip.antiAlias,
-          child: _ProfileModalBody(userId: userId, relationship: relationship),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: _ProfileModalBody(userId: userId, relationship: relationship),
+          ),
         ),
       ),
     );
@@ -108,10 +117,12 @@ Future<void> _showDesktopPanel(
         _DesktopPanelWrapper(userId: userId, relationship: relationship),
     transitionBuilder: (_, animation, _, child) {
       final curved = CurvedAnimation(parent: animation, curve: AppCurves.premiumEase);
-      return SlideTransition(
-        position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-            .animate(curved),
-        child: child,
+      return FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.95, end: 1.0).animate(curved),
+          child: child,
+        ),
       );
     },
   );
@@ -124,25 +135,23 @@ class _DesktopPanelWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.94;
+
+    return Center(
       child: Material(
         color: Colors.transparent,
         child: Container(
           width: _desktopPanelWidth,
-          height: double.infinity,
-          decoration: const BoxDecoration(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          decoration: BoxDecoration(
             color: AppColors.card,
-            boxShadow: [
-              BoxShadow(color: Color(0x3D000000), blurRadius: 32, offset: Offset(-8, 0)),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: const [
+              BoxShadow(color: Color(0x3D000000), blurRadius: 32, offset: Offset(0, 8)),
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: SafeArea(
-            left: false,
-            right: false,
-            child: _ProfileModalBody(userId: userId, relationship: relationship),
-          ),
+          child: _ProfileModalBody(userId: userId, relationship: relationship),
         ),
       ),
     );

@@ -75,8 +75,13 @@ class TandyChatHeader extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Center(
-              child: Icon(Icons.auto_awesome, color: kTandyOrange, size: 22),
+            child: Center(
+              child: Image.asset(
+                'assets/icons/tandy_icon.png',
+                width: 22,
+                height: 22,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           const SizedBox(width: 11),
@@ -171,7 +176,7 @@ class TandyChatChipsBar extends StatelessWidget {
         children: <Widget>[
           _ChatFeatureChip(
             label: 'Breathe',
-            icon: Icons.air,
+            icon: Icons.spa,
             color: kTandyTeal,
             backgroundColor: const Color(0xFFE0F5F4),
             onTap: onBreatheTap,

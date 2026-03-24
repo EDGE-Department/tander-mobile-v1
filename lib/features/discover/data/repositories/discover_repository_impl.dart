@@ -101,11 +101,13 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
 
   DiscoveryCandidate _mapCandidate(DiscoveryProfileDto dto) {
     final displayName = dto.displayName ?? dto.username;
+    // Extract first name from display name (e.g. "ROBERTO TUBIG DREZ" → "ROBERTO")
+    final firstName = displayName.split(' ').first;
 
     return DiscoveryCandidate(
       userId: dto.userId.toString(),
       username: dto.username,
-      firstName: displayName,
+      firstName: firstName,
       age: dto.age,
       city: dto.city,
       country: dto.country,
