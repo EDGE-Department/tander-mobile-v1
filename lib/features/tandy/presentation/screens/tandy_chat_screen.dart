@@ -20,6 +20,7 @@ import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_chat
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_composer.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_meditation_panel.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_psychiatrist_panel.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_message_thread.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_support_panel.dart';
 
@@ -193,9 +194,9 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
             onOpenPsychiatrist: () =>
                 notifier.setActivePanel(TandyActivePanel.psychiatrist),
           ),
-        TandyActivePanel.psychiatrist => TandySupportPanel(
+        TandyActivePanel.psychiatrist => TandyPsychiatristPanel(
             onClose: notifier.closePanel,
-            onOpenPsychiatrist: () {},
+            onBack: () => notifier.setActivePanel(TandyActivePanel.support),
           ),
       },
     );

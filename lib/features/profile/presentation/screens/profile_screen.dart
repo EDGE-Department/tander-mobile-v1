@@ -13,6 +13,8 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/notifiers/my_profile_notifier.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/states/profile_state.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_hero.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_screen_sections.dart';
@@ -24,16 +26,34 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO(#123): Watch myProfileNotifierProvider here.
-    // final profileAsync = ref.watch(myProfileNotifierProvider);
-    // return profileAsync.when(
-    //   loading: () => _buildLoading(),
-    //   error: (error, _) => _buildError(),
-    //   data: (profile) => ProfileLoadedBody(profile: profile),
-    // );
+    final profileState = ref.watch(myProfileNotifierProvider);
 
-    // Stub: show loading skeleton until the provider is wired.
-    return _buildLoading();
+    return switch (profileState) {
+      ProfileLoading() => _buildLoading(),
+      ProfileError(:final exception) => _buildError(ref, exception.userMessage),
+      ProfileLoaded(:final profile) => ProfileLoadedBody(profile: profile),
+    };
+  }
+
+  Widget _buildError(WidgetRef ref, String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+            const SizedBox(height: 16),
+            Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textBody)),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => ref.read(myProfileNotifierProvider.notifier).fetchProfile(),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildLoading() {

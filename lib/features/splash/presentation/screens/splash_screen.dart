@@ -158,22 +158,37 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
       body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment(-0.7, -0.5),
+            end: Alignment(0.7, 0.5),
             colors: [
-              Color(0xFF1A0800), // Dark warm
-              Color(0xFF0D1B2A), // Deep navy
+              Color(0xFFE8734A), // Warm coral-orange
+              Color(0xFFCD6038), // Deep burnt orange
+              Color(0xFF2A7A74), // Muted dark teal
+              Color(0xFF0F9D94), // Teal
             ],
-            transform: GradientRotation(145 * math.pi / 180),
+            stops: [0.0, 0.32, 0.62, 1.0],
           ),
         ),
         child: SizedBox.expand(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              _buildPulseRingsWithLogo(),
-              const SizedBox(height: AppSpacing.lg),
-              _buildWordmark(),
+              // Constellation stars
+              const _SplashConstellation(),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildPulseRingsWithLogo(),
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildWordmark(),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Made for Filipino seniors 60+',
+                      style: TextStyle(fontSize: 13, color: Colors.white54, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -189,16 +204,16 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer pulse ring (orange, no phase offset).
+          // Outer pulse ring (white, no phase offset).
           _PulseRing(
             controller: _pulseController,
-            color: AppColors.primary,
+            color: Colors.white,
             phaseOffset: 0.0,
           ),
-          // Inner pulse ring (teal, offset by half cycle).
+          // Inner pulse ring (white, offset by half cycle).
           _PulseRing(
             controller: _pulseController,
-            color: AppColors.secondary,
+            color: Colors.white,
             phaseOffset: 0.5,
           ),
           // Logo with scale-overshoot entrance.
@@ -213,11 +228,19 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
                 ),
               );
             },
-            child: Image.asset(
-              'assets/icons/tander_logo.png',
-              width: 64,
-              height: 64,
-              semanticLabel: 'Tander logo',
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [BoxShadow(color: Colors.white.withAlpha(60), blurRadius: 20, spreadRadius: 4)],
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Image.asset(
+                'assets/icons/tander_logo.png',
+                semanticLabel: 'Tander logo',
+              ),
             ),
           ),
         ],
@@ -240,9 +263,9 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
       },
       child: Text(
         'Tander',
-        style: AppTypography.displayLg.copyWith(
-          color: AppColors.textInverse,
-          letterSpacing: -1.2,
+        style: AppTypography.brandWordmark().copyWith(
+          fontSize: 36,
+          color: Colors.white,
         ),
       ),
     );
@@ -304,6 +327,142 @@ class _PulseRing extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Spring overshoot curve
 // ---------------------------------------------------------------------------
+
+/// Subtle constellation stars + lines for the splash background.
+class _SplashConstellation extends StatefulWidget {
+  const _SplashConstellation();
+
+  @override
+  State<_SplashConstellation> createState() => _SplashConstellationState();
+}
+
+class _SplashConstellationState extends State<_SplashConstellation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 15))..repeat();
+  }
+
+  @override
+  void dispose() { _controller.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) => CustomPaint(painter: _ConstellationPainter(_controller.value), size: Size.infinite),
+    );
+  }
+}
+
+class _ConstellationPainter extends CustomPainter {
+  _ConstellationPainter(this.time);
+  final double time;
+
+  // Web star positions normalized from 1200x700 viewBox
+  static const _stars = <List<double>>[
+    [0.067, 0.171], [0.150, 0.357], [0.050, 0.571], [0.208, 0.243],
+    [0.250, 0.657], [0.350, 0.429], [0.450, 0.486], [0.500, 0.500],
+    [0.550, 0.486], [0.650, 0.429], [0.750, 0.243], [0.792, 0.400],
+    [0.867, 0.600], [0.917, 0.200], [0.933, 0.714], [0.292, 0.129],
+    [0.500, 0.157], [0.708, 0.129], [0.142, 0.136], [0.858, 0.157],
+  ];
+
+  static const _radii = <double>[2.2,1.6,2.8,1.8,1.4,1.8,2.2,4.5,2.2,1.8,1.8,2.2,2.8,1.6,1.8,1.4,1.8,1.4,1.8,1.4];
+
+  // Colors: warm orange left, white center, teal right
+  static const _colors = <int>[
+    0xD9FFA05A, 0xB3FFFFFF, 0xCCFFB464, 0xA6FFFFFF, 0x80FFFFFF,
+    0xA6FFFFFF, 0xBFFFFFFF, 0xFFFFFFFF, 0xBFFFFFFF, 0xA6FFFFFF,
+    0xCC96E6E1, 0xD978DCD7, 0xCC64D2CD, 0xA6FFFFFF, 0x80FFFFFF,
+    0x80FFFFFF, 0x99FFFFFF, 0x80FFFFFF, 0xA6FFB464, 0xA696E6E1,
+  ];
+
+  static const _edges = [[0,1],[1,2],[2,4],[0,3],[3,5],[4,5],[5,6],[8,9],[9,11],[10,11],[11,12],[12,14],[10,13],[18,15],[15,16],[16,17],[17,19],[3,15],[16,8],[17,13]];
+  static const _bridges = [[6,7],[7,8]];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final t = time * math.pi * 2;
+
+    // Vignette
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), Paint()
+      ..shader = RadialGradient(colors: [Colors.transparent, Colors.black.withAlpha(77)], radius: 0.75).createShader(Rect.fromLTWH(0, 0, size.width, size.height)));
+
+    // Nebulae
+    _drawNebula(canvas, size, 0.17, 0.43, 0.20, const Color(0x40FF8C3C), t * 0.5);
+    _drawNebula(canvas, size, 0.82, 0.49, 0.20, const Color(0x3300C8C0), t * 0.43 + 2);
+
+    // Edges
+    for (final e in _edges) { canvas.drawLine(_p(e[0], size), _p(e[1], size), Paint()..color = const Color(0x1AFFFFFF)..strokeWidth = 0.6); }
+
+    // Bridge edges — pulsing
+    for (final e in _bridges) {
+      final pulse = 0.20 + 0.40 * ((math.sin(t * 1.5) + 1) / 2);
+      canvas.drawLine(_p(e[0], size), _p(e[1], size), Paint()..color = Color.fromRGBO(255, 255, 255, pulse.clamp(0.0, 1.0))..strokeWidth = 1.0..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.6));
+    }
+
+    // Energy orbs
+    for (int i = 0; i < 8; i++) {
+      const paths = [[0,1],[3,5],[6,7],[7,8],[10,11],[11,12],[15,16],[16,8]];
+      final from = _p(paths[i][0], size); final to = _p(paths[i][1], size);
+      final prog = (time + i * 0.125) % 1.0;
+      final pos = Offset.lerp(from, to, prog)!;
+      final fade = (prog / 0.08).clamp(0.0, 1.0) * ((1.0 - prog) / 0.08).clamp(0.0, 1.0);
+      if (fade > 0.02) {
+        final c = paths[i][0] >= 10 ? const Color(0xFFA0FFF8) : paths[i][0] < 6 ? const Color(0xFFFFD898) : Colors.white;
+        canvas.drawCircle(pos, 8, Paint()..color = c.withAlpha((fade * 80).round().clamp(0, 255))..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.5));
+        canvas.drawCircle(pos, 3, Paint()..color = c.withAlpha((fade * 160).round().clamp(0, 255)));
+      }
+    }
+
+    // Stars
+    for (int i = 0; i < _stars.length; i++) {
+      if (i == 7) continue;
+      final pos = _p(i, size);
+      final phase = t + (i * 317 % 1200) * 0.005;
+      final tw = 0.15 + 0.65 * ((math.sin(phase * 0.8) + 1) / 2);
+      final r = _radii[i] * (0.92 + 0.16 * ((math.sin(phase * 0.8) + 1) / 2));
+      final c = Color(_colors[i]);
+      if (_radii[i] >= 2.0) canvas.drawCircle(pos, r * 2.5, Paint()..color = c.withAlpha((tw * 50).round().clamp(0, 255))..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+      canvas.drawCircle(pos, r, Paint()..color = c.withAlpha((tw * 255).round().clamp(0, 255)));
+    }
+
+    // Hub
+    final hub = _p(7, size);
+    canvas.drawCircle(hub, 20, Paint()..color = const Color(0x09FFFFFF));
+    canvas.drawCircle(hub, 11, Paint()..color = const Color(0x0FFFFFFF));
+    final co = 0.40 + 0.20 * math.sin(t * 2.1);
+    canvas.drawLine(Offset(hub.dx - 42, hub.dy), Offset(hub.dx + 42, hub.dy), Paint()..color = Color.fromRGBO(255, 255, 255, co.clamp(0.0, 1.0))..strokeWidth = 0.6..strokeCap = StrokeCap.round);
+    canvas.drawLine(Offset(hub.dx, hub.dy - 42), Offset(hub.dx, hub.dy + 42), Paint()..color = Color.fromRGBO(255, 255, 255, co.clamp(0.0, 1.0))..strokeWidth = 0.6..strokeCap = StrokeCap.round);
+    for (int i = 0; i < 3; i++) {
+      final ph = (time * (i == 2 ? 0.83 : 1.11) + i * 0.33) % 1.0;
+      final mr = [55.0, 48.0, 72.0][i]; final r = 5 + (mr - 5) * ph;
+      final op = [0.55, 0.35, 0.60][i] * (1.0 - ph); final sw = 1.3 * (1.0 - ph * 0.91);
+      canvas.drawCircle(hub, r, Paint()..color = (i == 2 ? Color.fromRGBO(255, 145, 55, op.clamp(0.0, 1.0)) : Color.fromRGBO(255, 255, 255, op.clamp(0.0, 1.0)))..style = PaintingStyle.stroke..strokeWidth = sw);
+    }
+    final hb = _hb(time);
+    canvas.drawCircle(hub, 4.5 * hb, Paint()..color = Colors.white..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12));
+    canvas.drawCircle(hub, 4.5 * hb, Paint()..color = Colors.white.withAlpha(240)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5));
+    canvas.drawCircle(hub, 4.5 * hb, Paint()..color = Colors.white);
+  }
+
+  Offset _p(int i, Size s) => Offset(_stars[i][0] * s.width, _stars[i][1] * s.height);
+  void _drawNebula(Canvas c, Size s, double cx, double cy, double r, Color col, double ph) {
+    final o = 0.6 + 0.4 * math.sin(ph);
+    c.drawOval(Rect.fromCenter(center: Offset(cx * s.width, cy * s.height), width: r * s.width * 2.4, height: r * s.height * 1.9),
+      Paint()..shader = RadialGradient(colors: [col.withAlpha((col.alpha * o).round().clamp(0, 255)), Colors.transparent]).createShader(
+        Rect.fromCircle(center: Offset(cx * s.width, cy * s.height), radius: r * s.width))..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22));
+  }
+  double _hb(double t) { final p = (t * 5.26) % 1.0; if (p < 0.08) return 1.0 + 0.08 * (p / 0.08); if (p < 0.18) return 1.08 - 0.07 * ((p - 0.08) / 0.10); if (p < 0.28) return 1.01 + 0.04 * ((p - 0.18) / 0.10); if (p < 0.38) return 1.05 - 0.05 * ((p - 0.28) / 0.10); return 1.0; }
+
+  @override
+  bool shouldRepaint(_ConstellationPainter old) => time != old.time;
+}
 
 /// Custom curve that overshoots the target by ~8% before settling.
 ///
