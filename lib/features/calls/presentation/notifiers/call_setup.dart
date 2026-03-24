@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
+import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/calls/data/call_peer_state.dart';
 import 'package:tander_flutter_v3/features/calls/data/datasources/call_signaling.dart';
 import 'package:tander_flutter_v3/features/calls/data/datasources/webrtc_peer.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_constants.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
+import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_listener.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_signal_handler.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/providers/call_providers.dart';
@@ -59,6 +61,10 @@ final class CallSetup {
     final peer = WebrtcPeer(
       callbacks: WebrtcPeerCallbacks(
         onIceCandidate: (RTCIceCandidate candidate) {
+          AppLogger.debug(
+            'ICE candidate generated: ${candidate.candidate?.substring(0, 40) ?? "null"}...',
+            operation: 'CallSetup.onIceCandidate',
+          );
           final freshCallInfo = _ref.read(callNotifierProvider).callInfo;
           if (freshCallInfo != null) {
             sendIceCandidate(
@@ -70,6 +76,8 @@ final class CallSetup {
               ),
               freshCallInfo.remoteUserId,
             );
+          } else {
+            AppLogger.warning('ICE candidate dropped — no callInfo', operation: 'CallSetup.onIceCandidate');
           }
         },
         onIceStateChange: _signalHandler.handleIceStateChange,
@@ -90,7 +98,26 @@ final class CallSetup {
     await peer.create(iceServers);
     callRefs.peer = peer;
 
-    // Acquire media
+    // Subscribe to room signals BEFORE acquireMedia (which is slow on
+    // emulators). This ensures ICE candidates from the remote peer are
+    // captured and buffered by the signal handler while media initializes.
+    callRefs.unsubRoom = subscribeToRoomSignals(
+      callInfo.roomName,
+      userId,
+      _signalHandler.handleSignalEvent,
+    );
+
+    // For incoming calls: cancel the early subscription from CallListener
+    // now that the full handler is active.
+    if (!isOutgoing) {
+      try {
+        _ref.read(callListenerProvider).cancelEarlySignalSubscription();
+      } on Object {
+        // Provider might not be available
+      }
+    }
+
+    // Acquire media (slow — camera init can take seconds on emulators)
     final isVideo = callInfo.callType == CallType.video;
     final localStream = await peer.acquireMedia(isVideo: isVideo);
     callRefs.localStream = localStream;
@@ -99,13 +126,6 @@ final class CallSetup {
     } on Exception {
       // Video renderer detached
     }
-
-    // Subscribe to room signals
-    callRefs.unsubRoom = subscribeToRoomSignals(
-      callInfo.roomName,
-      userId,
-      _signalHandler.handleSignalEvent,
-    );
 
     if (isOutgoing) {
       await _handleOutgoingSetup(callInfo, peer, isVideo, callRefs, notifier);
@@ -148,11 +168,13 @@ final class CallSetup {
   }
 
   Future<void> _handleIncomingSetup(CallRefs callRefs) async {
+    // Drain the module-level buffer (set by CallListener's early subscription)
     final earlyOffer = drainPendingOfferBuffer();
     if (earlyOffer != null) {
       callRefs.pendingOffer = earlyOffer;
     }
 
+    // Also check if signal handler buffered one into callRefs directly
     if (callRefs.pendingOffer != null) {
       final bufferedOffer = callRefs.pendingOffer!;
       callRefs.pendingOffer = null;
@@ -174,23 +196,36 @@ final class CallSetup {
 
   Future<void> processRemoteOffer(String roomName, String sdp) async {
     final callRefs = getCallRefs();
-    if (callRefs.peer == null || !callRefs.peer!.isAlive) return;
+    if (callRefs.peer == null || !callRefs.peer!.isAlive) {
+      AppLogger.warning(
+        'processRemoteOffer skipped — peer is null or closed',
+        operation: 'CallSetup.processRemoteOffer',
+      );
+      return;
+    }
+
+    // Capture callInfo NOW before any async gaps where state could be cleared
+    final capturedCallInfo = _ref.read(callNotifierProvider).callInfo;
+    final capturedIsVideo = capturedCallInfo?.callType == CallType.video;
+
+    if (capturedCallInfo == null) {
+      AppLogger.error('processRemoteOffer: callInfo is null', operation: 'CallSetup.processRemoteOffer');
+      return;
+    }
 
     try {
       await callRefs.peer!.setRemoteOffer(sdp);
       await flushPendingIceCandidates();
 
-      final freshState = _ref.read(callNotifierProvider);
-      final isVideo = freshState.callInfo?.callType == CallType.video;
       final answerSdp =
-          await callRefs.peer!.createAnswer(isVideo: isVideo ?? false);
+          await callRefs.peer!.createAnswer(isVideo: capturedIsVideo ?? false);
 
-      final freshCallInfo = _ref.read(callNotifierProvider).callInfo;
-      if (freshCallInfo != null) {
-        sendAnswer(
-            freshCallInfo.roomName, answerSdp, freshCallInfo.remoteUserId);
-      }
+      AppLogger.info('Sending SDP answer', operation: 'CallSetup.processRemoteOffer',
+        context: {'roomName': capturedCallInfo.roomName, 'answerLength': answerSdp.length},
+      );
+      sendAnswer(capturedCallInfo.roomName, answerSdp, capturedCallInfo.remoteUserId);
     } on Exception catch (error) {
+      AppLogger.error('processRemoteOffer failed', operation: 'CallSetup.processRemoteOffer', error: error);
       _onTerminate('failed', CallEndReason.failed, error.toString());
     }
   }

@@ -73,9 +73,7 @@ class _ConversationAvatarRingState extends State<ConversationAvatarRing>
           widget.photoUrl != null ? NetworkImage(widget.photoUrl!) : null,
       child: widget.photoUrl == null
           ? Text(
-              widget.username.isNotEmpty
-                  ? widget.username[0].toUpperCase()
-                  : '?',
+              _computeInitials(widget.username),
               style: AppTypography.h3.copyWith(color: _orange),
             )
           : null,
@@ -123,4 +121,15 @@ class _ConversationAvatarRingState extends State<ConversationAvatarRing>
       child: avatar,
     );
   }
+}
+
+/// Computes first + last initials from a display name.
+/// "ROBERTO TUBIG DREZ" → "RD", "Alice" → "A", "" → "?"
+String _computeInitials(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return '?';
+  final parts = trimmed.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) return parts[0][0].toUpperCase();
+  return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
 }

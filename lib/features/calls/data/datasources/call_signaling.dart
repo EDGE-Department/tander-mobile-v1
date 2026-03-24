@@ -184,7 +184,11 @@ StompUnsubscribeCallback subscribeToRoomSignals(
 
   void parseWebrtcSignal(Map<String, Object?> body) {
     final signal = WebrtcSignalMessage.fromJson(body);
-    final dedupKey = '${signal.type}_${signal.roomName}';
+    // ICE candidates are unique — include candidate string in dedup key.
+    // Other signals (offer, answer) are one-per-room so type+room suffices.
+    final dedupKey = signal.type == 'ice' || signal.type == 'ice-candidate'
+        ? '${signal.type}_${signal.roomName}_${signal.candidate?.candidate ?? body.hashCode}'
+        : '${signal.type}_${signal.roomName}';
 
     if (!dedup.shouldProcess(dedupKey)) return;
 
@@ -221,18 +225,28 @@ StompUnsubscribeCallback subscribeToRoomSignals(
     }
   }
 
+  final roomDest = CallDestinations.roomTopic(roomId);
+  final queueDest = CallDestinations.webrtcQueue(userId);
+  final topicDest = CallDestinations.webrtcTopic(userId);
+
+  AppLogger.info(
+    'Subscribing to room signals',
+    operation: 'CallSignaling',
+    context: {'room': roomDest, 'queue': queueDest, 'topic': topicDest},
+  );
+
   final unsubRoom = StompClientManager.instance.subscribe(
-    CallDestinations.roomTopic(roomId),
+    roomDest,
     parseWebrtcSignal,
   );
 
   final unsubQueue = StompClientManager.instance.subscribe(
-    CallDestinations.webrtcQueue(userId),
+    queueDest,
     parseWebrtcSignal,
   );
 
   final unsubTopic = StompClientManager.instance.subscribe(
-    CallDestinations.webrtcTopic(userId),
+    topicDest,
     parseWebrtcSignal,
   );
 

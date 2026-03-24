@@ -67,9 +67,26 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         .sendTextMessage(trimmedText);
   }
 
-  Future<void> _handlePickImage() async {
+  void _showPhotoSourceMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _PhotoSourceSheet(
+        onGallery: () {
+          Navigator.of(sheetContext).pop();
+          _handlePickImage(ImageSource.gallery);
+        },
+        onCamera: () {
+          Navigator.of(sheetContext).pop();
+          _handlePickImage(ImageSource.camera);
+        },
+      ),
+    );
+  }
+
+  Future<void> _handlePickImage(ImageSource source) async {
     final pickedFile = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 80,
     );
     if (pickedFile == null) return;
@@ -167,7 +184,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
             : _ComposerInputRow(
                 textController: _textController, focusNode: _focusNode,
                 onTextChanged: _onTextChanged, onSend: _handleSend,
-                onPickImage: _handlePickImage, onRecordStart: _handleRecordStart,
+                onPickImage: _showPhotoSourceMenu, onRecordStart: _handleRecordStart,
                 canSend: canSend, isSending: isSending, isSendingMedia: isSendingMedia,
               ),
       ),
@@ -271,6 +288,117 @@ class _TrailingButton extends StatelessWidget {
       onTap: onRecordStart,
       color: _teal.withValues(alpha: 0.08),
       icon: const Icon(Icons.mic, size: 18, color: _teal),
+    );
+  }
+}
+
+// ─── Photo source bottom sheet ──────────────────────────────────────────────
+
+class _PhotoSourceSheet extends StatelessWidget {
+  const _PhotoSourceSheet({
+    required this.onGallery,
+    required this.onCamera,
+  });
+
+  final VoidCallback onGallery;
+  final VoidCallback onCamera;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDF9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xCCDDD3C2)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF764F21).withValues(alpha: 0.12),
+            blurRadius: 32,
+            offset: const Offset(0, -8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFDDD3C2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _PhotoSourceOption(
+            icon: Icons.photo_library_outlined,
+            label: 'Photo Library',
+            onTap: onGallery,
+          ),
+          Divider(
+            height: 1,
+            indent: 56,
+            endIndent: 16,
+            color: const Color(0xFFDDD3C2).withValues(alpha: 0.5),
+          ),
+          _PhotoSourceOption(
+            icon: Icons.camera_alt_outlined,
+            label: 'Take Photo',
+            onTap: onCamera,
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhotoSourceOption extends StatelessWidget {
+  const _PhotoSourceOption({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _teal.withValues(alpha: 0.08),
+                ),
+                child: Icon(icon, size: 18, color: _teal),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                label,
+                style: AppTypography.label.copyWith(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1A1209),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

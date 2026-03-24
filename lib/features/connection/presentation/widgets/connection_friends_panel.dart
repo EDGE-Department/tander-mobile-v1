@@ -58,15 +58,17 @@ class _ConnectionFriendsPanelState
   @override
   Widget build(BuildContext context) {
     if (widget.connections.isEmpty) {
-      return Center(
-        child: TabEmptyState(
-          icon: Icons.people,
-          title: 'No friends yet',
-          description:
-              'Accept requests or explore Discover to start building '
-              'your circle.',
-          actionLabel: 'Explore Discover',
-          onAction: () => context.go(AppRoutes.discover),
+      return SingleChildScrollView(
+        child: Center(
+          child: TabEmptyState(
+            icon: Icons.people,
+            title: 'No friends yet',
+            description:
+                'Accept requests or explore Discover to start building '
+                'your circle.',
+            actionLabel: 'Explore Discover',
+            onAction: () => context.go(AppRoutes.discover),
+          ),
         ),
       );
     }

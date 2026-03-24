@@ -16,11 +16,12 @@ import 'package:tander_flutter_v3/features/messaging/presentation/providers/mess
 // Provider — mount once at app root (AppShell or OnboardingGuard)
 // ---------------------------------------------------------------------------
 
-final callListenerProvider = Provider.autoDispose<void>((ref) {
+final callListenerProvider = Provider<CallListener>((ref) {
   final callListener = CallListener(ref: ref);
   callListener.start();
 
   ref.onDispose(callListener.dispose);
+  return callListener;
 });
 
 // ---------------------------------------------------------------------------
@@ -61,6 +62,17 @@ final class CallListener {
     );
   }
 
+  /// Unsubscribes the early room signal subscription.
+  /// Must be called when the call is accepted so that CallSetup's
+  /// subscription can receive ICE candidates without dedup conflicts.
+  void cancelEarlySignalSubscription() {
+    _earlySignalUnsub?.call();
+    _earlySignalUnsub = null;
+    _ringingTimeout?.cancel();
+    _ringingTimeout = null;
+    AppLogger.debug('Early signal subscription cancelled', operation: _tag);
+  }
+
   void dispose() {
     _callEventUnsub?.call();
     _callEventUnsub = null;
@@ -94,6 +106,16 @@ final class CallListener {
         _handleDismissEvent(roomName, currentState, notifier, CallEndReason.cancelled);
 
       case CallAnsweredElsewhereEvent(:final roomName):
+        // Ignore if WE are the one who answered (our own accept triggers this)
+        if ((currentState.status is CallConnecting || currentState.status is CallConnected) &&
+            currentState.callInfo?.direction == CallDirection.incoming &&
+            currentState.callInfo?.roomName == roomName) {
+          AppLogger.debug(
+            'Ignoring call_answered_elsewhere — we answered this call',
+            operation: _tag,
+          );
+          break;
+        }
         _handleDismissEvent(
           roomName, currentState, notifier, CallEndReason.answeredElsewhere,
         );
@@ -165,7 +187,8 @@ final class CallListener {
     notifier.setCallInfo(callInfo);
     notifier.setStatus(const CallRinging());
 
-    // Early-subscribe to room signals so the SDP offer gets buffered
+    // Early-subscribe to room signals so the SDP offer AND ICE candidates
+    // are buffered before the user taps Accept.
     _earlySignalUnsub?.call();
     _earlySignalUnsub = subscribeToRoomSignals(
       payload.roomName,
@@ -175,6 +198,9 @@ final class CallListener {
           setPendingOfferBuffer(
             BufferedOffer(roomName: signalEvent.roomName, sdp: signalEvent.sdp),
           );
+        } else if (signalEvent is IceCandidateEvent) {
+          // Buffer ICE candidates so they can be flushed after accept
+          getCallRefs().pendingIceCandidates.add(signalEvent.candidate);
         }
       },
     );

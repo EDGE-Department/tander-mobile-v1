@@ -12,8 +12,21 @@ import 'package:tander_flutter_v3/features/messaging/presentation/states/message
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/message_composer.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/thread_sub_widgets.dart';
+import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
+import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
+import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
+import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
 const Color _teal = AppColors.secondary;
+
+String _computeInitials(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return '?';
+  final parts = trimmed.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) return parts[0][0].toUpperCase();
+  return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+}
 
 /// Full message thread screen. Receives a [conversationId] from the router.
 ///
@@ -56,6 +69,29 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         );
       }
     });
+  }
+
+  Future<void> _initiateCall(
+    WidgetRef ref,
+    BuildContext context,
+    dynamic conversation,
+    CallType callType,
+  ) async {
+    if (conversation == null) return;
+    final participant = conversation.participant;
+    final callManager = ref.read(callManagerProvider);
+    await callManager.initiateCall(
+      targetUserId: participant.userId,
+      targetUsername: participant.username,
+      targetPhotoUrl: participant.profilePhotoUrl,
+      callType: callType,
+    );
+    if (!context.mounted) return;
+    final callState = ref.read(callNotifierProvider);
+    final roomName = callState.callInfo?.roomName;
+    if (roomName != null) {
+      context.push(AppRoutes.call(roomName));
+    }
   }
 
   @override
@@ -111,6 +147,8 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               isTyping: isPartnerTyping,
               isOnline: isOnline,
               onBack: widget.onBack ?? () => context.pop(),
+              onVoiceCall: () => _initiateCall(ref, context, conversation, CallType.audio),
+              onVideoCall: () => _initiateCall(ref, context, conversation, CallType.video),
             ),
             Expanded(
               child: _ThreadBody(
@@ -139,6 +177,8 @@ class _ThreadHeader extends StatelessWidget {
     required this.isTyping,
     required this.isOnline,
     required this.onBack,
+    required this.onVoiceCall,
+    required this.onVideoCall,
   });
 
   final String participantName;
@@ -147,6 +187,8 @@ class _ThreadHeader extends StatelessWidget {
   final bool isTyping;
   final bool isOnline;
   final VoidCallback onBack;
+  final VoidCallback onVoiceCall;
+  final VoidCallback onVideoCall;
 
   @override
   Widget build(BuildContext context) {
@@ -195,14 +237,14 @@ class _ThreadHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: onVoiceCall,
             icon: const Icon(Icons.phone, size: 18),
             color: AppColors.primary,
             tooltip: 'Voice call',
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: onVideoCall,
             icon: const Icon(Icons.videocam, size: 18),
             color: _teal,
             tooltip: 'Video call',
@@ -234,7 +276,7 @@ class _HeaderAvatar extends StatelessWidget {
           backgroundColor: const Color(0xFFFFF8EE),
           backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
           child: photoUrl == null
-              ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+              ? Text(_computeInitials(name),
                   style: AppTypography.label.copyWith(color: AppColors.primary))
               : null,
         ),
@@ -313,6 +355,7 @@ class _ThreadBody extends StatelessWidget {
                       isDifferentDay(previousMessage.sentAt, message.sentAt);
 
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (showDate) DateSeparatorWidget(date: message.sentAt),
                       MessageBubbleWidget(

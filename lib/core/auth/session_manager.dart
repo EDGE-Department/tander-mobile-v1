@@ -49,17 +49,17 @@ enum RegistrationPhase {
 final class AuthSession {
   const AuthSession({
     required this.userId,
-    required this.email,
-    required this.username,
     required this.registrationPhase,
     required this.isEmailVerified,
     required this.isIdVerified,
+    this.email,
+    this.username,
     this.profilePhotoUrl,
   });
 
   final int userId;
-  final String email;
-  final String username;
+  final String? email;
+  final String? username;
   final RegistrationPhase registrationPhase;
   final bool isEmailVerified;
   final bool isIdVerified;
@@ -327,15 +327,8 @@ final class SessionManager {
         ),
     };
 
-    final email = userJson['email'];
-    if (email is! String) {
-      throw StateError('Invalid or missing "email" in /user/me response');
-    }
-
-    final username = userJson['username'];
-    if (username is! String) {
-      throw StateError('Invalid or missing "username" in /user/me response');
-    }
+    final email = userJson['email'] is String ? userJson['email'] as String : null;
+    final username = userJson['username'] is String ? userJson['username'] as String : null;
 
     final registrationPhase = _parseRegistrationPhase(
       userJson['registrationPhase'],

@@ -283,12 +283,13 @@ class _ActionButton extends StatelessWidget {
 
 // ── Shared photo placeholder ────────────────────────────────────────
 
-/// Fallback placeholder for connection photos (bg-subtle + person icon).
-Widget connectionPhotoPlaceholder() {
+/// Fallback placeholder for connection photos (bg-subtle + Users icon).
+/// Web uses `<Users>` (two-person) icon, not a single-person silhouette.
+Widget connectionPhotoPlaceholder({double iconSize = 24}) {
   return Container(
     color: AppColors.subtle,
-    child: const Center(
-      child: Icon(Icons.person, size: 24, color: AppColors.textMuted),
+    child: Center(
+      child: Icon(Icons.people_outline, size: iconSize, color: AppColors.textMuted),
     ),
   );
 }

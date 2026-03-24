@@ -2,7 +2,6 @@
 /// Matches web connection-cards.tsx SentCard and FriendRow.
 library;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
@@ -70,10 +69,10 @@ class SentCard extends StatelessWidget {
       return Image.network(
         connection.otherPhotoUrl!,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => connectionPhotoPlaceholder(),
+        errorBuilder: (_, _, _) => connectionPhotoPlaceholder(iconSize: 32),
       );
     }
-    return connectionPhotoPlaceholder();
+    return connectionPhotoPlaceholder(iconSize: 32);
   }
 
   /// Web: linear-gradient(to top, rgba(0,0,0,.75) 0%,
@@ -236,32 +235,34 @@ class FriendRow extends StatelessWidget {
         boxShadow: AppShadows.warmXs,
       ),
       clipBehavior: Clip.antiAlias,
-      child: Row(
-        children: [
-          _buildThumbnail(),
-          _buildInfo(),
-          _buildActions(),
-        ],
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildThumbnail(),
+            _buildInfo(),
+            _buildActions(),
+          ],
+        ),
       ),
     );
   }
 
-  /// Web: w-[88px] flex-shrink-0 cursor-pointer, full-bleed photo
+  /// Web: w-[88px] flex-shrink-0 cursor-pointer, h-full photo
   Widget _buildThumbnail() {
     return GestureDetector(
       onTap: onViewProfile,
       child: SizedBox(
         width: 88,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: connection.otherPhotoUrl != null
-              ? Image.network(
-                  connection.otherPhotoUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => connectionPhotoPlaceholder(),
-                )
-              : connectionPhotoPlaceholder(),
-        ),
+        child: connection.otherPhotoUrl != null
+            ? Image.network(
+                connection.otherPhotoUrl!,
+                fit: BoxFit.cover,
+                width: 88,
+                height: double.infinity,
+                errorBuilder: (_, _, _) => connectionPhotoPlaceholder(),
+              )
+            : connectionPhotoPlaceholder(),
       ),
     );
   }

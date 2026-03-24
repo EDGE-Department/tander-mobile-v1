@@ -295,7 +295,7 @@ class PartnerAvatar extends StatelessWidget {
               backgroundColor: const Color(0xFFF0F8F7),
               backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
               child: photoUrl == null
-                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: AppTypography.caption.copyWith(color: _teal))
+                  ? Text(_computeInitials(name), style: AppTypography.caption.copyWith(color: _teal))
                   : null,
             )
           : null,
@@ -457,6 +457,15 @@ BorderRadius _computeBorderRadius(bool isMine, bool isGroupStart, bool isGroupEn
 bool _isCallRecord(String? body) {
   if (body == null) return false;
   return RegExp(r'^\W*(Audio|Video)\s+Call\b', caseSensitive: false).hasMatch(body);
+}
+
+String _computeInitials(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return '?';
+  final parts = trimmed.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) return parts[0][0].toUpperCase();
+  return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
 }
 
 String _formatTime(DateTime dateTime) {

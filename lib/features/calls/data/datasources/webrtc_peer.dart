@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
@@ -191,7 +193,9 @@ final class WebrtcPeer {
     _requireOpenConnection();
     await _peerConnection!.setRemoteDescription(
       RTCSessionDescription(sdp, 'offer'),
-    );
+    ).timeout(const Duration(seconds: 10), onTimeout: () {
+      throw TimeoutException('setRemoteDescription(offer) timed out');
+    });
   }
 
   /// Sets the remote SDP answer (caller side).

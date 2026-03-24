@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -67,11 +67,10 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
 
     Future<void> playTone() async {
       try {
-        await _audioPlayer?.play(
-          AssetSource('audio/ringtone.mp3'),
-          volume: 0.5,
-        );
-      } on Exception {
+        await _audioPlayer?.setAsset('assets/audio/ringtone.mp3');
+        await _audioPlayer?.setVolume(0.5);
+        await _audioPlayer?.play();
+      } on Object {
         // Audio playback failed — silent fallback
       }
     }

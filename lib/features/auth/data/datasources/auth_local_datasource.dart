@@ -141,15 +141,8 @@ final class AuthLocalDatasource {
       _ => throw FormatException('Invalid cached userId: $rawId'),
     };
 
-    final email = map['email'];
-    if (email is! String || email.isEmpty) {
-      throw const FormatException('Invalid cached email');
-    }
-
-    final username = map['username'];
-    if (username is! String || username.isEmpty) {
-      throw const FormatException('Invalid cached username');
-    }
+    final email = map['email'] is String ? map['email'] as String : null;
+    final username = map['username'] is String ? map['username'] as String : null;
 
     final registrationPhase = _parsePhaseFromCacheName(map['registrationPhase']);
 

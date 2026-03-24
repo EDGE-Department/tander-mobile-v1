@@ -104,8 +104,8 @@ final class MessagingRemoteDatasource {
 
     final formData = FormData.fromMap(<String, Object>{
       'roomId': roomId,
-      'durationSeconds': durationSeconds,
-      'voice': MultipartFile.fromFileSync(filePath, filename: fileName),
+      'duration': durationSeconds,
+      'audio': MultipartFile.fromFileSync(filePath, filename: fileName),
     });
 
     return _dioClient.post<Map<String, Object?>>(

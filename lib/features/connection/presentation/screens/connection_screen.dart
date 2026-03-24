@@ -120,13 +120,15 @@ class _IncomingPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (connections.isEmpty) {
-      return const Center(
-        child: TabEmptyState(
-          icon: Icons.favorite,
-          title: 'No requests yet',
-          description:
-              'When someone wants to connect with you, their invitation '
-              'will appear here. Love finds its own timing.',
+      return const SingleChildScrollView(
+        child: Center(
+          child: TabEmptyState(
+            icon: Icons.favorite,
+            title: 'No requests yet',
+            description:
+                'When someone wants to connect with you, their invitation '
+                'will appear here. Love finds its own timing.',
+          ),
         ),
       );
     }
@@ -182,15 +184,17 @@ class _SentPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (connections.isEmpty) {
-      return Center(
-        child: TabEmptyState(
-          icon: Icons.send,
-          title: 'No sent requests',
-          description:
-              "You haven't reached out to anyone yet. "
-              'Explore Discover to find someone to connect with.',
-          actionLabel: 'Go to Discover',
-          onAction: () => context.go(AppRoutes.discover),
+      return SingleChildScrollView(
+        child: Center(
+          child: TabEmptyState(
+            icon: Icons.send,
+            title: 'No sent requests',
+            description:
+                "You haven't reached out to anyone yet. "
+                'Explore Discover to find someone to connect with.',
+            actionLabel: 'Go to Discover',
+            onAction: () => context.go(AppRoutes.discover),
+          ),
         ),
       );
     }
