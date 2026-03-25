@@ -56,7 +56,7 @@ class ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isTablet =
-        MediaQuery.of(context).size.shortestSide >= _tabletBreakpoint;
+        MediaQuery.of(context).size.width >= 1024;
     final double avatarSize =
         isTablet ? _tabletAvatarSize : _mobileAvatarSize;
     final double coverHeight =

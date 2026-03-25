@@ -74,8 +74,10 @@ class _AppShellState extends ConsumerState<AppShell> {
       );
     }
 
-    // Phone: bottom dock nav bar (matches web's MobileBottomDock)
+    // Phone: bottom dock nav bar
     return Scaffold(
+      backgroundColor: const Color(0xFFFAF8F5), // warm parchment — matches all screens
+      extendBody: true,
       body: Stack(
         children: [
           widget.child,

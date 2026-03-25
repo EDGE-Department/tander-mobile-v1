@@ -44,13 +44,18 @@ class PhotoGrid extends StatelessWidget {
     final bool canAddMore = gallery.length < maxPhotoCount;
     final int itemCount = gallery.length + (canAddMore ? 1 : 0);
 
+    // Web: grid-cols-3 gap-1.5 sm:gap-2.5, aspect-square, rounded-2xl
+    final screenWidth = MediaQuery.of(context).size.width;
+    final gap = screenWidth >= 640 ? 10.0 : 6.0;
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: _columnCount,
-        mainAxisSpacing: AppSpacing.xs,
-        crossAxisSpacing: AppSpacing.xs,
+        mainAxisSpacing: gap,
+        crossAxisSpacing: gap,
+        childAspectRatio: 1.0,
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) {
@@ -84,8 +89,12 @@ class _PhotoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: AppRadius.borderLg,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))],
+        ),
+        clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
           children: [

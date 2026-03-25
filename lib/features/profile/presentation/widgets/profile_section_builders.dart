@@ -6,6 +6,10 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/screens/profile_edit_screen.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/screens/profile_photos_screen.dart';
+
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
 
@@ -126,6 +130,7 @@ List<FactRowData> buildDetailItems(UserProfile profile) {
 
 /// Builds completion tip list.
 List<CompletionTipData> buildCompletionTips({
+  required BuildContext context,
   required bool hasBio,
   required int photoCount,
   required int interestCount,
@@ -137,36 +142,62 @@ List<CompletionTipData> buildCompletionTips({
         label: 'Write a short introduction',
         actionLabel: 'Add bio',
         boost: '+20%',
-        onTap: () {
-          // TODO(#124): Open edit sheet
-        },
+        onTap: () => _openEditFromContext(context),
       ),
     if (photoCount < minPhotosForBonus)
       CompletionTipData(
         label: 'Add more photos',
         actionLabel: 'Upload',
         boost: '+20%',
-        onTap: () {
-          // TODO(#124): Open photos sheet
-        },
+        onTap: () => _openPhotosFromContext(context),
       ),
     if (interestCount < minInterestsForCompletion)
       CompletionTipData(
         label: 'Add interests',
         actionLabel: 'Choose',
         boost: '+15%',
-        onTap: () {
-          // TODO(#124): Open edit sheet
-        },
+        onTap: () => _openEditFromContext(context),
       ),
     if (!hasGender)
       CompletionTipData(
         label: 'Complete the basics',
         actionLabel: 'Update',
         boost: '+10%',
-        onTap: () {
-          // TODO(#124): Open edit sheet
-        },
+        onTap: () => _openEditFromContext(context),
       ),
   ];
+}
+
+void _openEditFromContext(BuildContext context) {
+  _showSheet(context, const ProfileEditScreen());
+}
+
+void _openPhotosFromContext(BuildContext context) {
+  _showSheet(context, const ProfilePhotosScreen());
+}
+
+void _showSheet(BuildContext context, Widget child) {
+  showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Close',
+    barrierColor: Colors.black.withAlpha(100),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, __, ___) => Align(
+      alignment: Alignment.bottomCenter,
+      child: Material(
+        color: AppColors.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        clipBehavior: Clip.antiAlias,
+        child: FractionallySizedBox(heightFactor: 0.92, child: child),
+      ),
+    ),
+    transitionBuilder: (_, animation, __, child) {
+      return SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+            .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        child: child,
+      );
+    },
+  );
 }

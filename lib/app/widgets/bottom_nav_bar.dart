@@ -20,13 +20,13 @@ const List<NavTabDescriptor> navTabs = [
   ),
   NavTabDescriptor(
     id: 'connections',
-    label: 'Connections',
+    label: 'Connect',
     route: AppRoutes.connection,
     iconAsset: 'assets/icons/matches_icon.png',
   ),
   NavTabDescriptor(
     id: 'messages',
-    label: 'Messages',
+    label: 'Chat',
     route: AppRoutes.messages,
     iconAsset: 'assets/icons/messages_icon.png',
   ),
@@ -135,59 +135,49 @@ class _TanderBottomNavBarState extends ConsumerState<TanderBottomNavBar>
     final EdgeInsets viewPadding = MediaQuery.viewPaddingOf(context);
     final NavBadgeCounts badgeCounts = ref.watch(navBadgeProvider);
 
-    return Container(
-      margin: EdgeInsets.only(
-        left: NavBarConstants.dockMargin,
-        right: NavBarConstants.dockMargin,
-        bottom: math.max(viewPadding.bottom, NavBarConstants.dockMargin),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(NavBarConstants.dockBorderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: NavBarConstants.dockBlurSigma,
-            sigmaY: NavBarConstants.dockBlurSigma,
-          ),
-          child: Container(
-            padding: EdgeInsets.only(
-              left: 8,
-              right: 8,
-              top: 8,
-              bottom: 10 + math.max(viewPadding.bottom, 0),
-            ),
-            decoration: BoxDecoration(
-              color: NavBarConstants.dockBackground,
-              borderRadius:
-                  BorderRadius.circular(NavBarConstants.dockBorderRadius),
-              border: Border.all(color: NavBarConstants.dockBorder),
-              boxShadow: NavBarConstants.dockShadows,
-            ),
-            child: Stack(
-              children: [
-                const Positioned.fill(child: NavBokehOrbs()),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(navTabs.length, (index) {
-                    return NavTabEntrance(
-                      delay: Duration(
-                        milliseconds:
-                            NavBarConstants.entranceInitialDelay
-                                    .inMilliseconds +
-                                (NavBarConstants.staggerDelay.inMilliseconds *
-                                    index),
-                      ),
-                      entranceController: _entranceController,
-                      child: _MobileDockTab(
-                        descriptor: navTabs[index],
-                        isActive: index == activeIndex,
-                        badge: _badgeForTab(navTabs[index].id, badgeCounts),
-                        tandyPulseAnimation: _tandyPulseAnimation,
-                        onTap: () => _onTabTapped(index),
-                      ),
-                    );
-                  }),
-                ),
-              ],
+    final bottomInset = math.max(viewPadding.bottom, 8.0);
+
+    return Padding(
+      padding: EdgeInsets.only(left: 16, right: 16, bottom: bottomInset),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withAlpha(22), blurRadius: 28, offset: const Offset(0, 6)),
+            BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xF0FFFCF8),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white.withAlpha(180), width: 1.5),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(navTabs.length, (index) {
+                  return NavTabEntrance(
+                    delay: Duration(
+                      milliseconds:
+                          NavBarConstants.entranceInitialDelay.inMilliseconds +
+                              (NavBarConstants.staggerDelay.inMilliseconds * index),
+                    ),
+                    entranceController: _entranceController,
+                    child: _MobileDockTab(
+                      descriptor: navTabs[index],
+                      isActive: index == activeIndex,
+                      badge: _badgeForTab(navTabs[index].id, badgeCounts),
+                      tandyPulseAnimation: _tandyPulseAnimation,
+                      onTap: () => _onTabTapped(index),
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
         ),
@@ -235,65 +225,67 @@ class _MobileDockTab extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              // Active pill background with organic blob radius
+              // Active pill — iOS 26 glassy style
               AnimatedContainer(
-                duration: NavBarConstants.pillAnimationDuration,
-                curve: Curves.easeOutBack,
-                decoration: BoxDecoration(
-                  gradient: isActive
-                      ? NavBarConstants.activePillGradient
-                      : null,
-                  borderRadius: isActive
-                      ? NavBarConstants.activePillBorderRadius
-                      : BorderRadius.circular(NavBarConstants.tabBorderRadius),
-                  boxShadow:
-                      isActive ? NavBarConstants.activePillShadows : null,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isActive ? 16.0 : 10.0,
+                  vertical: isActive ? 8.0 : 6.0,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: NavBarConstants.tabPaddingH,
-                    vertical: NavBarConstants.tabPaddingV,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DockTabIcon(
-                        descriptor: descriptor,
-                        isActive: isActive,
-                        badge: badge,
+                decoration: BoxDecoration(
+                  gradient: isActive ? NavBarConstants.activePillGradient : null,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: isActive
+                      ? [BoxShadow(color: const Color(0xFFF07020).withAlpha(100), blurRadius: 20, offset: const Offset(0, 4))]
+                      : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 34,
+                      height: 32,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Center(
+                            child: Image.asset(
+                              descriptor.iconAsset,
+                              width: 30,
+                              height: 30,
+                              color: isActive ? Colors.white : null,
+                              colorBlendMode: isActive ? BlendMode.srcIn : null,
+                              opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.9),
+                            ),
+                          ),
+                          if (badge > 0)
+                            Positioned(
+                              top: -5,
+                              right: -5,
+                              child: NavUnreadBadge(count: badge),
+                            ),
+                        ],
                       ),
-                      const SizedBox(height: NavBarConstants.iconLabelGap),
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 150),
+                    ),
+                    const SizedBox(height: 3),
+                    MediaQuery(
+                      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+                      child: Text(
+                        descriptor.label,
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
-                          color: isActive
-                              ? AppColors.textInverse
-                              : AppColors.textBody,
+                          fontSize: 13,
+                          fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                          color: isActive ? Colors.white : const Color(0xFF6B5B4F),
                           height: 1,
                         ),
-                        child: Text(descriptor.label),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-
-              // Bloom halo behind active tab
-              if (isActive)
-                const Positioned.fill(
-                  child: IgnorePointer(
-                    child: NavActiveBloomHalo(),
-                  ),
-                ),
-
-              // Tandy pulse ring on inactive Tandy tab
-              if (descriptor.isTandy && !isActive)
-                Positioned.fill(
-                  child: _TandyPulseRing(animation: tandyPulseAnimation),
-                ),
             ],
           ),
         ),
@@ -333,7 +325,7 @@ class _DockTabIcon extends StatelessWidget {
                 height: NavBarConstants.iconSize,
                 color: isActive ? AppColors.textInverse : null,
                 colorBlendMode: isActive ? BlendMode.srcIn : null,
-                opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.72),
+                opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.85),
               ),
             ),
           ),

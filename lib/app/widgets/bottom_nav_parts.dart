@@ -45,8 +45,8 @@ abstract final class NavBarConstants {
   static const double iconContainerSize = 30.0; // w-[30px] h-[30px]
   static const double iconSize = 25.0; // iconSize + 4 from web
   static const double iconLabelGap = 3.0; // gap-[3px]
-  static const double tabPaddingH = 10.0; // px-[10px]
-  static const double tabPaddingV = 8.0; // py-[8px]
+  static const double tabPaddingH = 16.0; // wider pill to match web
+  static const double tabPaddingV = 10.0; // taller pill to match web
 
   // ── Dimensions (tablet rail) ─────────────────────────────────
   static const double railWidth = 72.0;
@@ -61,10 +61,10 @@ abstract final class NavBarConstants {
 
   // ── Glass (mobile dock) ──────────────────────────────────────
   /// Mobile dock background: rgba(255,252,248,0.97).
-  static const Color dockBackground = Color(0xF8FFFCF8);
+  static const Color dockBackground = Color(0x00000000); // transparent
 
   /// Mobile dock border: rgba(255,255,255,0.92).
-  static const Color dockBorder = Color(0xEBFFFFFF);
+  static const Color dockBorder = Color(0x20DDD3C2); // subtle warm border
 
   /// Backdrop blur sigma for mobile dock (48px CSS → ~24 sigma).
   static const double dockBlurSigma = 24.0;
@@ -83,10 +83,10 @@ abstract final class NavBarConstants {
   /// Active pill border radius — organic irregular shape.
   /// Web: 16px 13px 14px 15px / 15px 16px 13px 14px.
   static const BorderRadius activePillBorderRadius = BorderRadius.only(
-    topLeft: Radius.circular(16),
-    topRight: Radius.circular(13),
-    bottomRight: Radius.circular(14),
-    bottomLeft: Radius.circular(15),
+    topLeft: Radius.circular(20),
+    topRight: Radius.circular(18),
+    bottomRight: Radius.circular(19),
+    bottomLeft: Radius.circular(20),
   );
 
   /// Active pill: 158deg, #F07020 → #DF5C08.
@@ -109,23 +109,29 @@ abstract final class NavBarConstants {
   /// 0 1px 4px rgba(224,92,8,0.20).
   static const List<BoxShadow> activePillShadows = [
     BoxShadow(
-      color: Color(0x70E05C08),
-      blurRadius: 22,
-      offset: Offset(0, 4),
+      color: Color(0x80E05C08),
+      blurRadius: 24,
+      offset: Offset(0, 6),
+      spreadRadius: 2,
     ),
     BoxShadow(
-      color: Color(0x33E05C08),
-      blurRadius: 4,
+      color: Color(0x40E05C08),
+      blurRadius: 6,
       offset: Offset(0, 1),
     ),
   ];
 
   /// Mobile dock box shadow.
   static const List<BoxShadow> dockShadows = [
-    // inset 0 1.5px 0 rgba(255,255,255,1.00) — simulated via border
     BoxShadow(
-      color: Color(0x14E67E22),
-      blurRadius: 0,
+      color: Color(0x25000000),
+      blurRadius: 20,
+      offset: Offset(0, -4),
+      spreadRadius: 0,
+    ),
+    BoxShadow(
+      color: Color(0x10000000),
+      blurRadius: 6,
       offset: Offset(0, -1),
     ),
     BoxShadow(

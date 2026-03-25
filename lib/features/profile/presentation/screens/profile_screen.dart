@@ -13,11 +13,16 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/notifiers/my_profile_notifier.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/states/profile_state.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/widgets/help_sheet.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_hero.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_screen_sections.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/screens/profile_edit_screen.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/screens/profile_photos_screen.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/screens/settings_screen.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
 /// My Profile screen displayed as a tab in the bottom navigation.
@@ -165,6 +170,7 @@ class ProfileLoadedBody extends StatelessWidget {
     );
     final detailItems = buildDetailItems(profile);
     final completionTips = buildCompletionTips(
+      context: context,
       hasBio: hasBio,
       photoCount: gallery.length,
       interestCount: interests.length,
@@ -188,7 +194,7 @@ class ProfileLoadedBody extends StatelessWidget {
             age: profile.age,
             gender: gender,
             lookingFor: lookingFor,
-            onChangePhoto: _noOp,
+            onChangePhoto: () => _openPhotosSheet(context),
           ),
           _ProfileContent(
             gallery: gallery,
@@ -202,16 +208,57 @@ class ProfileLoadedBody extends StatelessWidget {
             snapshotItems: snapshotItems,
             detailItems: detailItems,
             completionTips: completionTips,
+            onEdit: () => _openEditSheet(context),
+            onPhotos: () => _openPhotosSheet(context),
+            onSettings: () => _openSettingsSheet(context),
+            onHelp: () => showHelpSheet(context),
           ),
         ],
       ),
     );
   }
 
-  static void _noOp() {
-    // TODO(#124): Wire to sheet callbacks once data layer ships.
-  }
 }
+
+// ── Modal sheet helpers — full-screen overlays that cover the nav bar ─────
+
+void _showFullScreenSheet(BuildContext context, Widget child) {
+  showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Close',
+    barrierColor: Colors.black.withValues(alpha: 0.4),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, __, ___) => Align(
+      alignment: Alignment.bottomCenter,
+      child: Material(
+        color: AppColors.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        clipBehavior: Clip.antiAlias,
+        child: FractionallySizedBox(
+          heightFactor: 0.92,
+          child: child,
+        ),
+      ),
+    ),
+    transitionBuilder: (_, animation, __, child) {
+      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(curved),
+        child: child,
+      );
+    },
+  );
+}
+
+void _openEditSheet(BuildContext context) =>
+    _showFullScreenSheet(context, const ProfileEditScreen());
+
+void _openPhotosSheet(BuildContext context) =>
+    _showFullScreenSheet(context, const ProfilePhotosScreen());
+
+void _openSettingsSheet(BuildContext context) =>
+    _showFullScreenSheet(context, const SettingsScreen());
 
 /// Content sections below the hero, adapts to phone vs tablet.
 class _ProfileContent extends StatelessWidget {
@@ -227,6 +274,10 @@ class _ProfileContent extends StatelessWidget {
     required this.snapshotItems,
     required this.detailItems,
     required this.completionTips,
+    required this.onEdit,
+    required this.onPhotos,
+    required this.onSettings,
+    required this.onHelp,
   });
 
   final List<String> gallery;
@@ -240,6 +291,10 @@ class _ProfileContent extends StatelessWidget {
   final List<FactRowData> snapshotItems;
   final List<FactRowData> detailItems;
   final List<CompletionTipData> completionTips;
+  final VoidCallback onEdit;
+  final VoidCallback onPhotos;
+  final VoidCallback onSettings;
+  final VoidCallback onHelp;
 
   @override
   Widget build(BuildContext context) {
@@ -248,11 +303,11 @@ class _ProfileContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const ProfileActionRow(
-            onEdit: _noOp,
-            onPhotos: _noOp,
-            onSettings: _noOp,
-            onHelp: _noOp,
+          ProfileActionRow(
+            onEdit: onEdit,
+            onPhotos: onPhotos,
+            onSettings: onSettings,
+            onHelp: onHelp,
           ),
           const SizedBox(height: AppSpacing.xs),
           ProfileMetricRow(
@@ -284,13 +339,55 @@ class _ProfileContent extends StatelessWidget {
             hasInterests: hasInterests,
             detailItems: detailItems,
           ),
-          const SizedBox(height: AppSpacing.xxl),
+          const SizedBox(height: AppSpacing.lg),
+          // Sign out button
+          _SignOutButton(),
+          const SizedBox(height: 120), // extra space so content isn't hidden behind floating nav bar
         ],
       ),
     );
   }
+}
 
-  static void _noOp() {
-    // TODO(#124): Wire to sheet callbacks once data layer ships.
+class _SignOutButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      child: OutlinedButton.icon(
+        onPressed: () {
+          showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Sign out'),
+              content: const Text('Are you sure you want to sign out?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                  child: const Text('Sign out'),
+                ),
+              ],
+            ),
+          ).then((confirmed) {
+            if (confirmed == true) {
+              ref.read(authNotifierProvider.notifier).signOut();
+            }
+          });
+        },
+        icon: const Icon(Icons.logout, size: 18),
+        label: const Text('Sign out', style: TextStyle(fontWeight: FontWeight.w600)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.danger,
+          side: const BorderSide(color: AppColors.danger),
+          minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+    );
   }
 }
