@@ -148,9 +148,10 @@ final class MyProfileNotifier extends Notifier<ProfileState> {
     );
   }
 
-  /// Deletes a photo, then re-fetches profile to reflect the change.
-  Future<bool> deletePhoto(String photoUrl) async {
-    final deleteResult = await _repository.deletePhoto(photoUrl: photoUrl);
+  /// Deletes a photo by gallery index, then re-fetches profile.
+  /// Index 0 = main profile photo, index 1+ = additional photos.
+  Future<bool> deletePhoto(int galleryIndex) async {
+    final deleteResult = await _repository.deletePhoto(galleryIndex: galleryIndex);
 
     return deleteResult.when(
       success: (_) {

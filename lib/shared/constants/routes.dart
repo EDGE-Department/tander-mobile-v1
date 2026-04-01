@@ -12,6 +12,10 @@ abstract final class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String otpVerification = '/otp-verification';
   static const String emailVerification = '/email-verification';
+  static const String signUp = '/sign-up';
+  static const String idScanner = '/id-scanner';
+  static const String rateLimit = '/rate-limit';
+  static const String duplicateId = '/duplicate-id';
 
   // ── Onboarding (auth required, incomplete profile) ──────────────────
   static const String profileSetup = '/profile-setup';

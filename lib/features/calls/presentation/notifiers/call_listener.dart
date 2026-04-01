@@ -9,6 +9,7 @@ import 'package:tander_flutter_v3/features/calls/data/datasources/call_signaling
 import 'package:tander_flutter_v3/features/calls/domain/call_constants.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
+import 'package:tander_flutter_v3/features/calls/presentation/providers/call_providers.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/states/call_state.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
 
@@ -55,11 +56,86 @@ final class CallListener {
 
     _callEventUnsub = subscribeToCallEvents(userId, _handleCallEvent);
 
+    // Check for active incoming calls on boot (push recovery)
+    _checkForActiveIncomingCall();
+
     AppLogger.info(
       'Call listener started',
       operation: _tag,
       context: {'userId': userId},
     );
+  }
+
+  /// Check backend for an active incoming call that was pushed while
+  /// the app was closed. If found, inject the call state so the overlay shows.
+  Future<void> _checkForActiveIncomingCall() async {
+    try {
+      final datasource = _ref.read(callsRemoteDatasourceProvider);
+      final activeCall = await datasource.getActiveIncomingCall();
+      if (activeCall == null) return;
+
+      final currentState = _ref.read(callNotifierProvider);
+      if (currentState.status is! CallIdle) return;
+
+      final roomName = activeCall['roomName'] as String? ?? '';
+      if (roomName.isEmpty) return;
+
+      final callerName =
+          activeCall['callerName'] as String? ?? 'Unknown';
+      final callerPhoto = activeCall['callerPhoto'] as String?;
+      final rawCallType =
+          (activeCall['callType'] as String? ?? 'audio').toUpperCase();
+      final callType = CallType.fromBackend(rawCallType);
+      final callerId = (activeCall['callerId'] ?? '').toString();
+      final callerUsername =
+          activeCall['callerUsername'] as String? ?? callerName;
+
+      final callInfo = CallInfo(
+        callId: roomName,
+        roomName: roomName,
+        callType: callType,
+        direction: CallDirection.incoming,
+        remoteUserId: callerId,
+        remoteUsername: callerUsername,
+        remotePhotoUrl: callerPhoto,
+      );
+
+      final notifier = _ref.read(callNotifierProvider.notifier);
+      notifier.setCallInfo(callInfo);
+      notifier.setStatus(const CallRinging());
+
+      // Send ring ack to caller
+      sendRingAck(roomName, callerId);
+
+      // Start ringing timeout
+      _ringingTimeout?.cancel();
+      _ringingTimeout = Timer(CallTimeouts.ringing, () {
+        final state = _ref.read(callNotifierProvider);
+        if (state.status is CallRinging &&
+            state.callInfo?.roomName == roomName) {
+          _ref.read(callNotifierProvider.notifier).endCall(
+                CallEndReason.noAnswer,
+              );
+          Future<void>.delayed(CallTimeouts.endedDisplay, () {
+            try {
+              _ref.read(callNotifierProvider.notifier).resetToIdle();
+            } catch (_) {}
+          });
+        }
+      });
+
+      AppLogger.info(
+        'Recovered active incoming call from backend',
+        operation: _tag,
+        context: {'roomName': roomName, 'callerName': callerName},
+      );
+    } catch (error) {
+      // Best-effort — endpoint may not exist yet
+      AppLogger.debug(
+        'Active call check failed (expected if no active call)',
+        operation: _tag,
+      );
+    }
   }
 
   /// Unsubscribes the early room signal subscription.

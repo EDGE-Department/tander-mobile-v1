@@ -234,7 +234,7 @@ void _showFullScreenSheet(BuildContext context, Widget child) {
       child: Material(
         color: AppColors.card,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.none,
         child: FractionallySizedBox(
           heightFactor: 0.92,
           child: child,

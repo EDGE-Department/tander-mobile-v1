@@ -22,7 +22,7 @@ class TandyPsychiatristPanel extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             const Divider(height: 1, color: AppColors.borderLight),
             Expanded(
               child: Stack(
@@ -97,7 +97,7 @@ class TandyPsychiatristPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 20, 12),
       child: Row(
@@ -120,13 +120,16 @@ class TandyPsychiatristPanel extends StatelessWidget {
             child: Icon(Icons.person_search, size: 18, color: kTandyPurple),
           ),
           const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Find a Psychiatrist', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong)),
-                Text('Licensed professionals \u00B7 DOH verified', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          Expanded(
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Find a Psychiatrist', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text('Licensed \u00B7 DOH verified', style: TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
+            ),
             ),
           ),
           IconButton(

@@ -96,17 +96,23 @@ class CommunityCommentItem {
   const CommunityCommentItem({
     required this.commentId,
     required this.postId,
+    required this.authorUserId,
     required this.authorUsername,
     required this.body,
     required this.createdAt,
     this.authorPhotoUrl,
+    this.parentCommentId,
+    this.replyCount = 0,
   });
 
   final String commentId;
   final String postId;
+  final String authorUserId;
   final String authorUsername;
   final String? authorPhotoUrl;
   final String body;
+  final String? parentCommentId;
+  final int replyCount;
   final DateTime createdAt;
 
   @override

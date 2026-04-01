@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:tander_flutter_v3/core/auth/session_manager.dart';
 import 'package:tander_flutter_v3/core/network/dio_client.dart';
 import 'package:tander_flutter_v3/core/storage/local_storage.dart';
 import 'package:tander_flutter_v3/core/storage/secure_storage.dart';
@@ -45,9 +46,27 @@ final onSessionExpiredProvider = Provider<void Function()>((ref) {
 // Network — DioClient (creates its own Dio + interceptors internally)
 // ---------------------------------------------------------------------------
 
+/// Callback that syncs the refreshed access token into SessionManager.
+/// Reads SessionManager lazily to avoid circular dependency.
+final onTokenRefreshedProvider = Provider<void Function(String)>((ref) {
+  return (String newToken) {
+    try {
+      // Late import: auth_providers imports core_providers, so we read lazily
+      final sessionManager = ref.read(sessionManagerLateProvider);
+      sessionManager?.updateAccessToken(newToken);
+    } on Object {
+      // SessionManager not yet available during early bootstrap — safe to ignore
+    }
+  };
+});
+
+/// Late-bound reference to SessionManager — set by auth layer after creation.
+final sessionManagerLateProvider = StateProvider<SessionManager?>((ref) => null);
+
 final dioClientProvider = Provider<DioClient>((ref) {
   return DioClient(
     secureStorage: ref.watch(secureStorageProvider),
     onSessionExpired: ref.watch(onSessionExpiredProvider),
+    onTokenRefreshed: ref.watch(onTokenRefreshedProvider),
   );
 });

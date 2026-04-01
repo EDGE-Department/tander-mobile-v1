@@ -132,10 +132,13 @@ class _TanderButtonState extends State<TanderButton>
               boxShadow: specs.boxShadow,
             ),
             padding: _resolvePadding(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _buildChildren(specs),
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _buildChildren(specs),
+              ),
             ),
           ),
         ),
@@ -179,6 +182,8 @@ class _TanderButtonState extends State<TanderButton>
     final label = Text(
       widget.label,
       style: _resolveLabelStyle(specs.foregroundColor),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
 
     if (widget.icon == null) return [label];
@@ -258,7 +263,7 @@ class _VariantSpecs {
   static const _primaryGradient = LinearGradient(
     begin: Alignment(-0.7, -1),
     end: Alignment(0.7, 1),
-    colors: [Color(0xFFE67E22), Color(0xFFD06A18)],
+    colors: [Color(0xFFE67E22), Color(0xFFC96D18)],
   );
 
   static _VariantSpecs resolve(TanderButtonVariant variant) {

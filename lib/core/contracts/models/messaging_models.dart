@@ -169,6 +169,9 @@ class MessageItem {
     this.media,
     this.deliveredAt,
     this.readAt,
+    this.isUnsent = false,
+    this.unsentAt,
+    this.unsentByUserId,
   });
 
   final String messageId;
@@ -184,6 +187,9 @@ class MessageItem {
   final DateTime? readAt;
   final MessageDeliveryState deliveryState;
   final bool isDeleted;
+  final bool isUnsent;
+  final DateTime? unsentAt;
+  final String? unsentByUserId;
 
   @override
   bool operator ==(Object other) =>

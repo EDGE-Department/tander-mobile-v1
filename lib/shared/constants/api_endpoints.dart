@@ -16,6 +16,11 @@ abstract final class ApiEndpoints {
   static const String checkEmail = '/auth/check-email';
   static const String checkUsername = '/auth/check-username';
   static const String idVerification = '/auth/id-verification';
+  static const String verifyIdPreRegister = '/auth/verify-id-pre-register';
+  static const String verificationConfig = '/auth/verification-config';
+  static const String checkPhone = '/auth/check-phone';
+  static const String sendSmsOtp = '/auth/twilio/send-sms-otp';
+  static const String verifySmsOtp = '/auth/twilio/verify-sms-otp';
 
   // ── Profile ──────────────────────────────────────────────────────────
   static const String userMe = '/user/me';
@@ -27,8 +32,8 @@ abstract final class ApiEndpoints {
   static const String uploadAdditionalPhotos =
       '/user/upload-additional-photos';
 
-  static String deletePhoto(String photoUrl) =>
-      '/user/delete-photo?photoUrl=$photoUrl';
+  static String deletePhotoByIndex(int photoIndex) =>
+      '/user/delete-photo?photoIndex=$photoIndex';
 
   static const String deleteProfilePhoto = '/user/delete-profile-photo';
   static const String reorderPhotos = '/user/reorder-photos';
@@ -127,4 +132,7 @@ abstract final class ApiEndpoints {
 
   static String postReactions(int postId) =>
       '/api/community/posts/$postId/reactions';
+
+  static String commentReplies(int commentId) =>
+      '/api/community/comments/$commentId/replies';
 }

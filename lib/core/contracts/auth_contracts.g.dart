@@ -61,14 +61,18 @@ Map<String, dynamic> _$LoginResponseDtoToJson(LoginResponseDto instance) =>
 
 RegisterRequestDto _$RegisterRequestDtoFromJson(Map<String, dynamic> json) =>
     RegisterRequestDto(
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
       email: json['email'] as String,
       password: json['password'] as String,
-      dateOfBirth: json['dateOfBirth'] as String,
-      gender: json['gender'] as String,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
       phone: json['phone'] as String?,
       username: json['username'] as String?,
+      dateOfBirth: json['dateOfBirth'] as String?,
+      gender: json['gender'] as String?,
+      auditId: json['auditId'] as String?,
+      consentTerms: json['consentTerms'] as bool?,
+      consentDataPrivacy: json['consentDataPrivacy'] as bool?,
+      consentVersion: json['consentVersion'] as String?,
     );
 
 Map<String, dynamic> _$RegisterRequestDtoToJson(RegisterRequestDto instance) =>
@@ -81,6 +85,10 @@ Map<String, dynamic> _$RegisterRequestDtoToJson(RegisterRequestDto instance) =>
       'password': instance.password,
       'dateOfBirth': instance.dateOfBirth,
       'gender': instance.gender,
+      'auditId': instance.auditId,
+      'consentTerms': instance.consentTerms,
+      'consentDataPrivacy': instance.consentDataPrivacy,
+      'consentVersion': instance.consentVersion,
     };
 
 RegisterResponseDataDto _$RegisterResponseDataDtoFromJson(

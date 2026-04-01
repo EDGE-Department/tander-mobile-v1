@@ -35,8 +35,9 @@ abstract interface class ProfileRepository {
     required List<String> filePaths,
   });
 
-  /// Deletes the photo at [photoUrl].
-  Future<Result<void>> deletePhoto({required String photoUrl});
+  /// Deletes a photo by its gallery index.
+  /// Index 0 = main profile photo, index 1+ = additional photos.
+  Future<Result<void>> deletePhoto({required int galleryIndex});
 
   /// Reorders gallery photos to match the given [photoUrls] order.
   Future<Result<void>> reorderPhotos({required List<String> photoUrls});

@@ -112,20 +112,59 @@ final class CommunityRemoteDatasource {
     );
   }
 
-  /// Creates a comment on a post.
+  /// Creates a comment on a post. Pass [parentCommentId] for threaded replies.
   Future<Response<Map<String, Object?>>> createComment({
     required int postId,
     required String content,
+    int? parentCommentId,
   }) {
     AppLogger.debug(
       'Creating comment',
       operation: '$_tag.createComment',
-      context: {'postId': postId},
+      context: {'postId': postId, if (parentCommentId != null) 'parentCommentId': parentCommentId},
     );
 
     return _dioClient.post<Map<String, Object?>>(
       ApiEndpoints.postComments(postId),
-      data: {'content': content},
+      data: <String, Object>{
+        'content': content,
+        if (parentCommentId != null) 'parentCommentId': parentCommentId,
+      },
+    );
+  }
+
+  /// Fetches replies to a specific comment.
+  Future<Response<Map<String, Object?>>> fetchReplies({
+    required int commentId,
+    String? cursor,
+  }) {
+    AppLogger.debug(
+      'Fetching replies',
+      operation: '$_tag.fetchReplies',
+      context: {'commentId': commentId},
+    );
+
+    final Map<String, Object>? queryParameters =
+        cursor != null ? {'cursor': cursor} : null;
+
+    return _dioClient.get<Map<String, Object?>>(
+      ApiEndpoints.commentReplies(commentId),
+      queryParameters: queryParameters,
+    );
+  }
+
+  /// Deletes a comment via DELETE /api/community/comments/{commentId}.
+  Future<Response<Map<String, Object?>>> deleteComment({
+    required int commentId,
+  }) {
+    AppLogger.debug(
+      'Deleting comment',
+      operation: '$_tag.deleteComment',
+      context: {'commentId': commentId},
+    );
+
+    return _dioClient.delete<Map<String, Object?>>(
+      '/api/community/comments/$commentId',
     );
   }
 

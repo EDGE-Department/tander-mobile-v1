@@ -13,16 +13,12 @@ final class RegisterUseCase {
   Future<Result<AuthSession>> execute({
     required String email,
     required String password,
-    required String username,
-    required String firstName,
-    required String lastName,
+    required String auditId,
   }) {
     return _repository.register(
       email: email,
       password: password,
-      username: username,
-      firstName: firstName,
-      lastName: lastName,
+      auditId: auditId,
     );
   }
 }

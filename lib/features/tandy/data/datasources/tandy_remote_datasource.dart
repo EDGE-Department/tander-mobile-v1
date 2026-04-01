@@ -67,6 +67,7 @@ final class TandyRemoteDatasource {
     return _dioClient.post<Map<String, Object?>>(
       ApiEndpoints.tandySend,
       data: requestDto.toJson(),
+      receiveTimeout: const Duration(seconds: 45),
     );
   }
 

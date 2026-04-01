@@ -73,7 +73,7 @@ final class ProfileRemoteDatasource {
     );
 
     final formData = FormData.fromMap(<String, Object>{
-      'file': await MultipartFile.fromFile(filePath),
+      'profilePhoto': await MultipartFile.fromFile(filePath, filename: 'profile-photo.jpg'),
     });
 
     await _dioClient.post<Map<String, Object?>>(
@@ -97,7 +97,7 @@ final class ProfileRemoteDatasource {
     );
 
     final formData = FormData.fromMap(<String, Object>{
-      'files': multipartFiles,
+      'additionalPhotos': multipartFiles,
     });
 
     await _dioClient.post<Map<String, Object?>>(
@@ -106,15 +106,22 @@ final class ProfileRemoteDatasource {
     );
   }
 
-  /// Deletes a photo via DELETE /user/delete-photo?photoUrl={url}.
-  Future<void> deletePhoto({required String photoUrl}) async {
-    AppLogger.debug(
-      'Deleting photo',
-      operation: '$_tag.deletePhoto',
-    );
-
+  /// Deletes the main profile photo via DELETE /user/delete-profile-photo.
+  Future<void> deleteProfilePhoto() async {
+    AppLogger.debug('Deleting profile photo', operation: '$_tag.deleteProfilePhoto');
     await _dioClient.delete<Map<String, Object?>>(
-      ApiEndpoints.deletePhoto(photoUrl),
+      ApiEndpoints.deleteProfilePhoto,
+    );
+  }
+
+  /// Deletes an additional photo by index via DELETE /user/delete-photo?photoIndex=N.
+  Future<void> deleteAdditionalPhoto({required int photoIndex}) async {
+    AppLogger.debug(
+      'Deleting additional photo at index $photoIndex',
+      operation: '$_tag.deleteAdditionalPhoto',
+    );
+    await _dioClient.delete<Map<String, Object?>>(
+      ApiEndpoints.deletePhotoByIndex(photoIndex),
     );
   }
 
@@ -128,7 +135,7 @@ final class ProfileRemoteDatasource {
 
     await _dioClient.put<Map<String, Object?>>(
       ApiEndpoints.reorderPhotos,
-      data: photoUrls,
+      data: <String, Object>{'photoUrls': photoUrls},
     );
   }
 

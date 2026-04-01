@@ -12,13 +12,13 @@ abstract final class AppColors {
   static const Color primary = Color(0xFFE67E22);
 
   /// Darkened primary for pressed / hover states.
-  static const Color primaryHover = Color(0xFFD35400);
+  static const Color primaryHover = Color(0xFFC96D18);
 
   /// Very light orange tint for backgrounds and chips.
-  static const Color primaryLight = Color(0xFFFEF3E2);
+  static const Color primaryLight = Color(0xFFFEF0E0);
 
   /// WCAG-contrast-safe variant of primary for text-on-white.
-  static const Color primaryAccessible = Color(0xFFCF6F1E);
+  static const Color primaryAccessible = Color(0xFF904C18);
 
   /// Secondary teal for complementary accents.
   static const Color secondary = Color(0xFF0F9D94);
@@ -46,10 +46,10 @@ abstract final class AppColors {
   static const Color textStrong = Color(0xFF1F2937);
 
   /// Default body copy.
-  static const Color textBody = Color(0xFF4B5563);
+  static const Color textBody = Color(0xFF374151);
 
   /// De-emphasized helper text.
-  static const Color textMuted = Color(0xFF9CA3AF);
+  static const Color textMuted = Color(0xFF5C6370);
 
   /// Disabled / placeholder text.
   static const Color textDisabled = Color(0xFFD1D5DB);
@@ -74,10 +74,10 @@ abstract final class AppColors {
   static const Color successLight = Color(0xFFF0FDF4);
 
   /// Danger / error red.
-  static const Color danger = Color(0xFFEF4444);
+  static const Color danger = Color(0xFFC0392B);
 
   /// Light danger background.
-  static const Color dangerLight = Color(0xFFFEF2F2);
+  static const Color dangerLight = Color(0xFFFEE2E2);
 
   /// Warning amber.
   static const Color warning = Color(0xFFF59E0B);

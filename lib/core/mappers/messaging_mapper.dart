@@ -78,7 +78,10 @@ abstract final class MessagingMapper {
           ? (DateTime.tryParse(dto.sentAt) ?? DateTime.now())
           : null,
       deliveryState: _parseDeliveryState(dto.status),
-      isDeleted: false,
+      isDeleted: dto.unsent,
+      isUnsent: dto.unsent,
+      unsentAt: dto.unsentAt != null ? DateTime.tryParse(dto.unsentAt!) : null,
+      unsentByUserId: dto.unsentByUserId?.toString(),
     );
   }
 

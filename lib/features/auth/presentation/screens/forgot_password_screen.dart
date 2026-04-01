@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
@@ -14,6 +16,30 @@ import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
+
+const LinearGradient _parchmentGradient = LinearGradient(
+  begin: Alignment(-0.15, -1.0),
+  end: Alignment(0.15, 1.0),
+  colors: [
+    Color(0xFFFEF7EE),
+    Color(0xFFFEFAF4),
+    Color(0xFFFFF8EF),
+    Color(0xFFFDF4E8),
+  ],
+  stops: [0.0, 0.35, 0.65, 1.0],
+);
+
+const LinearGradient _mobileAuthGradient = LinearGradient(
+  begin: Alignment(-1, -1),
+  end: Alignment(1, 1),
+  colors: [
+    Color(0xFFF07040),
+    Color(0xFFE86035),
+    Color(0xFF2EC878),
+    Color(0xFF20BF68),
+  ],
+  stops: [0.0, 0.30, 0.70, 1.0],
+);
 
 /// Forgot password screen — 1:1 copy of the web's forgot-password-page.
 ///
@@ -115,10 +141,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   void _navigateToOtp() {
     context.push(
       AppRoutes.otpVerification,
-      extra: {
-        'email': _emailController.text.trim(),
-        'type': 'PASSWORD_RESET',
-      },
+      extra: {'email': _emailController.text.trim(), 'type': 'PASSWORD_RESET'},
     );
   }
 
@@ -128,42 +151,45 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWideLayout = MediaQuery.sizeOf(context).width >= 1024;
-    return isWideLayout ? _buildWideLayout() : _buildPhoneLayout();
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isWideLayout = screenWidth >= 1024;
+    final isTabletPortraitLayout = screenWidth >= 768 && screenWidth < 1024;
+
+    if (isWideLayout) return _buildWideLayout(context);
+    if (isTabletPortraitLayout) return _buildTabletPortraitLayout();
+    return _buildPhoneLayout();
   }
 
-  Widget _buildWideLayout() {
+  Widget _buildWideLayout(BuildContext context) {
     return Scaffold(
-      body: Row(
+      body: Stack(
         children: [
-          Expanded(
-            flex: 60,
-            child: DesktopHeroPanel(onlineCount: _onlineCount),
-          ),
-          Expanded(
-            flex: 40,
-            child: Container(
-              color: const Color(0xFFFEFAF4),
-              child: SafeArea(
-                left: false,
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                      vertical: AppSpacing.xl,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 480),
-                      child: ForgotPasswordFormCard(
-                        isWide: true,
-                        isCodeSent: _isCodeSent,
-                        formContent: _buildFormContent(),
-                        successContent: _buildSuccessContent(),
-                      ),
-                    ),
+          Row(
+            children: [
+              Expanded(
+                flex: 60,
+                child: DesktopHeroPanel(onlineCount: _onlineCount),
+              ),
+              Expanded(
+                flex: 40,
+                child: _ForgotLandscapeRightPanel(
+                  child: ForgotPasswordFormCard(
+                    isWide: true,
+                    isCodeSent: _isCodeSent,
+                    formContent: _buildFormContent(),
+                    successContent: _buildSuccessContent(),
                   ),
                 ),
               ),
+            ],
+          ),
+          Positioned(
+            left: MediaQuery.sizeOf(context).width * 0.6 - 64,
+            top: 0,
+            bottom: 0,
+            width: 128,
+            child: const IgnorePointer(
+              child: CustomPaint(painter: _WaveSeamPainter()),
             ),
           ),
         ],
@@ -176,21 +202,109 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final headerHeight = resolveHeaderHeight(screenHeight);
 
     return Scaffold(
-      backgroundColor: AppColors.card,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            ForgotPasswordMobileHeader(
-              headerHeight: headerHeight,
-              onlineCount: _onlineCount,
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(gradient: _mobileAuthGradient),
+              ),
             ),
-            Transform.translate(
-              offset: const Offset(0, -headerOverlap),
-              child: ForgotPasswordFormCard(
-                isWide: false,
-                isCodeSent: _isCodeSent,
-                formContent: _buildFormContent(),
-                successContent: _buildSuccessContent(),
+          ),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                ForgotPasswordMobileHeader(
+                  headerHeight: headerHeight,
+                  onlineCount: _onlineCount,
+                ),
+                Transform.translate(
+                      offset: const Offset(0, -headerOverlap),
+                      child: _ForgotMobileParchmentSheet(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 32),
+                          child: ForgotPasswordFormCard(
+                            isWide: false,
+                            isCodeSent: _isCodeSent,
+                            formContent: _buildFormContent(),
+                            successContent: _buildSuccessContent(),
+                          ),
+                        ),
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(
+                      duration: 700.ms,
+                      delay: 100.ms,
+                      curve: AppCurves.premiumEase,
+                    )
+                    .slideY(begin: 0.08, curve: AppCurves.premiumEase),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletPortraitLayout() {
+    return Scaffold(
+      backgroundColor: AppColors.card,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: _parchmentGradient),
+        child: Stack(
+          children: [
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: 0.05,
+                  child: CustomPaint(painter: _ParchmentDotGridPainter()),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(32, 40, 32, 36),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 940),
+                    child: Column(
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 96),
+                              child: TabletPortraitHeroPanel(
+                                onlineCount: _onlineCount,
+                              ),
+                            ),
+                            Positioned(
+                              left: 40,
+                              right: 40,
+                              bottom: 0,
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 720,
+                                  ),
+                                  child: ForgotPasswordFormCard(
+                                    isWide: true,
+                                    isCodeSent: _isCodeSent,
+                                    formContent: _buildFormContent(),
+                                    successContent: _buildSuccessContent(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -360,3 +474,238 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 }
 
+class _ForgotMobileParchmentSheet extends StatelessWidget {
+  const _ForgotMobileParchmentSheet({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.14),
+            Colors.white.withValues(alpha: 0.08),
+            Colors.white.withValues(alpha: 0.04),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(36),
+          topRight: Radius.circular(36),
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x26000000),
+            blurRadius: 28,
+            offset: Offset(0, -8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 12),
+          const _SheetHandle(),
+          const SizedBox(height: 4),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ForgotLandscapeRightPanel extends StatelessWidget {
+  const _ForgotLandscapeRightPanel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: _parchmentGradient),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: IgnorePointer(child: _LandscapeDecor())),
+          SafeArea(
+            left: false,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(40),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LandscapeDecor extends StatelessWidget {
+  const _LandscapeDecor();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: Opacity(
+            opacity: 0.45,
+            child: CustomPaint(painter: _ParchmentDotGridPainter(spacing: 24)),
+          ),
+        ),
+        Positioned.fill(
+          child: Center(
+            child: Container(
+              width: 420,
+              height: 420,
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0x1AE67E22),
+                    Color(0x0AE67E22),
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.45, 0.85],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 80,
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0x0FE67E22), Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          right: 0,
+          child: Container(
+            width: 280,
+            height: 280,
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topRight,
+                radius: 0.95,
+                colors: [Color(0x0FE6A03C), Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 48,
+        height: 4,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
+          ),
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    );
+  }
+}
+
+class _ParchmentDotGridPainter extends CustomPainter {
+  const _ParchmentDotGridPainter({this.spacing = 26});
+
+  final double spacing;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0x14B46414)
+      ..style = PaintingStyle.fill;
+
+    for (double x = 0; x <= size.width; x += spacing) {
+      for (double y = 0; y <= size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 0.8, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParchmentDotGridPainter oldDelegate) {
+    return oldDelegate.spacing != spacing;
+  }
+}
+
+class _WaveSeamPainter extends CustomPainter {
+  const _WaveSeamPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width * 0.53, 0)
+      ..cubicTo(
+        size.width * 0.66,
+        size.height * 0.078,
+        size.width * 0.80,
+        size.height * 0.143,
+        size.width * 0.59,
+        size.height * 0.266,
+      )
+      ..cubicTo(
+        size.width * 0.44,
+        size.height * 0.39,
+        size.width * 0.71,
+        size.height * 0.456,
+        size.width * 0.56,
+        size.height * 0.576,
+      )
+      ..cubicTo(
+        size.width * 0.44,
+        size.height * 0.696,
+        size.width * 0.67,
+        size.height * 0.75,
+        size.width * 0.53,
+        size.height * 0.876,
+      )
+      ..cubicTo(
+        size.width * 0.44,
+        size.height * 0.96,
+        size.width * 0.56,
+        size.height * 0.983,
+        size.width * 0.53,
+        size.height,
+      );
+
+    final paint = Paint()
+      ..color = const Color(0x38E6A03C)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}

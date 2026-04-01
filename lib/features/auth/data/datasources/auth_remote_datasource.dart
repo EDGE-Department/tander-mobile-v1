@@ -234,6 +234,97 @@ final class AuthRemoteDatasource {
     return isAvailable is bool && isAvailable;
   }
 
+  /// Returns `true` if the phone number is available for registration.
+  Future<bool> checkPhoneAvailability({required String phone}) async {
+    AppLogger.debug(
+      'Checking phone availability',
+      operation: 'AuthRemoteDatasource.checkPhoneAvailability',
+    );
+
+    final response = await _dioClient.get<Map<String, Object?>>(
+      ApiEndpoints.checkPhone,
+      queryParameters: {'phone': phone},
+    );
+
+    final body = response.data;
+    if (body == null) return false;
+
+    final isAvailable = body['available'];
+    return isAvailable is bool && isAvailable;
+  }
+
+  /// Fetches the minimum age requirement from the backend.
+  Future<int> getMinimumAge() async {
+    AppLogger.debug(
+      'Fetching verification config',
+      operation: 'AuthRemoteDatasource.getMinimumAge',
+    );
+
+    final response = await _dioClient.get<Map<String, Object?>>(
+      ApiEndpoints.verificationConfig,
+    );
+
+    final body = response.data;
+    if (body == null) return 60;
+
+    final data = body['data'];
+    if (data is Map<String, Object?>) {
+      final minimumAge = data['minimumAge'];
+      if (minimumAge is int) return minimumAge;
+      if (minimumAge is num) return minimumAge.toInt();
+    }
+
+    return 60;
+  }
+
+  /// Verifies ID pre-registration with selfie + ID photo (multipart upload).
+  ///
+  /// Returns the raw response so the caller can extract auditId.
+  Future<Response<Map<String, Object?>>> verifyIdPreRegister({
+    required String idPhotoFrontPath,
+    String? selfiePath,
+    Map<String, dynamic>? livenessMetadata,
+    Map<String, dynamic>? frontendOcrData,
+  }) async {
+    AppLogger.debug(
+      'Verifying ID pre-register',
+      operation: 'AuthRemoteDatasource.verifyIdPreRegister',
+    );
+
+    final formMap = <String, dynamic>{
+      'idPhotoFront': await MultipartFile.fromFile(
+        idPhotoFrontPath,
+        contentType: DioMediaType.parse('image/jpeg'),
+      ),
+    };
+
+    if (selfiePath != null && selfiePath.isNotEmpty) {
+      formMap['selfie'] = await MultipartFile.fromFile(
+        selfiePath,
+        contentType: DioMediaType.parse('image/jpeg'),
+      );
+    }
+
+    if (livenessMetadata != null) {
+      formMap['livenessMetadata'] = livenessMetadata.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('&');
+    }
+
+    if (frontendOcrData != null) {
+      formMap['frontendOcrData'] = frontendOcrData.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('&');
+    }
+
+    final formData = FormData.fromMap(formMap);
+
+    return _dioClient.post<Map<String, Object?>>(
+      ApiEndpoints.verifyIdPreRegister,
+      data: formData,
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // User session
   // ---------------------------------------------------------------------------

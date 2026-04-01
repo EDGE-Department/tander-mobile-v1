@@ -119,6 +119,12 @@ final class SessionManager {
 
   bool get isAuthenticated => _accessToken != null && _session != null;
 
+  /// Updates the in-memory access token after a refresh performed by
+  /// [TokenRefreshInterceptor]. Keeps memory and storage in sync.
+  void updateAccessToken(String token) {
+    _accessToken = token;
+  }
+
   // ---------------------------------------------------------------------------
   // Token management
   // ---------------------------------------------------------------------------
@@ -174,36 +180,58 @@ final class SessionManager {
   ///
   /// Returns `true` if the session was restored, `false` on any failure.
   /// Never throws — a failed bootstrap simply means the user must log in.
+  /// Retries once on transient failure before clearing the session.
   Future<bool> bootstrapSession() async {
-    try {
-      final refreshToken = await _readRefreshToken();
-      if (refreshToken == null) {
-        AppLogger.debug(
-          'No refresh token found — skipping bootstrap',
-          operation: 'SessionManager.bootstrapSession',
-        );
-        return false;
-      }
-
-      await _callRefreshEndpoint(refreshToken);
-      await _restoreAccessTokenFromStorage();
-      await _fetchAndSetUserSession();
-
-      AppLogger.info(
-        'Session bootstrapped successfully for user ${_session?.userId}',
+    final refreshToken = await _readRefreshToken();
+    if (refreshToken == null) {
+      AppLogger.debug(
+        'No refresh token found — skipping bootstrap',
         operation: 'SessionManager.bootstrapSession',
       );
-      return true;
-    } on Object catch (error, stackTrace) {
-      AppLogger.error(
-        'Bootstrap failed — user must log in manually',
-        operation: 'SessionManager.bootstrapSession',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      await clearSession();
       return false;
     }
+
+    // Try up to 2 times (initial + 1 retry) to handle transient network errors.
+    for (int attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await _callRefreshEndpoint(refreshToken);
+
+        final tokenRestored = await _restoreAccessTokenFromStorage();
+        if (!tokenRestored) {
+          // Token wasn't in header or storage — can't proceed
+          if (attempt < 2) continue; // retry
+          await clearSession();
+          return false;
+        }
+
+        await _fetchAndSetUserSession();
+
+        AppLogger.info(
+          'Session bootstrapped successfully for user ${_session?.userId}',
+          operation: 'SessionManager.bootstrapSession',
+        );
+        return true;
+      } on Object catch (error, stackTrace) {
+        if (attempt < 2) {
+          AppLogger.warning(
+            'Bootstrap attempt $attempt failed — retrying',
+            operation: 'SessionManager.bootstrapSession',
+          );
+          await Future<void>.delayed(const Duration(seconds: 1));
+          continue;
+        }
+        AppLogger.error(
+          'Bootstrap failed after 2 attempts — user must log in manually',
+          operation: 'SessionManager.bootstrapSession',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        await clearSession();
+        return false;
+      }
+    }
+
+    return false;
   }
 
   // ---------------------------------------------------------------------------
@@ -264,7 +292,13 @@ final class SessionManager {
   /// both in-memory and in secure storage.
   Future<void> _extractAccessTokenFromHeader(Response<Object?> response) async {
     final rawJwtHeader = response.headers.value('jwt-token');
-    if (rawJwtHeader == null || rawJwtHeader.isEmpty) return;
+    if (rawJwtHeader == null || rawJwtHeader.isEmpty) {
+      AppLogger.warning(
+        'Jwt-Token header missing from response — token not rotated',
+        operation: 'SessionManager._extractAccessTokenFromHeader',
+      );
+      return;
+    }
 
     final freshToken = rawJwtHeader.startsWith('Bearer ')
         ? rawJwtHeader.substring(7)
@@ -283,20 +317,24 @@ final class SessionManager {
 
   /// Reads the access token from [SecureStorage] into in-memory state.
   /// Called during bootstrap after the refresh call has persisted a new token.
-  Future<void> _restoreAccessTokenFromStorage() async {
+  /// Returns `true` if a token was restored, `false` otherwise.
+  Future<bool> _restoreAccessTokenFromStorage() async {
     // If _extractAccessTokenFromHeader already set it, skip the read.
-    if (_accessToken != null) return;
+    if (_accessToken != null) return true;
 
     final tokenResult = await _secureStorage.readAccessToken();
     final storedToken = tokenResult.valueOrNull;
 
     if (storedToken == null || storedToken.isEmpty) {
-      throw StateError(
-        'Refresh succeeded but no access token found in secure storage',
+      AppLogger.warning(
+        'No access token found in secure storage after refresh',
+        operation: 'SessionManager._restoreAccessTokenFromStorage',
       );
+      return false;
     }
 
     _accessToken = storedToken;
+    return true;
   }
 
   /// Calls `GET /api/user/me` and builds an [AuthSession] from the response.

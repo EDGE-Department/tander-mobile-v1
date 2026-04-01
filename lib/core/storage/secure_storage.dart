@@ -19,6 +19,7 @@ final class SecureStorage {
 
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
+  static const String _auditIdKey = 'audit_id';
 
   // ---------------------------------------------------------------------------
   // Access token (cold-start backup)
@@ -106,6 +107,52 @@ final class SecureStorage {
       return Failure(
         StorageException(
           message: 'Failed to delete refresh token: $error',
+          stackTrace: stackTrace,
+        ),
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Audit ID (pre-registration ID verification)
+  // ---------------------------------------------------------------------------
+
+  Future<Result<String?>> readAuditId() async {
+    try {
+      final auditId = await _storage.read(key: _auditIdKey);
+      return Success(auditId);
+    } catch (error, stackTrace) {
+      return Failure(
+        StorageException(
+          message: 'Failed to read auditId: $error',
+          stackTrace: stackTrace,
+        ),
+      );
+    }
+  }
+
+  Future<Result<void>> saveAuditId(String auditId) async {
+    try {
+      await _storage.write(key: _auditIdKey, value: auditId);
+      return const Success(null);
+    } catch (error, stackTrace) {
+      return Failure(
+        StorageException(
+          message: 'Failed to save auditId: $error',
+          stackTrace: stackTrace,
+        ),
+      );
+    }
+  }
+
+  Future<Result<void>> deleteAuditId() async {
+    try {
+      await _storage.delete(key: _auditIdKey);
+      return const Success(null);
+    } catch (error, stackTrace) {
+      return Failure(
+        StorageException(
+          message: 'Failed to delete auditId: $error',
           stackTrace: stackTrace,
         ),
       );

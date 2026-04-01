@@ -67,6 +67,8 @@ class CommunityCommentDto {
     required this.author,
     required this.content,
     required this.createdAt,
+    this.parentCommentId,
+    this.replyCount = 0,
   });
 
   factory CommunityCommentDto.fromJson(Map<String, Object?> json) =>
@@ -76,6 +78,8 @@ class CommunityCommentDto {
   final int postId;
   final PostAuthorDto author;
   final String content;
+  final int? parentCommentId;
+  final int replyCount;
   final String createdAt;
 
   Map<String, Object?> toJson() => _$CommunityCommentDtoToJson(this);

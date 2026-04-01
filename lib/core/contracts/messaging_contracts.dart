@@ -75,6 +75,9 @@ class MessageDto {
     this.messageType,
     this.mediaUrl,
     this.mediaDurationSeconds,
+    this.unsent = false,
+    this.unsentAt,
+    this.unsentByUserId,
   });
 
   factory MessageDto.fromJson(Map<String, Object?> json) =>
@@ -94,6 +97,9 @@ class MessageDto {
   final String? messageType;
   final String? mediaUrl;
   final int? mediaDurationSeconds;
+  final bool unsent;
+  final String? unsentAt;
+  final int? unsentByUserId;
 
   Map<String, Object?> toJson() => _$MessageDtoToJson(this);
 }

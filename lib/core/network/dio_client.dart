@@ -24,9 +24,11 @@ final class DioClient {
   DioClient({
     required SecureStorage secureStorage,
     required OnSessionExpired onSessionExpired,
+    OnTokenRefreshed? onTokenRefreshed,
   }) : _dio = _createDio(
           secureStorage: secureStorage,
           onSessionExpired: onSessionExpired,
+          onTokenRefreshed: onTokenRefreshed,
         );
 
   /// Test-only constructor that accepts a pre-configured [Dio] instance.
@@ -51,11 +53,15 @@ final class DioClient {
     String path, {
     Object? data,
     Map<String, Object>? queryParameters,
+    Duration? receiveTimeout,
   }) =>
       _execute(() => _dio.post<TResponse>(
             path,
             data: data,
             queryParameters: queryParameters,
+            options: receiveTimeout != null
+                ? Options(receiveTimeout: receiveTimeout)
+                : null,
           ));
 
   Future<Response<TResponse>> put<TResponse>(
@@ -97,6 +103,7 @@ final class DioClient {
   static Dio _createDio({
     required SecureStorage secureStorage,
     required OnSessionExpired onSessionExpired,
+    OnTokenRefreshed? onTokenRefreshed,
   }) {
     final dio = Dio(
       BaseOptions(
@@ -116,6 +123,7 @@ final class DioClient {
         dio: dio,
         secureStorage: secureStorage,
         onSessionExpired: onSessionExpired,
+        onTokenRefreshed: onTokenRefreshed,
       ),
     ]);
 

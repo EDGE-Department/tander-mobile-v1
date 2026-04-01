@@ -48,8 +48,13 @@ final class ProfileRepositoryImpl implements ProfileRepository {
     required UpdateProfileRequestDto request,
   }) {
     return _runSafe('updateProfile', () async {
-      final response = await _remoteDatasource.updateProfile(request: request);
-      return _mapProfileResponse(response.data);
+      // Send the update
+      await _remoteDatasource.updateProfile(request: request);
+      // Refetch profile — the PUT response has inconsistent field formats
+      // (additionalPhotos as String vs List), so use the GET endpoint
+      // which always returns the correct shape.
+      final refreshed = await _remoteDatasource.fetchMyProfile();
+      return _mapProfileResponse(refreshed.data);
     });
   }
 
@@ -74,9 +79,16 @@ final class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Result<void>> deletePhoto({required String photoUrl}) {
+  Future<Result<void>> deletePhoto({required int galleryIndex}) {
     return _runSafe('deletePhoto', () async {
-      await _remoteDatasource.deletePhoto(photoUrl: photoUrl);
+      if (galleryIndex == 0) {
+        await _remoteDatasource.deleteProfilePhoto();
+      } else {
+        // Gallery index 1+ maps to additionalPhotos index 0+
+        await _remoteDatasource.deleteAdditionalPhoto(
+          photoIndex: galleryIndex - 1,
+        );
+      }
     });
   }
 

@@ -20,9 +20,7 @@ abstract interface class AuthRepository {
   Future<Result<AuthSession>> register({
     required String email,
     required String password,
-    required String username,
-    required String firstName,
-    required String lastName,
+    required String auditId,
   });
 
   /// Fetches the currently authenticated user's session from the server.
@@ -67,4 +65,20 @@ abstract interface class AuthRepository {
 
   /// Checks whether [username] is available for registration.
   Future<Result<bool>> checkUsernameAvailability({required String username});
+
+  /// Checks whether [phone] is available for registration.
+  Future<Result<bool>> checkPhoneAvailability({required String phone});
+
+  /// Fetches the minimum age requirement from the backend.
+  Future<Result<int>> getMinimumAge();
+
+  /// Verifies ID pre-registration with selfie + ID photo.
+  ///
+  /// Returns the auditId on success.
+  Future<Result<String>> verifyIdPreRegister({
+    required String idPhotoFrontPath,
+    String? selfiePath,
+    Map<String, dynamic>? livenessMetadata,
+    Map<String, dynamic>? frontendOcrData,
+  });
 }

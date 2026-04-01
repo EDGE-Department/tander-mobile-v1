@@ -68,7 +68,7 @@ class SideNavRail extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 24),
                   child: Image.asset(
-                    'assets/icons/tander_logo.png',
+                    'assets/icons/tander_icon.png',
                     width: 32,
                     height: 32,
                   ),

@@ -133,6 +133,20 @@ final class MessagingRepositoryImpl implements MessagingRepository {
     });
   }
 
+  @override
+  Future<Result<void>> unsendMessage({required int messageId}) {
+    return _runSafe('unsendMessage', () async {
+      await _remoteDatasource.unsendMessage(messageId: messageId);
+    });
+  }
+
+  @override
+  Future<Result<void>> hideMessageForUser({required int messageId}) {
+    return _runSafe('hideMessageForUser', () async {
+      await _remoteDatasource.hideMessageForUser(messageId: messageId);
+    });
+  }
+
   // -----------------------------------------------------------------------
   // Private helpers
   // -----------------------------------------------------------------------

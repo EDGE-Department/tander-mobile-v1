@@ -231,7 +231,7 @@ class MessagesWelcomePlaceholder extends StatelessWidget {
     return Container(
       color: const Color(0xFFF6EFE4),
       child: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding:
               const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
           child: Column(

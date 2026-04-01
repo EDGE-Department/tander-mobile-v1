@@ -130,19 +130,28 @@ class ConnectionHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Connections', style: AppTypography.h1),
-            const SizedBox(height: 2),
-            Text(
-              'Your people, your circle',
-              style: AppTypography.bodySm.copyWith(
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w500,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Connections',
+                style: AppTypography.h1,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                'Your people, your circle',
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -201,22 +210,30 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6), // p-1.5
-      decoration: BoxDecoration(
-        color: AppColors.subtle,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.noScaling,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildTab(ConnectionTab.incoming, 'Requests'),
-          const SizedBox(width: 2),
-          _buildTab(ConnectionTab.sent, 'Sent'),
-          const SizedBox(width: 2),
-          _buildTab(ConnectionTab.connected, 'Friends'),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Container(
+          padding: const EdgeInsets.all(6), // p-1.5
+          decoration: BoxDecoration(
+            color: AppColors.subtle,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTab(ConnectionTab.incoming, 'Requests'),
+              const SizedBox(width: 2),
+              _buildTab(ConnectionTab.sent, 'Sent'),
+              const SizedBox(width: 2),
+              _buildTab(ConnectionTab.connected, 'Friends'),
+            ],
+          ),
+        ),
       ),
     );
   }

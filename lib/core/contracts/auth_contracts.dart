@@ -84,27 +84,35 @@ class LoginResponseDto {
 @JsonSerializable()
 class RegisterRequestDto {
   const RegisterRequestDto({
-    required this.firstName,
-    required this.lastName,
     required this.email,
     required this.password,
-    required this.dateOfBirth,
-    required this.gender,
+    this.firstName,
+    this.lastName,
     this.phone,
     this.username,
+    this.dateOfBirth,
+    this.gender,
+    this.auditId,
+    this.consentTerms,
+    this.consentDataPrivacy,
+    this.consentVersion,
   });
 
   factory RegisterRequestDto.fromJson(Map<String, Object?> json) =>
       _$RegisterRequestDtoFromJson(json);
 
-  final String firstName;
-  final String lastName;
+  final String? firstName;
+  final String? lastName;
   final String email;
   final String? phone;
   final String? username;
   final String password;
-  final String dateOfBirth;
-  final String gender;
+  final String? dateOfBirth;
+  final String? gender;
+  final String? auditId;
+  final bool? consentTerms;
+  final bool? consentDataPrivacy;
+  final String? consentVersion;
 
   Map<String, Object?> toJson() => _$RegisterRequestDtoToJson(this);
 }

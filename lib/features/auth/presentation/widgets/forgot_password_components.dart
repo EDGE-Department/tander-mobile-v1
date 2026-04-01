@@ -6,13 +6,6 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
 // ── Constants (shared across forgot-password files) ──────────────────
 
-/// Brand icon gradient matching web's `var(--gradient-primary-button)`.
-const LinearGradient brandIconGradient = LinearGradient(
-  begin: Alignment(-0.7, -1),
-  end: Alignment(0.7, 1),
-  colors: [Color(0xFFE67E22), Color(0xFFD06A18)],
-);
-
 /// Parchment background color matching web's `#F9F5F0`.
 const Color parchmentBg = Color(0xFFF9F5F0);
 
@@ -49,7 +42,11 @@ class BackToSignInPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.arrow_back, size: 15, color: AppColors.textMuted),
+              const Icon(
+                Icons.arrow_back,
+                size: 15,
+                color: AppColors.textMuted,
+              ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 'Back to sign in',
@@ -68,47 +65,17 @@ class BackToSignInPill extends StatelessWidget {
 
 // ── Brand header row ─────────────────────────────────────────────────
 
-/// Heart icon + "Tander" wordmark + "Secure Recovery" badge.
+/// Recovery badge row shown at the top-right of the forgot-password form.
 class ForgotPasswordBrandHeader extends StatelessWidget {
   const ForgotPasswordBrandHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                gradient: brandIconGradient,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x59E67E22),
-                    blurRadius: 12,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(Icons.favorite, size: 18, color: Colors.white),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Tander',
-              style: AppTypography.brandWordmark(
-                fontSize: 16,
-                letterSpacing: -0.3,
-              ),
-            ),
-          ],
-        ),
-        Container(
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: AppColors.primaryLight,
@@ -118,7 +85,11 @@ class ForgotPasswordBrandHeader extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.lock, size: 12, color: AppColors.primaryAccessible),
+              const Icon(
+                Icons.lock,
+                size: 12,
+                color: AppColors.primaryAccessible,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Secure Recovery',
@@ -131,7 +102,7 @@ class ForgotPasswordBrandHeader extends StatelessWidget {
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -285,29 +256,32 @@ class MethodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: parchmentBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: primaryBorderSubtle, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          _MethodTab(
-            label: 'Email',
-            icon: Icons.email_outlined,
-            isActive: selectedMethod == IdentifierMethod.email,
-            onTap: () => onMethodChanged(IdentifierMethod.email),
-          ),
-          const SizedBox(width: 4),
-          _MethodTab(
-            label: 'Phone Number',
-            icon: Icons.phone,
-            isActive: selectedMethod == IdentifierMethod.phone,
-            onTap: () => onMethodChanged(IdentifierMethod.phone),
-          ),
-        ],
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: parchmentBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: primaryBorderSubtle, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            _MethodTab(
+              label: 'Email',
+              icon: Icons.email_outlined,
+              isActive: selectedMethod == IdentifierMethod.email,
+              onTap: () => onMethodChanged(IdentifierMethod.email),
+            ),
+            const SizedBox(width: 4),
+            _MethodTab(
+              label: 'Phone Number',
+              icon: Icons.phone,
+              isActive: selectedMethod == IdentifierMethod.phone,
+              onTap: () => onMethodChanged(IdentifierMethod.phone),
+            ),
+          ],
+        ),
       ),
     );
   }

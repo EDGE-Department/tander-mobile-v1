@@ -142,4 +142,30 @@ final class CallsRemoteDatasource {
       data: {'roomName': roomName},
     );
   }
+
+  /// Check if the user has an active incoming call (RINGING/INITIATED).
+  ///
+  /// Used on app boot to recover calls pushed while the app was closed.
+  /// Returns the call payload or `null` if no active call exists.
+  Future<Map<String, dynamic>?> getActiveIncomingCall() async {
+    try {
+      final response = await _dioClient.get<Map<String, Object?>>(
+        '/api/twilio/video/active-incoming',
+      );
+
+      final body = response.data;
+      if (body == null) return null;
+
+      final hasActiveCall = body['hasActiveCall'] == true;
+      if (!hasActiveCall) return null;
+
+      return Map<String, dynamic>.from(body);
+    } catch (error) {
+      AppLogger.debug(
+        'Active incoming call check failed (expected if no active call)',
+        operation: '$_tag.getActiveIncomingCall',
+      );
+      return null;
+    }
+  }
 }

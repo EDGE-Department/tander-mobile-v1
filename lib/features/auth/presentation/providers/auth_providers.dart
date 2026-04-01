@@ -30,10 +30,15 @@ final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
 // ---------------------------------------------------------------------------
 
 final sessionManagerProvider = Provider<SessionManager>((ref) {
-  return SessionManager(
+  final manager = SessionManager(
     secureStorage: ref.watch(secureStorageProvider),
     dioClient: ref.watch(dioClientProvider),
   );
+  // Wire the late-bound reference after initialization completes
+  Future.microtask(() {
+    ref.read(sessionManagerLateProvider.notifier).state = manager;
+  });
+  return manager;
 });
 
 // ---------------------------------------------------------------------------

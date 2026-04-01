@@ -57,6 +57,9 @@ MessageDto _$MessageDtoFromJson(Map<String, dynamic> json) => MessageDto(
   messageType: json['messageType'] as String?,
   mediaUrl: json['mediaUrl'] as String?,
   mediaDurationSeconds: (json['mediaDurationSeconds'] as num?)?.toInt(),
+  unsent: json['unsent'] as bool? ?? false,
+  unsentAt: json['unsentAt'] as String?,
+  unsentByUserId: (json['unsentByUserId'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MessageDtoToJson(MessageDto instance) =>
@@ -73,6 +76,9 @@ Map<String, dynamic> _$MessageDtoToJson(MessageDto instance) =>
       'messageType': instance.messageType,
       'mediaUrl': instance.mediaUrl,
       'mediaDurationSeconds': instance.mediaDurationSeconds,
+      'unsent': instance.unsent,
+      'unsentAt': instance.unsentAt,
+      'unsentByUserId': instance.unsentByUserId,
     };
 
 SendMessageRequestDto _$SendMessageRequestDtoFromJson(

@@ -71,15 +71,22 @@ class _PostAuthorRow extends StatelessWidget {
           size: TanderAvatarSize.md,
         ),
         const SizedBox(width: AppSpacing.sm),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(post.author.displayName, style: AppTypography.label),
-            Text(
-              formatRelativeTime(post.createdAt),
-              style: AppTypography.caption,
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                post.author.displayName,
+                style: AppTypography.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                formatRelativeTime(post.createdAt),
+                style: AppTypography.caption,
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -212,58 +219,269 @@ class CommentsHeader extends StatelessWidget {
 }
 
 class CommentTile extends StatelessWidget {
-  const CommentTile({required this.comment, super.key});
+  const CommentTile({
+    required this.comment,
+    required this.depth,
+    required this.onReply,
+    this.expandedReplies = const [],
+    this.onExpandReplies,
+    this.parentAuthor,
+    this.isExpanded = false,
+    this.onToggleExpand,
+    this.currentUserId,
+    this.onDelete,
+    super.key,
+  });
 
   final CommunityCommentItem comment;
+  final int depth;
+  final ValueChanged<CommunityCommentItem> onReply;
+  final List<CommunityCommentItem> expandedReplies;
+  final VoidCallback? onExpandReplies;
+  final String? parentAuthor;
+  final bool isExpanded;
+  final VoidCallback? onToggleExpand;
+  final String? currentUserId;
+  final VoidCallback? onDelete;
+
+  static const int _maxVisualDepth = 3;
+  static const List<Color> _threadColors = [
+    AppColors.primary,
+    AppColors.secondary,
+    Color(0xFFB47A1E),
+    Color(0xFF9D6EC1),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TanderAvatar(
-            imageUrl: comment.authorPhotoUrl,
-            displayName: comment.authorUsername,
-            size: TanderAvatarSize.sm,
+    final visualDepth = depth.clamp(0, _maxVisualDepth);
+    final isReply = depth > 0;
+    final threadColor = _threadColors[visualDepth % _threadColors.length];
+
+    return Stack(
+      children: [
+        // Thread line — vertical connector
+        if (isReply)
+          Positioned(
+            left: AppSpacing.md + (visualDepth - 1) * 28.0 + 12,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 2,
+              decoration: BoxDecoration(
+                color: threadColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+
+        Padding(
+          padding: EdgeInsets.only(left: visualDepth * 28.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: 6,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      comment.authorUsername,
-                      style: AppTypography.label.copyWith(fontSize: 13),
+                    TanderAvatar(
+                      imageUrl: comment.authorPhotoUrl,
+                      displayName: comment.authorUsername,
+                      size: isReply ? TanderAvatarSize.xs : TanderAvatarSize.sm,
                     ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      formatRelativeTime(comment.createdAt),
-                      style: AppTypography.caption,
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Reply context label
+                          if (isReply && parentAuthor != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.reply, size: 10, color: threadColor.withValues(alpha: 0.6)),
+                                  const SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text.rich(
+                                      TextSpan(
+                                        style: AppTypography.caption.copyWith(fontSize: 10, color: AppColors.textMuted),
+                                        children: [
+                                          const TextSpan(text: 'replying to '),
+                                          TextSpan(
+                                            text: parentAuthor,
+                                            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textBody),
+                                          ),
+                                        ],
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          // Comment bubble
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                            decoration: BoxDecoration(
+                              color: isReply
+                                  ? threadColor.withValues(alpha: 0.04)
+                                  : AppColors.subtle,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(4),
+                                topRight: Radius.circular(16),
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(16),
+                              ),
+                              border: isReply
+                                  ? Border(left: BorderSide(color: threadColor.withValues(alpha: 0.3), width: 2))
+                                  : null,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        comment.authorUsername,
+                                        style: AppTypography.label.copyWith(
+                                          fontSize: isReply ? 12 : 13,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      formatRelativeTime(comment.createdAt),
+                                      style: AppTypography.caption.copyWith(fontSize: 10),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  comment.body,
+                                  style: AppTypography.body.copyWith(
+                                    fontSize: isReply ? 14 : 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Reply + expand actions
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 4),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => onReply(comment),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.reply, size: 13, color: AppColors.textMuted),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Reply',
+                                          style: AppTypography.caption.copyWith(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (currentUserId != null && comment.authorUserId == currentUserId) ...[
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: onDelete,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                                      child: Text(
+                                        'Delete',
+                                        style: AppTypography.caption.copyWith(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                if (comment.replyCount > 0) ...[
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: onExpandReplies ?? onToggleExpand,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isExpanded || expandedReplies.isNotEmpty
+                                                ? Icons.expand_less
+                                                : Icons.expand_more,
+                                            size: 14,
+                                            color: isExpanded || expandedReplies.isNotEmpty
+                                                ? AppColors.textMuted
+                                                : AppColors.primary,
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            isExpanded || expandedReplies.isNotEmpty
+                                                ? 'Hide replies'
+                                                : '${comment.replyCount} ${comment.replyCount == 1 ? 'reply' : 'replies'}',
+                                            style: AppTypography.caption.copyWith(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: isExpanded || expandedReplies.isNotEmpty
+                                                  ? AppColors.textMuted
+                                                  : AppColors.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xxs),
-                Container(
-                  padding: const EdgeInsets.only(left: AppSpacing.sm),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      left: BorderSide(color: AppColors.border, width: 2),
-                    ),
-                  ),
-                  child: Text(comment.body, style: AppTypography.body),
+              ),
+
+              // Nested replies
+              for (final reply in expandedReplies)
+                CommentTile(
+                  comment: reply,
+                  depth: depth + 1,
+                  onReply: onReply,
+                  parentAuthor: comment.authorUsername,
+                  currentUserId: currentUserId,
+                  onDelete: onDelete,
                 ),
-              ],
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -274,11 +492,15 @@ class PostCommentInput extends ConsumerStatefulWidget {
   const PostCommentInput({
     required this.postId,
     required this.isSending,
+    this.replyTarget,
+    this.onClearReply,
     super.key,
   });
 
   final int postId;
   final bool isSending;
+  final CommunityCommentItem? replyTarget;
+  final VoidCallback? onClearReply;
 
   @override
   ConsumerState<PostCommentInput> createState() => _PostCommentInputState();
@@ -317,7 +539,44 @@ class _PostCommentInputState extends ConsumerState<PostCommentInput> {
         color: AppColors.card,
         border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Reply target indicator
+          if (widget.replyTarget != null)
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
+              margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.reply, size: 14, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Replying to ${widget.replyTarget!.authorUsername}',
+                      style: AppTypography.caption.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: widget.onClearReply,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.close, size: 14, color: AppColors.textMuted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Row(
         children: [
           Expanded(
             child: TextField(
@@ -327,7 +586,9 @@ class _PostCommentInputState extends ConsumerState<PostCommentInput> {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _handleSend(),
               decoration: InputDecoration(
-                hintText: 'Write a comment...',
+                hintText: widget.replyTarget != null
+                    ? 'Reply to ${widget.replyTarget!.authorUsername}...'
+                    : 'Write a comment...',
                 hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
                 border: borderDecoration,
                 enabledBorder: borderDecoration,
@@ -368,6 +629,8 @@ class _PostCommentInputState extends ConsumerState<PostCommentInput> {
               );
             },
           ),
+        ],
+      ),
         ],
       ),
     );

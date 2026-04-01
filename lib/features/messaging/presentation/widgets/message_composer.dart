@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +18,7 @@ import 'package:tander_flutter_v3/features/messaging/presentation/widgets/compos
 const Color _orange = AppColors.primary;
 const Color _teal = AppColors.secondary;
 
-/// Message composer with text input, photo attachment, and voice recording.
+/// Message composer with text input, multi-photo attachment, and voice recording.
 class MessageComposer extends ConsumerStatefulWidget {
   const MessageComposer({super.key, required this.conversationId});
 
@@ -37,6 +38,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   int _recordingSeconds = 0;
   Timer? _recordingTimer;
   String? _recordingFilePath;
+
+  /// Queued photos waiting to be sent (web-style batch).
+  final List<XFile> _pendingPhotos = [];
 
   @override
   void dispose() {
@@ -67,34 +71,76 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         .sendTextMessage(trimmedText);
   }
 
+  // ── Photo handling ────────────────────────────────────────────────
+
   void _showPhotoSourceMenu() {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      useRootNavigator: true,
       builder: (sheetContext) => _PhotoSourceSheet(
         onGallery: () {
           Navigator.of(sheetContext).pop();
-          _handlePickImage(ImageSource.gallery);
+          _handlePickMultipleImages();
         },
         onCamera: () {
           Navigator.of(sheetContext).pop();
-          _handlePickImage(ImageSource.camera);
+          _handleCameraCapture();
         },
       ),
     );
   }
 
-  Future<void> _handlePickImage(ImageSource source) async {
+  /// Pick multiple images from gallery and add to pending queue.
+  Future<void> _handlePickMultipleImages() async {
+    final pickedFiles = await _imagePicker.pickMultiImage(
+      imageQuality: 80,
+    );
+    if (pickedFiles.isEmpty) return;
+
+    setState(() {
+      _pendingPhotos.addAll(pickedFiles);
+    });
+  }
+
+  /// Capture a single photo from camera and add to pending queue.
+  Future<void> _handleCameraCapture() async {
     final pickedFile = await _imagePicker.pickImage(
-      source: source,
+      source: ImageSource.camera,
       imageQuality: 80,
     );
     if (pickedFile == null) return;
 
-    await ref
-        .read(messageThreadNotifierProvider(widget.conversationId).notifier)
-        .sendImageMessage(filePath: pickedFile.path, fileName: pickedFile.name);
+    setState(() {
+      _pendingPhotos.add(pickedFile);
+    });
   }
+
+  void _removePhoto(int index) {
+    setState(() {
+      _pendingPhotos.removeAt(index);
+    });
+  }
+
+  /// Send all pending photos as individual image messages, then clear.
+  Future<void> _sendPendingPhotos() async {
+    if (_pendingPhotos.isEmpty) return;
+
+    final photosToSend = List<XFile>.from(_pendingPhotos);
+    setState(() => _pendingPhotos.clear());
+
+    final notifier = ref.read(
+      messageThreadNotifierProvider(widget.conversationId).notifier,
+    );
+    for (final photo in photosToSend) {
+      await notifier.sendImageMessage(
+        filePath: photo.path,
+        fileName: photo.name,
+      );
+    }
+  }
+
+  // ── Voice recording ───────────────────────────────────────────────
 
   Future<void> _handleRecordStart() async {
     final hasPermission = await _audioRecorder.hasPermission();
@@ -154,6 +200,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     });
   }
 
+  // ── Build ─────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final threadState = ref.watch(messageThreadNotifierProvider(widget.conversationId));
@@ -161,32 +209,254 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final isSendingMedia = threadState is MessageThreadLoaded && threadState.isSendingMedia;
     final hasText = _textController.text.trim().isNotEmpty;
     final canSend = hasText && !isSending && !_isRecording;
+    final hasPendingPhotos = _pendingPhotos.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          colors: [Color(0x00F8F1E6), Color(0xFAF9F3EA), Color(0xFFF9F3EA)],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Pending photos preview strip
+        if (hasPendingPhotos)
+          _PendingPhotosStrip(
+            photos: _pendingPhotos,
+            onRemove: _removePhoto,
+            onAddMore: _showPhotoSourceMenu,
+            onSend: isSendingMedia ? null : _sendPendingPhotos,
+            isSending: isSendingMedia,
+          ),
+
+        // Composer bar
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Color(0x00F8F1E6), Color(0xFAF9F3EA), Color(0xFFF9F3EA)],
+            ),
+            border: Border(top: BorderSide(color: Color(0x99DDD3C2))),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFAFFFDFA),
+              borderRadius: AppRadius.borderXl,
+              border: Border.all(color: const Color(0xCCDDD3C2), width: 1.5),
+              boxShadow: [BoxShadow(color: const Color(0xFF764F21).withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 4))],
+            ),
+            padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+            child: _isRecording
+                ? ComposerRecordingRow(recordingSeconds: _recordingSeconds, onCancel: _handleRecordCancel, onSend: _handleRecordSend)
+                : _ComposerInputRow(
+                    textController: _textController, focusNode: _focusNode,
+                    onTextChanged: _onTextChanged, onSend: _handleSend,
+                    onPickImage: _showPhotoSourceMenu, onRecordStart: _handleRecordStart,
+                    canSend: canSend, isSending: isSending, isSendingMedia: isSendingMedia,
+                  ),
+          ),
         ),
+      ],
+    );
+  }
+}
+
+// ─── Pending photos preview strip ───────────────────────────────────────────
+
+class _PendingPhotosStrip extends StatelessWidget {
+  const _PendingPhotosStrip({
+    required this.photos,
+    required this.onRemove,
+    required this.onAddMore,
+    required this.onSend,
+    required this.isSending,
+  });
+
+  final List<XFile> photos;
+  final ValueChanged<int> onRemove;
+  final VoidCallback onAddMore;
+  final VoidCallback? onSend;
+  final bool isSending;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF9F3EA),
         border: Border(top: BorderSide(color: Color(0x99DDD3C2))),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFAFFFDFA),
-          borderRadius: AppRadius.borderXl,
-          border: Border.all(color: const Color(0xCCDDD3C2), width: 1.5),
-          boxShadow: [BoxShadow(color: const Color(0xFF764F21).withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 4))],
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-        child: _isRecording
-            ? ComposerRecordingRow(recordingSeconds: _recordingSeconds, onCancel: _handleRecordCancel, onSend: _handleRecordSend)
-            : _ComposerInputRow(
-                textController: _textController, focusNode: _focusNode,
-                onTextChanged: _onTextChanged, onSend: _handleSend,
-                onPickImage: _showPhotoSourceMenu, onRecordStart: _handleRecordStart,
-                canSend: canSend, isSending: isSending, isSendingMedia: isSendingMedia,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Text(
+                '${photos.length} photo${photos.length == 1 ? '' : 's'} selected',
+                style: AppTypography.label.copyWith(
+                  fontSize: 13,
+                  color: AppColors.textMuted,
+                ),
               ),
+              const Spacer(),
+              // Send all button
+              GestureDetector(
+                onTap: onSend,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    gradient: isSending
+                        ? null
+                        : const LinearGradient(colors: [_orange, Color(0xFFC96D18)]),
+                    color: isSending ? _orange.withValues(alpha: 0.3) : null,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: isSending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.send, size: 14, color: Colors.white),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Send',
+                              style: AppTypography.label.copyWith(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Thumbnail strip
+          SizedBox(
+            height: 72,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: photos.length + 1, // +1 for "add more" button
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                if (index == photos.length) {
+                  return _AddMoreButton(onTap: onAddMore);
+                }
+                return _PhotoThumbnail(
+                  file: photos[index],
+                  onRemove: () => onRemove(index),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhotoThumbnail extends StatelessWidget {
+  const _PhotoThumbnail({
+    required this.file,
+    required this.onRemove,
+  });
+
+  final XFile file;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(
+        children: [
+          // Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              File(file.path),
+              width: 72,
+              height: 72,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: _teal.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.broken_image, size: 24, color: _teal),
+              ),
+            ),
+          ),
+          // Remove button
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, size: 14, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddMoreButton extends StatelessWidget {
+  const _AddMoreButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _teal.withValues(alpha: 0.25),
+            width: 1.5,
+            strokeAlign: BorderSide.strokeAlignInside,
+          ),
+          color: _teal.withValues(alpha: 0.04),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_photo_alternate_outlined, size: 22, color: _teal.withValues(alpha: 0.6)),
+            const SizedBox(height: 2),
+            Text(
+              'Add',
+              style: AppTypography.caption.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: _teal.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -269,7 +539,7 @@ class _TrailingButton extends StatelessWidget {
     if (canSend) {
       return ComposerActionButton(
         onTap: onSend,
-        gradient: const LinearGradient(colors: [_orange, Color(0xFFD06A18)]),
+        gradient: const LinearGradient(colors: [_orange, Color(0xFFC96D18)]),
         icon: isSending
             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
             : const Icon(Icons.send, size: 18, color: Colors.white),

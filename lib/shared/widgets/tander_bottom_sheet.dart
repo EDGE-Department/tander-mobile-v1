@@ -89,6 +89,9 @@ class TanderBottomSheet extends StatelessWidget {
           Flexible(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.paddingOf(context).bottom,
+              ),
               child: child,
             ),
           ),

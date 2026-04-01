@@ -1,7 +1,10 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
+import 'package:tander_flutter_v3/features/calls/services/call_push_bridge.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
 // ---------------------------------------------------------------------------
@@ -12,6 +15,10 @@ const String _typeIncomingCall = 'incoming_call';
 const String _typeMissedCall = 'missed_call';
 const String _typeNewMessage = 'new_message';
 const String _typeCallCancelled = 'call_cancelled';
+const String _typeCommunityComment = 'community_comment';
+const String _typeCommunityReply = 'community_reply';
+const String _typeNewMatch = 'new_match';
+const String _typeMatchAccepted = 'match_accepted';
 
 /// Routes incoming push notifications to the correct UI surface.
 ///
@@ -96,6 +103,12 @@ final class NotificationHandler {
       case _typeCallCancelled:
         onCallCancelled(message);
 
+      case _typeCommunityComment:
+      case _typeCommunityReply:
+      case _typeNewMatch:
+      case _typeMatchAccepted:
+        onForegroundToast(message);
+
       case null:
         AppLogger.warning(
           'Foreground notification missing type field — ignored',
@@ -161,6 +174,14 @@ final class NotificationHandler {
           operation: 'NotificationHandler._handleNotificationTap',
         );
 
+      case _typeCommunityComment:
+      case _typeCommunityReply:
+        router.go(AppRoutes.discover);
+
+      case _typeNewMatch:
+      case _typeMatchAccepted:
+        router.go(AppRoutes.connection);
+
       case null:
         AppLogger.warning(
           'Notification tap missing type field — ignored',
@@ -218,26 +239,33 @@ final class NotificationHandler {
 /// Top-level function for handling background/terminated push notifications.
 ///
 /// Firebase requires this to be a top-level or static function — it runs in
-/// its own isolate and cannot access widget state. Keep processing minimal:
-/// the system automatically displays the notification to the user.
+/// its own isolate and cannot access widget state.
+///
+/// For call-related pushes (`incoming_call`, `call_cancelled`, `call_ended`),
+/// routes to [CallPushBridge] which shows/dismisses native CallKit UI.
 @pragma('vm:entry-point')
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
+  // Ensure Firebase is initialized in the background isolate.
+  // On Android, onBackgroundMessage runs in a separate Dart isolate
+  // where Firebase may not yet be initialized.
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {
+    // Already initialized — safe to ignore
+  }
+
   final rawType = message.data['type'];
   final notificationType = rawType is String ? rawType : 'unknown';
 
-  AppLogger.debug(
-    'Background message received',
-    operation: 'handleBackgroundMessage',
-    context: {'type': notificationType},
-  );
+  debugPrint('[BG] Background message received: type=$notificationType '
+      'keys=${message.data.keys.toList()}');
 
-  // For call_cancelled: the system notification for the incoming call should
-  // be dismissed. This requires platform-specific logic that will be wired
-  // in Phase 11 (CallKit / ConnectionService integration).
-  if (notificationType == _typeCallCancelled) {
-    AppLogger.info(
-      'call_cancelled received in background — pending CallKit dismissal',
-      operation: 'handleBackgroundMessage',
-    );
+  // Route call-related pushes to CallPushBridge for native UI
+  if (notificationType == _typeIncomingCall ||
+      notificationType == _typeCallCancelled ||
+      notificationType == 'call_ended') {
+    final wasHandled =
+        await CallPushBridge.handleBackgroundCallPush(message.data);
+    debugPrint('[BG] Call push handled=$wasHandled type=$notificationType');
   }
 }

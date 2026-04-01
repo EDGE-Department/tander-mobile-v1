@@ -353,6 +353,80 @@ final class MessageThreadNotifier
   }
 
   // -----------------------------------------------------------------------
+  // Message deletion
+  // -----------------------------------------------------------------------
+
+  /// Unsend a message (delete for everyone). Sender-only, 1-hour limit.
+  /// Optimistic: updates UI immediately, rolls back on failure.
+  Future<void> unsendMessage(String messageId) async {
+    final currentState = state;
+    if (currentState is! MessageThreadLoaded) return;
+
+    // Optimistic update — mark as unsent immediately
+    final updated = currentState.messages.map((m) {
+      if (m.messageId == messageId) {
+        return MessageItem(
+          messageId: m.messageId,
+          conversationId: m.conversationId,
+          roomId: m.roomId,
+          senderUserId: m.senderUserId,
+          senderUsername: m.senderUsername,
+          senderPhotoUrl: m.senderPhotoUrl,
+          body: null,
+          media: null,
+          sentAt: m.sentAt,
+          deliveryState: m.deliveryState,
+          isDeleted: true,
+          isUnsent: true,
+          unsentAt: DateTime.now(),
+          unsentByUserId: m.senderUserId,
+        );
+      }
+      return m;
+    }).toList();
+    state = currentState.copyWith(messages: updated);
+
+    // Fire API call in background
+    final result = await _repository.unsendMessage(messageId: int.parse(messageId));
+    result.when(
+      success: (_) {
+        ref.read(conversationsNotifierProvider.notifier).refreshSilently();
+      },
+      failure: (exception) {
+        // Roll back on failure
+        state = currentState;
+        AppLogger.error('Failed to unsend message', operation: _tag, error: exception);
+      },
+    );
+  }
+
+  /// Hide a message for the current user only (delete for me).
+  /// Optimistic: removes from view immediately, rolls back on failure.
+  Future<void> hideMessageForUser(String messageId) async {
+    final currentState = state;
+    if (currentState is! MessageThreadLoaded) return;
+
+    // Optimistic update — remove from view immediately
+    final updated = currentState.messages
+        .where((m) => m.messageId != messageId)
+        .toList();
+    state = currentState.copyWith(messages: updated);
+
+    // Fire API call in background
+    final result = await _repository.hideMessageForUser(messageId: int.parse(messageId));
+    result.when(
+      success: (_) {
+        ref.read(conversationsNotifierProvider.notifier).refreshSilently();
+      },
+      failure: (exception) {
+        // Roll back on failure
+        state = currentState;
+        AppLogger.error('Failed to hide message', operation: _tag, error: exception);
+      },
+    );
+  }
+
+  // -----------------------------------------------------------------------
   // Typing indicator
   // -----------------------------------------------------------------------
 

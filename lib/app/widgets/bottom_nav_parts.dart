@@ -13,9 +13,13 @@ class NavTabDescriptor {
     required this.id,
     required this.label,
     required this.route,
-    required this.iconAsset,
+    this.iconAsset,
+    this.iconData,
+    this.activeIconData,
+    this.iconColor,
     this.isTandy = false,
-  });
+  }) : assert(iconAsset != null || iconData != null,
+            'Either iconAsset or iconData must be provided');
 
   /// Unique identifier used for badge resolution.
   final String id;
@@ -26,11 +30,23 @@ class NavTabDescriptor {
   /// GoRouter path for this tab.
   final String route;
 
-  /// Asset path to the tab icon image.
-  final String iconAsset;
+  /// Asset path to the tab icon image (null if using iconData).
+  final String? iconAsset;
+
+  /// Icon data for vector icon (null if using iconAsset).
+  final IconData? iconData;
+
+  /// Filled variant for active state (null = use same icon).
+  final IconData? activeIconData;
+
+  /// Custom color for the icon when inactive (null = default tint).
+  final Color? iconColor;
 
   /// Whether this tab represents the Tandy AI companion.
   final bool isTandy;
+
+  /// Whether this tab uses a vector icon instead of an image asset.
+  bool get usesIconData => iconData != null;
 }
 
 // ── Design constants ────────────────────────────────────────────────────────

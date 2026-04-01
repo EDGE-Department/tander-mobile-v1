@@ -18,7 +18,6 @@ import 'package:tander_flutter_v3/features/profile/presentation/notifiers/my_pro
 import 'package:tander_flutter_v3/features/profile/presentation/states/profile_state.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_confirm_dialog.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 /// Maximum number of photos a user can have.
@@ -121,20 +120,16 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
     );
   }
 
-  Future<void> _handleRemovePhoto(String photoUrl) async {
-    final didConfirm = await TanderConfirmDialog.show(
-      context: context,
-      title: 'Remove photo?',
-      message: 'This photo will be permanently deleted from your profile.',
-      confirmLabel: 'Remove',
-      isDanger: true,
-    );
+  Future<void> _handleReorder(List<String> newOrder) async {
+    await ref
+        .read(myProfileNotifierProvider.notifier)
+        .reorderPhotos(newOrder);
+  }
 
-    if (didConfirm != true || !mounted) return;
-
+  Future<void> _handleRemovePhoto(int galleryIndex) async {
     final didSucceed = await ref
         .read(myProfileNotifierProvider.notifier)
-        .deletePhoto(photoUrl);
+        .deletePhoto(galleryIndex);
 
     if (!mounted) return;
 
@@ -169,7 +164,7 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 22),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.of(context).pop(),
           tooltip: 'Back to profile',
         ),
         title: Column(
@@ -189,15 +184,16 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your first photo is your main profile photo. You can have up to $_maxPhotoSlots photos.',
+              'Your first photo is your main profile photo. Long-press to drag and reorder. You can have up to $_maxPhotoSlots photos.',
               style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
             ),
             const SizedBox(height: AppSpacing.md),
-            _PhotoGrid(
+            _DraggablePhotoGrid(
               photos: photos,
               isUploading: _isUploading,
               onAddPhoto: _handleAddPhoto,
               onRemovePhoto: _handleRemovePhoto,
+              onReorder: _handleReorder,
             ),
           ],
         ),
@@ -206,46 +202,168 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
   }
 }
 
-// ── Photo grid ──────────────────────────────────────────────────────────
+// ── Draggable photo grid ─────────────────────────────────────────────────
 
-class _PhotoGrid extends StatelessWidget {
-  const _PhotoGrid({
+class _DraggablePhotoGrid extends StatefulWidget {
+  const _DraggablePhotoGrid({
     required this.photos,
     required this.isUploading,
     required this.onAddPhoto,
     required this.onRemovePhoto,
+    required this.onReorder,
   });
 
   final List<String> photos;
   final bool isUploading;
   final ValueChanged<int> onAddPhoto;
-  final ValueChanged<String> onRemovePhoto;
+  final ValueChanged<int> onRemovePhoto;
+  final ValueChanged<List<String>> onReorder;
+
+  @override
+  State<_DraggablePhotoGrid> createState() => _DraggablePhotoGridState();
+}
+
+class _DraggablePhotoGridState extends State<_DraggablePhotoGrid> {
+  int? _dragOverIndex;
+
+  void _handleAccept(int fromIndex, int toIndex) {
+    if (fromIndex == toIndex) return;
+    final reordered = List<String>.from(widget.photos);
+    final moved = reordered.removeAt(fromIndex);
+    reordered.insert(toIndex, moved);
+    widget.onReorder(reordered);
+    setState(() => _dragOverIndex = null);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool canAddMore = photos.length < _maxPhotoSlots;
-    final int itemCount = photos.length + (canAddMore ? 1 : 0);
+    final bool canAddMore = widget.photos.length < _maxPhotoSlots;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final gap = screenWidth >= 640 ? 10.0 : 8.0;
+    final gridWidth = screenWidth - AppSpacing.md * 2;
+    final cellSize = (gridWidth - gap * (_gridColumnCount - 1)) / _gridColumnCount;
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: _gridColumnCount,
-        mainAxisSpacing: AppSpacing.sm,
-        crossAxisSpacing: AppSpacing.sm,
-      ),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        if (index < photos.length) {
-          return _FilledSlot(
-            photoUrl: photos[index],
+    return Wrap(
+      spacing: gap,
+      runSpacing: gap,
+      children: [
+        // Photo tiles with drag support
+        for (int index = 0; index < widget.photos.length; index++)
+          _DraggablePhotoTile(
+            index: index,
+            photoUrl: widget.photos[index],
             isMain: index == 0,
-            onRemove: () => onRemovePhoto(photos[index]),
-          );
-        }
-        return _EmptySlot(
-          isUploading: isUploading,
-          onTap: () => onAddPhoto(photos.length),
+            cellSize: cellSize,
+            isDragOver: _dragOverIndex == index,
+            onRemove: () => widget.onRemovePhoto(index),
+            onDragStarted: () => setState(() {}),
+            onDragOver: () => setState(() => _dragOverIndex = index),
+            onDragEnd: () => setState(() => _dragOverIndex = null),
+            onAccept: (fromIndex) => _handleAccept(fromIndex, index),
+          ),
+
+        // Add photo slot
+        if (canAddMore)
+          SizedBox(
+            width: cellSize,
+            height: cellSize,
+            child: _EmptySlot(
+              isUploading: widget.isUploading,
+              onTap: () => widget.onAddPhoto(widget.photos.length),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _DraggablePhotoTile extends StatelessWidget {
+  const _DraggablePhotoTile({
+    required this.index,
+    required this.photoUrl,
+    required this.isMain,
+    required this.cellSize,
+    required this.isDragOver,
+    required this.onRemove,
+    required this.onDragStarted,
+    required this.onDragOver,
+    required this.onDragEnd,
+    required this.onAccept,
+  });
+
+  final int index;
+  final String photoUrl;
+  final bool isMain;
+  final double cellSize;
+  final bool isDragOver;
+  final VoidCallback onRemove;
+  final VoidCallback onDragStarted;
+  final VoidCallback onDragOver;
+  final VoidCallback onDragEnd;
+  final ValueChanged<int> onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = SizedBox(
+      width: cellSize,
+      height: cellSize,
+      child: _FilledSlot(
+        photoUrl: photoUrl,
+        isMain: isMain,
+        onRemove: onRemove,
+        showDragHandle: true,
+      ),
+    );
+
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) {
+        if (details.data != index) onDragOver();
+        return details.data != index;
+      },
+      onAcceptWithDetails: (details) => onAccept(details.data),
+      onLeave: (_) => onDragEnd(),
+      builder: (context, candidateData, rejectedData) {
+        return LongPressDraggable<int>(
+          data: index,
+          onDragStarted: onDragStarted,
+          onDragEnd: (_) => onDragEnd(),
+          feedback: Material(
+            elevation: 8,
+            borderRadius: AppRadius.borderLg,
+            clipBehavior: Clip.antiAlias,
+            child: SizedBox(
+              width: cellSize,
+              height: cellSize,
+              child: Opacity(
+                opacity: 0.85,
+                child: Image.network(photoUrl, fit: BoxFit.cover),
+              ),
+            ),
+          ),
+          childWhenDragging: SizedBox(
+            width: cellSize,
+            height: cellSize,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: AppRadius.borderLg,
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+                color: AppColors.primary.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: isDragOver
+                ? BoxDecoration(
+                    borderRadius: AppRadius.borderLg,
+                    border: Border.all(color: AppColors.primary, width: 2.5),
+                  )
+                : null,
+            child: child,
+          ),
         );
       },
     );
@@ -255,31 +373,82 @@ class _PhotoGrid extends StatelessWidget {
 // ── Filled photo slot ───────────────────────────────────────────────────
 
 class _FilledSlot extends StatelessWidget {
-  const _FilledSlot({required this.photoUrl, required this.isMain, required this.onRemove});
+  const _FilledSlot({required this.photoUrl, required this.isMain, required this.onRemove, this.showDragHandle = false});
   final String photoUrl;
   final bool isMain;
   final VoidCallback onRemove;
+  final bool showDragHandle;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: AppRadius.borderLg,
-      child: Stack(fit: StackFit.expand, children: [
-        Image.network(
-                  photoUrl, fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(color: AppColors.subtle, alignment: Alignment.center, child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted)),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Photo with rounded corners
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: AppRadius.borderLg,
+            child: Image.network(
+              photoUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                color: AppColors.subtle,
+                alignment: Alignment.center,
+                child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+              ),
+            ),
+          ),
         ),
-        if (isMain) Positioned(bottom: AppSpacing.xs, left: AppSpacing.xs, child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
-          decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppRadius.borderFull),
-          child: Text('Main', style: AppTypography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textInverse)),
-        )),
-        Positioned(top: AppSpacing.xs, right: AppSpacing.xs, child: GestureDetector(
-          onTap: onRemove,
-          child: Container(width: 28, height: 28, decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle), alignment: Alignment.center,
-            child: const Icon(Icons.delete_outline, size: 13, color: AppColors.textInverse)),
-        )),
-      ]),
+        // Drag handle
+        if (showDragHandle)
+          Positioned(
+            top: 4,
+            left: 4,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.drag_indicator, size: 14, color: AppColors.textInverse),
+            ),
+          ),
+        // "Main" badge
+        if (isMain)
+          Positioned(
+            bottom: AppSpacing.xs,
+            left: AppSpacing.xs,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
+              decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppRadius.borderFull),
+              child: Text('Main', style: AppTypography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textInverse)),
+            ),
+          ),
+        // Delete button — outside ClipRRect so it's never clipped
+        Positioned(
+          top: 4,
+          right: 4,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onRemove,
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.delete_outline, size: 13, color: AppColors.textInverse),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

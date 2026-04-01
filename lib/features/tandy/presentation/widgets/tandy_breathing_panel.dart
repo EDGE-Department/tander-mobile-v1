@@ -128,20 +128,26 @@ class _TandyBreathingPanelState extends State<TandyBreathingPanel>
             child: const Icon(Icons.spa, size: 18, color: kTandyOrange)),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('4-7-8 Breathing', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong)),
-              const Text('Constellation-guided calm', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-            ]),
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('4-7-8 Breathing', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const Text('Constellation-guided calm', style: TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ]),
+            ),
           ),
           // Status badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: kTandyTeal.withAlpha(15), border: Border.all(color: kTandyTeal.withAlpha(40))),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: kTandyTeal)),
-              const SizedBox(width: 6),
-              Text(_isRunning ? 'In session' : 'Ready when you are', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0B7D73))),
-            ]),
+          MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: kTandyTeal.withAlpha(15), border: Border.all(color: kTandyTeal.withAlpha(40))),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: kTandyTeal)),
+                const SizedBox(width: 6),
+                Text(_isRunning ? 'In session' : 'Ready', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0B7D73))),
+              ]),
+            ),
           ),
           const SizedBox(width: 8),
           IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close, size: 16),
@@ -191,11 +197,14 @@ class _TandyBreathingPanelState extends State<TandyBreathingPanel>
       child: Column(
         children: [
           // Tag pills
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            _tagPill('4-7-8 Technique'),
-            const SizedBox(width: 8),
-            _tagPill('4 guided cycles'),
-          ]),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              _tagPill('4-7-8 Technique'),
+              const SizedBox(width: 8),
+              _tagPill('4 guided cycles'),
+            ]),
+          ),
           const SizedBox(height: 20),
           _buildOrbSection(phaseColor, orbSize: 160),
           const SizedBox(height: 20),

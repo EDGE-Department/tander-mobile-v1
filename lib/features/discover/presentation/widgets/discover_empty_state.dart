@@ -29,7 +29,7 @@ class DiscoverEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.xl,
@@ -45,9 +45,9 @@ class DiscoverEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xs),
-            const SizedBox(
-              width: 280,
-              child: Text(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 280),
+              child: const Text(
                 'New people join every day. We\u2019ll let you know '
                 'when someone new is nearby.',
                 style: TextStyle(
@@ -59,7 +59,7 @@ class DiscoverEmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            _buildAdjustFiltersButton(),
+            _buildAdjustFiltersButton(context),
             const SizedBox(height: AppSpacing.md),
             _buildSecondaryLinks(context),
           ],
@@ -137,7 +137,7 @@ class DiscoverEmptyState extends StatelessWidget {
     );
   }
 
-  Widget _buildAdjustFiltersButton() {
+  Widget _buildAdjustFiltersButton(BuildContext context) {
     return Semantics(
       button: true,
       label: 'Adjust filters',
@@ -161,20 +161,25 @@ class DiscoverEmptyState extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.tune, size: 18, color: AppColors.textInverse),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Adjust filters',
-                style: AppTypography.label.copyWith(
-                  color: AppColors.textInverse,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.noScaling,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.tune, size: 18, color: AppColors.textInverse),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Adjust filters',
+                  style: AppTypography.label.copyWith(
+                    color: AppColors.textInverse,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -278,22 +283,27 @@ class _SecondaryPill extends StatelessWidget {
       label: label,
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 40),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 10,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.noScaling,
           ),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: AppRadius.borderFull,
-            border: Border.all(color: borderColor),
-          ),
-          child: Text(
-            label,
-            style: AppTypography.bodySm.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 40),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: AppRadius.borderFull,
+              border: Border.all(color: borderColor),
+            ),
+            child: Text(
+              label,
+              style: AppTypography.bodySm.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),

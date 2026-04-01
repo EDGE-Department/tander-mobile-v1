@@ -69,6 +69,14 @@ final class TandyRepositoryImpl implements TandyRepository {
       );
       final body = _requireResponseBody(response.data, 'tandy send');
       final dto = TandySendMessageResponseDto.fromJson(body);
+
+      if (!dto.success) {
+        throw ServerException(
+          message: dto.error ?? 'Tandy is temporarily unavailable',
+          statusCode: 200,
+        );
+      }
+
       return mapSendMessageResponse(dto);
     });
   }

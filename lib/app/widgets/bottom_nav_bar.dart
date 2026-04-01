@@ -16,7 +16,9 @@ const List<NavTabDescriptor> navTabs = [
     id: 'discover',
     label: 'Discover',
     route: AppRoutes.discover,
-    iconAsset: 'assets/icons/tander_logo.png',
+    iconData: Icons.explore_outlined,
+    activeIconData: Icons.explore,
+    iconColor: const Color(0xFF89B8E8),
   ),
   NavTabDescriptor(
     id: 'connections',
@@ -138,24 +140,26 @@ class _TanderBottomNavBarState extends ConsumerState<TanderBottomNavBar>
     final bottomInset = math.max(viewPadding.bottom, 8.0);
 
     return Padding(
-      padding: EdgeInsets.only(left: 16, right: 16, bottom: bottomInset),
+      padding: EdgeInsets.only(left: 12, right: 12, bottom: bottomInset),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(32),
           boxShadow: [
-            BoxShadow(color: Colors.black.withAlpha(22), blurRadius: 28, offset: const Offset(0, 6)),
-            BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 48, offset: const Offset(0, 16), spreadRadius: -6),
+            BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 20, offset: const Offset(0, 6)),
+            BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 6, offset: const Offset(0, 2)),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(32),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xF0FFFCF8),
-                borderRadius: BorderRadius.circular(30),
+                // iOS 26 Liquid Glass
+                color: Colors.white.withAlpha(75),
+                borderRadius: BorderRadius.circular(32),
                 border: Border.all(color: Colors.white.withAlpha(180), width: 1.5),
               ),
               child: Row(
@@ -234,10 +238,14 @@ class _MobileDockTab extends StatelessWidget {
                   vertical: isActive ? 8.0 : 6.0,
                 ),
                 decoration: BoxDecoration(
-                  gradient: isActive ? NavBarConstants.activePillGradient : null,
-                  borderRadius: BorderRadius.circular(22),
+                  // Solid orange gradient pill matching web's ACTIVE_PILL_STYLE
+                  color: isActive ? const Color(0xFFE67E22) : null,
+                  borderRadius: BorderRadius.circular(20),
+                  border: isActive ? Border.all(color: Colors.white.withAlpha(80), width: 0.5) : null,
                   boxShadow: isActive
-                      ? [BoxShadow(color: const Color(0xFFF07020).withAlpha(100), blurRadius: 20, offset: const Offset(0, 4))]
+                      ? [
+                          BoxShadow(color: const Color(0xFFF07020).withAlpha(50), blurRadius: 20, offset: const Offset(0, 6)),
+                        ]
                       : null,
                 ),
                 child: Column(
@@ -250,14 +258,24 @@ class _MobileDockTab extends StatelessWidget {
                         clipBehavior: Clip.none,
                         children: [
                           Center(
-                            child: Image.asset(
-                              descriptor.iconAsset,
-                              width: 30,
-                              height: 30,
-                              color: isActive ? Colors.white : null,
-                              colorBlendMode: isActive ? BlendMode.srcIn : null,
-                              opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.9),
-                            ),
+                            child: descriptor.usesIconData
+                                ? Icon(
+                                    isActive
+                                        ? (descriptor.activeIconData ?? descriptor.iconData!)
+                                        : descriptor.iconData!,
+                                    size: 26,
+                                    color: isActive
+                                        ? Colors.white
+                                        : (descriptor.iconColor ?? AppColors.textMuted),
+                                  )
+                                : Image.asset(
+                                    descriptor.iconAsset!,
+                                    width: 30,
+                                    height: 30,
+                                    color: isActive ? Colors.white : null,
+                                    colorBlendMode: isActive ? BlendMode.srcIn : null,
+                                    opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.9),
+                                  ),
                           ),
                           if (badge > 0)
                             Positioned(
@@ -319,14 +337,24 @@ class _DockTabIcon extends StatelessWidget {
             child: AnimatedScale(
               scale: isActive ? 1.05 : 1.0,
               duration: const Duration(milliseconds: 200),
-              child: Image.asset(
-                descriptor.iconAsset,
-                width: NavBarConstants.iconSize,
-                height: NavBarConstants.iconSize,
-                color: isActive ? AppColors.textInverse : null,
-                colorBlendMode: isActive ? BlendMode.srcIn : null,
-                opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.85),
-              ),
+              child: descriptor.usesIconData
+                  ? Icon(
+                      isActive
+                          ? (descriptor.activeIconData ?? descriptor.iconData!)
+                          : descriptor.iconData!,
+                      size: NavBarConstants.iconSize,
+                      color: isActive
+                          ? AppColors.textInverse
+                          : (descriptor.iconColor ?? AppColors.textMuted),
+                    )
+                  : Image.asset(
+                      descriptor.iconAsset!,
+                      width: NavBarConstants.iconSize,
+                      height: NavBarConstants.iconSize,
+                      color: isActive ? AppColors.textInverse : null,
+                      colorBlendMode: isActive ? BlendMode.srcIn : null,
+                      opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.85),
+                    ),
             ),
           ),
           if (badge > 0)

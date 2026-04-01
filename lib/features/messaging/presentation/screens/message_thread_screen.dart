@@ -157,6 +157,14 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                 participantName: participantName,
                 participantPhotoUrl: participantPhotoUrl,
                 scrollController: _scrollController,
+                onUnsend: (messageId) {
+                  ref.read(messageThreadNotifierProvider(widget.conversationId).notifier)
+                      .unsendMessage(messageId);
+                },
+                onHide: (messageId) {
+                  ref.read(messageThreadNotifierProvider(widget.conversationId).notifier)
+                      .hideMessageForUser(messageId);
+                },
               ),
             ),
             MessageComposer(conversationId: widget.conversationId),
@@ -306,6 +314,8 @@ class _ThreadBody extends StatelessWidget {
     required this.participantName,
     required this.participantPhotoUrl,
     required this.scrollController,
+    this.onUnsend,
+    this.onHide,
   });
 
   final MessageThreadState threadState;
@@ -313,6 +323,8 @@ class _ThreadBody extends StatelessWidget {
   final String participantName;
   final String? participantPhotoUrl;
   final ScrollController scrollController;
+  final ValueChanged<String>? onUnsend;
+  final ValueChanged<String>? onHide;
 
   @override
   Widget build(BuildContext context) {
@@ -365,6 +377,8 @@ class _ThreadBody extends StatelessWidget {
                         isGroupEnd: isGroupEnd,
                         participantName: participantName,
                         participantPhotoUrl: participantPhotoUrl,
+                        onUnsend: onUnsend,
+                        onHide: onHide,
                       ),
                     ],
                   );

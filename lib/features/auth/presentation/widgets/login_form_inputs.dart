@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
@@ -7,11 +10,11 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
 // ── Constants ────────────────────────────────────────────────────────
 
-/// Field background matching web's `#F9F5F0`.
-const Color _fieldBackground = Color(0xFFF9F5F0);
+/// Field background matching web's `#F7F2EC`.
+const Color _fieldBackground = Color(0xFFF7F2EC);
 
-/// Field border color matching web's `rgba(230,126,34,0.20)`.
-const Color _fieldBorderColor = Color(0x33E67E22);
+/// Field border color matching web's `rgba(180,120,50,0.18)`.
+const Color _fieldBorderColor = Color(0x2EB47832);
 
 /// Field border color on focus matching web's primary.
 const Color _fieldFocusBorderColor = AppColors.primary;
@@ -20,8 +23,8 @@ const Color _fieldFocusBorderColor = AppColors.primary;
 
 /// Warm-styled text field matching the web login form inputs.
 ///
-/// Features: rounded-16 border, `#F9F5F0` fill, duotone prefix icon
-/// tinted primary at 65%, 2px orange border, 56px min height.
+/// Features: pill border, `#F7F2EC` fill, Phosphor duotone prefix icon
+/// tinted primary at 50%, 1px orange border, 48px min height.
 class LoginTextField extends StatelessWidget {
   const LoginTextField({
     required this.label,
@@ -55,46 +58,55 @@ class LoginTextField extends StatelessWidget {
           style: AppTypography.bodySm.copyWith(
             fontWeight: FontWeight.w600,
             color: AppColors.textBody,
-            fontSize: 15,
+            fontSize: 13.5,
+            letterSpacing: 0.135, // tracking-[0.01em]
           ),
         ),
         const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          autocorrect: false,
-          enableSuggestions: false,
-          validator: validator,
-          style: AppTypography.body.copyWith(color: AppColors.textStrong),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
-            filled: true,
-            fillColor: _fieldBackground,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            constraints: const BoxConstraints(minHeight: 56),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 16, right: 8),
-              child: Icon(
-                prefixIcon,
-                size: 18,
-                color: AppColors.primary.withValues(alpha: 0.65),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          alignment: Alignment.topCenter,
+          child: TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            autocorrect: false,
+            enableSuggestions: false,
+            autofillHints: const [AutofillHints.username, AutofillHints.email],
+            validator: validator,
+            style: AppTypography.body.copyWith(color: AppColors.textStrong),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: AppTypography.body.copyWith(
+                color: AppColors.textMuted,
               ),
-            ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 42),
-            border: _buildBorder(_fieldBorderColor),
-            enabledBorder: _buildBorder(_fieldBorderColor),
-            focusedBorder: _buildBorder(_fieldFocusBorderColor, width: 2),
-            errorBorder: _buildBorder(AppColors.danger),
-            focusedErrorBorder: _buildBorder(AppColors.danger, width: 2),
-            errorStyle: AppTypography.caption.copyWith(
-              color: AppColors.danger,
-              fontWeight: FontWeight.w500,
+              filled: true,
+              fillColor: _fieldBackground,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
+              constraints: const BoxConstraints(minHeight: 48),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 8),
+                child: Icon(
+                  prefixIcon,
+                  size: 17,
+                  color: AppColors.primary.withValues(alpha: 0.50),
+                ),
+              ),
+              prefixIconConstraints: const BoxConstraints(minWidth: 42),
+              border: _buildBorder(_fieldBorderColor),
+              enabledBorder: _buildBorder(_fieldBorderColor),
+              focusedBorder: _buildBorder(_fieldFocusBorderColor, width: 2),
+              errorBorder: _buildBorder(AppColors.danger),
+              focusedErrorBorder: _buildBorder(AppColors.danger, width: 2),
+              errorStyle: AppTypography.caption.copyWith(
+                color: AppColors.danger,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -137,23 +149,37 @@ class LoginPasswordField extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Password',
-              style: AppTypography.bodySm.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textBody,
-                fontSize: 15,
+            Flexible(
+              child: Text(
+                'Password',
+                style: AppTypography.bodySm.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textBody,
+                  fontSize: 13.5,
+                  letterSpacing: 0.135, // tracking-[0.01em]
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            GestureDetector(
-              onTap: onForgotPassword,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  'Forgot password?',
-                  style: AppTypography.bodySm.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryAccessible,
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(4),
+              child: InkWell(
+                onTap: onForgotPassword,
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 2,
+                    horizontal: 4,
+                  ),
+                  child: Text(
+                    'Forgot password?',
+                    style: AppTypography.bodySm.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryAccessible,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
@@ -161,57 +187,73 @@ class LoginPasswordField extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          obscureText: !isPasswordVisible,
-          textInputAction: textInputAction,
-          validator: _validatePassword,
-          style: AppTypography.body.copyWith(color: AppColors.textStrong),
-          decoration: InputDecoration(
-            hintText: 'Enter your password',
-            hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
-            filled: true,
-            fillColor: _fieldBackground,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            constraints: const BoxConstraints(minHeight: 56),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 16, right: 8),
-              child: Icon(
-                Icons.lock_outline,
-                size: 18,
-                color: AppColors.primary.withValues(alpha: 0.65),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          alignment: Alignment.topCenter,
+          child: TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            obscureText: !isPasswordVisible,
+            textInputAction: textInputAction,
+            autofillHints: const [AutofillHints.password],
+            validator: _validatePassword,
+            style: AppTypography.body.copyWith(color: AppColors.textStrong),
+            decoration: InputDecoration(
+              hintText: 'Enter your password',
+              hintStyle: AppTypography.body.copyWith(
+                color: AppColors.textMuted,
               ),
-            ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 42),
-            suffixIcon: GestureDetector(
-              onTap: onToggleVisibility,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 12),
+              filled: true,
+              fillColor: _fieldBackground,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
+              constraints: const BoxConstraints(minHeight: 48),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 8),
                 child: Icon(
-                  isPasswordVisible
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 20,
-                  color: AppColors.primary.withValues(alpha: 0.65),
+                  PhosphorIconsDuotone.lockSimple,
+                  size: 17,
+                  color: AppColors.primary.withValues(alpha: 0.50),
                 ),
               ),
-            ),
-            suffixIconConstraints: const BoxConstraints(
-              minWidth: AppSpacing.touchMinimum,
-              minHeight: AppSpacing.touchMinimum,
-            ),
-            border: _buildBorder(_fieldBorderColor),
-            enabledBorder: _buildBorder(_fieldBorderColor),
-            focusedBorder: _buildBorder(_fieldFocusBorderColor, width: 2),
-            errorBorder: _buildBorder(AppColors.danger),
-            focusedErrorBorder: _buildBorder(AppColors.danger, width: 2),
-            errorStyle: AppTypography.caption.copyWith(
-              color: AppColors.danger,
-              fontWeight: FontWeight.w500,
+              prefixIconConstraints: const BoxConstraints(minWidth: 42),
+              suffixIcon: GestureDetector(
+                onTap: onToggleVisibility,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: TweenAnimationBuilder<double>(
+                    key: ValueKey(isPasswordVisible),
+                    tween: Tween<double>(begin: 12.0 * math.pi / 180, end: 0),
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeOut,
+                    builder: (_, rotationAngle, child) =>
+                        Transform.rotate(angle: rotationAngle, child: child),
+                    child: Icon(
+                      isPasswordVisible
+                          ? PhosphorIconsRegular.eyeSlash
+                          : PhosphorIconsRegular.eye,
+                      size: 19,
+                      color: AppColors.primary.withValues(alpha: 0.50),
+                    ),
+                  ),
+                ),
+              ),
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: AppSpacing.touchMinimum,
+                minHeight: AppSpacing.touchMinimum,
+              ),
+              border: _buildBorder(_fieldBorderColor),
+              enabledBorder: _buildBorder(_fieldBorderColor),
+              focusedBorder: _buildBorder(_fieldFocusBorderColor, width: 2),
+              errorBorder: _buildBorder(AppColors.danger),
+              focusedErrorBorder: _buildBorder(AppColors.danger, width: 2),
+              errorStyle: AppTypography.caption.copyWith(
+                color: AppColors.danger,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -247,35 +289,41 @@ class LoginRememberMeCheckbox extends StatelessWidget {
       onTap: onToggle,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        // web: px-0.5
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Row(
           children: [
+            // web: w-[18px] h-[18px] rounded-[4px] border-[1.5px]
             AnimatedContainer(
               duration: AppDurations.fast,
-              width: 20,
-              height: 20,
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
                 color: isChecked ? AppColors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(4),
                 border: Border.all(
                   color: isChecked
                       ? AppColors.primary
-                      : const Color(0x4DE67E22), // rgba(230,126,34,0.30)
-                  width: 2,
+                      : const Color(0x40B47832), // rgba(180,120,50,0.25)
+                  width: 1.5,
                 ),
               ),
               child: isChecked
                   ? const Center(
-                      child: Icon(Icons.check, size: 14, color: Colors.white),
+                      child: Icon(Icons.check, size: 12, color: Colors.white),
                     )
                   : null,
             ),
-            const SizedBox(width: 12),
-            Text(
-              'Remember me on this device',
-              style: AppTypography.body.copyWith(
-                fontSize: 15,
-                color: AppColors.textBody,
+            const SizedBox(width: 10), // web: gap-2.5
+            Flexible(
+              child: Text(
+                '',
+                style: AppTypography.body.copyWith(
+                  fontSize: 13.5, // web: text-[13.5px]
+                  color: AppColors.textBody,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -287,9 +335,9 @@ class LoginRememberMeCheckbox extends StatelessWidget {
 
 // ── Shared border builder ───────────────────────────────────────────
 
-OutlineInputBorder _buildBorder(Color color, {double width = 2}) {
+OutlineInputBorder _buildBorder(Color color, {double width = 1}) {
   return OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(999),
     borderSide: BorderSide(color: color, width: width),
   );
 }

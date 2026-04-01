@@ -22,6 +22,8 @@ final class CommunityPostLoaded extends CommunityPostState {
     this.nextCommentsCursor,
     this.isLoadingMoreComments = false,
     this.isSendingComment = false,
+    this.replyTarget,
+    this.expandedReplies = const {},
   });
 
   final CommunityPostItem post;
@@ -31,6 +33,12 @@ final class CommunityPostLoaded extends CommunityPostState {
   final bool isLoadingMoreComments;
   final bool isSendingComment;
 
+  /// Comment being replied to (null = top-level comment).
+  final CommunityCommentItem? replyTarget;
+
+  /// Loaded replies keyed by parent comment ID.
+  final Map<String, List<CommunityCommentItem>> expandedReplies;
+
   CommunityPostLoaded copyWith({
     CommunityPostItem? post,
     List<CommunityCommentItem>? comments,
@@ -38,6 +46,9 @@ final class CommunityPostLoaded extends CommunityPostState {
     bool? hasMoreComments,
     bool? isLoadingMoreComments,
     bool? isSendingComment,
+    CommunityCommentItem? replyTarget,
+    bool clearReplyTarget = false,
+    Map<String, List<CommunityCommentItem>>? expandedReplies,
   }) {
     return CommunityPostLoaded(
       post: post ?? this.post,
@@ -47,6 +58,9 @@ final class CommunityPostLoaded extends CommunityPostState {
       isLoadingMoreComments:
           isLoadingMoreComments ?? this.isLoadingMoreComments,
       isSendingComment: isSendingComment ?? this.isSendingComment,
+      replyTarget:
+          clearReplyTarget ? null : (replyTarget ?? this.replyTarget),
+      expandedReplies: expandedReplies ?? this.expandedReplies,
     );
   }
 }

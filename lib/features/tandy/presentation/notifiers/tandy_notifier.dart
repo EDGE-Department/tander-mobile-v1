@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
+import 'package:tander_flutter_v3/core/errors/app_exception.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/tandy/domain/repositories/tandy_repository.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/providers/tandy_providers.dart';
@@ -104,6 +105,7 @@ final class TandyNotifier extends Notifier<TandyState> {
       thread: optimisticThread,
       isSending: true,
       sendError: () => null,
+      suggestBreathingPanel: false,
     );
 
     final sendResult = await _repository.sendMessage(message: trimmedText);
@@ -127,10 +129,14 @@ final class TandyNotifier extends Notifier<TandyState> {
           messages: confirmedMessages,
         );
 
+        final shouldSuggestBreathing = result.suggestBreathing ||
+            (result.redirectAction != null &&
+                result.redirectAction!.startsWith('breathing:'));
+
         state = loadedState.copyWith(
           thread: updatedThread,
           isSending: false,
-          activePanel: () => _panelFromResult(result),
+          suggestBreathingPanel: shouldSuggestBreathing,
         );
       },
       failure: (exception) {
@@ -143,22 +149,31 @@ final class TandyNotifier extends Notifier<TandyState> {
         final loadedState = state;
         if (loadedState is! TandyLoaded) return;
 
+        final errorMessage = switch (exception) {
+          NetworkException() =>
+            'No internet connection. Please check your connection and try again.',
+          ServerException() => exception.message,
+          AuthException() =>
+            'Your session has expired. Please sign in again.',
+          AppException() => exception.userMessage,
+        };
+
         state = loadedState.copyWith(
           isSending: false,
-          sendError: () => 'Could not send. Please try again.',
+          sendError: () => errorMessage,
         );
       },
     );
   }
 
-  /// Determines if a wellness panel should auto-open from the result.
-  TandyActivePanel? _panelFromResult(TandySendResult result) {
-    if (result.suggestBreathing) return TandyActivePanel.breathe;
-    final redirectAction = result.redirectAction;
-    if (redirectAction != null && redirectAction.startsWith('breathing:')) {
-      return TandyActivePanel.breathe;
-    }
-    return null;
+  // -----------------------------------------------------------------------
+  // Breathing suggestion
+  // -----------------------------------------------------------------------
+
+  void dismissBreathingSuggestion() {
+    final currentState = state;
+    if (currentState is! TandyLoaded) return;
+    state = currentState.copyWith(suggestBreathingPanel: false);
   }
 
   // -----------------------------------------------------------------------

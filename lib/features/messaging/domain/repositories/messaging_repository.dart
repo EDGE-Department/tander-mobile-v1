@@ -42,4 +42,10 @@ abstract interface class MessagingRepository {
   Future<Result<void>> markConversationRead({
     required int conversationId,
   });
+
+  /// Unsend a message (delete for everyone). Sender-only, 1-hour limit.
+  Future<Result<void>> unsendMessage({required int messageId});
+
+  /// Hide a message for the current user only (delete for me).
+  Future<Result<void>> hideMessageForUser({required int messageId});
 }

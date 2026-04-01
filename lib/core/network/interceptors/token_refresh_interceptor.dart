@@ -9,6 +9,9 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 /// (usually the DI layer) should clear auth state and redirect to login.
 typedef OnSessionExpired = void Function();
 
+/// Callback to sync the new access token into the in-memory session manager.
+typedef OnTokenRefreshed = void Function(String newAccessToken);
+
 /// Intercepts 401 responses and transparently refreshes the access token.
 ///
 /// Concurrent requests that hit a 401 while a refresh is already in-flight
@@ -23,12 +26,15 @@ final class TokenRefreshInterceptor extends Interceptor {
     required Dio dio,
     required SecureStorage secureStorage,
     required OnSessionExpired onSessionExpired,
+    OnTokenRefreshed? onTokenRefreshed,
   })  : _dio = dio,
         _secureStorage = secureStorage,
-        _onSessionExpired = onSessionExpired;
+        _onSessionExpired = onSessionExpired,
+        _onTokenRefreshed = onTokenRefreshed;
 
   final Dio _dio;
   final SecureStorage _secureStorage;
+  final OnTokenRefreshed? _onTokenRefreshed;
   final OnSessionExpired _onSessionExpired;
 
   /// Guards concurrent refresh attempts — only one refresh flies at a time.
@@ -140,13 +146,14 @@ final class TokenRefreshInterceptor extends Interceptor {
     }
 
     await _secureStorage.saveAccessToken(newAccessToken);
+    _onTokenRefreshed?.call(newAccessToken);
 
     if (newRefreshToken is String && newRefreshToken.isNotEmpty) {
       await _secureStorage.saveRefreshToken(newRefreshToken);
     }
 
     AppLogger.info(
-      'Token refresh succeeded',
+      'Token refresh succeeded — in-memory token synced',
       operation: 'TokenRefreshInterceptor',
     );
 

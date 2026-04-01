@@ -232,7 +232,7 @@ class _SendButton extends StatelessWidget {
             ? const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: <Color>[kTandyOrange, Color(0xFFD06A18)],
+                colors: <Color>[kTandyOrange, Color(0xFFC96D18)],
               )
             : null,
         color: canSend ? null : const Color(0xB3F0ECE6),

@@ -27,11 +27,21 @@ abstract interface class CommunityRepository {
     String? cursor,
   });
 
-  /// Creates a comment on a post.
+  /// Creates a comment on a post. Pass [parentCommentId] for threaded replies.
   Future<Result<CommunityCommentItem>> createComment({
     required int postId,
     required String content,
+    int? parentCommentId,
   });
+
+  /// Fetches replies to a specific comment.
+  Future<Result<CommentsPage>> fetchReplies({
+    required int commentId,
+    String? cursor,
+  });
+
+  /// Deletes a comment by ID.
+  Future<Result<void>> deleteComment({required int commentId});
 
   /// Toggles a reaction (like/unlike) on a post.
   Future<Result<void>> toggleReaction({required int postId});

@@ -92,13 +92,16 @@ class _PanelHeader extends StatelessWidget {
             child: const Icon(Icons.favorite_outline, size: 18, color: kTandyOrange),
           ),
           const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text('Professional Support', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong)),
-                Text('Verified mental health resources', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-              ],
+          Expanded(
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('Professional Support', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text('Verified resources', style: TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
           ),
           IconButton(
@@ -331,12 +334,15 @@ class _PsychiatristTeaser extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      const Text('Find a Psychiatrist', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF3B1A7A))),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2.5),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), color: kTandyPurple.withAlpha(20), border: Border.all(color: kTandyPurple.withAlpha(40))),
-                        child: const Text('COMING SOON', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: kTandyPurple, letterSpacing: 0.5)),
+                      Flexible(child: Text('Find a Psychiatrist', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF3B1A7A)), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      const SizedBox(width: 6),
+                      MediaQuery(
+                        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2.5),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), color: kTandyPurple.withAlpha(20), border: Border.all(color: kTandyPurple.withAlpha(40))),
+                          child: const Text('COMING SOON', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: kTandyPurple, letterSpacing: 0.5)),
+                        ),
                       ),
                     ],
                   ),

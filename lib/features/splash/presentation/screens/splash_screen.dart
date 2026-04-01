@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
@@ -37,6 +36,8 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
   late final AnimationController _logoController;
   late final AnimationController _wordmarkController;
   late final AnimationController _pulseController;
+  late final AnimationController _heartbeatController;
+  late final AnimationController _shimmerController;
 
   // -- Derived animations ---------------------------------------------------
 
@@ -106,6 +107,18 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2400),
     );
+
+    // Heartbeat: subtle scale pulsation on the logo.
+    _heartbeatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4500),
+    )..repeat();
+
+    // Shimmer: horizontal highlight sweep on the loading bar.
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
   }
 
   void _startEntranceSequence() {
@@ -147,6 +160,8 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
     _logoController.dispose();
     _wordmarkController.dispose();
     _pulseController.dispose();
+    _heartbeatController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -183,9 +198,28 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
                     _buildWordmark(),
                     const SizedBox(height: 8),
                     const Text(
-                      'Made for Filipino seniors 60+',
-                      style: TextStyle(fontSize: 13, color: Colors.white54, fontWeight: FontWeight.w500),
+                      'MADE FOR FILIPINO SENIORS 60+',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2.5,
+                      ),
                     ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'CONNECTING',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white38,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildLoadingDots(),
+                    const SizedBox(height: 12),
+                    _buildShimmerBar(),
                   ],
                 ),
               ),
@@ -196,55 +230,153 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
 
-  /// Logo at center with two expanding/fading pulse rings behind it.
+  /// Logo at center with three expanding/fading pulse rings behind it.
   Widget _buildPulseRingsWithLogo() {
     return SizedBox(
-      width: 160,
-      height: 160,
+      width: 220,
+      height: 220,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer pulse ring (white, no phase offset).
+          // Warm orange halo behind everything.
+          Container(
+            width: 160,
+            height: 160,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  Color(0x4DFFA050),
+                  Color(0x0FFFA050),
+                  Colors.transparent,
+                ],
+                stops: [0.0, 0.55, 1.0],
+              ),
+            ),
+          ),
+          // Pulse ring 1 (white, no phase offset).
           _PulseRing(
             controller: _pulseController,
             color: Colors.white,
             phaseOffset: 0.0,
           ),
-          // Inner pulse ring (white, offset by half cycle).
+          // Pulse ring 2 (warm orange, offset by half cycle).
           _PulseRing(
             controller: _pulseController,
-            color: Colors.white,
+            color: const Color(0xFFFFC878),
             phaseOffset: 0.5,
           ),
-          // Logo with scale-overshoot entrance.
+          // Pulse ring 3 (teal, offset by one-third cycle).
+          _PulseRing(
+            controller: _pulseController,
+            color: const Color(0xFF0F9D94),
+            phaseOffset: 0.33,
+          ),
+          // Logo with scale-overshoot entrance + heartbeat.
           AnimatedBuilder(
-            animation: _logoController,
+            animation: Listenable.merge([_logoController, _heartbeatController]),
             builder: (context, child) {
               return Opacity(
                 opacity: _logoOpacity.value,
                 child: Transform.scale(
-                  scale: _logoScale.value,
+                  scale: _logoScale.value * _heartbeatScale(),
                   child: child,
                 ),
               );
             },
             child: Container(
-              width: 72,
-              height: 72,
+              width: 96,
+              height: 96,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.white.withAlpha(60), blurRadius: 20, spreadRadius: 4)],
+                boxShadow: [
+                  BoxShadow(color: Colors.white.withAlpha(60), blurRadius: 24, spreadRadius: 6),
+                  BoxShadow(color: const Color(0xFFFFA050).withAlpha(50), blurRadius: 40, spreadRadius: 8),
+                ],
               ),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Image.asset(
-                'assets/icons/tander_logo.png',
+                'assets/icons/tander_icon.png',
                 semanticLabel: 'Tander logo',
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Heartbeat scale factor for a subtle cardiac pulse on the logo.
+  double _heartbeatScale() {
+    final phase = (_heartbeatController.value * 1.0) % 1.0;
+    if (phase < 0.08) return 1.0 + 0.08 * (phase / 0.08);
+    if (phase < 0.18) return 1.08 - 0.07 * ((phase - 0.08) / 0.10);
+    if (phase < 0.28) return 1.01 + 0.04 * ((phase - 0.18) / 0.10);
+    if (phase < 0.38) return 1.05 - 0.05 * ((phase - 0.28) / 0.10);
+    return 1.0;
+  }
+
+  /// Three animated bouncing dots beneath the connecting label.
+  Widget _buildLoadingDots() {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            final phase = (_pulseController.value + index * 0.2) % 1.0;
+            final scale = 0.7 + 0.6 * ((math.sin(phase * math.pi * 2) + 1) / 2);
+            final opacity = 0.3 + 0.7 * ((math.sin(phase * math.pi * 2) + 1) / 2);
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withAlpha((opacity * 190).round()),
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  /// Horizontal shimmer bar indicating loading progress.
+  Widget _buildShimmerBar() {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, _) {
+        return SizedBox(
+          width: 96,
+          height: 2,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(1),
+            child: Stack(
+              children: [
+                Container(color: Colors.white.withAlpha(25)),
+                Positioned(
+                  left: -32 + (_shimmerController.value * 160),
+                  child: Container(
+                    width: 32,
+                    height: 2,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(1),
+                      color: Colors.white.withAlpha(115),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -308,8 +440,8 @@ class _PulseRing extends StatelessWidget {
         return Transform.scale(
           scale: scale,
           child: Container(
-            width: 160,
-            height: 160,
+            width: 220,
+            height: 220,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
@@ -353,7 +485,7 @@ class _SplashConstellationState extends State<_SplashConstellation>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (_, __) => CustomPaint(painter: _ConstellationPainter(_controller.value), size: Size.infinite),
+      builder: (_, _) => CustomPaint(painter: _ConstellationPainter(_controller.value), size: Size.infinite),
     );
   }
 }
@@ -362,7 +494,8 @@ class _ConstellationPainter extends CustomPainter {
   _ConstellationPainter(this.time);
   final double time;
 
-  // Web star positions normalized from 1200x700 viewBox
+  // ── Star data (normalized 0–1 from web 1200×700 viewBox) ──────────
+
   static const _stars = <List<double>>[
     [0.067, 0.171], [0.150, 0.357], [0.050, 0.571], [0.208, 0.243],
     [0.250, 0.657], [0.350, 0.429], [0.450, 0.486], [0.500, 0.500],
@@ -371,9 +504,11 @@ class _ConstellationPainter extends CustomPainter {
     [0.500, 0.157], [0.708, 0.129], [0.142, 0.136], [0.858, 0.157],
   ];
 
-  static const _radii = <double>[2.2,1.6,2.8,1.8,1.4,1.8,2.2,4.5,2.2,1.8,1.8,2.2,2.8,1.6,1.8,1.4,1.8,1.4,1.8,1.4];
+  static const _baseRadii = <double>[
+    2.2, 1.6, 2.8, 1.8, 1.4, 1.8, 2.2, 4.5, 2.2, 1.8,
+    1.8, 2.2, 2.8, 1.6, 1.8, 1.4, 1.8, 1.4, 1.8, 1.4,
+  ];
 
-  // Colors: warm orange left, white center, teal right
   static const _colors = <int>[
     0xD9FFA05A, 0xB3FFFFFF, 0xCCFFB464, 0xA6FFFFFF, 0x80FFFFFF,
     0xA6FFFFFF, 0xBFFFFFFF, 0xFFFFFFFF, 0xBFFFFFFF, 0xA6FFFFFF,
@@ -381,84 +516,257 @@ class _ConstellationPainter extends CustomPainter {
     0x80FFFFFF, 0x99FFFFFF, 0x80FFFFFF, 0xA6FFB464, 0xA696E6E1,
   ];
 
-  static const _edges = [[0,1],[1,2],[2,4],[0,3],[3,5],[4,5],[5,6],[8,9],[9,11],[10,11],[11,12],[12,14],[10,13],[18,15],[15,16],[16,17],[17,19],[3,15],[16,8],[17,13]];
-  static const _bridges = [[6,7],[7,8]];
+  static const _edges = [
+    [0, 1], [1, 2], [2, 4], [0, 3], [3, 5], [4, 5], [5, 6],
+    [8, 9], [9, 11], [10, 11], [11, 12], [12, 14], [10, 13],
+    [18, 15], [15, 16], [16, 17], [17, 19], [3, 15], [16, 8], [17, 13],
+  ];
+  static const _bridges = [[6, 7], [7, 8]];
+
+  // ── Responsive helpers ────────────────────────────────────────────
+
+  /// Scale factor relative to a baseline phone width of 393px.
+  double _sf(Size s) =>
+      (math.min(s.width, s.height) / 393).clamp(0.6, 2.0);
+
+  /// Maps a normalized coordinate to screen position.
+  /// On portrait screens, expands Y positions outward from center
+  /// so the constellation fills more vertical space.
+  Offset _mapNormalized(double nx, double ny, Size s) {
+    final aspect = s.width / s.height;
+    if (aspect < 1.0) {
+      final expansion = 1.0 + (1.0 - aspect) * 0.45;
+      final adjustedY = (0.5 + (ny - 0.5) * expansion).clamp(0.02, 0.98);
+      return Offset(nx * s.width, adjustedY * s.height);
+    }
+    return Offset(nx * s.width, ny * s.height);
+  }
+
+  /// Maps a constellation star index to its screen position.
+  Offset _p(int i, Size s) =>
+      _mapNormalized(_stars[i][0], _stars[i][1], s);
+
+  // ── Paint ─────────────────────────────────────────────────────────
 
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
+    final sf = _sf(size);
     final t = time * math.pi * 2;
 
-    // Vignette
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), Paint()
-      ..shader = RadialGradient(colors: [Colors.transparent, Colors.black.withAlpha(77)], radius: 0.75).createShader(Rect.fromLTWH(0, 0, size.width, size.height)));
+    _paintVignette(canvas, size);
+    _paintNebulae(canvas, size, sf, t);
+    _paintEdges(canvas, size, sf);
+    _paintBridges(canvas, size, sf, t);
+    _paintOrbs(canvas, size, sf);
+    _paintStars(canvas, size, sf, t);
+    _paintHub(canvas, size, sf, t);
+  }
 
-    // Nebulae
-    _drawNebula(canvas, size, 0.17, 0.43, 0.20, const Color(0x40FF8C3C), t * 0.5);
-    _drawNebula(canvas, size, 0.82, 0.49, 0.20, const Color(0x3300C8C0), t * 0.43 + 2);
+  void _paintVignette(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [Colors.transparent, Colors.black.withAlpha(50)],
+          radius: 0.75,
+        ).createShader(rect),
+    );
+  }
 
-    // Edges
-    for (final e in _edges) { canvas.drawLine(_p(e[0], size), _p(e[1], size), Paint()..color = const Color(0x1AFFFFFF)..strokeWidth = 0.6); }
+  void _paintNebulae(Canvas canvas, Size size, double sf, double t) {
+    _drawNebula(canvas, size, sf, 0.17, 0.43, 0.20, const Color(0x20FF8C3C), t * 0.5);
+    _drawNebula(canvas, size, sf, 0.82, 0.49, 0.20, const Color(0x1A00C8C0), t * 0.5 + math.pi);
+  }
 
-    // Bridge edges — pulsing
-    for (final e in _bridges) {
-      final pulse = 0.20 + 0.40 * ((math.sin(t * 1.5) + 1) / 2);
-      canvas.drawLine(_p(e[0], size), _p(e[1], size), Paint()..color = Color.fromRGBO(255, 255, 255, pulse.clamp(0.0, 1.0))..strokeWidth = 1.0..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.6));
+  void _paintEdges(Canvas canvas, Size size, double sf) {
+    final paint = Paint()
+      ..color = const Color(0x0FFFFFFF)
+      ..strokeWidth = 0.5 * sf;
+    for (final e in _edges) {
+      canvas.drawLine(_p(e[0], size), _p(e[1], size), paint);
     }
+  }
 
-    // Energy orbs
-    for (int i = 0; i < 8; i++) {
-      const paths = [[0,1],[3,5],[6,7],[7,8],[10,11],[11,12],[15,16],[16,8]];
-      final from = _p(paths[i][0], size); final to = _p(paths[i][1], size);
+  void _paintBridges(Canvas canvas, Size size, double sf, double t) {
+    for (final e in _bridges) {
+      final pulse = 0.10 + 0.20 * ((math.sin(t * 1.5) + 1) / 2);
+      canvas.drawLine(
+        _p(e[0], size),
+        _p(e[1], size),
+        Paint()
+          ..color = Color.fromRGBO(255, 255, 255, pulse.clamp(0.0, 1.0))
+          ..strokeWidth = 0.8 * sf,
+      );
+    }
+  }
+
+  void _paintOrbs(Canvas canvas, Size size, double sf) {
+    const paths = [
+      [0, 1],   // left: orange
+      [6, 7],   // center-left: white bridge
+      [7, 8],   // center-right: white bridge
+      [10, 11], // right: teal
+    ];
+    for (int i = 0; i < paths.length; i++) {
+      final from = _p(paths[i][0], size);
+      final to = _p(paths[i][1], size);
       final prog = (time + i * 0.125) % 1.0;
       final pos = Offset.lerp(from, to, prog)!;
-      final fade = (prog / 0.08).clamp(0.0, 1.0) * ((1.0 - prog) / 0.08).clamp(0.0, 1.0);
-      if (fade > 0.02) {
-        final c = paths[i][0] >= 10 ? const Color(0xFFA0FFF8) : paths[i][0] < 6 ? const Color(0xFFFFD898) : Colors.white;
-        canvas.drawCircle(pos, 8, Paint()..color = c.withAlpha((fade * 80).round().clamp(0, 255))..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.5));
-        canvas.drawCircle(pos, 3, Paint()..color = c.withAlpha((fade * 160).round().clamp(0, 255)));
-      }
-    }
+      final fade = (prog / 0.10).clamp(0.0, 1.0) *
+          ((1.0 - prog) / 0.10).clamp(0.0, 1.0);
+      if (fade <= 0.02) continue;
 
-    // Stars
+      final orbColor = paths[i][0] >= 10
+          ? const Color(0xFFA0FFF8)
+          : paths[i][0] < 6
+              ? const Color(0xFFFFD898)
+              : Colors.white;
+      canvas.drawCircle(
+        pos,
+        5 * sf,
+        Paint()
+          ..color = orbColor.withAlpha((fade * 35).round().clamp(0, 255))
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3.5 * sf),
+      );
+      canvas.drawCircle(
+        pos,
+        2 * sf,
+        Paint()..color = orbColor.withAlpha((fade * 90).round().clamp(0, 255)),
+      );
+    }
+  }
+
+  void _paintStars(Canvas canvas, Size size, double sf, double t) {
     for (int i = 0; i < _stars.length; i++) {
-      if (i == 7) continue;
+      if (i == 7) continue; // Hub drawn separately
       final pos = _p(i, size);
-      final phase = t + (i * 317 % 1200) * 0.005;
-      final tw = 0.15 + 0.65 * ((math.sin(phase * 0.8) + 1) / 2);
-      final r = _radii[i] * (0.92 + 0.16 * ((math.sin(phase * 0.8) + 1) / 2));
-      final c = Color(_colors[i]);
-      if (_radii[i] >= 2.0) canvas.drawCircle(pos, r * 2.5, Paint()..color = c.withAlpha((tw * 50).round().clamp(0, 255))..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
-      canvas.drawCircle(pos, r, Paint()..color = c.withAlpha((tw * 255).round().clamp(0, 255)));
-    }
+      final groupOffset = (i % 3) * 2.09; // 2π/3 spacing for 3 groups
+      final phase = t + groupOffset;
+      final twinkle = 0.15 + 0.65 * ((math.sin(phase * 0.5) + 1) / 2);
+      final scaledRadius = _baseRadii[i] * sf *
+          (0.92 + 0.16 * ((math.sin(phase * 0.5) + 1) / 2));
+      final starColor = Color(_colors[i]);
 
-    // Hub
+      // Glow layer for larger stars
+      if (_baseRadii[i] >= 2.0) {
+        canvas.drawCircle(
+          pos,
+          scaledRadius * 2.0,
+          Paint()
+            ..color = starColor.withAlpha((twinkle * 30).round().clamp(0, 255))
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3.5 * sf),
+        );
+      }
+      // Core
+      canvas.drawCircle(
+        pos,
+        scaledRadius,
+        Paint()..color = starColor.withAlpha(
+          (twinkle * 220).round().clamp(0, 255),
+        ),
+      );
+    }
+  }
+
+  void _paintHub(Canvas canvas, Size size, double sf, double t) {
     final hub = _p(7, size);
-    canvas.drawCircle(hub, 20, Paint()..color = const Color(0x09FFFFFF));
-    canvas.drawCircle(hub, 11, Paint()..color = const Color(0x0FFFFFFF));
-    final co = 0.40 + 0.20 * math.sin(t * 2.1);
-    canvas.drawLine(Offset(hub.dx - 42, hub.dy), Offset(hub.dx + 42, hub.dy), Paint()..color = Color.fromRGBO(255, 255, 255, co.clamp(0.0, 1.0))..strokeWidth = 0.6..strokeCap = StrokeCap.round);
-    canvas.drawLine(Offset(hub.dx, hub.dy - 42), Offset(hub.dx, hub.dy + 42), Paint()..color = Color.fromRGBO(255, 255, 255, co.clamp(0.0, 1.0))..strokeWidth = 0.6..strokeCap = StrokeCap.round);
-    for (int i = 0; i < 3; i++) {
-      final ph = (time * (i == 2 ? 0.83 : 1.11) + i * 0.33) % 1.0;
-      final mr = [55.0, 48.0, 72.0][i]; final r = 5 + (mr - 5) * ph;
-      final op = [0.55, 0.35, 0.60][i] * (1.0 - ph); final sw = 1.3 * (1.0 - ph * 0.91);
-      canvas.drawCircle(hub, r, Paint()..color = (i == 2 ? Color.fromRGBO(255, 145, 55, op.clamp(0.0, 1.0)) : Color.fromRGBO(255, 255, 255, op.clamp(0.0, 1.0)))..style = PaintingStyle.stroke..strokeWidth = sw);
-    }
-    final hb = _hb(time);
-    canvas.drawCircle(hub, 4.5 * hb, Paint()..color = Colors.white..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12));
-    canvas.drawCircle(hub, 4.5 * hb, Paint()..color = Colors.white.withAlpha(240)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5));
-    canvas.drawCircle(hub, 4.5 * hb, Paint()..color = Colors.white);
+
+    // Single expanding ring
+    final phase = (time * 1.11) % 1.0;
+    final maxRadius = 40.0 * sf;
+    final ringRadius = 4 * sf + (maxRadius - 4 * sf) * phase;
+    final ringOpacity = 0.50 * (1.0 - phase);
+    final strokeWidth = 0.9 * sf * (1.0 - phase * 0.88);
+    canvas.drawCircle(
+      hub,
+      ringRadius,
+      Paint()
+        ..color = Color.fromRGBO(255, 255, 255, ringOpacity.clamp(0.0, 1.0))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    // Diffraction cross
+    final crossOpacity = 0.25 + 0.15 * math.sin(t * 2.1);
+    final crossPaint = Paint()
+      ..color = Color.fromRGBO(255, 255, 255, crossOpacity.clamp(0.0, 1.0))
+      ..strokeWidth = 0.5 * sf
+      ..strokeCap = StrokeCap.round;
+    final armLength = 28 * sf;
+    canvas.drawLine(
+      Offset(hub.dx - armLength, hub.dy),
+      Offset(hub.dx + armLength, hub.dy),
+      crossPaint,
+    );
+    canvas.drawLine(
+      Offset(hub.dx, hub.dy - armLength),
+      Offset(hub.dx, hub.dy + armLength),
+      crossPaint,
+    );
+
+    // Heartbeat core
+    final heartbeat = _heartbeatScale(time);
+    final coreRadius = 3.5 * sf * heartbeat;
+    canvas.drawCircle(
+      hub,
+      coreRadius,
+      Paint()
+        ..color = Colors.white.withAlpha(200)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6 * sf),
+    );
+    canvas.drawCircle(
+      hub,
+      coreRadius,
+      Paint()
+        ..color = Colors.white.withAlpha(230)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5 * sf),
+    );
+    canvas.drawCircle(hub, coreRadius, Paint()..color = Colors.white);
   }
 
-  Offset _p(int i, Size s) => Offset(_stars[i][0] * s.width, _stars[i][1] * s.height);
-  void _drawNebula(Canvas c, Size s, double cx, double cy, double r, Color col, double ph) {
-    final o = 0.6 + 0.4 * math.sin(ph);
-    c.drawOval(Rect.fromCenter(center: Offset(cx * s.width, cy * s.height), width: r * s.width * 2.4, height: r * s.height * 1.9),
-      Paint()..shader = RadialGradient(colors: [col.withAlpha((col.alpha * o).round().clamp(0, 255)), Colors.transparent]).createShader(
-        Rect.fromCircle(center: Offset(cx * s.width, cy * s.height), radius: r * s.width))..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22));
+  void _drawNebula(
+    Canvas canvas,
+    Size size,
+    double sf,
+    double cx,
+    double cy,
+    double radius,
+    Color nebulaColor,
+    double phase,
+  ) {
+    final center = _mapNormalized(cx, cy, size);
+    final breathe = 0.6 + 0.4 * math.sin(phase);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: center,
+        width: radius * size.width * 2.4,
+        height: radius * size.height * 1.9,
+      ),
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            nebulaColor.withAlpha(
+              (nebulaColor.a * 255 * breathe).round().clamp(0, 255),
+            ),
+            Colors.transparent,
+          ],
+        ).createShader(
+          Rect.fromCircle(center: center, radius: radius * size.width),
+        )
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 22 * sf),
+    );
   }
-  double _hb(double t) { final p = (t * 5.26) % 1.0; if (p < 0.08) return 1.0 + 0.08 * (p / 0.08); if (p < 0.18) return 1.08 - 0.07 * ((p - 0.08) / 0.10); if (p < 0.28) return 1.01 + 0.04 * ((p - 0.18) / 0.10); if (p < 0.38) return 1.05 - 0.05 * ((p - 0.28) / 0.10); return 1.0; }
+
+  double _heartbeatScale(double t) {
+    final phase = (t * 5.26) % 1.0;
+    if (phase < 0.08) return 1.0 + 0.08 * (phase / 0.08);
+    if (phase < 0.18) return 1.08 - 0.07 * ((phase - 0.08) / 0.10);
+    if (phase < 0.28) return 1.01 + 0.04 * ((phase - 0.18) / 0.10);
+    if (phase < 0.38) return 1.05 - 0.05 * ((phase - 0.28) / 0.10);
+    return 1.0;
+  }
 
   @override
   bool shouldRepaint(_ConstellationPainter old) => time != old.time;

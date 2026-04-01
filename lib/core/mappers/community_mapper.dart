@@ -37,11 +37,14 @@ abstract final class CommunityMapper {
     return CommunityCommentItem(
       commentId: dto.id.toString(),
       postId: dto.postId.toString(),
+      authorUserId: dto.author.userId.toString(),
       authorUsername: (dto.author.displayName?.isNotEmpty ?? false)
           ? dto.author.displayName!
           : 'Tander User',
       authorPhotoUrl: dto.author.photoUrl,
       body: dto.content,
+      parentCommentId: dto.parentCommentId?.toString(),
+      replyCount: dto.replyCount,
       createdAt: DateTime.tryParse(dto.createdAt) ?? DateTime.now(),
     );
   }

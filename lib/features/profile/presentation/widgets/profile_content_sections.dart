@@ -42,7 +42,7 @@ void _showFullScreenSheet(BuildContext context, Widget child) {
       child: Material(
         color: AppColors.card,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.none,
         child: FractionallySizedBox(heightFactor: 0.92, child: child),
       ),
     ),
@@ -102,9 +102,7 @@ class ProfilePhotosSection extends StatelessWidget {
           photoUrls: gallery,
           initialIndex: index,
         ),
-        onAddPhoto: () {
-          // TODO(#124): Open photos sheet
-        },
+        onAddPhoto: () => _openPhotosSheet(context),
       ),
     );
   }

@@ -102,10 +102,13 @@ class _TandyMeditationPanelState extends State<TandyMeditationPanel> {
           Container(width: 38, height: 38, decoration: BoxDecoration(borderRadius: BorderRadius.circular(11), color: const Color(0xFFEDE9FE)),
             child: const Icon(Icons.self_improvement, size: 18, color: kTandyPurple)),
           const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_selected?.title ?? 'Meditation', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong)),
-            Text(_selected != null ? '${_selected!.durationMinutes} minutes \u00B7 ${_selected!.bestFor}' : 'Constellation-guided mindfulness', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-          ])),
+          Expanded(child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_selected?.title ?? 'Meditation', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textStrong), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(_selected != null ? '${_selected!.durationMinutes} min \u00B7 ${_selected!.bestFor}' : 'Guided mindfulness', style: const TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+            ]),
+          )),
           IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close, size: 16),
             style: IconButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11), side: const BorderSide(color: AppColors.borderLight)), backgroundColor: Colors.white)),
         ],
@@ -197,11 +200,14 @@ class _SessionLanding extends StatelessWidget {
         const Text('Choose a session below — Tandy guides every moment at a pace that is yours alone.', style: TextStyle(fontSize: 14, color: AppColors.textMuted, height: 1.5)),
         const SizedBox(height: 16),
         // Stats
-        Row(children: [
-          _statBadge('3', 'curated\nsessions'),
-          const SizedBox(width: 10),
-          _statBadge('5–10', 'minutes\neach'),
-        ]),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _statBadge('3', 'curated\nsessions'),
+            const SizedBox(width: 10),
+            _statBadge('5–10', 'minutes\neach'),
+          ]),
+        ),
       ],
     );
   }
@@ -307,7 +313,8 @@ class _SessionCard extends StatelessWidget {
               const SizedBox(height: 12),
               // Footer
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('${session.durationMinutes} min \u00B7 6 guided steps', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                Expanded(child: Text('${session.durationMinutes} min \u00B7 6 steps', style: const TextStyle(fontSize: 11, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => onSelect(session),
                   child: Container(

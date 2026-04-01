@@ -107,6 +107,7 @@ class _AuthorHeader extends StatelessWidget {
                 Text(
                   author.displayName,
                   style: AppTypography.label,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(

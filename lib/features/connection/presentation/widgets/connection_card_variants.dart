@@ -96,28 +96,35 @@ class SentCard extends StatelessWidget {
     return Positioned(
       right: 8,
       top: 8,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: const Color(0x4D000000),
-          borderRadius: AppRadius.borderFull,
-          border: Border.all(color: Colors.white24),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.access_time, size: 9, color: Colors.white),
-            const SizedBox(width: 4),
-            Text(
-              'PENDING',
-              style: AppTypography.caption.copyWith(
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
-                color: Colors.white,
-              ),
+      child: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.noScaling,
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0x4D000000),
+              borderRadius: AppRadius.borderFull,
+              border: Border.all(color: Colors.white24),
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.access_time, size: 9, color: Colors.white),
+                const SizedBox(width: 4),
+                Text(
+                  'PENDING',
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -158,11 +165,15 @@ class SentCard extends StatelessWidget {
                     color: Colors.white70,
                   ),
                   const SizedBox(width: 2),
-                  Text(
-                    connection.otherCity!,
-                    style: AppTypography.caption.copyWith(
-                      fontSize: 10,
-                      color: Colors.white70,
+                  Expanded(
+                    child: Text(
+                      connection.otherCity!,
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 10,
+                        color: Colors.white70,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -296,6 +307,8 @@ class FriendRow extends StatelessWidget {
               Text(
                 'Connected ${formatConnectionTimeAgo(connection.createdAt)}',
                 style: AppTypography.caption.copyWith(fontSize: 11),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               if (connection.otherCity != null) ...[
                 const SizedBox(height: 2),
@@ -307,9 +320,13 @@ class FriendRow extends StatelessWidget {
                       color: AppColors.textMuted,
                     ),
                     const SizedBox(width: 2),
-                    Text(
-                      connection.otherCity!,
-                      style: AppTypography.caption.copyWith(fontSize: 11),
+                    Expanded(
+                      child: Text(
+                        connection.otherCity!,
+                        style: AppTypography.caption.copyWith(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

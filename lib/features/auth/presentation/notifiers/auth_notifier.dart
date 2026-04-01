@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/auth/session_manager.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/features/auth/domain/repositories/auth_repository.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
@@ -85,27 +86,56 @@ final class AuthNotifier extends Notifier<AuthState> {
   Future<void> register({
     required String email,
     required String password,
-    required String username,
-    required String firstName,
-    required String lastName,
+    required String auditId,
   }) async {
     state = const AuthLoading();
 
     final registerResult = await _repository.register(
       email: email,
       password: password,
-      username: username,
-      firstName: firstName,
-      lastName: lastName,
+      auditId: auditId,
     );
 
     registerResult.when(
-      success: (session) => state = AuthOnboarding(
-        phase: session.registrationPhase,
-        session: session,
-      ),
+      success: (session) {
+        // Purge auditId from secure storage — no longer needed post-registration
+        ref.read(secureStorageProvider).deleteAuditId();
+        state = AuthOnboarding(
+          phase: session.registrationPhase,
+          session: session,
+        );
+      },
       failure: (exception) => state = AuthError(exception: exception),
     );
+  }
+
+  // -------------------------------------------------------------------------
+  // ID Pre-registration verification
+  // -------------------------------------------------------------------------
+
+  /// Verifies ID pre-registration with selfie + ID photo.
+  ///
+  /// Returns the auditId on success, null on failure.
+  Future<String?> verifyIdPreRegister({
+    required String idPhotoFrontPath,
+    String? selfiePath,
+    Map<String, dynamic>? livenessMetadata,
+    Map<String, dynamic>? frontendOcrData,
+  }) async {
+    final verifyResult = await _repository.verifyIdPreRegister(
+      idPhotoFrontPath: idPhotoFrontPath,
+      selfiePath: selfiePath,
+      livenessMetadata: livenessMetadata,
+      frontendOcrData: frontendOcrData,
+    );
+
+    return verifyResult.valueOrNull;
+  }
+
+  /// Fetches the minimum age requirement from the backend.
+  Future<int> getMinimumAge() async {
+    final ageResult = await _repository.getMinimumAge();
+    return ageResult.valueOrNull ?? 60;
   }
 
   // -------------------------------------------------------------------------

@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:tander_flutter_v3/core/contracts/models/community_models.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/community/domain/repositories/community_repository.dart';
 import 'package:tander_flutter_v3/features/community/presentation/providers/community_providers.dart';
@@ -106,27 +107,143 @@ final class CommunityPostNotifier
     if (currentState is! CommunityPostLoaded) return;
     if (currentState.isSendingComment) return;
 
+    final parentId = currentState.replyTarget?.commentId;
+
     state = currentState.copyWith(isSendingComment: true);
 
     final createResult = await _repository.createComment(
       postId: _postId,
       content: content,
+      parentCommentId: parentId != null ? int.parse(parentId) : null,
     );
 
     createResult.when(
       success: (comment) {
-        state = currentState.copyWith(
-          comments: [...currentState.comments, comment],
-          post: currentState.post.copyWith(
-            commentCount: currentState.post.commentCount + 1,
-          ),
-          isSendingComment: false,
-        );
+        if (parentId != null) {
+          // Add reply to expanded replies map
+          final updatedReplies = Map<String, List<CommunityCommentItem>>.from(
+            currentState.expandedReplies,
+          );
+          updatedReplies[parentId] = [
+            ...updatedReplies[parentId] ?? [],
+            comment,
+          ];
+          state = currentState.copyWith(
+            expandedReplies: updatedReplies,
+            post: currentState.post.copyWith(
+              commentCount: currentState.post.commentCount + 1,
+            ),
+            isSendingComment: false,
+            clearReplyTarget: true,
+          );
+        } else {
+          state = currentState.copyWith(
+            comments: [...currentState.comments, comment],
+            post: currentState.post.copyWith(
+              commentCount: currentState.post.commentCount + 1,
+            ),
+            isSendingComment: false,
+          );
+        }
       },
       failure: (exception) {
         state = currentState.copyWith(isSendingComment: false);
         AppLogger.error(
           'Failed to send comment',
+          operation: _tag,
+          error: exception,
+        );
+      },
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Reply targeting
+  // -----------------------------------------------------------------------
+
+  void setReplyTarget(CommunityCommentItem comment) {
+    final currentState = state;
+    if (currentState is! CommunityPostLoaded) return;
+    state = currentState.copyWith(replyTarget: comment);
+  }
+
+  void clearReplyTarget() {
+    final currentState = state;
+    if (currentState is! CommunityPostLoaded) return;
+    state = currentState.copyWith(clearReplyTarget: true);
+  }
+
+  // -----------------------------------------------------------------------
+  // Load replies for a comment
+  // -----------------------------------------------------------------------
+
+  Future<void> loadReplies({required String commentId}) async {
+    final currentState = state;
+    if (currentState is! CommunityPostLoaded) return;
+
+    final repliesResult = await _repository.fetchReplies(
+      commentId: int.parse(commentId),
+    );
+
+    repliesResult.when(
+      success: (repliesPage) {
+        final updatedReplies = Map<String, List<CommunityCommentItem>>.from(
+          currentState.expandedReplies,
+        );
+        updatedReplies[commentId] = repliesPage.comments;
+        state = currentState.copyWith(expandedReplies: updatedReplies);
+      },
+      failure: (exception) {
+        AppLogger.error(
+          'Failed to load replies',
+          operation: _tag,
+          error: exception,
+        );
+      },
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Delete comment
+  // -----------------------------------------------------------------------
+
+  Future<void> deleteCommentById({required String commentId}) async {
+    final currentState = state;
+    if (currentState is! CommunityPostLoaded) return;
+
+    final deleteResult = await _repository.deleteComment(
+      commentId: int.parse(commentId),
+    );
+
+    deleteResult.when(
+      success: (_) {
+        // Remove from top-level comments
+        final updatedComments = currentState.comments
+            .where((c) => c.commentId != commentId)
+            .toList();
+
+        // Remove from expanded replies
+        final updatedReplies = Map<String, List<CommunityCommentItem>>.from(
+          currentState.expandedReplies,
+        );
+        for (final key in updatedReplies.keys.toList()) {
+          updatedReplies[key] = updatedReplies[key]!
+              .where((c) => c.commentId != commentId)
+              .toList();
+        }
+        updatedReplies.remove(commentId);
+
+        state = currentState.copyWith(
+          comments: updatedComments,
+          expandedReplies: updatedReplies,
+          post: currentState.post.copyWith(
+            commentCount: currentState.post.commentCount - 1,
+          ),
+        );
+      },
+      failure: (exception) {
+        AppLogger.error(
+          'Failed to delete comment',
           operation: _tag,
           error: exception,
         );

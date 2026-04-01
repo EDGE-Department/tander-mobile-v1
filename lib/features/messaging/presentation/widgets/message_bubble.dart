@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -19,6 +20,8 @@ class MessageBubbleWidget extends StatelessWidget {
     required this.isGroupEnd,
     required this.participantName,
     required this.participantPhotoUrl,
+    this.onUnsend,
+    this.onHide,
   });
 
   final MessageItem message;
@@ -27,6 +30,122 @@ class MessageBubbleWidget extends StatelessWidget {
   final bool isGroupEnd;
   final String participantName;
   final String? participantPhotoUrl;
+  final ValueChanged<String>? onUnsend;
+  final ValueChanged<String>? onHide;
+
+  void _showMessageOptions(BuildContext context) {
+    if (message.isUnsent) return;
+    final canUnsend = isMine && !message.isUnsent &&
+        (DateTime.now().difference(message.sentAt).inMinutes < 60);
+
+    final messagePreview = message.media != null
+        ? (message.media!.type == MessageMediaType.image ? '📷 Photo' : '🎤 Voice message')
+        : message.body ?? '';
+
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final bottomPadding = MediaQuery.paddingOf(sheetContext).bottom;
+        return Container(
+          margin: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomPadding),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFDF9),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xCCDDD3C2)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF764F21).withValues(alpha: 0.12),
+                blurRadius: 32,
+                offset: const Offset(0, -8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              const SizedBox(height: 10),
+              Container(width: 36, height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFDDD3C2), borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 12),
+
+              // Message preview
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0x66DDD3C2))),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isMine ? 'Your message' : "$participantName's message",
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF9C8E82),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      messagePreview,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySm.copyWith(
+                        color: const Color(0xFF1C140C),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Actions
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                child: Column(
+                  children: [
+                    if (canUnsend)
+                      _MessageOptionTile(
+                        icon: Icons.undo,
+                        label: 'Unsend',
+                        subtitle: 'Remove for everyone',
+                        color: AppColors.danger,
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          onUnsend?.call(message.messageId);
+                        },
+                      ),
+                    _MessageOptionTile(
+                      icon: Icons.delete_outline,
+                      label: 'Delete for me',
+                      subtitle: "Only you won't see this",
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        onHide?.call(message.messageId);
+                      },
+                    ),
+                    if (message.body != null && !message.isUnsent)
+                      _MessageOptionTile(
+                        icon: Icons.copy,
+                        label: 'Copy text',
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          Clipboard.setData(ClipboardData(text: message.body ?? ''));
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +155,14 @@ class MessageBubbleWidget extends StatelessWidget {
     if (_isCallRecord(message.body)) {
       return CallChipWidget(body: message.body ?? '', time: time);
     }
+
+    return GestureDetector(
+      onLongPress: message.isUnsent ? null : () => _showMessageOptions(context),
+      child: _buildBubbleContent(context, topGap, time),
+    );
+  }
+
+  Widget _buildBubbleContent(BuildContext context, double topGap, String time) {
 
     if (message.media?.type == MessageMediaType.image) {
       return _ImageMessage(
@@ -52,12 +179,31 @@ class MessageBubbleWidget extends StatelessWidget {
                 .hasMatch(message.body!));
 
     final Widget bubbleContent;
-    if (message.isDeleted) {
+    if (message.isUnsent) {
+      final unsentLabel = isMine
+          ? 'You unsent this message.'
+          : '$participantName unsent this message.';
+      bubbleContent = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.block, size: 14,
+              color: isMine ? Colors.white.withValues(alpha: 0.5) : AppColors.textMuted),
+          const SizedBox(width: 6),
+          Text(
+            unsentLabel,
+            style: AppTypography.bodySm.copyWith(
+              fontStyle: FontStyle.italic,
+              color: isMine ? Colors.white.withValues(alpha: 0.55) : AppColors.textMuted,
+            ),
+          ),
+        ],
+      );
+    } else if (message.isDeleted) {
       bubbleContent = Text(
         'This message was deleted.',
         style: AppTypography.bodySm.copyWith(
           fontStyle: FontStyle.italic,
-          color: Colors.white.withValues(alpha: 0.55),
+          color: isMine ? Colors.white.withValues(alpha: 0.55) : AppColors.textMuted,
         ),
       );
     } else if (isVoice) {
@@ -474,4 +620,66 @@ String _formatTime(DateTime dateTime) {
   final period = hour >= 12 ? 'PM' : 'AM';
   final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
   return '$displayHour:$minute $period';
+}
+
+// ─── Message option tile for bottom sheet ────────────────────────────────
+
+class _MessageOptionTile extends StatelessWidget {
+  const _MessageOptionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.subtitle,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = color ?? AppColors.textBody;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: effectiveColor),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: AppTypography.label.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: effectiveColor,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 11.5,
+                          color: const Color(0xFF9C8E82),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

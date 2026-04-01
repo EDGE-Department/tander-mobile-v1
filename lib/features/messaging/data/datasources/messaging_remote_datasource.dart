@@ -115,6 +115,28 @@ final class MessagingRemoteDatasource {
   }
 
   // -----------------------------------------------------------------------
+  // Message deletion
+  // -----------------------------------------------------------------------
+
+  /// Unsend a message (delete for everyone). Sender-only, 1-hour limit.
+  Future<void> unsendMessage({required int messageId}) async {
+    AppLogger.debug('Unsending message', operation: '$_tag.unsendMessage',
+        context: {'messageId': messageId});
+    await _dioClient.post<Map<String, Object?>>(
+      '/chat/messages/$messageId/unsend',
+    );
+  }
+
+  /// Hide a message for the current user only (delete for me).
+  Future<void> hideMessageForUser({required int messageId}) async {
+    AppLogger.debug('Hiding message for user', operation: '$_tag.hideMessageForUser',
+        context: {'messageId': messageId});
+    await _dioClient.post<Map<String, Object?>>(
+      '/chat/messages/$messageId/hide',
+    );
+  }
+
+  // -----------------------------------------------------------------------
   // Read receipts & muting
   // -----------------------------------------------------------------------
 

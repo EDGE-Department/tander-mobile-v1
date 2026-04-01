@@ -34,7 +34,7 @@ final class DiscoverRemoteDatasource {
       'page': page,
       'size': size,
       'verifiedOnly': false,
-      'minAge': filters?.minAge ?? 18,
+      'minAge': filters?.minAge ?? 60,
     };
 
     if (filters != null) {

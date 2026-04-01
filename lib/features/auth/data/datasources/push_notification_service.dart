@@ -59,12 +59,30 @@ final class PushNotificationService {
     await _createAndroidNotificationChannels();
     await _requestPermission();
 
-    final fcmToken = await FirebaseMessaging.instance.getToken();
+    // Get FCM token with timeout + retry (mirrors legacy app's TokenManager)
+    String? fcmToken;
+    for (var attempt = 1; attempt <= 3; attempt++) {
+      try {
+        fcmToken = await FirebaseMessaging.instance
+            .getToken()
+            .timeout(const Duration(seconds: 15));
+        if (fcmToken != null) break;
+      } catch (error) {
+        AppLogger.warning(
+          'FCM token attempt $attempt/3 failed: $error',
+          operation: 'PushNotificationService.initialize',
+        );
+        if (attempt < 3) {
+          await Future<void>.delayed(Duration(seconds: 2 * attempt));
+        }
+      }
+    }
+
     if (fcmToken != null) {
       await _registerToken(fcmToken);
     } else {
       AppLogger.warning(
-        'FCM token was null after initialization',
+        'FCM token unavailable after 3 attempts — push notifications disabled',
         operation: 'PushNotificationService.initialize',
       );
     }
@@ -135,32 +153,41 @@ final class PushNotificationService {
   // ---------------------------------------------------------------------------
 
   Future<void> _registerToken(String fcmToken) async {
-    try {
-      final deviceId = _getOrCreateDeviceId();
-      final platform = Platform.isAndroid ? 'android' : 'ios';
+    final deviceId = _getOrCreateDeviceId();
+    final platform = Platform.isAndroid ? 'android' : 'ios';
 
-      await _dioClient.post<Map<String, Object?>>(
-        ApiEndpoints.registerToken,
-        data: {
-          'deviceToken': fcmToken,
-          'platform': platform,
-          'deviceId': deviceId,
-        },
-      );
+    for (var attempt = 1; attempt <= 5; attempt++) {
+      try {
+        await _dioClient.post<Map<String, Object?>>(
+          ApiEndpoints.registerToken,
+          data: {
+            'token': fcmToken,
+            'platform': platform,
+            'deviceId': deviceId,
+            'tokenType': 'fcm',
+          },
+        );
 
-      AppLogger.info(
-        'FCM token registered with backend',
-        operation: 'PushNotificationService._registerToken',
-        context: {'platform': platform, 'deviceId': deviceId},
-      );
-    } on Object catch (error, stackTrace) {
-      AppLogger.error(
-        'Failed to register FCM token with backend',
-        operation: 'PushNotificationService._registerToken',
-        error: error,
-        stackTrace: stackTrace,
-      );
+        AppLogger.info(
+          'FCM token registered with backend (attempt $attempt)',
+          operation: 'PushNotificationService._registerToken',
+          context: {'platform': platform, 'deviceId': deviceId},
+        );
+        return;
+      } on Object catch (error) {
+        AppLogger.warning(
+          'FCM register attempt $attempt/5 failed: $error',
+          operation: 'PushNotificationService._registerToken',
+        );
+        if (attempt < 5) {
+          await Future<void>.delayed(Duration(seconds: 2 * attempt));
+        }
+      }
     }
+    AppLogger.error(
+      'Failed to register FCM token after 5 attempts',
+      operation: 'PushNotificationService._registerToken',
+    );
   }
 
   // ---------------------------------------------------------------------------

@@ -157,6 +157,11 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
                   ),
                 ),
 
+              // Breathing suggestion chip
+              if (tandyState is TandyLoaded &&
+                  tandyState.suggestBreathingPanel)
+                _buildBreathingSuggestion(),
+
               // Composer
               if (tandyState is TandyLoaded)
                 TandyComposer(
@@ -174,6 +179,68 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
           // Wellness panel overlay
           if (tandyState is TandyLoaded && tandyState.activePanel != null)
             _buildPanelOverlay(tandyState.activePanel!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBreathingSuggestion() {
+    final notifier = ref.read(tandyNotifierProvider.notifier);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE0F5F4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF0F9D94).withValues(alpha: 0.28),
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(Icons.air_rounded, color: Color(0xFF0F9D94), size: 18),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'How about a short breathing exercise?',
+              style: TextStyle(
+                fontSize: 13.5,
+                color: Color(0xFF1A5F5B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              notifier.dismissBreathingSuggestion();
+              notifier.setActivePanel(TandyActivePanel.breathe);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F9D94),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Start',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: notifier.dismissBreathingSuggestion,
+            child: const Icon(
+              Icons.close_rounded,
+              color: Color(0xFF0F9D94),
+              size: 16,
+            ),
+          ),
         ],
       ),
     );

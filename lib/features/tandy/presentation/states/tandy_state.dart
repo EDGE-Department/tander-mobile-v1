@@ -27,6 +27,7 @@ final class TandyLoaded extends TandyState {
     this.isSending = false,
     this.sendError,
     this.activePanel,
+    this.suggestBreathingPanel = false,
   });
 
   /// The current conversation thread.
@@ -44,6 +45,10 @@ final class TandyLoaded extends TandyState {
   /// Currently active wellness panel overlay.
   final TandyActivePanel? activePanel;
 
+  /// True when the backend suggests a breathing exercise — shows an inline
+  /// suggestion chip instead of auto-opening the panel.
+  final bool suggestBreathingPanel;
+
   /// Convenience: all messages in the thread.
   List<TandyMessage> get messages => thread.messages;
 
@@ -56,6 +61,7 @@ final class TandyLoaded extends TandyState {
     bool? isSending,
     String? Function()? sendError,
     TandyActivePanel? Function()? activePanel,
+    bool? suggestBreathingPanel,
   }) {
     return TandyLoaded(
       thread: thread ?? this.thread,
@@ -63,6 +69,7 @@ final class TandyLoaded extends TandyState {
       isSending: isSending ?? this.isSending,
       sendError: sendError != null ? sendError() : this.sendError,
       activePanel: activePanel != null ? activePanel() : this.activePanel,
+      suggestBreathingPanel: suggestBreathingPanel ?? this.suggestBreathingPanel,
     );
   }
 }

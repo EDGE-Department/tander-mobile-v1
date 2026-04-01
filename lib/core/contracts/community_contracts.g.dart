@@ -55,6 +55,8 @@ CommunityCommentDto _$CommunityCommentDtoFromJson(Map<String, dynamic> json) =>
       author: PostAuthorDto.fromJson(json['author'] as Map<String, dynamic>),
       content: json['content'] as String,
       createdAt: json['createdAt'] as String,
+      parentCommentId: (json['parentCommentId'] as num?)?.toInt(),
+      replyCount: (json['replyCount'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$CommunityCommentDtoToJson(
@@ -64,6 +66,8 @@ Map<String, dynamic> _$CommunityCommentDtoToJson(
   'postId': instance.postId,
   'author': instance.author,
   'content': instance.content,
+  'parentCommentId': instance.parentCommentId,
+  'replyCount': instance.replyCount,
   'createdAt': instance.createdAt,
 };
 

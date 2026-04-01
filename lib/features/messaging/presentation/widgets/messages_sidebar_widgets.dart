@@ -197,7 +197,7 @@ class _TitleRow extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [_orange, Color(0xFFD06A18)],
+                colors: [_orange, Color(0xFFC96D18)],
               ),
             ),
             alignment: Alignment.center,

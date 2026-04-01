@@ -229,7 +229,12 @@ class _CommunityHeader extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text('Community', style: AppTypography.h1),
+                Text(
+                  'Community',
+                  style: AppTypography.h1,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -261,25 +266,30 @@ class _NewPostButton extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.noScaling,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add, color: AppColors.textInverse, size: 18),
-                SizedBox(width: AppSpacing.xxs),
-                Text(
-                  'New post',
-                  style: TextStyle(
-                    color: AppColors.textInverse,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, color: AppColors.textInverse, size: 18),
+                  SizedBox(width: AppSpacing.xxs),
+                  Text(
+                    'New post',
+                    style: TextStyle(
+                      color: AppColors.textInverse,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

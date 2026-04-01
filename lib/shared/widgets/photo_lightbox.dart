@@ -34,7 +34,7 @@ class PhotoLightbox extends StatefulWidget {
     required List<String> photoUrls,
     int initialIndex = 0,
   }) {
-    Navigator.of(context).push(
+    Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder<void>(
         opaque: false,
         barrierColor: Colors.black87,

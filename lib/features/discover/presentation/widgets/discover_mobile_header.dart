@@ -50,11 +50,15 @@ class DiscoverMobileHeader extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      activeTab == DiscoverTab.discover
-                          ? 'Discover'
-                          : 'Community',
-                      style: AppTypography.h1,
+                    Flexible(
+                      child: Text(
+                        activeTab == DiscoverTab.discover
+                            ? 'Discover'
+                            : 'Community',
+                        style: AppTypography.h1,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (activeTab == DiscoverTab.discover &&
                         remainingCount > 0) ...[
@@ -72,6 +76,8 @@ class DiscoverMobileHeader extends StatelessWidget {
                     color: AppColors.textMuted,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -176,28 +182,38 @@ class _TabButton extends StatelessWidget {
                 : null,
           ),
           alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected
-                    ? AppColors.textInverse
-                    : AppColors.textMuted,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: AppTypography.label.copyWith(
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.noScaling,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 16,
                   color: isSelected
                       ? AppColors.textInverse
                       : AppColors.textMuted,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  fontSize: 15,
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppTypography.label.copyWith(
+                      color: isSelected
+                          ? AppColors.textInverse
+                          : AppColors.textMuted,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -275,24 +291,29 @@ class _MobileNewPostButton extends StatelessWidget {
             ],
           ),
           alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.add,
-                size: 18,
-                color: AppColors.textInverse,
-              ),
-              const SizedBox(width: AppSpacing.xxs),
-              Text(
-                'New post',
-                style: AppTypography.label.copyWith(
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.noScaling,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.add,
+                  size: 18,
                   color: AppColors.textInverse,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
                 ),
-              ),
-            ],
+                const SizedBox(width: AppSpacing.xxs),
+                Text(
+                  'New post',
+                  style: AppTypography.label.copyWith(
+                    color: AppColors.textInverse,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

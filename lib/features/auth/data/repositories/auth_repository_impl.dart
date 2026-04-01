@@ -108,19 +108,15 @@ final class AuthRepositoryImpl implements AuthRepository {
   Future<Result<AuthSession>> register({
     required String email,
     required String password,
-    required String username,
-    required String firstName,
-    required String lastName,
+    required String auditId,
   }) {
     return _runSafe('register', () async {
       final requestDto = RegisterRequestDto(
-        firstName: firstName,
-        lastName: lastName,
         email: email,
         password: password,
-        username: username,
-        dateOfBirth: '',
-        gender: '',
+        auditId: auditId,
+        consentTerms: true,
+        consentDataPrivacy: true,
       );
 
       final registerResponse = await _remoteDatasource.register(
@@ -356,6 +352,83 @@ final class AuthRepositoryImpl implements AuthRepository {
 
     return accessToken;
   }
+
+  // ---------------------------------------------------------------------------
+  // Phone availability
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Result<bool>> checkPhoneAvailability({required String phone}) {
+    return _runSafe('checkPhoneAvailability', () async {
+      return _remoteDatasource.checkPhoneAvailability(phone: phone);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Minimum age
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Result<int>> getMinimumAge() {
+    return _runSafe('getMinimumAge', () async {
+      return _remoteDatasource.getMinimumAge();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // ID pre-registration verification
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Result<String>> verifyIdPreRegister({
+    required String idPhotoFrontPath,
+    String? selfiePath,
+    Map<String, dynamic>? livenessMetadata,
+    Map<String, dynamic>? frontendOcrData,
+  }) {
+    return _runSafe('verifyIdPreRegister', () async {
+      final response = await _remoteDatasource.verifyIdPreRegister(
+        idPhotoFrontPath: idPhotoFrontPath,
+        selfiePath: selfiePath,
+        livenessMetadata: livenessMetadata,
+        frontendOcrData: frontendOcrData,
+      );
+
+      final body = response.data;
+      if (body == null) {
+        throw const FormatException(
+          'Empty response body from verify-id-pre-register',
+        );
+      }
+
+      // Extract auditId from response
+      final data = body['data'];
+      String? auditId;
+      if (data is Map<String, Object?>) {
+        auditId = data['auditId'] as String?;
+      }
+
+      if (auditId == null || auditId.isEmpty) {
+        throw const FormatException(
+          'Missing auditId in verify-id-pre-register response',
+        );
+      }
+
+      // Store auditId in secure storage for later use during registration
+      await _secureStorage.saveAuditId(auditId);
+
+      AppLogger.info(
+        'ID pre-registration verified, auditId stored',
+        operation: _tag,
+      );
+
+      return auditId;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
 
   /// Calls GET /user/me and maps the response to an [AuthSession].
   Future<AuthSession> _fetchAndMapSession() async {

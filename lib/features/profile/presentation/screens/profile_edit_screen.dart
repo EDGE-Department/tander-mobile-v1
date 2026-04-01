@@ -9,7 +9,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+// Note: this screen is opened via showGeneralDialog, not GoRouter.
+// Use Navigator.of(context).pop() instead of Navigator.of(context).pop().
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
@@ -39,8 +40,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _firstNameController;
+  late final TextEditingController _middleNameController;
   late final TextEditingController _lastNameController;
-  late final TextEditingController _nickNameController;
   late final TextEditingController _bioController;
   late final TextEditingController _cityController;
   late final TextEditingController _countryController;
@@ -60,8 +61,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   void initState() {
     super.initState();
     _firstNameController = TextEditingController();
+    _middleNameController = TextEditingController();
     _lastNameController = TextEditingController();
-    _nickNameController = TextEditingController();
     _bioController = TextEditingController();
     _cityController = TextEditingController();
     _countryController = TextEditingController();
@@ -83,8 +84,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
     final profile = profileState.profile;
     _firstNameController.text = profile.firstName;
+    _middleNameController.text = profile.middleName ?? '';
     _lastNameController.text = profile.lastName ?? '';
-    _nickNameController.text = profile.nickName ?? '';
     _bioController.text = profile.bio ?? '';
     _cityController.text = profile.city ?? '';
     _countryController.text = profile.country ?? '';
@@ -105,8 +106,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   void dispose() {
     _bioController.removeListener(_onBioChanged);
     _firstNameController.dispose();
+    _middleNameController.dispose();
     _lastNameController.dispose();
-    _nickNameController.dispose();
     _bioController.dispose();
     _cityController.dispose();
     _countryController.dispose();
@@ -114,51 +115,62 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_isSaving) return;
+    try {
+      if (_isSaving) return;
+      if (!_formKey.currentState!.validate()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Validation failed'), duration: Duration(seconds: 2)),
+          );
+        }
+        return;
+      }
 
-    setState(() => _isSaving = true);
+      setState(() => _isSaving = true);
 
-    final request = UpdateProfileRequestDto(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      nickName: _nickNameController.text.trim(),
-      bio: _bioController.text.trim(),
-      city: _cityController.text.trim(),
-      country: _countryController.text.trim(),
-      gender: _selectedGender,
-      birthDate: _selectedDateOfBirth?.toIso8601String().split('T').first,
-      civilStatus: _selectedCivilStatus,
-      religion: _selectedReligion,
-      numberOfChildren: _selectedChildrenCount,
-      interests: jsonEncode(_selectedInterests),
-      lookingFor: jsonEncode(_selectedLookingFor),
-      languages: jsonEncode(_selectedLanguages),
-    );
+      // Match web: only send fields the web sends, convert empty to null
+      final bio = _bioController.text.trim();
+      final city = _cityController.text.trim();
+      final country = _countryController.text.trim();
 
-    final didSucceed =
-        await ref.read(myProfileNotifierProvider.notifier).updateProfile(request);
-
-    if (!mounted) return;
-    setState(() => _isSaving = false);
-
-    if (didSucceed) {
-      TanderToastOverlay.show(
-        context,
-        const TanderToastData(
-          message: 'Profile updated successfully.',
-          variant: TanderToastVariant.success,
-        ),
+      final middleName = _middleNameController.text.trim();
+      final request = UpdateProfileRequestDto(
+        firstName: _firstNameController.text.trim(),
+        middleName: middleName.isNotEmpty ? middleName : null,
+        lastName: _lastNameController.text.trim(),
+        bio: bio.isNotEmpty ? bio : null,
+        city: city.isNotEmpty ? city : null,
+        country: country.isNotEmpty ? country : null,
+        lookingFor: _selectedLookingFor.isNotEmpty
+            ? jsonEncode(_selectedLookingFor)
+            : null,
+        interests: jsonEncode(_selectedInterests),
       );
-      context.pop();
-    } else {
-      TanderToastOverlay.show(
-        context,
-        const TanderToastData(
-          message: 'Failed to save changes. Please try again.',
-          variant: TanderToastVariant.error,
-        ),
-      );
+
+      final didSucceed =
+          await ref.read(myProfileNotifierProvider.notifier).updateProfile(request);
+
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+
+      if (didSucceed) {
+        Navigator.of(context).pop();
+        // Show toast after dialog closes so the overlay ancestor is available
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save changes. Please try again.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error'), duration: const Duration(seconds: 4)),
+        );
+      }
     }
   }
 
@@ -174,7 +186,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         title: Text('Edit Profile', style: AppTypography.h3),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 22),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.of(context).pop(),
           tooltip: 'Back',
         ),
         actions: [
@@ -208,17 +220,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: TanderTextField(
+                      label: 'Middle name',
+                      controller: _middleNameController,
+                      hint: 'Optional',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: TanderTextField(
                       label: 'Last name',
                       controller: _lastNameController,
+                      validator: _requiredValidator,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TanderTextField(
-                label: 'Nickname',
-                controller: _nickNameController,
-                hint: 'What friends call you',
               ),
               const SizedBox(height: AppSpacing.sm),
               _BioField(
@@ -317,40 +332,35 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isSaving ? null : onPressed,
-      child: Container(
+    return ElevatedButton.icon(
+      onPressed: isSaving ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textInverse,
+        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.xs,
         ),
-        decoration: BoxDecoration(
-          color: AppColors.primary,
+        shape: RoundedRectangleBorder(
           borderRadius: AppRadius.borderSm,
         ),
-        child: isSaving
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppColors.textInverse),
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.check, size: 16,
-                      color: AppColors.textInverse),
-                  const SizedBox(width: AppSpacing.xxs),
-                  Text(
-                    'Save',
-                    style: AppTypography.label
-                        .copyWith(color: AppColors.textInverse),
-                  ),
-                ],
+        elevation: 0,
+      ),
+      icon: isSaving
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.textInverse),
               ),
+            )
+          : const Icon(Icons.check, size: 16),
+      label: Text(
+        'Save',
+        style: AppTypography.label.copyWith(color: AppColors.textInverse),
       ),
     );
   }

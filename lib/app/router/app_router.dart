@@ -13,6 +13,8 @@ import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_noti
 import 'package:tander_flutter_v3/features/auth/presentation/screens/email_verification_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/login_screen.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/screens/id_scanner_screen.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/screens/sign_up_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/notification_permission_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/otp_verification_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/photo_setup_screen.dart';
@@ -42,6 +44,10 @@ import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
 const _publicRoutes = <String>{
   AppRoutes.login,
+  AppRoutes.signUp,
+  AppRoutes.idScanner,
+  AppRoutes.rateLimit,
+  AppRoutes.duplicateId,
   AppRoutes.forgotPassword,
   AppRoutes.otpVerification,
   AppRoutes.emailVerification,
@@ -89,8 +95,9 @@ String? _redirect(AuthState authState, String matchedLocation) {
   final isOnOnboardingRoute = _onboardingRoutes.contains(matchedLocation);
 
   return switch (authState) {
-    // Still loading -- stay on splash
-    AuthInitial() || AuthLoading() => isOnSplash ? null : AppRoutes.splash,
+    // Still loading -- stay where you are if on splash or a public route
+    AuthInitial() || AuthLoading() =>
+      (isOnSplash || isOnPublicRoute) ? null : AppRoutes.splash,
 
     // Not authenticated -- go to login (unless already on public route)
     AuthUnauthenticated() || AuthError() =>
@@ -100,10 +107,10 @@ String? _redirect(AuthState authState, String matchedLocation) {
     AuthOnboarding(:final phase) =>
       _redirectForOnboarding(phase, matchedLocation, isOnOnboardingRoute),
 
-    // Authenticated but on public/onboarding route -- go home
+    // Authenticated but on public/onboarding route -- go to discover
     AuthAuthenticated() =>
       (isOnPublicRoute || isOnOnboardingRoute || isOnSplash)
-          ? AppRoutes.home
+          ? AppRoutes.discover
           : null,
   };
 }
@@ -149,6 +156,19 @@ final _routes = <RouteBase>[
   GoRoute(
     path: AppRoutes.login,
     builder: (_, _) => const LoginScreen(),
+  ),
+  GoRoute(
+    path: AppRoutes.signUp,
+    builder: (_, _) => const SignUpScreen(),
+  ),
+  GoRoute(
+    path: AppRoutes.idScanner,
+    builder: (_, state) {
+      final minimumAgeParam = state.uri.queryParameters['minimumAge'];
+      final minimumAge =
+          minimumAgeParam != null ? int.tryParse(minimumAgeParam) : null;
+      return IdScannerScreen(minimumAge: minimumAge);
+    },
   ),
   GoRoute(
     path: AppRoutes.forgotPassword,
@@ -256,15 +276,14 @@ final _routes = <RouteBase>[
           ),
         ],
       ),
+      // -- Full-screen call (inside shell to preserve STOMP connection) ------
+      GoRoute(
+        path: '/calls/:roomName',
+        builder: (_, state) => CallScreen(
+          roomName: state.pathParameters['roomName'] ?? '',
+        ),
+      ),
     ],
-  ),
-
-  // -- Full-screen call (outside shell) -------------------------------------
-  GoRoute(
-    path: '/calls/:roomName',
-    builder: (_, state) => CallScreen(
-      roomName: state.pathParameters['roomName'] ?? '',
-    ),
   ),
 
   // -- Deep navigation ------------------------------------------------------

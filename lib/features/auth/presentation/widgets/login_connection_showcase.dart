@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -34,12 +35,18 @@ class _ProfileData {
 }
 
 const _profiles = <_ProfileData>[
-  _ProfileData('Maricel', 64, 'QC', [Color(0xFFF97316), Color(0xFFFB923C)]),
-  _ProfileData('Roberto', 68, 'Makati', [Color(0xFF14B8A6), Color(0xFF2DD4BF)]),
-  _ProfileData('Ligaya', 62, 'Pasig', [Color(0xFFA855F7), Color(0xFFC084FC)]),
-  _ProfileData('Ernesto', 71, 'Manila', [Color(0xFF3B82F6), Color(0xFF60A5FA)]),
-  _ProfileData('Perla', 65, 'Cavite', [Color(0xFFEC4899), Color(0xFFF472B6)]),
-  _ProfileData('Domingo', 69, 'Taguig', [Color(0xFF22C55E), Color(0xFF4ADE80)]),
+  // Warm orange: rgba(255,160,90,0.95) -> rgba(225,90,40,0.95)
+  _ProfileData('Maricel', 64, 'QC', [Color(0xF2FFA05A), Color(0xF2E15A28)]),
+  // Teal green: rgba(46,200,140,0.95) -> rgba(15,155,130,0.95)
+  _ProfileData('Roberto', 68, 'Makati', [Color(0xF22EC88C), Color(0xF20F9B82)]),
+  // Purple: rgba(200,100,220,0.95) -> rgba(150,60,180,0.95)
+  _ProfileData('Ligaya', 62, 'Pasig', [Color(0xF2C864DC), Color(0xF2963CB4)]),
+  // Blue: rgba(80,140,240,0.95) -> rgba(50,100,210,0.95)
+  _ProfileData('Ernesto', 71, 'Manila', [Color(0xF2508CF0), Color(0xF23264D2)]),
+  // Pink: rgba(240,100,140,0.95) -> rgba(200,60,100,0.95)
+  _ProfileData('Perla', 65, 'Cavite', [Color(0xF2F0648C), Color(0xF2C83C64)]),
+  // Green: rgba(60,200,100,0.95) -> rgba(30,160,70,0.95)
+  _ProfileData('Domingo', 69, 'Taguig', [Color(0xF23CC864), Color(0xF21EA046)]),
   _ProfileData('Celia', 63, 'Paranaque', [Color(0xFFEAB308), Color(0xFFFACC15)]),
   _ProfileData('Vicente', 72, 'Batangas', [Color(0xFF06B6D4), Color(0xFF22D3EE)]),
 ];
@@ -128,38 +135,44 @@ class _ConnectionCardState extends State<_ConnectionCard>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
-      ),
-      child: Column(
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 18),
-          _buildAvatarRow(),
-          const SizedBox(height: 14),
-          AnimatedBuilder(
-            animation: _progressAnimation,
-            builder: (_, _) => _ShimmerProgressBar(
-              progress: _progressAnimation.value,
-              isComplete: _isConnected,
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.24),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.32)),
           ),
-          const SizedBox(height: 8),
-          Text(
-            _isConnected ? '\u2713 connected' : 'matching...',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: _isConnected
-                  ? const Color(0xFF34D399)
-                  : Colors.white.withValues(alpha: 0.50),
-            ),
+          child: Column(
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 18),
+              _buildAvatarRow(),
+              const SizedBox(height: 14),
+              AnimatedBuilder(
+                animation: _progressAnimation,
+                builder: (_, _) => _ShimmerProgressBar(
+                  progress: _progressAnimation.value,
+                  isComplete: _isConnected,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _isConnected ? '\u2713 connected' : 'matching...',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: _isConnected
+                      ? const Color(0xFF34D399)
+                      : Colors.white.withValues(alpha: 0.50),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -177,21 +190,12 @@ class _ConnectionCardState extends State<_ConnectionCard>
           ),
         ),
         const Spacer(),
-        Container(
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFF34D399),
-          ),
-        ),
-        const SizedBox(width: 6),
         Text(
           'just now',
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w500,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: Colors.white.withValues(alpha: 0.55),
           ),
         ),
       ],
@@ -360,45 +364,103 @@ class _TestimonialCardState extends State<_TestimonialCard> {
           BoxShadow(color: Color(0x14000000), blurRadius: 20, offset: Offset(0, 8)),
         ],
       ),
+      clipBehavior: Clip.hardEdge,
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 500),
-        child: Column(
+        duration: const Duration(milliseconds: 380),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        layoutBuilder: (currentChild, previousChildren) {
+          return Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              ...previousChildren,
+              ?currentChild,
+            ],
+          );
+        },
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.08),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: _TestimonialContent(
           key: ValueKey(_currentIndex),
-          crossAxisAlignment: CrossAxisAlignment.start,
+          testimonial: testimonial,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Testimonial Content ─────────────────────────────────────────────
+
+class _TestimonialContent extends StatelessWidget {
+  const _TestimonialContent({required this.testimonial, super.key});
+
+  final ({String quote, String author, String location}) testimonial;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '"${testimonial.quote}"',
+          style: const TextStyle(
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+            color: Color(0xFF374151),
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${testimonial.author} \u00B7 ${testimonial.location}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF374151),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Member since 2024',
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                  ),
+                ],
+              ),
+            ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: List.generate(
                 5,
-                (_) => const Icon(Icons.star, size: 14, color: Color(0xFFF59E0B)),
+                (_) => const Padding(
+                  padding: EdgeInsets.only(left: 2),
+                  child: Icon(Icons.star, size: 11, color: Color(0xFFF59E0B)),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '"${testimonial.quote}"',
-              style: const TextStyle(
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
-                color: Color(0xFF374151),
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '${testimonial.author}, ${testimonial.location}',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF374151),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Member since 2024',
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }

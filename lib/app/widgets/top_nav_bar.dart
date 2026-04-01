@@ -45,7 +45,7 @@ class TanderTopNavBar extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      'assets/icons/tander_logo.png',
+                      'assets/icons/tander_icon.png',
                       width: 38,
                       height: 38,
                     ),
@@ -157,13 +157,23 @@ class _TopNavTab extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Image.asset(
-                  tab.iconAsset,
-                  width: 24,
-                  height: 24,
-                  color: isActive ? Colors.white : AppColors.textMuted,
-                  colorBlendMode: BlendMode.srcIn,
-                ),
+                tab.usesIconData
+                    ? Icon(
+                        isActive
+                            ? (tab.activeIconData ?? tab.iconData!)
+                            : tab.iconData!,
+                        size: 24,
+                        color: isActive
+                            ? Colors.white
+                            : (tab.iconColor ?? AppColors.textMuted),
+                      )
+                    : Image.asset(
+                        tab.iconAsset!,
+                        width: 24,
+                        height: 24,
+                        color: isActive ? Colors.white : AppColors.textMuted,
+                        colorBlendMode: BlendMode.srcIn,
+                      ),
                 if (badge > 0)
                   Positioned(
                     top: -6,

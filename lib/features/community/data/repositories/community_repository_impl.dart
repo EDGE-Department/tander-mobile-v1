@@ -99,16 +99,42 @@ final class CommunityRepositoryImpl implements CommunityRepository {
   Future<Result<CommunityCommentItem>> createComment({
     required int postId,
     required String content,
+    int? parentCommentId,
   }) {
     return _runSafe('createComment', () async {
       final response = await _remoteDatasource.createComment(
         postId: postId,
         content: content,
+        parentCommentId: parentCommentId,
       );
       final body = _requireResponseBody(response.data, 'create comment');
       return CommunityMapper.mapCommentDto(
         CommunityCommentDto.fromJson(body),
       );
+    });
+  }
+
+  @override
+  Future<Result<CommentsPage>> fetchReplies({
+    required int commentId,
+    String? cursor,
+  }) {
+    return _runSafe('fetchReplies', () async {
+      final response = await _remoteDatasource.fetchReplies(
+        commentId: commentId,
+        cursor: cursor,
+      );
+      final body = _requireResponseBody(response.data, 'fetch replies');
+      return CommunityMapper.mapCommentsResponse(
+        CommentsResponseDto.fromJson(body),
+      );
+    });
+  }
+
+  @override
+  Future<Result<void>> deleteComment({required int commentId}) {
+    return _runSafe('deleteComment', () async {
+      await _remoteDatasource.deleteComment(commentId: commentId);
     });
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -9,20 +9,20 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 const LinearGradient _buttonGradient = LinearGradient(
   begin: Alignment(-0.7, -1),
   end: Alignment(0.7, 1),
-  colors: [Color(0xFFE67E22), Color(0xFFD06A18)],
+  colors: [Color(0xFFE67E22), Color(0xFFC96D18)],
 );
 
-/// Button shadow matching web's submit button box-shadow.
+/// Button shadow matching web's `0 8px 28px rgba(230,126,34,0.38), 0 2px 8px rgba(0,0,0,0.08)`.
 const List<BoxShadow> _submitButtonShadow = [
   BoxShadow(
-    color: Color(0x80E67E22), // rgba(230,126,34,0.50)
-    blurRadius: 36,
-    offset: Offset(0, 12),
+    color: Color(0x61E67E22), // rgba(230,126,34,0.38)
+    blurRadius: 28,
+    offset: Offset(0, 8),
   ),
   BoxShadow(
-    color: Color(0x1A000000), // rgba(0,0,0,0.10)
-    blurRadius: 12,
-    offset: Offset(0, 4),
+    color: Color(0x14000000), // rgba(0,0,0,0.08)
+    blurRadius: 8,
+    offset: Offset(0, 2),
   ),
 ];
 
@@ -31,7 +31,7 @@ const List<BoxShadow> _submitButtonShadow = [
 /// Full-width gradient submit button with shimmer sweep animation,
 /// scale-down tap feedback, and loading spinner state.
 ///
-/// Matches the web's "Sign In to Tander" button: rounded-full,
+/// Matches the web's "Sign In" button: rounded-full,
 /// gradient bg, deep warm shadow, ArrowRight icon, shimmer overlay.
 class LoginSubmitButton extends StatefulWidget {
   const LoginSubmitButton({
@@ -85,7 +85,7 @@ class _LoginSubmitButtonState extends State<LoginSubmitButton>
           onTap: isInteractive ? widget.onPressed : null,
           child: Container(
             constraints: const BoxConstraints(
-              minHeight: AppSpacing.touchComfortable,
+              minHeight: 48, // web: h-12
             ),
             decoration: BoxDecoration(
               gradient: _buttonGradient,
@@ -110,16 +110,18 @@ class _LoginSubmitButtonState extends State<LoginSubmitButton>
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Sign In to Tander',
-                              style: AppTypography.bodyLg.copyWith(
+                              'Sign In',
+                              style: AppTypography.body.copyWith(
+                                fontSize: 16, // web: text-[16px]
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 height: 1.0,
@@ -127,8 +129,8 @@ class _LoginSubmitButtonState extends State<LoginSubmitButton>
                             ),
                             const SizedBox(width: 10),
                             const Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 20,
+                              PhosphorIconsBold.arrowRight,
+                              size: 18, // web: size={18}
                               color: Colors.white,
                             ),
                           ],
@@ -163,7 +165,7 @@ class _ShimmerSweepState extends State<_ShimmerSweep>
     super.initState();
     _shimmerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 4000),
     )..repeat();
   }
 
