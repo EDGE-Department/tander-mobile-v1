@@ -49,9 +49,10 @@ class TanderBottomSheet extends StatelessWidget {
     return showModalBottomSheet<TOutput>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.transparent,
+      barrierColor: AppColors.overlay,
       builder: (sheetContext) => _BackdropWrapper(
         child: TanderBottomSheet(
           title: title,
@@ -109,14 +110,7 @@ class _BackdropWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-      child: Container(
-        color: AppColors.overlay,
-        alignment: Alignment.bottomCenter,
-        child: child,
-      ),
-    );
+    return child;
   }
 }
 

@@ -249,14 +249,14 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 2, 24, 8),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _buildLogoRow(),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     _buildHeading(),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     ValueListenableBuilder<int>(
                       valueListenable: onlineCount,
                       builder: (_, count, _) =>

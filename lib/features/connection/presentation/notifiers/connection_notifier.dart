@@ -12,6 +12,7 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/connection/domain/repositories/connection_repository.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/providers/connection_providers.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/states/connection_state.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
 
 // ── Provider ────────────────────────────────────────────────────────────
 
@@ -183,6 +184,7 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     removeResult.when(
       success: (_) {
         AppLogger.debug('Removed $connectionId', operation: _tag);
+        ref.invalidate(discoverNotifierProvider);
       },
       failure: (exception) {
         AppLogger.error(

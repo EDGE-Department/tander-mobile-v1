@@ -139,7 +139,8 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
               ? AvailabilityStatus.available
               : AvailabilityStatus.taken;
           if (!isAvailable) {
-            _contactError = 'This email is already registered';
+            _contactError =
+                'This email is already registered. Sign in to complete your profile.';
           }
         });
       } catch (_) {
@@ -183,7 +184,8 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
               ? AvailabilityStatus.available
               : AvailabilityStatus.taken;
           if (!isAvailable) {
-            _contactError = 'This phone number is already registered';
+            _contactError =
+                'This phone number is already registered. Sign in to complete your profile.';
           }
         });
       } catch (_) {
@@ -306,36 +308,85 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
         return;
       }
 
-      if (_method == RegistrationMethod.email) {
-        // Send OTP first, then register after OTP verification
-        await ref
-            .read(authNotifierProvider.notifier)
-            .register(email: contact, password: password, auditId: auditId);
-      } else {
-        // Phone registration — format number
-        final digits = contact.replaceAll(RegExp(r'\D'), '');
-        final fullPhone = '${RegistrationConstants.phoneCountryCode}$digits';
-        await ref.read(authNotifierProvider.notifier).register(
-              email: fullPhone,
-              password: password,
-              auditId: auditId,
-            );
-      }
+      final secureStorage = ref.read(secureStorageProvider);
+      final isPhone = _method == RegistrationMethod.phone;
+      final normalizedContact = isPhone
+          ? '${RegistrationConstants.phoneCountryCode}${contact.replaceAll(RegExp(r'\D'), '')}'
+          : contact;
 
-      if (!mounted) return;
-
-      // Check auth state after registration
-      final authState = ref.read(authNotifierProvider);
-      if (authState is AuthError) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = authState.exception.userMessage;
-        });
+      // Check if OTP was already sent for this contact (user pressed back)
+      final pending = await secureStorage.readPendingRegistration();
+      final pendingContact = pending.email ?? pending.phone ?? '';
+      if (pendingContact == normalizedContact &&
+          pending.password != null &&
+          pending.auditId != null) {
+        // Verify the email/phone is still available before resuming
+        final repository = ref.read(authRepositoryProvider);
+        final isAvailable = isPhone
+            ? await repository.checkPhoneAvailability(phone: normalizedContact)
+            : await repository.checkEmailAvailability(email: normalizedContact);
+        final available = isAvailable.valueOrNull ?? false;
+        if (!available) {
+          await secureStorage.clearPendingRegistration();
+          setState(() {
+            _isLoading = false;
+            _errorMessage =
+                'This ${isPhone ? "phone number" : "email"} is already registered. Please sign in instead.';
+          });
+          return;
+        }
+        // OTP already sent — go directly to OTP screen without re-sending
+        setState(() => _isLoading = false);
+        if (mounted) {
+          context.push(
+            AppRoutes.otpVerification,
+            extra: {
+              'email': isPhone ? '' : normalizedContact,
+              'phone': isPhone ? normalizedContact : '',
+              'type': 'REGISTRATION',
+            },
+          );
+        }
         return;
       }
 
-      // Registration successful — router redirect will handle navigation
-      setState(() => _isLoading = false);
+      // Store credentials locally — account is NOT created until OTP verified
+      await secureStorage.savePendingRegistration(
+        email: isPhone ? null : normalizedContact,
+        phone: isPhone ? normalizedContact : null,
+        password: password,
+        auditId: auditId,
+      );
+
+      // Send OTP via Twilio
+      final repository = ref.read(authRepositoryProvider);
+      final sendResult = await repository.sendRegistrationOtp(
+        email: isPhone ? null : normalizedContact,
+        phone: isPhone ? normalizedContact : null,
+      );
+
+      if (!mounted) return;
+
+      sendResult.when(
+        success: (_) {
+          setState(() => _isLoading = false);
+          context.push(
+            AppRoutes.otpVerification,
+            extra: {
+              'email': isPhone ? '' : normalizedContact,
+              'phone': isPhone ? normalizedContact : '',
+              'type': 'REGISTRATION',
+            },
+          );
+        },
+        failure: (exception) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = exception.userMessage;
+          });
+        },
+      );
+      return;
     } catch (e) {
       if (!mounted) return;
       setState(() {

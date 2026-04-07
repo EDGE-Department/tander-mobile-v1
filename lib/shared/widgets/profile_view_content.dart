@@ -29,12 +29,14 @@ class ProfileViewContent extends StatelessWidget {
     required this.onPhotoTap,
     required this.onMessage,
     required this.onConnect,
+    this.isSelf = false,
     super.key,
   });
 
   final UserProfile profile;
   final ProfileRelationship relationship;
   final bool isSendingRequest;
+  final bool isSelf;
   final VoidCallback onClose;
   final ValueChanged<int> onPhotoTap;
   final VoidCallback onMessage;
@@ -72,19 +74,20 @@ class ProfileViewContent extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Action buttons
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.lg,
+                if (!isSelf)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.lg,
+                    ),
+                    child: ProfileViewActionButton(
+                      relationship: relationship,
+                      firstName: profile.firstName,
+                      isSendingRequest: isSendingRequest,
+                      onMessage: onMessage,
+                      onConnect: onConnect,
+                    ),
                   ),
-                  child: ProfileViewActionButton(
-                    relationship: relationship,
-                    firstName: profile.firstName,
-                    isSendingRequest: isSendingRequest,
-                    onMessage: onMessage,
-                    onConnect: onConnect,
-                  ),
-                ),
                 // Bio
                 if (profile.bio != null && profile.bio!.isNotEmpty)
                   _SectionBlock(

@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/auth/domain/repositories/auth_repository.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/registration_step_dots.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/otp_digit_boxes.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/otp_verified_state.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/resend_timer.dart';
@@ -52,6 +58,7 @@ class _OtpVerificationScreenState
   int _filledDigitCount = 0;
 
   String _email = '';
+  String _phone = '';
   bool _isRegistration = false;
 
   // -- Lifecycle ------------------------------------------------------------
@@ -81,6 +88,7 @@ class _OtpVerificationScreenState
     final extras = GoRouterState.of(context).extra;
     if (extras is Map<String, String>) {
       _email = extras['email'] ?? '';
+      _phone = extras['phone'] ?? '';
       _isRegistration = extras['type'] == otpTypeRegistration;
     }
   }
@@ -103,26 +111,98 @@ class _OtpVerificationScreenState
     });
 
     final repository = ref.read(authRepositoryProvider);
-    final verifyResult = _isRegistration
-        ? await repository.verifyRegistrationOtp(email: _email, otp: otp)
-        : await repository.verifyResetOtp(email: _email, otp: otp);
+
+    if (_isRegistration) {
+      await _handleRegistrationOtp(otp, repository);
+    } else {
+      final verifyResult = await repository.verifyResetOtp(
+        email: _email.isNotEmpty ? _email : null,
+        phone: _phone.isNotEmpty ? _phone : null,
+        otp: otp,
+      );
+      if (!mounted) return;
+      verifyResult.when(
+        success: (_) {
+          setState(() {
+            _isVerifying = false;
+            _isVerified = true;
+          });
+          Future<void>.delayed(const Duration(milliseconds: 2200), () {
+            if (mounted) context.go(AppRoutes.login);
+          });
+        },
+        failure: (exception) {
+          setState(() {
+            _isVerifying = false;
+            _hasError = true;
+            _errorMessage = exception.userMessage;
+          });
+          _shakeController.forward(from: 0);
+        },
+      );
+    }
+  }
+
+  Future<void> _handleRegistrationOtp(
+    String otp,
+    AuthRepository repository,
+  ) async {
+    // Step 1: Verify OTP via Twilio
+    final verifyResult = await repository.verifyRegistrationOtp(
+      email: _email.isNotEmpty ? _email : null,
+      phone: _phone.isNotEmpty ? _phone : null,
+      otp: otp,
+    );
 
     if (!mounted) return;
 
     verifyResult.when(
-      success: (_) {
+      success: (isValid) async {
+        if (!isValid) {
+          setState(() {
+            _isVerifying = false;
+            _hasError = true;
+            _errorMessage = 'Invalid verification code. Please try again.';
+          });
+          _shakeController.forward(from: 0);
+          return;
+        }
+
+        // Step 2: OTP verified — now create the account
+        final secureStorage = ref.read(secureStorageProvider);
+        final pending = await secureStorage.readPendingRegistration();
+
+        if (pending.password == null || pending.auditId == null) {
+          setState(() {
+            _isVerifying = false;
+            _hasError = true;
+            _errorMessage =
+                'Registration data expired. Please start over.';
+          });
+          return;
+        }
+
+        final email = pending.email ?? _email;
+        final phone = pending.phone ?? _phone;
+        final contact = email.isNotEmpty ? email : phone;
+
+        await ref.read(authNotifierProvider.notifier).register(
+              email: contact,
+              password: pending.password!,
+              auditId: pending.auditId!,
+            );
+
+        if (!mounted) return;
+
+        // Clean up pending data
+        await secureStorage.clearPendingRegistration();
+
         setState(() {
           _isVerifying = false;
           _isVerified = true;
         });
-        final destination =
-            _isRegistration ? AppRoutes.profileSetup : AppRoutes.login;
-        Future<void>.delayed(
-          const Duration(milliseconds: 2200),
-          () {
-            if (mounted) context.go(destination);
-          },
-        );
+
+        // Router redirect will handle navigation to profile setup
       },
       failure: (exception) {
         setState(() {
@@ -139,8 +219,15 @@ class _OtpVerificationScreenState
     setState(() => _isResending = true);
 
     final repository = ref.read(authRepositoryProvider);
-    final resendResult =
-        await repository.requestPasswordReset(email: _email);
+    final resendResult = _isRegistration
+        ? await repository.sendRegistrationOtp(
+            email: _email.isNotEmpty ? _email : null,
+            phone: _phone.isNotEmpty ? _phone : null,
+          )
+        : await repository.requestPasswordReset(
+            email: _email.isNotEmpty ? _email : null,
+            phone: _phone.isNotEmpty ? _phone : null,
+          );
 
     if (!mounted) return;
 
@@ -176,59 +263,191 @@ class _OtpVerificationScreenState
 
   // -- Build ----------------------------------------------------------------
 
+  // Bottom color of authGradient — paint the system nav bar to match.
+  static const Color _navBarColor = Color(0xFF20BF68);
+
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final headerHeight = resolveHeaderHeight(screenHeight);
+
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primaryLight, AppColors.secondaryLight],
+      backgroundColor: _navBarColor,
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(gradient: authGradient),
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
+          Column(
             children: [
-              _buildBackButton(),
+              _buildHeader(headerHeight),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.xl,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child:
-                        _isVerified ? _buildVerifiedState() : _buildOtpForm(),
-                  ),
+                child: Transform.translate(
+                  offset: const Offset(0, -8),
+                  child: _buildWhiteSheet(),
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildBackButton() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(
-          left: AppSpacing.sm,
-          top: AppSpacing.xs,
-        ),
-        child: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-          iconSize: 24,
-          color: AppColors.textStrong,
-          tooltip: 'Go back',
-          constraints: const BoxConstraints(
-            minWidth: AppSpacing.touchComfortable,
-            minHeight: AppSpacing.touchComfortable,
+  Widget _buildHeader(double headerHeight) {
+    final horizontalOverscan = MediaQuery.sizeOf(context).width * 0.10;
+    return SizedBox(
+      height: headerHeight + headerOverlap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: -horizontalOverscan,
+            right: -horizontalOverscan,
+            top: 0,
+            bottom: 0,
+            child: const IgnorePointer(child: AuthHeaderScene()),
           ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+              child: Column(
+                children: [
+                  _buildNavRow(),
+                  const Spacer(),
+                  Image.asset(
+                    'assets/icons/tander_icon.png',
+                    width: 52,
+                    height: 52,
+                    semanticLabel: 'Tander logo',
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Tander',
+                    style: AppTypography.brandWordmark(
+                      fontSize: 26,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavRow() {
+    return Row(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.pop(),
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.18),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+        const Spacer(),
+        if (_isRegistration)
+          Container(
+            padding: const EdgeInsets.all(1.2),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
+              ),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'Step 2 of 4',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
+            ),
+          ),
+        const Spacer(),
+        const SizedBox(width: 40),
+      ],
+    );
+  }
+
+  Widget _buildWhiteSheet() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(36),
+          topRight: Radius.circular(36),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1A000000),
+            offset: Offset(0, -8),
+            blurRadius: 24,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(36),
+          topRight: Radius.circular(36),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 12),
+            const AuthSheetHandle(),
+            const SizedBox(height: 4),
+            if (_isRegistration)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Center(
+                  child: RegistrationStepDots(
+                    currentStep: 2,
+                    totalSteps: 4,
+                  ),
+                ),
+              ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+                child: _isVerified ? _buildVerifiedState() : _buildOtpForm(),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -240,8 +459,6 @@ class _OtpVerificationScreenState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Step indicator for registration
-        if (_isRegistration) _buildStepIndicator(),
         _buildIconHero(),
         const SizedBox(height: AppSpacing.lg),
         _buildHeading(),
@@ -268,60 +485,6 @@ class _OtpVerificationScreenState
           isResending: _isResending,
         ),
       ],
-    );
-  }
-
-  /// Step indicator matching web: colored bars + "Step 2 of 4"
-  Widget _buildStepIndicator() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      child: Row(
-        children: [
-          Container(
-            height: 6,
-            width: 24,
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.6),
-              borderRadius: AppRadius.borderFull,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            height: 6,
-            width: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: AppRadius.borderFull,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            height: 6,
-            width: 16,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: AppRadius.borderFull,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            height: 6,
-            width: 16,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: AppRadius.borderFull,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'Step 2 of 4',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textMuted,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -370,7 +533,11 @@ class _OtpVerificationScreenState
             children: [
               const TextSpan(text: 'We sent a 6-digit code to '),
               TextSpan(
-                text: _email.isNotEmpty ? _email : 'your email',
+                text: _email.isNotEmpty
+                    ? _email
+                    : _phone.isNotEmpty
+                        ? _phone
+                        : 'your contact',
                 style: AppTypography.body.copyWith(
                   color: AppColors.textStrong,
                   fontWeight: FontWeight.w600,

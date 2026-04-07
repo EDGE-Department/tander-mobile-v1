@@ -19,6 +19,7 @@ import 'package:tander_flutter_v3/features/connection/presentation/notifiers/con
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_card_variants.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_shared_ui.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/widgets/tander_confirm_dialog.dart';
 
 /// Friends tab content with search input and pull-to-refresh.
 ///
@@ -76,94 +77,78 @@ class _ConnectionFriendsPanelState
 
     final filteredItems = _filteredConnections;
 
+    // Use ListView instead of CustomScrollView to avoid layout issues
+    // with AnimatedSwitcher's Stack on mobile.
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
       color: AppColors.primary,
-      child: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(child: _buildSearchBar()),
-          ),
-          if (filteredItems.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 40),
-                  child: Text(
-                    'No friends matching "$_searchQuery"',
-                    style: AppTypography.bodySm.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                    textAlign: TextAlign.center,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        itemCount: filteredItems.length + 2, // search bar + label + items
+        separatorBuilder: (_, index) =>
+            SizedBox(height: index == 0 ? AppSpacing.md : AppSpacing.sm),
+        itemBuilder: (context, index) {
+          if (index == 0) return _buildSearchBar();
+          if (index == 1) {
+            if (filteredItems.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Text(
+                  'No friends matching "$_searchQuery"',
+                  style: AppTypography.bodySm.copyWith(
+                    color: AppColors.textMuted,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            )
-          else ...[
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.md,
-                AppSpacing.lg,
-                0,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: SectionLabel(
-                  count: filteredItems.length,
-                  noun: 'friend',
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                0,
-                AppSpacing.lg,
-                AppSpacing.lg,
-              ),
-              sliver: SliverList.separated(
-                itemCount: filteredItems.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final connection = filteredItems[index];
-                  return StaggeredEntrance(
-                    index: index,
-                    delayMilliseconds: 50,
-                    child: FriendRow(
-                      connection: connection,
-                      isLoading:
-                          _isMutating(ref, connection.connectionId),
-                      onMessage: () {
-                        if (connection.conversationId != null) {
-                          context.push(
-                            AppRoutes.messageThread(
-                              connection.conversationId!,
-                            ),
-                          );
-                        }
-                      },
-                      onRemove: () => ref
-                          .read(connectionNotifierProvider.notifier)
-                          .removeConnection(connection.connectionId),
-                      onViewProfile: () => showProfileViewModal(
-                        context,
-                        userId: connection.otherUserId,
-                        relationship: ProfileRelationship.connected,
-                      ),
+              );
+            }
+            return SectionLabel(
+              count: filteredItems.length,
+              noun: 'friend',
+            );
+          }
+          final friendIndex = index - 2;
+          final connection = filteredItems[friendIndex];
+          return StaggeredEntrance(
+            index: friendIndex,
+            delayMilliseconds: 50,
+            child: FriendRow(
+              connection: connection,
+              isLoading: _isMutating(ref, connection.connectionId),
+              onMessage: () {
+                if (connection.conversationId != null) {
+                  context.push(
+                    AppRoutes.messageThread(
+                      connection.conversationId!,
                     ),
                   );
-                },
+                }
+              },
+              onRemove: () async {
+                final confirmed = await TanderConfirmDialog.show(
+                  context: context,
+                  title: 'Remove friend?',
+                  message:
+                      'Are you sure you want to remove '
+                      '${connection.otherUsername} from your friends? '
+                      'This action cannot be undone.',
+                  confirmLabel: 'Remove',
+                  isDanger: true,
+                );
+                if (confirmed == true && context.mounted) {
+                  ref
+                      .read(connectionNotifierProvider.notifier)
+                      .removeConnection(connection.connectionId);
+                }
+              },
+              onViewProfile: () => showProfileViewModal(
+                context,
+                userId: connection.otherUserId,
+                relationship: ProfileRelationship.connected,
               ),
             ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
@@ -171,45 +156,42 @@ class _ConnectionFriendsPanelState
   /// Web: rounded-2xl border bg-card, MagnifyingGlass 15px left,
   /// focus ring secondary/20, text-sm
   Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: TextField(
-        onChanged: (value) => setState(() => _searchQuery = value),
-        decoration: InputDecoration(
-          hintText: 'Search friends\u2026',
-          hintStyle: AppTypography.bodySm.copyWith(
-            color: AppColors.textMuted,
-          ),
-          prefixIcon: const Icon(
-            Icons.search,
-            size: 15,
-            color: AppColors.textMuted,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: AppColors.secondary,
-              width: 2,
-            ),
-          ),
-          filled: true,
-          fillColor: AppColors.card,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 10,
-          ),
-          isDense: true,
+    return TextField(
+      onChanged: (value) => setState(() => _searchQuery = value),
+      decoration: InputDecoration(
+        hintText: 'Search friends\u2026',
+        hintStyle: AppTypography.bodySm.copyWith(
+          color: AppColors.textMuted,
         ),
-        style: AppTypography.bodySm.copyWith(color: AppColors.textStrong),
+        prefixIcon: const Icon(
+          Icons.search,
+          size: 15,
+          color: AppColors.textMuted,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: AppColors.secondary,
+            width: 2,
+          ),
+        ),
+        filled: true,
+        fillColor: AppColors.card,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 10,
+        ),
+        isDense: true,
       ),
+      style: AppTypography.bodySm.copyWith(color: AppColors.textStrong),
     );
   }
 }

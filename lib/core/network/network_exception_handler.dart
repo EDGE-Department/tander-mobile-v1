@@ -52,48 +52,57 @@ final class NetworkExceptionHandler {
   }) {
     final responseBody = _extractResponseBody(exception);
 
+    final errorCode = _extractCode(responseBody);
+
     return switch (statusCode) {
-      400 => _buildValidationException(responseBody, exception),
+      400 => _buildValidationException(responseBody, exception, errorCode),
       401 => AuthException(
           message: _extractMessage(responseBody) ??
               'Your session has expired. Please sign in again.',
-          reason: _extractCode(responseBody) == 'INVALID_CREDENTIALS'
+          reason: errorCode == 'INVALID_CREDENTIALS'
               ? AuthFailureReason.invalidCredentials
               : AuthFailureReason.tokenExpired,
           stackTrace: exception.stackTrace,
+          code: errorCode,
         ),
       403 => AuthException(
           message: _extractMessage(responseBody) ??
               'You do not have permission to perform this action.',
           reason: AuthFailureReason.forbidden,
           stackTrace: exception.stackTrace,
+          code: errorCode,
         ),
       404 => NotFoundException(
           message: _extractMessage(responseBody) ??
               'The requested resource was not found.',
           stackTrace: exception.stackTrace,
+          code: errorCode,
         ),
       409 => ConflictException(
           message: _extractMessage(responseBody) ??
               'A conflict occurred with your request.',
           stackTrace: exception.stackTrace,
+          code: errorCode,
         ),
       429 => RateLimitException(
           message: _extractMessage(responseBody) ??
               'Too many requests. Please wait and try again.',
           retryAfterSeconds: _extractRetryAfter(responseBody),
           stackTrace: exception.stackTrace,
+          code: errorCode,
         ),
       >= 500 => ServerException(
           message: _extractMessage(responseBody) ??
               'Something went wrong on our end.',
           statusCode: statusCode,
           stackTrace: exception.stackTrace,
+          code: errorCode,
         ),
       _ => UnknownException(
           message: _extractMessage(responseBody) ??
               'Unexpected HTTP $statusCode',
           stackTrace: exception.stackTrace,
+          code: errorCode,
         ),
     };
   }
@@ -105,6 +114,7 @@ final class NetworkExceptionHandler {
   static ValidationException _buildValidationException(
     Map<String, Object?> responseBody,
     DioException exception,
+    String? errorCode,
   ) {
     final fieldErrors = _extractFieldErrors(responseBody);
 
@@ -113,6 +123,7 @@ final class NetworkExceptionHandler {
           'Please correct the highlighted fields.',
       fieldErrors: fieldErrors,
       stackTrace: exception.stackTrace,
+      code: errorCode,
     );
   }
 

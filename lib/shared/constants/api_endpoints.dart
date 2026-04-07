@@ -11,19 +11,20 @@ abstract final class ApiEndpoints {
   static const String verifyResetOtp = '/auth/verify-reset-otp';
   static const String resetPassword = '/auth/reset-password';
   static const String resendVerification = '/auth/resend-verification';
-  static const String sendOtp = '/auth/send-otp';
-  static const String verifyOtp = '/auth/verify-otp';
+  static const String sendOtp = '/api/twilio/otp/send';
+  static const String verifyOtp = '/api/twilio/otp/verify';
+  static const String sendEmailOtp = '/api/twilio/otp/send-email';
+  static const String verifyEmailOtp = '/api/twilio/otp/verify-email';
   static const String checkEmail = '/auth/check-email';
   static const String checkUsername = '/auth/check-username';
   static const String idVerification = '/auth/id-verification';
-  static const String verifyIdPreRegister = '/auth/verify-id-pre-register';
+  static const String verifyIdPreRegister = '/auth/verify-id-preregister';
   static const String verificationConfig = '/auth/verification-config';
   static const String checkPhone = '/auth/check-phone';
-  static const String sendSmsOtp = '/auth/twilio/send-sms-otp';
-  static const String verifySmsOtp = '/auth/twilio/verify-sms-otp';
 
   // ── Profile ──────────────────────────────────────────────────────────
   static const String userMe = '/user/me';
+  static const String identityData = '/user/identity-data';
 
   static String userById(int userId) => '/user/$userId';
 

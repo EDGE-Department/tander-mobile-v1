@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -11,21 +10,15 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../../core/theme/app_colors.dart';
 import '../../../data/id_ocr_service.dart';
+import 'auto_track_overlay_painter.dart';
+import 'id_rectangle_detector.dart';
 
-enum _DocScanPhase {
-  initializing,
-  positioning,
-  capturing,
-  processing,
-  retrying,
-  timeout,
-  error,
-}
-
-/// Fully automatic ID scanner -- no buttons, no countdowns.
+/// Auto-detecting ID scanner with CamScanner-style visual feedback.
 ///
-/// Camera opens, user positions ID, auto-captures after brief delay.
-/// If OCR fails, auto-retries. Super simple for elderly users.
+/// Uses ML Kit text recognition to detect ID cards in real-time.
+/// Shows a guide frame that turns blue when ID text is detected,
+/// green when stable, then auto-captures. No manual alignment needed —
+/// the user just points their camera roughly at their ID.
 class DocumentScanView extends StatefulWidget {
   final int minimumAge;
   final void Function(String photoPath, OcrResult ocrResult) onScanned;
@@ -44,44 +37,63 @@ class DocumentScanView extends StatefulWidget {
 
 class _DocumentScanViewState extends State<DocumentScanView>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  // After brightness check confirms card is in frame, wait this long before capture.
-  static const _captureHoldDuration = Duration(milliseconds: 1200);
-  // After a failed OCR, wait this long before resuming stream analysis.
-  static const _retryDelay = Duration(seconds: 6);
-  // Max number of takePicture() calls before timing out.
-  static const _maxAttempts = 8;
-  // How many consecutive "bright" frames needed before we schedule capture.
-  static const _requiredBrightFrames = 12;
+  // ---------------------------------------------------------------------------
+  // Constants
+  // ---------------------------------------------------------------------------
+
+  static const _retryDelay = Duration(seconds: 5);
+  static const _maxAttempts = 10;
+
+  /// Consecutive detections needed to confirm ID is present.
+  static const _detectionsToConfirm = 2;
+
+  /// Consecutive confirmations needed to trigger capture.
+  static const _confirmationsToCapture = 3;
+
+  /// Frames to tolerate without detection before resetting.
+  static const _missesToReset = 3;
+
+  /// CamScanner blue.
+  static const _scannerBlue = Color(0xFF2979FF);
+  static const _stableGreen = Color(0xFF00C853);
+
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
 
   final _ocrService = IdOcrService();
+  final _detector = IdRectangleDetector();
 
   CameraController? _camera;
-  Timer? _captureTimer;
+  Timer? _timeoutTimer;
 
-  _DocScanPhase _phase = _DocScanPhase.initializing;
+  ScanPhase _phase = ScanPhase.initializing;
+  DetectionState _detection = DetectionState.searching;
   String _status = 'Starting camera...';
   String? _error;
   int _attempt = 0;
+  double _confidence = 0.0;
 
-  late final AnimationController _scanCtrl;
+  late final AnimationController _pulseCtrl;
 
   bool _isInitializing = false;
   bool _isCapturing = false;
   bool _isDisposed = false;
+  bool _isDetecting = false;
 
-  // Stream-based alignment state (avoids repeated takePicture() shutter sounds).
   int _streamFrameIndex = 0;
-  int _brightFrameCount = 0;
-  bool _captureScheduled = false;
+  int _consecutiveDetections = 0;
+  int _consecutiveConfirmations = 0;
+  int _consecutiveMisses = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _scanCtrl = AnimationController(
+    _pulseCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat();
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
     _initCamera();
   }
 
@@ -89,40 +101,39 @@ class _DocumentScanViewState extends State<DocumentScanView>
   void dispose() {
     _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    _captureTimer?.cancel();
+    _timeoutTimer?.cancel();
     _disposeCamera();
-    _scanCtrl.dispose();
+    _pulseCtrl.dispose();
     _ocrService.dispose();
+    _detector.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_isDisposed) return;
-
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
-      _captureTimer?.cancel();
+      _timeoutTimer?.cancel();
       _disposeCamera();
       return;
     }
-
     if (state == AppLifecycleState.resumed && _camera == null && mounted) {
       _initCamera();
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Camera lifecycle
+  // ---------------------------------------------------------------------------
+
   Future<void> _disposeCamera() async {
     final camera = _camera;
     _camera = null;
     if (camera == null) return;
-
     try {
-      if (camera.value.isStreamingImages) {
-        await camera.stopImageStream();
-      }
+      if (camera.value.isStreamingImages) await camera.stopImageStream();
     } catch (_) {}
-
     try {
       await camera.dispose();
     } catch (_) {}
@@ -130,15 +141,9 @@ class _DocumentScanViewState extends State<DocumentScanView>
 
   Future<void> _initCamera() async {
     if (_isInitializing || _isDisposed) return;
-
     _isInitializing = true;
-    _captureTimer?.cancel();
-    _attempt = 0;
-    _error = null;
-    _streamFrameIndex = 0;
-    _brightFrameCount = 0;
-    _captureScheduled = false;
-    _setPhase(_DocScanPhase.initializing, 'Starting camera...');
+    _resetState();
+    _setPhase(ScanPhase.initializing, 'Starting camera...');
 
     try {
       final permission = await Permission.camera.request();
@@ -176,10 +181,22 @@ class _DocumentScanViewState extends State<DocumentScanView>
 
       if (!mounted || _isDisposed) return;
 
-      _setPhase(_DocScanPhase.positioning, 'Place your ID inside the frame.');
+      _setPhase(ScanPhase.scanning, 'Point your camera at your ID');
+      _detection = DetectionState.searching;
 
-      // Use image stream to detect when ID is in frame -- no shutter sound.
-      await controller.startImageStream(_analyzeAlignmentFrame);
+      // 45-second timeout.
+      _timeoutTimer?.cancel();
+      _timeoutTimer = Timer(const Duration(seconds: 45), () {
+        if (!_isDisposed && mounted && _phase == ScanPhase.scanning) {
+          _setPhase(
+            ScanPhase.timeout,
+            'Could not find your ID. Please try with better lighting.',
+          );
+          widget.onError('AUTO_CAPTURE_TIMEOUT');
+        }
+      });
+
+      await controller.startImageStream(_onCameraFrame);
     } catch (_) {
       _setError('Could not start camera. Please try again.');
     } finally {
@@ -187,81 +204,115 @@ class _DocumentScanViewState extends State<DocumentScanView>
     }
   }
 
-  /// Analyzes camera stream frames to detect when an ID card is likely in frame.
-  /// Fires takePicture() only once alignment is confirmed -- avoids repeated
-  /// shutter sounds on iOS that occur with blind timer-based capture.
-  void _analyzeAlignmentFrame(CameraImage image) {
-    if (_isDisposed || !mounted || _isCapturing || _captureScheduled) return;
+  // ---------------------------------------------------------------------------
+  // Frame analysis — ML Kit text detection
+  // ---------------------------------------------------------------------------
+
+  void _onCameraFrame(CameraImage image) {
+    if (_isDisposed || !mounted || _isCapturing) return;
+    if (_phase != ScanPhase.scanning) return;
+    if (_isDetecting) return;
 
     _streamFrameIndex++;
-    // Sample every 6th frame (~5fps at 30fps stream) to save CPU.
-    if (_streamFrameIndex % 6 != 0) return;
+    // Process every 10th frame (~3fps). ML Kit needs time but this gives
+    // smooth, consistent detection without overwhelming the device.
+    if (_streamFrameIndex % 10 != 0) return;
 
-    // Sample brightness from the Y (luma) plane center region.
-    final yPlane = image.planes.first.bytes;
-    if (yPlane.isEmpty) return;
-
-    final sampleCount = 60;
-    final step = math.max(1, yPlane.length ~/ sampleCount);
-    int sum = 0;
-    for (int i = 0; i < sampleCount; i++) {
-      final index = i * step;
-      if (index < yPlane.length) sum += yPlane[index];
+    // Quick brightness check.
+    if (!_detector.hasSufficientBrightness(image)) {
+      _onMiss();
+      if (mounted && !_isDisposed) {
+        setState(() => _status = 'Move to a brighter area');
+      }
+      return;
     }
-    final avgBrightness = sum / sampleCount;
 
-    // Brightness 40-240: card present with adequate lighting (not dark room /
-    // not blown-out overexposure). Accumulate consecutive good frames.
-    if (avgBrightness >= 40 && avgBrightness <= 240) {
-      _brightFrameCount++;
-      if (_brightFrameCount >= _requiredBrightFrames) {
-        _captureScheduled = true;
-        _brightFrameCount = 0;
-        // Brief hold so the user sees "Hold still" before the shutter fires.
-        _captureTimer?.cancel();
-        _captureTimer = Timer(_captureHoldDuration, () {
-          if (!_isDisposed && mounted) _captureAndAnalyze();
-        });
-        _setPhase(_DocScanPhase.capturing, 'Hold still...');
-      } else if (_brightFrameCount == _requiredBrightFrames ~/ 2) {
-        _setPhase(_DocScanPhase.positioning, 'Looking good -- hold still...');
+    final camera = _camera;
+    if (camera == null) return;
+
+    _isDetecting = true;
+    _detector.detectAsync(image, camera).then(_onDetectionResult).catchError((_) {
+      _isDetecting = false;
+    });
+  }
+
+  void _onDetectionResult(IdDetectionResult result) {
+    _isDetecting = false;
+    if (_isDisposed || !mounted || _isCapturing) return;
+    if (_phase != ScanPhase.scanning) return;
+
+    if (!result.detected) {
+      _onMiss();
+      return;
+    }
+
+    // Reset miss counter on any detection.
+    _consecutiveMisses = 0;
+    _confidence = result.confidence;
+    _consecutiveDetections++;
+
+    if (_consecutiveDetections >= _detectionsToConfirm) {
+      _consecutiveConfirmations++;
+
+      if (_consecutiveConfirmations >= _confirmationsToCapture) {
+        // ID confirmed stable — capture now.
+        _setDetection(DetectionState.stable, 'Capturing...');
+        _doCapture();
+      } else {
+        _setDetection(DetectionState.confirming, 'Hold steady...');
       }
     } else {
-      // Frame too dark or overexposed -- reset counter.
-      if (_brightFrameCount > 0) {
-        _brightFrameCount = 0;
-        _setPhase(_DocScanPhase.positioning, 'Place your ID inside the frame.');
+      _setDetection(DetectionState.detected, 'Found your ID...');
+    }
+  }
+
+  void _onMiss() {
+    _consecutiveMisses++;
+
+    // Don't reset immediately — tolerate a few missed frames.
+    if (_consecutiveMisses >= _missesToReset) {
+      if (_detection != DetectionState.searching) {
+        _consecutiveDetections = 0;
+        _consecutiveConfirmations = 0;
+        _confidence = 0.0;
+        _setDetection(
+          DetectionState.searching,
+          'Point your camera at your ID',
+        );
       }
     }
+    // If we were confirming and missed a frame, just pause the counter
+    // but don't reset (allows for brief frame drops).
+  }
+
+  void _setDetection(DetectionState state, String status) {
+    if (!mounted || _isDisposed) return;
+    setState(() {
+      _detection = state;
+      _status = status;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Capture
+  // ---------------------------------------------------------------------------
+
+  void _doCapture() {
+    if (_isCapturing) return;
+    HapticFeedback.mediumImpact();
+
+    // Stop detection and capture on next microtask (lets UI paint green first).
+    Future.microtask(() {
+      if (!_isDisposed && mounted) _captureAndAnalyze();
+    });
   }
 
   Future<void> _stopStreamIfRunning() async {
     final camera = _camera;
     if (camera == null || !camera.value.isInitialized) return;
     try {
-      if (camera.value.isStreamingImages) {
-        await camera.stopImageStream();
-      }
+      if (camera.value.isStreamingImages) await camera.stopImageStream();
     } catch (_) {}
-  }
-
-  Future<void> _resumeStreamAnalysis() async {
-    if (_isDisposed) return;
-    _captureScheduled = false;
-    _brightFrameCount = 0;
-    _streamFrameIndex = 0;
-
-    await Future.delayed(_retryDelay);
-    if (_isDisposed || !mounted) return;
-
-    final camera = _camera;
-    if (camera == null || !camera.value.isInitialized) return;
-    try {
-      if (!camera.value.isStreamingImages) {
-        await camera.startImageStream(_analyzeAlignmentFrame);
-      }
-    } catch (_) {}
-    _setPhase(_DocScanPhase.retrying, 'Adjusting -- hold your ID steady.');
   }
 
   Future<void> _captureAndAnalyze() async {
@@ -271,34 +322,31 @@ class _DocumentScanViewState extends State<DocumentScanView>
         _isCapturing ||
         camera == null ||
         !camera.value.isInitialized) {
-      _captureScheduled = false;
       return;
     }
 
     if (_attempt >= _maxAttempts) {
-      _captureTimer?.cancel();
+      _timeoutTimer?.cancel();
       _setPhase(
-        _DocScanPhase.timeout,
+        ScanPhase.timeout,
         'Could not read your ID. Please try with better lighting.',
       );
       widget.onError('AUTO_CAPTURE_TIMEOUT');
       return;
     }
 
-    _attempt += 1;
+    _attempt++;
     _isCapturing = true;
 
     try {
-      // Stop stream before taking picture -- prevents concurrent stream/capture
-      // and avoids extra shutter triggers on iOS.
       await _stopStreamIfRunning();
 
-      _setPhase(_DocScanPhase.capturing, 'Taking photo...');
+      _setPhase(ScanPhase.capturing, 'Taking photo...');
       final xFile = await camera.takePicture();
 
       if (!mounted || _isDisposed) return;
 
-      _setPhase(_DocScanPhase.processing, 'Reading your ID...');
+      _setPhase(ScanPhase.processing, 'Reading your ID...');
       final ocrResult =
           await _ocrService.extractDobFromId(xFile.path, widget.minimumAge);
 
@@ -307,58 +355,84 @@ class _DocumentScanViewState extends State<DocumentScanView>
       if (ocrResult.success && ocrResult.meetsAgeRequirement) {
         HapticFeedback.heavyImpact();
         _announce('ID scanned successfully.');
-        _captureTimer?.cancel();
+        _timeoutTimer?.cancel();
         widget.onScanned(xFile.path, ocrResult);
         return;
       }
 
-      // Delete failed capture to avoid orphaning files.
+      // Delete failed capture.
       await _safeDelete(xFile.path);
 
       if (ocrResult.success && !ocrResult.meetsAgeRequirement) {
-        _captureTimer?.cancel();
+        _timeoutTimer?.cancel();
         widget.onError(
             'Age requirement not met. Must be ${widget.minimumAge}+.');
         return;
       }
 
-      // Resume stream-based alignment detection after a delay.
-      _setPhase(_DocScanPhase.retrying,
-          'Couldn\'t read the ID clearly. Repositioning...');
-      unawaited(_resumeStreamAnalysis());
+      // OCR failed — resume detection after delay.
+      _setPhase(ScanPhase.retrying, 'Repositioning...');
+      unawaited(_resumeDetection());
     } catch (_) {
-      _setPhase(_DocScanPhase.retrying, 'Let\'s try again. Hold your ID steady.');
-      unawaited(_resumeStreamAnalysis());
+      _setPhase(ScanPhase.retrying, 'Let\'s try again. Hold your ID steady.');
+      unawaited(_resumeDetection());
     } finally {
       _isCapturing = false;
     }
   }
 
+  Future<void> _resumeDetection() async {
+    _resetState();
+    await Future.delayed(_retryDelay);
+    if (_isDisposed || !mounted) return;
+
+    final camera = _camera;
+    if (camera == null || !camera.value.isInitialized) return;
+    try {
+      if (!camera.value.isStreamingImages) {
+        await camera.startImageStream(_onCameraFrame);
+      }
+    } catch (_) {}
+    _setPhase(ScanPhase.scanning, 'Point your camera at your ID');
+    _detection = DetectionState.searching;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  void _resetState() {
+    _isDetecting = false;
+    _consecutiveDetections = 0;
+    _consecutiveConfirmations = 0;
+    _consecutiveMisses = 0;
+    _confidence = 0.0;
+    _streamFrameIndex = 0;
+    _attempt = 0;
+    _error = null;
+  }
+
   Future<void> _safeDelete(String path) async {
     try {
       final file = File(path);
-      if (await file.exists()) {
-        await file.delete();
-      }
+      if (await file.exists()) await file.delete();
     } catch (_) {}
   }
 
-  void _setPhase(_DocScanPhase phase, String status) {
+  void _setPhase(ScanPhase phase, String status) {
     if (!mounted || _isDisposed) return;
     setState(() {
       _phase = phase;
       _status = status;
-      if (phase != _DocScanPhase.error) {
-        _error = null;
-      }
+      if (phase != ScanPhase.error) _error = null;
     });
   }
 
   void _setError(String message) {
     if (!mounted || _isDisposed) return;
-    _captureTimer?.cancel();
+    _timeoutTimer?.cancel();
     setState(() {
-      _phase = _DocScanPhase.error;
+      _phase = ScanPhase.error;
       _error = message;
       _status = message;
     });
@@ -377,17 +451,20 @@ class _DocumentScanViewState extends State<DocumentScanView>
   }
 
   Future<void> _retry() async {
-    _captureTimer?.cancel();
-    _captureScheduled = false;
-    _brightFrameCount = 0;
+    _timeoutTimer?.cancel();
+    _resetState();
     await _disposeCamera();
     if (!mounted || _isDisposed) return;
     _initCamera();
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
-    if (_phase == _DocScanPhase.error || _phase == _DocScanPhase.timeout) {
+    if (_phase == ScanPhase.error || _phase == ScanPhase.timeout) {
       return _errorView();
     }
 
@@ -402,7 +479,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
     return Stack(
       fit: StackFit.expand,
       children: [
-        Container(color: const Color(0xFF4B4C4F)),
+        Container(color: const Color(0xFF1A1A1A)),
+        // Camera preview.
         Positioned.fill(
           child: FittedBox(
             fit: BoxFit.cover,
@@ -413,15 +491,34 @@ class _DocumentScanViewState extends State<DocumentScanView>
             ),
           ),
         ),
-        Positioned.fill(child: IgnorePointer(child: _frameGuide())),
-        _statusCard(),
+        // Overlay with guide frame.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: AnimatedBuilder(
+              animation: _pulseCtrl,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: AutoTrackOverlayPainter(
+                    detectionState: _detection,
+                    scanPhase: _phase,
+                    pulseValue: _pulseCtrl.value,
+                    screenSize: MediaQuery.sizeOf(context),
+                    confidenceLevel: _confidence,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        // Status badge.
+        _statusBadge(),
       ],
     );
   }
 
   Widget _loadingView() {
     return Container(
-      color: const Color(0xFF4B4C4F),
+      color: const Color(0xFF1A1A1A),
       alignment: Alignment.center,
       child: const Column(
         mainAxisSize: MainAxisSize.min,
@@ -430,7 +527,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
             width: 42,
             height: 42,
             child: CircularProgressIndicator(
-              color: AppColors.primary,
+              color: Color(0xFF2979FF),
               strokeWidth: 3,
             ),
           ),
@@ -448,171 +545,27 @@ class _DocumentScanViewState extends State<DocumentScanView>
     );
   }
 
-  Widget _frameGuide() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isTablet =
-            math.min(constraints.maxWidth, constraints.maxHeight) >= 600;
-        final frameWidth = math.min(
-          constraints.maxWidth * 0.86,
-          isTablet ? 520.0 : 360.0,
-        );
-        final frameHeight = frameWidth / 1.58;
-        const cornerSize = 40.0;
-        const cornerStroke = 4.0;
-        const cornerRadius = 24.0;
-
-        final isScanning = _phase == _DocScanPhase.positioning ||
-            _phase == _DocScanPhase.retrying;
-        final isCapturing = _phase == _DocScanPhase.capturing ||
-            _phase == _DocScanPhase.processing;
-
-        final cornerColor = isCapturing
-            ? AppColors.secondary
-            : AppColors.primary;
-
-        final frameRect = Rect.fromCenter(
-          center: Offset(constraints.maxWidth / 2, constraints.maxHeight / 2),
-          width: frameWidth,
-          height: frameHeight,
-        );
-
-        return AnimatedBuilder(
-          animation: _scanCtrl,
-          builder: (context, child) {
-            final scanY = frameRect.top +
-                frameRect.height * CurvedAnimation(
-                  parent: _scanCtrl,
-                  curve: Curves.easeInOut,
-                ).value;
-
-            return Stack(
-              children: [
-                // Dark overlay with rectangular cutout
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _RectCutoutPainter(
-                      frameRect: frameRect,
-                      borderRadius: cornerRadius,
-                    ),
-                  ),
-                ),
-                // Animated scan line (only when scanning)
-                if (isScanning)
-                  Positioned(
-                    top: scanY - 1,
-                    left: frameRect.left + 12,
-                    right: constraints.maxWidth - frameRect.right + 12,
-                    child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.transparent,
-                            AppColors.primary.withValues(alpha: 0.8),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                // Animated corner brackets
-                Positioned(
-                  left: frameRect.left,
-                  top: frameRect.top,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    child: _corner(
-                      topLeft: true,
-                      size: cornerSize,
-                      stroke: cornerStroke,
-                      radius: cornerRadius,
-                      color: cornerColor,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: constraints.maxWidth - frameRect.right,
-                  top: frameRect.top,
-                  child: _corner(
-                    topRight: true,
-                    size: cornerSize,
-                    stroke: cornerStroke,
-                    radius: cornerRadius,
-                    color: cornerColor,
-                  ),
-                ),
-                Positioned(
-                  left: frameRect.left,
-                  bottom: constraints.maxHeight - frameRect.bottom,
-                  child: _corner(
-                    bottomLeft: true,
-                    size: cornerSize,
-                    stroke: cornerStroke,
-                    radius: cornerRadius,
-                    color: cornerColor,
-                  ),
-                ),
-                Positioned(
-                  right: constraints.maxWidth - frameRect.right,
-                  bottom: constraints.maxHeight - frameRect.bottom,
-                  child: _corner(
-                    bottomRight: true,
-                    size: cornerSize,
-                    stroke: cornerStroke,
-                    radius: cornerRadius,
-                    color: cornerColor,
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _corner({
-    bool topLeft = false,
-    bool topRight = false,
-    bool bottomLeft = false,
-    bool bottomRight = false,
-    required double size,
-    required double stroke,
-    required double radius,
-    required Color color,
-  }) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _CornerPainter(
-          topLeft: topLeft,
-          topRight: topRight,
-          bottomLeft: bottomLeft,
-          bottomRight: bottomRight,
-          stroke: stroke,
-          radius: radius,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  Widget _statusCard() {
-    final badgeText = switch (_phase) {
-      _DocScanPhase.positioning => 'Align your ID within the frame',
-      _DocScanPhase.capturing => 'Hold still...',
-      _DocScanPhase.processing => 'Reading your ID...',
-      _DocScanPhase.retrying => 'Adjusting position...',
-      _ => 'Place your ID here',
-    };
-
-    final badgeColor = switch (_phase) {
-      _DocScanPhase.capturing || _DocScanPhase.processing => AppColors.secondary,
-      _ => AppColors.primary,
-    };
+  Widget _statusBadge() {
+    final Color badgeColor;
+    switch (_phase) {
+      case ScanPhase.processing:
+        badgeColor = _scannerBlue;
+      case ScanPhase.capturing:
+        badgeColor = _stableGreen;
+      case ScanPhase.retrying:
+        badgeColor = Colors.orange;
+      default:
+        switch (_detection) {
+          case DetectionState.searching:
+            badgeColor = Colors.white.withValues(alpha: 0.15);
+          case DetectionState.detected:
+            badgeColor = _scannerBlue.withValues(alpha: 0.8);
+          case DetectionState.confirming:
+            badgeColor = _scannerBlue;
+          case DetectionState.stable:
+            badgeColor = _stableGreen;
+        }
+    }
 
     return Positioned(
       bottom: 80,
@@ -631,9 +584,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
               child: child,
             ),
           ),
-          child: AnimatedContainer(
-            key: ValueKey(badgeColor),
-            duration: const Duration(milliseconds: 350),
+          child: Container(
+            key: ValueKey('$_phase-$_detection'),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
             decoration: BoxDecoration(
               color: badgeColor,
@@ -649,7 +601,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_phase == _DocScanPhase.processing) ...[
+                if (_phase == ScanPhase.processing) ...[
                   const SizedBox(
                     width: 14,
                     height: 14,
@@ -661,7 +613,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
                   const SizedBox(width: 8),
                 ],
                 Text(
-                  badgeText,
+                  _status,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -746,106 +698,4 @@ class _DocumentScanViewState extends State<DocumentScanView>
       ),
     );
   }
-}
-
-class _RectCutoutPainter extends CustomPainter {
-  final Rect frameRect;
-  final double borderRadius;
-
-  const _RectCutoutPainter({
-    required this.frameRect,
-    required this.borderRadius,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF4B4C4F)
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          frameRect,
-          Radius.circular(borderRadius),
-        ),
-      );
-    path.fillType = PathFillType.evenOdd;
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_RectCutoutPainter old) =>
-      old.frameRect != frameRect || old.borderRadius != borderRadius;
-}
-
-class _CornerPainter extends CustomPainter {
-  final bool topLeft;
-  final bool topRight;
-  final bool bottomLeft;
-  final bool bottomRight;
-  final double stroke;
-  final double radius;
-  final Color color;
-
-  const _CornerPainter({
-    this.topLeft = false,
-    this.topRight = false,
-    this.bottomLeft = false,
-    this.bottomRight = false,
-    required this.stroke,
-    required this.radius,
-    required this.color,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    if (topLeft) {
-      path.moveTo(0, size.height);
-      path.lineTo(0, radius);
-      path.arcToPoint(
-        Offset(radius, 0),
-        radius: Radius.circular(radius),
-      );
-      path.lineTo(size.width, 0);
-    } else if (topRight) {
-      path.moveTo(0, 0);
-      path.lineTo(size.width - radius, 0);
-      path.arcToPoint(
-        Offset(size.width, radius),
-        radius: Radius.circular(radius),
-      );
-      path.lineTo(size.width, size.height);
-    } else if (bottomLeft) {
-      path.moveTo(0, 0);
-      path.lineTo(0, size.height - radius);
-      path.arcToPoint(
-        Offset(radius, size.height),
-        radius: Radius.circular(radius),
-        clockwise: false,
-      );
-      path.lineTo(size.width, size.height);
-    } else if (bottomRight) {
-      path.moveTo(0, size.height);
-      path.lineTo(size.width - radius, size.height);
-      path.arcToPoint(
-        Offset(size.width, size.height - radius),
-        radius: Radius.circular(radius),
-        clockwise: false,
-      );
-      path.lineTo(size.width, 0);
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_CornerPainter old) => false;
 }

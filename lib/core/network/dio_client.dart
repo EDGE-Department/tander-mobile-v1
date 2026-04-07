@@ -67,8 +67,13 @@ final class DioClient {
   Future<Response<TResponse>> put<TResponse>(
     String path, {
     Object? data,
+    Map<String, Object>? queryParameters,
   }) =>
-      _execute(() => _dio.put<TResponse>(path, data: data));
+      _execute(() => _dio.put<TResponse>(
+            path,
+            data: data,
+            queryParameters: queryParameters,
+          ));
 
   Future<Response<TResponse>> patch<TResponse>(
     String path, {

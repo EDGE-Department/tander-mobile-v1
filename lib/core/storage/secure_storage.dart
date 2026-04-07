@@ -20,6 +20,10 @@ final class SecureStorage {
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _auditIdKey = 'audit_id';
+  static const String _pendingEmailKey = 'pending_reg_email';
+  static const String _pendingPhoneKey = 'pending_reg_phone';
+  static const String _pendingPasswordKey = 'pending_reg_password';
+  static const String _pendingAuditIdKey = 'pending_reg_audit_id';
 
   // ---------------------------------------------------------------------------
   // Access token (cold-start backup)
@@ -157,6 +161,39 @@ final class SecureStorage {
         ),
       );
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pending registration (credentials stored until OTP verified)
+  // ---------------------------------------------------------------------------
+
+  Future<void> savePendingRegistration({
+    String? email,
+    String? phone,
+    required String password,
+    required String auditId,
+  }) async {
+    if (email != null) await _storage.write(key: _pendingEmailKey, value: email);
+    if (phone != null) await _storage.write(key: _pendingPhoneKey, value: phone);
+    await _storage.write(key: _pendingPasswordKey, value: password);
+    await _storage.write(key: _pendingAuditIdKey, value: auditId);
+  }
+
+  Future<({String? email, String? phone, String? password, String? auditId})>
+      readPendingRegistration() async {
+    return (
+      email: await _storage.read(key: _pendingEmailKey),
+      phone: await _storage.read(key: _pendingPhoneKey),
+      password: await _storage.read(key: _pendingPasswordKey),
+      auditId: await _storage.read(key: _pendingAuditIdKey),
+    );
+  }
+
+  Future<void> clearPendingRegistration() async {
+    await _storage.delete(key: _pendingEmailKey);
+    await _storage.delete(key: _pendingPhoneKey);
+    await _storage.delete(key: _pendingPasswordKey);
+    await _storage.delete(key: _pendingAuditIdKey);
   }
 
   // ---------------------------------------------------------------------------

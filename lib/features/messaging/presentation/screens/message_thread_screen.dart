@@ -141,6 +141,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         child: Column(
           children: [
             _ThreadHeader(
+              participantUserId: conversation?.participant.userId,
               participantName: participantName,
               participantPhotoUrl: participantPhotoUrl,
               headerStatus: headerStatus,
@@ -179,6 +180,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
 
 class _ThreadHeader extends StatelessWidget {
   const _ThreadHeader({
+    required this.participantUserId,
     required this.participantName,
     required this.participantPhotoUrl,
     required this.headerStatus,
@@ -189,6 +191,7 @@ class _ThreadHeader extends StatelessWidget {
     required this.onVideoCall,
   });
 
+  final String? participantUserId;
   final String participantName;
   final String? participantPhotoUrl;
   final String headerStatus;
@@ -213,35 +216,46 @@ class _ThreadHeader extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, size: 20, color: AppColors.primary),
             tooltip: 'Back to conversations',
           ),
-          _HeaderAvatar(
-            name: participantName,
-            photoUrl: participantPhotoUrl,
-            isOnline: isOnline,
-          ),
-          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  participantName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.label.copyWith(
-                    fontSize: 15, fontWeight: FontWeight.w800,
-                    color: const Color(0xFF18110A),
+            child: GestureDetector(
+              onTap: participantUserId != null
+                  ? () => context.push(AppRoutes.userProfile(participantUserId!))
+                  : null,
+              child: Row(
+                children: [
+                  _HeaderAvatar(
+                    name: participantName,
+                    photoUrl: participantPhotoUrl,
+                    isOnline: isOnline,
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  headerStatus,
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 11.5,
-                    fontWeight: isTyping ? FontWeight.w600 : FontWeight.w500,
-                    color: isTyping ? _teal : isOnline ? const Color(0xFF16803C) : const Color(0xFF8D8072),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          participantName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.label.copyWith(
+                            fontSize: 15, fontWeight: FontWeight.w800,
+                            color: const Color(0xFF18110A),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          headerStatus,
+                          style: AppTypography.caption.copyWith(
+                            fontSize: 11.5,
+                            fontWeight: isTyping ? FontWeight.w600 : FontWeight.w500,
+                            color: isTyping ? _teal : isOnline ? const Color(0xFF16803C) : const Color(0xFF8D8072),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           IconButton(

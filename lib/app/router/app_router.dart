@@ -131,13 +131,13 @@ String? _redirectForOnboarding(
 
 String _onboardingRouteForPhase(RegistrationPhase phase) => switch (phase) {
       RegistrationPhase.pendingEmailVerification =>
-        AppRoutes.emailVerification,
+        AppRoutes.profileSetup,
       RegistrationPhase.pendingProfileSetup => AppRoutes.profileSetup,
       RegistrationPhase.pendingPhotoSetup => AppRoutes.photoSetup,
       RegistrationPhase.pendingIdVerification =>
         AppRoutes.profileSetup, // no separate ID screen yet
       RegistrationPhase.pendingNotificationPermission =>
-        AppRoutes.notificationPermission,
+        AppRoutes.home,
       RegistrationPhase.complete => AppRoutes.home,
     };
 

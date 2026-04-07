@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,14 +70,27 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   bool _isLoading = false;
   bool _isCodeSent = false;
 
+  // Bottom color of _mobileAuthGradient — used to paint the system nav bar
+  // so it blends seamlessly with the gradient background.
+  static const Color _navBarColor = Color(0xFF20BF68);
+
   @override
   void initState() {
     super.initState();
     _onlineCount = SimulatedOnlineCount();
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      systemNavigationBarColor: _navBarColor,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
+    ));
   }
 
   @override
   void dispose() {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
+    ));
     _emailController.dispose();
     _phoneController.dispose();
     _emailFocusNode.dispose();
@@ -115,8 +129,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     setState(() => _isLoading = true);
 
     final repository = ref.read(authRepositoryProvider);
-    final email = _emailController.text.trim();
-    final resetResult = await repository.requestPasswordReset(email: email);
+    final isPhone = _method == IdentifierMethod.phone;
+    final email = isPhone ? null : _emailController.text.trim();
+    final phone = isPhone ? _phoneController.text.trim() : null;
+    final resetResult = await repository.requestPasswordReset(
+      email: email,
+      phone: phone,
+    );
 
     if (!mounted) return;
 
@@ -139,9 +158,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   void _navigateToOtp() {
+    final isPhone = _method == IdentifierMethod.phone;
     context.push(
       AppRoutes.otpVerification,
-      extra: {'email': _emailController.text.trim(), 'type': 'PASSWORD_RESET'},
+      extra: {
+        'email': isPhone ? '' : _emailController.text.trim(),
+        'phone': isPhone ? _phoneController.text.trim() : '',
+        'type': 'PASSWORD_RESET',
+      },
     );
   }
 

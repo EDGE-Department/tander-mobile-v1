@@ -13,7 +13,7 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
 
-const int _minAge = 60;
+const int _minAge = 18;
 const int _maxAge = 100;
 const int _minDistanceKm = 1;
 const int _maxDistanceKm = 500;

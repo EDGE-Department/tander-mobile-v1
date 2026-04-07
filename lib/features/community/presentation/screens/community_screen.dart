@@ -16,6 +16,7 @@ import 'package:tander_flutter_v3/features/community/presentation/widgets/daily_
 import 'package:tander_flutter_v3/features/community/presentation/widgets/post_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
 class CommunityScreen extends ConsumerStatefulWidget {
@@ -171,6 +172,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                               )
                               .toggleReaction(postId: post.postId);
                         },
+                        onViewProfile: () => showProfileViewModal(
+                          context,
+                          userId: post.author.userId,
+                        ),
                       ),
                     );
                   },

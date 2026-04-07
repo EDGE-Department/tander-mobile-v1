@@ -270,7 +270,6 @@ class FriendRow extends StatelessWidget {
                 connection.otherPhotoUrl!,
                 fit: BoxFit.cover,
                 width: 88,
-                height: double.infinity,
                 errorBuilder: (_, _, _) => connectionPhotoPlaceholder(),
               )
             : connectionPhotoPlaceholder(),

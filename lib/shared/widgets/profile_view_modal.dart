@@ -22,6 +22,7 @@ import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
 import 'package:tander_flutter_v3/shared/widgets/photo_lightbox.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
@@ -219,10 +220,15 @@ class _ProfileModalBodyState extends ConsumerState<_ProfileModalBody> {
       error: (_, _) => _ProfileModalError(onClose: _handleClose),
       data: (candidate) {
         final allPhotos = _buildPhotoList(candidate);
+        final sessionManager = ref.read(sessionManagerLateProvider);
+        final currentUserId = sessionManager?.session?.userId;
+        final isSelf = currentUserId != null &&
+            currentUserId.toString() == widget.userId;
         return ProfileViewContent(
           profile: _candidateToUserProfile(candidate),
           relationship: _localRelationship,
           isSendingRequest: _isSendingRequest,
+          isSelf: isSelf,
           onClose: _handleClose,
           onPhotoTap: (index) => _handlePhotoTap(index, allPhotos),
           onMessage: _handleMessage,

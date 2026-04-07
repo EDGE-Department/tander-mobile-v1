@@ -17,12 +17,14 @@ class PostCard extends StatelessWidget {
     required this.post,
     required this.onViewPost,
     required this.onToggleReaction,
+    this.onViewProfile,
     super.key,
   });
 
   final CommunityPostItem post;
   final VoidCallback onViewPost;
   final VoidCallback onToggleReaction;
+  final VoidCallback? onViewProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +45,11 @@ class PostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _AuthorHeader(author: post.author, createdAt: post.createdAt),
+          _AuthorHeader(
+            author: post.author,
+            createdAt: post.createdAt,
+            onTap: onViewProfile,
+          ),
           if (post.content.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -78,46 +84,52 @@ class _AuthorHeader extends StatelessWidget {
   const _AuthorHeader({
     required this.author,
     required this.createdAt,
+    this.onTap,
   });
 
   final PostAuthor author;
   final DateTime createdAt;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          TanderAvatar(
-            imageUrl: author.photoUrl,
-            displayName: author.displayName,
-            size: TanderAvatarSize.md,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  author.displayName,
-                  style: AppTypography.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  _formatPostTime(createdAt),
-                  style: AppTypography.caption,
-                ),
-              ],
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            TanderAvatar(
+              imageUrl: author.photoUrl,
+              displayName: author.displayName,
+              size: TanderAvatarSize.md,
             ),
-          ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    author.displayName,
+                    style: AppTypography.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _formatPostTime(createdAt),
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,8 +1,9 @@
 sealed class AppException implements Exception {
-  const AppException({required this.message, this.stackTrace});
+  const AppException({required this.message, this.stackTrace, this.code});
 
   final String message;
   final StackTrace? stackTrace;
+  final String? code;
 
   String get userMessage;
 
@@ -26,6 +27,7 @@ final class ServerException extends AppException {
     required super.message,
     required this.statusCode,
     super.stackTrace,
+    super.code,
   });
 
   final int statusCode;
@@ -40,6 +42,7 @@ final class AuthException extends AppException {
     required super.message,
     required this.reason,
     super.stackTrace,
+    super.code,
   });
 
   final AuthFailureReason reason;
@@ -62,12 +65,15 @@ final class ValidationException extends AppException {
     required super.message,
     required this.fieldErrors,
     super.stackTrace,
+    super.code,
   });
 
   final Map<String, List<String>> fieldErrors;
 
   @override
-  String get userMessage => 'Please correct the highlighted fields and try again.';
+  String get userMessage => message.isNotEmpty
+      ? message
+      : 'Please correct the highlighted fields and try again.';
 }
 
 final class StorageException extends AppException {
@@ -86,6 +92,7 @@ final class RateLimitException extends AppException {
     required super.message,
     required this.retryAfterSeconds,
     super.stackTrace,
+    super.code,
   });
 
   final int retryAfterSeconds;
@@ -99,6 +106,7 @@ final class NotFoundException extends AppException {
   const NotFoundException({
     required super.message,
     super.stackTrace,
+    super.code,
   });
 
   @override
@@ -109,17 +117,20 @@ final class ConflictException extends AppException {
   const ConflictException({
     required super.message,
     super.stackTrace,
+    super.code,
   });
 
   @override
-  String get userMessage =>
-      'A conflict occurred. You may already have an active session on another device.';
+  String get userMessage => message.isNotEmpty
+      ? message
+      : 'A conflict occurred. You may already have an active session on another device.';
 }
 
 final class UnknownException extends AppException {
   const UnknownException({
     required super.message,
     super.stackTrace,
+    super.code,
   });
 
   @override

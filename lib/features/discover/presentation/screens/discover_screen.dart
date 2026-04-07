@@ -97,7 +97,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               children: [
                 DiscoverPanelHeader(
                   icon: const Icon(
-                    Icons.favorite,
+                    Icons.explore,
                     size: 18,
                     color: AppColors.textInverse,
                   ),

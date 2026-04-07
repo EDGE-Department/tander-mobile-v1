@@ -10,6 +10,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../providers/auth_providers.dart';
 import '../../../../core/utils/device_utils.dart';
 import '../../../../shared/constants/routes.dart';
 import '../../data/id_ocr_service.dart';
@@ -202,31 +203,127 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     });
 
     try {
-      final auditId =
-          await ref.read(authNotifierProvider.notifier).verifyIdPreRegister(
-                idPhotoFrontPath: _capturedIdPath!,
-                selfiePath: _selfiePath,
-                livenessMetadata: _livenessMetadata?.toJson(),
-                frontendOcrData: _ocrResult!.toFrontendOcrData(),
+      final repository = ref.read(authRepositoryProvider);
+      final verifyResult = await repository.verifyIdPreRegister(
+        idPhotoFrontPath: _capturedIdPath!,
+        selfiePath: _selfiePath,
+        livenessMetadata: _livenessMetadata?.toJson(),
+        frontendOcrData: _ocrResult!.toFrontendOcrData(),
+      );
+
+      if (!mounted) return;
+
+      verifyResult.when(
+        success: (auditId) async {
+          if (auditId.isEmpty) {
+            setState(() {
+              _isVerifying = false;
+              _phase = _ScanPhase.complete;
+            });
+            await _showResultScreen(
+              IdVerificationResultType.error,
+              message: 'ID verification returned empty result. Please try again.',
+            );
+            return;
+          }
+
+          await ref.read(secureStorageProvider).saveAuditId(auditId);
+          await _cleanupPhotos();
+
+          HapticFeedback.heavyImpact();
+          setState(() {
+            _isVerifying = false;
+            _verifyComplete = true;
+          });
+        },
+        failure: (exception) async {
+          if (!mounted) return;
+          final errorMsg = exception.userMessage;
+          final errorCode = exception.code;
+
+          // Check for specific backend error codes
+          final isLivenessIssue = errorCode == 'LIVENESS_REQUIRED' ||
+              errorCode == 'LIVENESS_CHECK_FAILED' ||
+              errorCode == 'LIVENESS_WEAK_EVIDENCE' ||
+              errorCode == 'INVALID_LIVENESS_METADATA' ||
+              errorCode == 'FACE_MISMATCH';
+
+          if (isLivenessIssue) {
+            _cleanupPhotos();
+            setState(() {
+              _isVerifying = false;
+              _verifyComplete = false;
+              _phase = _ScanPhase.liveness;
+              _ocrResult = null;
+              _livenessMetadata = null;
+            });
+            _showFeedback(errorMsg);
+            return;
+          }
+
+          if (errorCode == 'DUPLICATE_ID_DETECTED' ||
+              errorCode == 'ID_IN_COOLDOWN' ||
+              errorCode == 'ID_BLOCKED') {
+            setState(() => _isVerifying = false);
+            if (mounted) {
+              _showDuplicateIdDialog(
+                errorMsg,
+                'This ID is already linked to an active account.',
               );
+            }
+            return;
+          }
 
-      if (!mounted) return;
+          if (errorCode == 'ACCOUNT_INCOMPLETE') {
+            setState(() => _isVerifying = false);
+            if (mounted) {
+              _showDuplicateIdDialog(
+                'You already have an account. Please sign in to complete your profile.',
+                'Account found',
+              );
+            }
+            return;
+          }
 
-      if (auditId == null || auditId.isEmpty) {
-        throw Exception('ID verification failed. Please try again.');
-      }
+          if (errorCode == 'AGE_REQUIREMENT_NOT_MET') {
+            setState(() {
+              _isVerifying = false;
+              _phase = _ScanPhase.complete;
+            });
+            await _showResultScreen(
+              IdVerificationResultType.ageRejected,
+              message: errorMsg,
+            );
+            return;
+          }
 
-      await ref.read(secureStorageProvider).saveAuditId(auditId);
-      await _cleanupPhotos(); // Delete selfie + ID from device immediately
+          if (errorCode == 'FRAUD_DETECTED') {
+            setState(() {
+              _isVerifying = false;
+              _phase = _ScanPhase.complete;
+            });
+            await _showResultScreen(IdVerificationResultType.fraudRejected);
+            return;
+          }
 
-      HapticFeedback.heavyImpact();
-      setState(() {
-        _isVerifying = false;
-        _verifyComplete = true;
-      });
-    } on DioException catch (e) {
-      if (!mounted) return;
-      _handleDioError(e);
+          // Rate limit
+          if (errorCode == 'RATE_LIMITED') {
+            setState(() => _isVerifying = false);
+            _showFeedback(errorMsg);
+            return;
+          }
+
+          // Generic error — show actual backend message
+          setState(() {
+            _isVerifying = false;
+            _phase = _ScanPhase.complete;
+          });
+          await _showResultScreen(
+            IdVerificationResultType.error,
+            message: errorMsg,
+          );
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -285,7 +382,23 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         errorCode == 'ID_IN_COOLDOWN' ||
         errorCode == 'ID_BLOCKED') {
       setState(() => _isVerifying = false);
-      if (mounted) context.go(AppRoutes.login);
+      if (mounted) {
+        _showDuplicateIdDialog(
+          friendlyMsg,
+          'This ID is already linked to an active account.',
+        );
+      }
+      return;
+    }
+
+    if (errorCode == 'ACCOUNT_INCOMPLETE') {
+      setState(() => _isVerifying = false);
+      if (mounted) {
+        _showDuplicateIdDialog(
+          'You already have an account. Please sign in to complete your profile.',
+          'Account found',
+        );
+      }
       return;
     }
 
@@ -330,6 +443,58 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           ? 'We couldn\'t read your ID. Try with better lighting and a flat surface.'
           : error,
     ));
+  }
+
+  void _showDuplicateIdDialog(String message, String title) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.info_outline, color: Color(0xFFE65100), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 15, color: Color(0xFF64748B), height: 1.4),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.go(AppRoutes.login);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE86035),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Go to Login', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showResultScreen(

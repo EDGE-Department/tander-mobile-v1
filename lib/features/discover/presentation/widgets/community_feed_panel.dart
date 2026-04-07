@@ -20,6 +20,7 @@ import 'package:tander_flutter_v3/features/community/presentation/widgets/post_c
 import 'package:tander_flutter_v3/features/community/presentation/screens/community_post_screen.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
 class CommunityFeedPanel extends ConsumerStatefulWidget {
@@ -155,6 +156,10 @@ class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
                               .read(communityFeedNotifierProvider.notifier)
                               .toggleReaction(postId: post.postId);
                         },
+                        onViewProfile: () => showProfileViewModal(
+                          context,
+                          userId: post.author.userId,
+                        ),
                       ),
                     );
                   },

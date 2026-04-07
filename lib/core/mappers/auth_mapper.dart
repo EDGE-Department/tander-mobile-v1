@@ -20,8 +20,12 @@ abstract final class AuthMapper {
     final email = _parseOptionalString(userMeJson['email']) ?? '';
     final username = _parseOptionalString(userMeJson['username']) ?? '';
 
-    final registrationPhase =
-        _parseRegistrationPhase(userMeJson['registrationPhase']);
+    final profileCompleted =
+        _parseBool(userMeJson['profileCompleted'], fallback: true);
+    final registrationPhase = _deriveRegistrationPhase(
+      userMeJson['registrationPhase'],
+      profileCompleted,
+    );
     final isEmailVerified =
         _parseBool(userMeJson['isEmailVerified'], fallback: true);
     final isIdVerified =
@@ -75,20 +79,29 @@ abstract final class AuthMapper {
   ///
   /// Falls back to [RegistrationPhase.complete] when the value is absent or
   /// unrecognised, logging a warning for unrecognised values.
-  static RegistrationPhase _parseRegistrationPhase(Object? rawPhase) {
-    if (rawPhase is! String || rawPhase.isEmpty) {
-      return RegistrationPhase.complete;
+  /// Derives the registration phase from either the explicit backend field
+  /// or from `profileCompleted`. If `profileCompleted` is false and no
+  /// explicit phase is given, the user still needs to complete profile setup.
+  static RegistrationPhase _deriveRegistrationPhase(
+    Object? rawPhase,
+    bool profileCompleted,
+  ) {
+    if (rawPhase is String && rawPhase.isNotEmpty) {
+      try {
+        return RegistrationPhase.fromBackendString(rawPhase);
+      } on ArgumentError {
+        AppLogger.warning(
+          'Unrecognised registration phase "$rawPhase"',
+          operation: 'AuthMapper._deriveRegistrationPhase',
+        );
+      }
     }
 
-    try {
-      return RegistrationPhase.fromBackendString(rawPhase);
-    } on ArgumentError {
-      AppLogger.warning(
-        'Unrecognised registration phase "$rawPhase" — defaulting to COMPLETE',
-        operation: 'AuthMapper._parseRegistrationPhase',
-      );
-      return RegistrationPhase.complete;
+    // No explicit phase — derive from profile completion status
+    if (!profileCompleted) {
+      return RegistrationPhase.pendingProfileSetup;
     }
+    return RegistrationPhase.complete;
   }
 
   /// Parses a boolean field with a safe [fallback] for missing/invalid values.

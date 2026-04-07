@@ -29,12 +29,14 @@ const List<String> genderOptions = [
 class BirthDatePickerField extends StatelessWidget {
   const BirthDatePickerField({
     required this.selectedDate,
-    required this.onPicked,
+    this.onPicked,
+    this.locked = false,
     super.key,
   });
 
   final DateTime? selectedDate;
-  final ValueChanged<DateTime> onPicked;
+  final ValueChanged<DateTime>? onPicked;
+  final bool locked;
 
   Future<void> _pickDate(BuildContext context) async {
     final now = DateTime.now();
@@ -63,7 +65,7 @@ class BirthDatePickerField extends StatelessWidget {
       },
     );
 
-    if (picked != null) onPicked(picked);
+    if (picked != null) onPicked?.call(picked);
   }
 
   @override
@@ -78,13 +80,15 @@ class BirthDatePickerField extends StatelessWidget {
         Text('Date of Birth', style: AppTypography.label),
         const SizedBox(height: AppSpacing.xs),
         GestureDetector(
-          onTap: () => _pickDate(context),
+          onTap: locked ? null : () => _pickDate(context),
           child: Container(
             constraints:
                 const BoxConstraints(minHeight: AppSpacing.touchComfortable),
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.card,
+              color: locked
+                  ? AppColors.subtle
+                  : AppColors.card,
               borderRadius: AppRadius.borderSm,
               border: Border.all(color: AppColors.border),
             ),

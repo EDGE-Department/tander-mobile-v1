@@ -26,14 +26,25 @@ enum RegistrationPhase {
   /// Throws [ArgumentError] if the string does not match any known phase.
   static RegistrationPhase fromBackendString(String backendValue) {
     return switch (backendValue) {
-      'PENDING_EMAIL_VERIFICATION' => RegistrationPhase.pendingEmailVerification,
-      'PENDING_PROFILE_SETUP' => RegistrationPhase.pendingProfileSetup,
-      'PENDING_PHOTO_SETUP' => RegistrationPhase.pendingPhotoSetup,
-      'PENDING_ID_VERIFICATION' => RegistrationPhase.pendingIdVerification,
+      'PENDING_EMAIL_VERIFICATION' ||
+      'email_pending' =>
+        RegistrationPhase.pendingEmailVerification,
+      'PENDING_PROFILE_SETUP' ||
+      'otp_verified' ||
+      'otp_pending' ||
+      'registered' ||
+      'email_verified' =>
+        RegistrationPhase.pendingProfileSetup,
+      'PENDING_PHOTO_SETUP' ||
+      'profile_completed' =>
+        RegistrationPhase.pendingPhotoSetup,
+      'PENDING_ID_VERIFICATION' ||
+      'id_pre_verified' =>
+        RegistrationPhase.pendingIdVerification,
       'PENDING_NOTIFICATION_PERMISSION' =>
         RegistrationPhase.pendingNotificationPermission,
       'COMPLETE' || 'verified' || 'VERIFIED' => RegistrationPhase.complete,
-      _ => RegistrationPhase.complete, // Unknown phase = treat as complete
+      _ => RegistrationPhase.complete,
     };
   }
 }

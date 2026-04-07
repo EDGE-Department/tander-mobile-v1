@@ -122,7 +122,7 @@ class DiscoverTabSwitcher extends StatelessWidget {
           children: [
             _TabButton(
               isSelected: activeTab == DiscoverTab.discover,
-              icon: Icons.favorite,
+              icon: Icons.explore,
               label: 'Discover',
               onTap: () => onTabChanged(DiscoverTab.discover),
             ),

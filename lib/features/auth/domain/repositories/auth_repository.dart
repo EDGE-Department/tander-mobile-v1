@@ -32,18 +32,20 @@ abstract interface class AuthRepository {
   /// sign in manually.
   Future<Result<bool>> bootstrapSession();
 
-  /// Sends a password-reset email to [email].
-  Future<Result<void>> requestPasswordReset({required String email});
+  /// Sends a password-reset code to [email] or [phone] (exactly one required).
+  Future<Result<void>> requestPasswordReset({String? email, String? phone});
 
   /// Verifies the one-time password sent during password reset.
   Future<Result<void>> verifyResetOtp({
-    required String email,
+    String? email,
+    String? phone,
     required String otp,
   });
 
   /// Sets a new password using a verified OTP.
   Future<Result<void>> resetPassword({
-    required String email,
+    String? email,
+    String? phone,
     required String otp,
     required String newPassword,
   });
@@ -51,12 +53,13 @@ abstract interface class AuthRepository {
   /// Re-sends the email verification message to [email].
   Future<Result<void>> resendEmailVerification({required String email});
 
-  /// Sends a registration OTP to [email] for account verification.
-  Future<Result<void>> sendRegistrationOtp({required String email});
+  /// Sends a registration OTP to [email] or [phone] for account verification.
+  Future<Result<void>> sendRegistrationOtp({String? email, String? phone});
 
-  /// Verifies the registration OTP for [email].
-  Future<Result<void>> verifyRegistrationOtp({
-    required String email,
+  /// Verifies the registration OTP. Returns true if valid.
+  Future<Result<bool>> verifyRegistrationOtp({
+    String? email,
+    String? phone,
     required String otp,
   });
 

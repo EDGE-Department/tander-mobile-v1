@@ -9,6 +9,7 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/community/presentation/notifiers/community_post_notifier.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_avatar.dart';
 
 // ── Post content ───────────────────────────────────────────────────────
@@ -36,7 +37,13 @@ class PostDetailContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _PostAuthorRow(post: post),
+          _PostAuthorRow(
+            post: post,
+            onTap: () => showProfileViewModal(
+              context,
+              userId: post.author.userId,
+            ),
+          ),
           if (post.content.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(post.content, style: AppTypography.body),
@@ -57,38 +64,43 @@ class PostDetailContent extends StatelessWidget {
 }
 
 class _PostAuthorRow extends StatelessWidget {
-  const _PostAuthorRow({required this.post});
+  const _PostAuthorRow({required this.post, this.onTap});
 
   final CommunityPostItem post;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        TanderAvatar(
-          imageUrl: post.author.photoUrl,
-          displayName: post.author.displayName,
-          size: TanderAvatarSize.md,
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                post.author.displayName,
-                style: AppTypography.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                formatRelativeTime(post.createdAt),
-                style: AppTypography.caption,
-              ),
-            ],
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          TanderAvatar(
+            imageUrl: post.author.photoUrl,
+            displayName: post.author.displayName,
+            size: TanderAvatarSize.md,
           ),
-        ),
-      ],
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  post.author.displayName,
+                  style: AppTypography.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  formatRelativeTime(post.createdAt),
+                  style: AppTypography.caption,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

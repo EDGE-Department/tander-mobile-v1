@@ -130,42 +130,54 @@ final class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      final accessToken = _extractAccessToken(registerResponse.headers);
-      final registerDto = RegisterResponseDto.fromJson(responseBody);
+      // Backend register returns 201 without tokens — user must verify
+      // email before logging in. Extract what we can from the response.
+      final bodyData = responseBody['data'];
+      final username = bodyData is Map<String, Object?>
+          ? bodyData['username'] as String? ?? ''
+          : '';
+      final registrationPhase = bodyData is Map<String, Object?>
+          ? bodyData['registrationPhase'] as String? ?? 'email_pending'
+          : 'email_pending';
+
+      // Access token is optional — backend may not issue one at registration.
+      final rawJwtHeader = registerResponse.headers.value('jwt-token');
+      final hasToken = rawJwtHeader != null && rawJwtHeader.isNotEmpty;
+
+      if (hasToken) {
+        final accessToken = _extractAccessToken(registerResponse.headers);
+        final refreshToken = bodyData is Map<String, Object?>
+            ? (bodyData['refreshToken'] is String
+                ? bodyData['refreshToken']! as String
+                : '')
+            : '';
+
+        if (refreshToken.isNotEmpty) {
+          await _localDatasource.saveTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+          await _sessionManager.setTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+        }
+      }
 
       final session = AuthSession(
-        userId: int.parse(registerDto.data.userId),
-        email: registerDto.data.email,
-        username: registerDto.data.username,
-        registrationPhase: RegistrationPhase.fromBackendString(
-          registerDto.data.registrationPhase,
-        ),
+        userId: 0,
+        email: email,
+        username: username,
+        registrationPhase:
+            RegistrationPhase.fromBackendString(registrationPhase),
         isEmailVerified: false,
-        isIdVerified: false,
+        isIdVerified: true,
       );
-
-      final bodyData = responseBody['data'];
-      final refreshToken = bodyData is Map<String, Object?>
-          ? (bodyData['refreshToken'] is String
-              ? bodyData['refreshToken']! as String
-              : '')
-          : '';
-
-      if (refreshToken.isNotEmpty) {
-        await _localDatasource.saveTokens(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-        );
-        await _sessionManager.setTokens(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-        );
-      }
 
       _sessionManager.setSession(session);
 
       AppLogger.info(
-        'Registration successful for user ${session.userId}',
+        'Registration successful for user $username',
         operation: _tag,
       );
 
@@ -211,31 +223,41 @@ final class AuthRepositoryImpl implements AuthRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Result<void>> requestPasswordReset({required String email}) {
+  Future<Result<void>> requestPasswordReset({String? email, String? phone}) {
     return _runSafe('requestPasswordReset', () async {
-      await _remoteDatasource.requestPasswordReset(email: email);
+      await _remoteDatasource.requestPasswordReset(
+        email: email,
+        phone: phone,
+      );
     });
   }
 
   @override
   Future<Result<void>> verifyResetOtp({
-    required String email,
+    String? email,
+    String? phone,
     required String otp,
   }) {
     return _runSafe('verifyResetOtp', () async {
-      await _remoteDatasource.verifyResetOtp(email: email, otp: otp);
+      await _remoteDatasource.verifyResetOtp(
+        email: email,
+        phone: phone,
+        otp: otp,
+      );
     });
   }
 
   @override
   Future<Result<void>> resetPassword({
-    required String email,
+    String? email,
+    String? phone,
     required String otp,
     required String newPassword,
   }) {
     return _runSafe('resetPassword', () async {
       await _remoteDatasource.resetPassword(
         email: email,
+        phone: phone,
         otp: otp,
         newPassword: newPassword,
       );
@@ -258,20 +280,25 @@ final class AuthRepositoryImpl implements AuthRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Result<void>> sendRegistrationOtp({required String email}) {
+  Future<Result<void>> sendRegistrationOtp({String? email, String? phone}) {
     return _runSafe('sendRegistrationOtp', () async {
-      await _remoteDatasource.sendRegistrationOtp(email: email);
+      await _remoteDatasource.sendRegistrationOtp(
+        email: email,
+        phone: phone,
+      );
     });
   }
 
   @override
-  Future<Result<void>> verifyRegistrationOtp({
-    required String email,
+  Future<Result<bool>> verifyRegistrationOtp({
+    String? email,
+    String? phone,
     required String otp,
   }) {
     return _runSafe('verifyRegistrationOtp', () async {
-      await _remoteDatasource.verifyRegistrationOtp(
+      return _remoteDatasource.verifyRegistrationOtp(
         email: email,
+        phone: phone,
         otp: otp,
       );
     });

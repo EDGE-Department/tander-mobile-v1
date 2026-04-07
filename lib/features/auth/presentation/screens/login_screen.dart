@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,7 @@ import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_conne
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_form_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 /// How far the parchment sheet visually overlaps the header (paint-only).
 /// Smaller than [headerOverlap] so the online badge has clearance above the sheet.
@@ -69,10 +71,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _onlineCount = SimulatedOnlineCount();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _emailController.dispose();
     _passwordController.dispose();
     _emailFocusNode.dispose();
@@ -813,30 +817,34 @@ class _HeaderSection extends StatelessWidget {
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+              padding: const EdgeInsets.fromLTRB(24, 2, 24, 8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Column(
-                    children: [
-                      Image.asset(
-                        'assets/icons/tander_icon.png',
-                        width: 62,
-                        height: 62,
-                        semanticLabel: 'Tander logo',
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Tander',
-                        style: AppTypography.brandWordmark(
-                          fontSize: 40,
-                          color: Colors.white,
-                          letterSpacing: -0.8,
+                  Flexible(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/icons/tander_icon.png',
+                          width: 62,
+                          height: 62,
+                          semanticLabel: 'Tander logo',
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tander',
+                          style: AppTypography.brandWordmark(
+                            fontSize: 40,
+                            color: Colors.white,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   ValueListenableBuilder<int>(
                     valueListenable: onlineCount,
                     builder: (_, count, _) =>
