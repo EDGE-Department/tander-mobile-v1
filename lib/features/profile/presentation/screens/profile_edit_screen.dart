@@ -12,7 +12,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Note: this screen is opened via showGeneralDialog, not GoRouter.
 // Use Navigator.of(context).pop() instead of Navigator.of(context).pop().
 
-import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -23,7 +22,6 @@ import 'package:tander_flutter_v3/features/profile/presentation/states/profile_s
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_edit_form_fields.dart';
 import 'package:tander_flutter_v3/shared/widgets/section_label.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 /// Maximum bio length.
 const int _maxBioLength = 300;

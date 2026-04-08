@@ -137,7 +137,7 @@ final class AuthRemoteDatasource {
   Future<void> resetPassword({
     String? email,
     String? phone,
-    required String otp,
+    required String resetToken,
     required String newPassword,
   }) async {
     AppLogger.debug(
@@ -154,7 +154,7 @@ final class AuthRemoteDatasource {
       data: ResetPasswordRequestDto(
         email: email,
         phoneNumber: phone,
-        resetToken: otp,
+        resetToken: resetToken,
         newPassword: newPassword,
       ).toJson(),
     );

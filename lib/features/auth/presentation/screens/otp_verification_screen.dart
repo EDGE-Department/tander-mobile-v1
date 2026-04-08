@@ -122,13 +122,22 @@ class _OtpVerificationScreenState
       );
       if (!mounted) return;
       verifyResult.when(
-        success: (_) {
+        success: (resetToken) {
           setState(() {
             _isVerifying = false;
             _isVerified = true;
           });
-          Future<void>.delayed(const Duration(milliseconds: 2200), () {
-            if (mounted) context.go(AppRoutes.login);
+          Future<void>.delayed(const Duration(milliseconds: 1500), () {
+            if (mounted) {
+              context.go(
+                AppRoutes.resetPassword,
+                extra: {
+                  'email': _email,
+                  'phone': _phone,
+                  'resetToken': resetToken,
+                },
+              );
+            }
           });
         },
         failure: (exception) {
@@ -190,6 +199,14 @@ class _OtpVerificationScreenState
               email: contact,
               password: pending.password!,
               auditId: pending.auditId!,
+            );
+
+        if (!mounted) return;
+
+        // Auto-login to get JWT tokens (register doesn't issue them)
+        await ref.read(authNotifierProvider.notifier).signIn(
+              email: contact,
+              password: pending.password!,
             );
 
         if (!mounted) return;

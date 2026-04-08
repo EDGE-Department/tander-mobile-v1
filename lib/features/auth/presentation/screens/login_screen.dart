@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/auth/session_manager.dart';
-import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
@@ -19,7 +18,6 @@ import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_conne
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_form_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 /// How far the parchment sheet visually overlaps the header (paint-only).
 /// Smaller than [headerOverlap] so the online badge has clearance above the sheet.

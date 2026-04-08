@@ -8,8 +8,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/features/community/presentation/notifiers/community_feed_notifier.dart';
@@ -18,7 +16,6 @@ import 'package:tander_flutter_v3/features/community/presentation/widgets/create
 import 'package:tander_flutter_v3/features/community/presentation/widgets/daily_prompt_card.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/post_card.dart';
 import 'package:tander_flutter_v3/features/community/presentation/screens/community_post_screen.dart';
-import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';

@@ -233,17 +233,32 @@ final class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Result<void>> verifyResetOtp({
+  Future<Result<String>> verifyResetOtp({
     String? email,
     String? phone,
     required String otp,
   }) {
     return _runSafe('verifyResetOtp', () async {
-      await _remoteDatasource.verifyResetOtp(
+      final response = await _remoteDatasource.verifyResetOtp(
         email: email,
         phone: phone,
         otp: otp,
       );
+
+      final body = response.data;
+      if (body == null) {
+        throw const FormatException('Empty response from verify-reset-otp');
+      }
+
+      final data = body['data'];
+      if (data is Map<String, Object?>) {
+        final resetToken = data['resetToken'];
+        if (resetToken is String && resetToken.isNotEmpty) {
+          return resetToken;
+        }
+      }
+
+      throw const FormatException('Missing resetToken in verify-reset-otp response');
     });
   }
 
@@ -251,14 +266,14 @@ final class AuthRepositoryImpl implements AuthRepository {
   Future<Result<void>> resetPassword({
     String? email,
     String? phone,
-    required String otp,
+    required String resetToken,
     required String newPassword,
   }) {
     return _runSafe('resetPassword', () async {
       await _remoteDatasource.resetPassword(
         email: email,
         phone: phone,
-        otp: otp,
+        resetToken: resetToken,
         newPassword: newPassword,
       );
     });

@@ -29,7 +29,6 @@ class _IdPreviewViewState extends State<IdPreviewView>
   late final AnimationController _ctrl;
   late final Animation<Offset> _slideAnim;
   late final Animation<double> _fadeAnim;
-  late final Animation<double> _scrimAnim;
 
   @override
   void initState() {
@@ -46,9 +45,6 @@ class _IdPreviewViewState extends State<IdPreviewView>
       parent: _ctrl,
       curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
-    _scrimAnim = Tween<double>(begin: 0.0, end: 0.35).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
     _ctrl.forward();
   }
 
@@ -61,31 +57,30 @@ class _IdPreviewViewState extends State<IdPreviewView>
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final topPadding = MediaQuery.paddingOf(context).top;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Captured ID photo — fade in
-        FadeTransition(
-          opacity: _fadeAnim,
-          child: Image.file(
-            File(widget.idPhotoPath),
-            fit: BoxFit.cover,
+    return Container(
+      color: const Color(0xFF1A1A1A),
+      child: Column(
+        children: [
+          // ID photo — takes all available space above buttons
+          Expanded(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.file(
+                    File(widget.idPhotoPath),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-        // Animated dark scrim
-        AnimatedBuilder(
-          animation: _scrimAnim,
-          builder: (context, _) => ColoredBox(
-            color: Color.fromRGBO(0, 0, 0, _scrimAnim.value),
-          ),
-        ),
-        // Slide-up bottom sheet
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: SlideTransition(
+          // Action buttons — slide up from bottom
+          SlideTransition(
             position: _slideAnim,
             child: Container(
               decoration: const BoxDecoration(
@@ -103,7 +98,6 @@ class _IdPreviewViewState extends State<IdPreviewView>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Drag handle
                   Container(
                     width: 40,
                     height: 4,
@@ -113,7 +107,6 @@ class _IdPreviewViewState extends State<IdPreviewView>
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
-                  // Action buttons
                   Row(
                     children: [
                       Expanded(child: _retakeButton()),
@@ -125,8 +118,8 @@ class _IdPreviewViewState extends State<IdPreviewView>
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

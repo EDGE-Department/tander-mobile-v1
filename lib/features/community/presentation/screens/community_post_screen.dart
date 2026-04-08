@@ -33,11 +33,6 @@ class CommunityPostScreen extends ConsumerWidget {
             Expanded(
               child: _buildBody(context, ref, postState),
             ),
-            if (postState is CommunityPostLoaded)
-              PostCommentInput(
-                postId: postId,
-                isSending: postState.isSendingComment,
-              ),
           ],
         ),
       ),
@@ -173,7 +168,7 @@ class _PostHeader extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(Icons.close_rounded),
             color: AppColors.textMuted,
             tooltip: 'Back to community',
           ),

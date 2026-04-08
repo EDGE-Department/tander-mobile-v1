@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../providers/auth_providers.dart';
-import '../../../../core/utils/device_utils.dart';
 import '../../../../shared/constants/routes.dart';
 import '../../data/id_ocr_service.dart';
 import '../../data/models/liveness_metadata.dart';
@@ -73,10 +71,12 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   @override
   void initState() {
     super.initState();
-    // Force portrait on ALL devices (phones + tablets) during ID scanner
+    // Allow all orientations during ID scanner
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
     ]);
     _phase = _ScanPhase.tutorial;
     _resolveMinimumAgeIfNeeded();
@@ -86,10 +86,12 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _isPhone = MediaQuery.sizeOf(context).shortestSide < 600;
-    // Re-enforce portrait lock after dependencies resolve (catches tablets)
+    // Allow all orientations during scanning
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
     ]);
   }
 
@@ -333,97 +335,6 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       await _showResultScreen(
         IdVerificationResultType.error,
         message: 'Something went wrong. Please try again.',
-      );
-    }
-  }
-
-  Future<void> _handleDioError(DioException e) async {
-    final responseData = e.response?.data;
-    String? errorCode;
-    String friendlyMsg = 'Something went wrong. Please try again.';
-
-    if (responseData is Map<String, dynamic>) {
-      errorCode = responseData['code'] as String?;
-      final message = responseData['message'] as String?;
-      if (message != null && message.isNotEmpty) {
-        friendlyMsg = message;
-      }
-    }
-
-    final statusCode = e.response?.statusCode;
-
-    final isLivenessIssue = errorCode == 'LIVENESS_REQUIRED' ||
-        errorCode == 'LIVENESS_CHECK_FAILED' ||
-        errorCode == 'LIVENESS_WEAK_EVIDENCE' ||
-        errorCode == 'INVALID_LIVENESS_METADATA' ||
-        errorCode == 'INVALID_SELFIE_FILE_TYPE' ||
-        errorCode == 'SELFIE_FILE_TOO_LARGE' ||
-        errorCode == 'FACE_MISMATCH' ||
-        errorCode == 'AUTO_CAPTURE_TIMEOUT';
-
-    if (isLivenessIssue) {
-      _cleanupPhotos(); // Delete photos before retry
-      setState(() {
-        _isVerifying = false;
-        _verifyComplete = false;
-        _phase = _ScanPhase.liveness;
-        _ocrResult = null;
-        _livenessMetadata = null;
-      });
-      _showFeedback(
-        friendlyMsg.isNotEmpty
-            ? friendlyMsg
-            : 'Please verify your face again before scanning your ID.',
-      );
-      return;
-    }
-
-    if (errorCode == 'DUPLICATE_ID_DETECTED' ||
-        errorCode == 'ID_IN_COOLDOWN' ||
-        errorCode == 'ID_BLOCKED') {
-      setState(() => _isVerifying = false);
-      if (mounted) {
-        _showDuplicateIdDialog(
-          friendlyMsg,
-          'This ID is already linked to an active account.',
-        );
-      }
-      return;
-    }
-
-    if (errorCode == 'ACCOUNT_INCOMPLETE') {
-      setState(() => _isVerifying = false);
-      if (mounted) {
-        _showDuplicateIdDialog(
-          'You already have an account. Please sign in to complete your profile.',
-          'Account found',
-        );
-      }
-      return;
-    }
-
-    if (statusCode == 429) {
-      setState(() => _isVerifying = false);
-      if (mounted) context.go(AppRoutes.login);
-      return;
-    }
-
-    setState(() {
-      _isVerifying = false;
-      _phase = _ScanPhase.complete;
-    });
-
-    if (errorCode == 'AGE_REQUIREMENT_NOT_MET') {
-      await _showResultScreen(
-        IdVerificationResultType.ageRejected,
-        message: friendlyMsg,
-      );
-    } else if (errorCode == 'FRAUD_DETECTED') {
-      await _showResultScreen(IdVerificationResultType.fraudRejected);
-    } else {
-      await _showResultScreen(
-        IdVerificationResultType.error,
-        message: friendlyMsg,
       );
     }
   }

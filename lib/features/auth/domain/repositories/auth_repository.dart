@@ -36,17 +36,18 @@ abstract interface class AuthRepository {
   Future<Result<void>> requestPasswordReset({String? email, String? phone});
 
   /// Verifies the one-time password sent during password reset.
-  Future<Result<void>> verifyResetOtp({
+  /// Returns the one-time reset token (UUID, valid 5 minutes).
+  Future<Result<String>> verifyResetOtp({
     String? email,
     String? phone,
     required String otp,
   });
 
-  /// Sets a new password using a verified OTP.
+  /// Sets a new password using the reset token from [verifyResetOtp].
   Future<Result<void>> resetPassword({
     String? email,
     String? phone,
-    required String otp,
+    required String resetToken,
     required String newPassword,
   });
 

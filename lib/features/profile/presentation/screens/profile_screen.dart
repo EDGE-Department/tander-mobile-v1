@@ -10,9 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
-import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/notifiers/my_profile_notifier.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/states/profile_state.dart';
@@ -77,52 +75,6 @@ class ProfileScreen extends ConsumerWidget {
           SizedBox(height: AppSpacing.md),
           SkeletonCard(),
         ],
-      ),
-    );
-  }
-}
-
-/// Error state widget for the profile screen.
-class _ProfileError extends StatelessWidget {
-  const _ProfileError();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 380),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.xl,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: AppRadius.borderLg,
-            border: Border.all(
-              color: AppColors.danger.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Unable to load your profile',
-                style: AppTypography.h3,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Please refresh the page and try again.',
-                style: AppTypography.bodySm.copyWith(
-                  color: AppColors.textMuted,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -15,7 +15,6 @@ import 'package:tander_flutter_v3/shared/widgets/tander_badge.dart';
 
 const double _mobileAvatarSize = 96;
 const double _tabletAvatarSize = 112;
-const double _tabletBreakpoint = 600;
 const double _coverHeightMobile = 140;
 const double _coverHeightTablet = 180;
 const double _changePhotoSize = 32;

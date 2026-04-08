@@ -45,13 +45,13 @@ class _DocumentScanViewState extends State<DocumentScanView>
   static const _maxAttempts = 10;
 
   /// Consecutive detections needed to confirm ID is present.
-  static const _detectionsToConfirm = 2;
+  static const _detectionsToConfirm = 1;
 
   /// Consecutive confirmations needed to trigger capture.
-  static const _confirmationsToCapture = 3;
+  static const _confirmationsToCapture = 1;
 
   /// Frames to tolerate without detection before resetting.
-  static const _missesToReset = 3;
+  static const _missesToReset = 5;
 
   /// CamScanner blue.
   static const _scannerBlue = Color(0xFF2979FF);
@@ -214,18 +214,11 @@ class _DocumentScanViewState extends State<DocumentScanView>
     if (_isDetecting) return;
 
     _streamFrameIndex++;
-    // Process every 10th frame (~3fps). ML Kit needs time but this gives
-    // smooth, consistent detection without overwhelming the device.
-    if (_streamFrameIndex % 10 != 0) return;
+    // Process every 5th frame (~6fps). Faster detection = quicker capture.
+    if (_streamFrameIndex % 5 != 0) return;
 
-    // Quick brightness check.
-    if (!_detector.hasSufficientBrightness(image)) {
-      _onMiss();
-      if (mounted && !_isDisposed) {
-        setState(() => _status = 'Move to a brighter area');
-      }
-      return;
-    }
+    // Skip brightness gate — let detection handle quality naturally.
+    // The "Move to a brighter area" spam was blocking legitimate scans.
 
     final camera = _camera;
     if (camera == null) return;
@@ -360,21 +353,23 @@ class _DocumentScanViewState extends State<DocumentScanView>
         return;
       }
 
-      // Delete failed capture.
-      await _safeDelete(xFile.path);
-
       if (ocrResult.success && !ocrResult.meetsAgeRequirement) {
+        await _safeDelete(xFile.path);
         _timeoutTimer?.cancel();
         widget.onError(
             'Age requirement not met. Must be ${widget.minimumAge}+.');
         return;
       }
 
-      // OCR failed — resume detection after delay.
-      _setPhase(ScanPhase.retrying, 'Repositioning...');
-      unawaited(_resumeDetection());
+      // OCR failed or partial — still send to backend (Azure is more accurate).
+      // Don't delete the photo or retry with "Repositioning..." — just submit.
+      HapticFeedback.heavyImpact();
+      _announce('ID captured. Sending for verification...');
+      _timeoutTimer?.cancel();
+      widget.onScanned(xFile.path, ocrResult);
+      return;
     } catch (_) {
-      _setPhase(ScanPhase.retrying, 'Let\'s try again. Hold your ID steady.');
+      _setPhase(ScanPhase.retrying, 'Let\'s try again.');
       unawaited(_resumeDetection());
     } finally {
       _isCapturing = false;

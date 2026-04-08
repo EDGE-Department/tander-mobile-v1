@@ -17,6 +17,7 @@ import 'package:tander_flutter_v3/features/auth/presentation/screens/id_scanner_
 import 'package:tander_flutter_v3/features/auth/presentation/screens/sign_up_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/notification_permission_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/otp_verification_screen.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/screens/reset_password_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/photo_setup_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/profile_setup_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
@@ -50,6 +51,7 @@ const _publicRoutes = <String>{
   AppRoutes.duplicateId,
   AppRoutes.forgotPassword,
   AppRoutes.otpVerification,
+  AppRoutes.resetPassword,
   AppRoutes.emailVerification,
 };
 
@@ -177,6 +179,10 @@ final _routes = <RouteBase>[
   GoRoute(
     path: AppRoutes.otpVerification,
     builder: (_, _) => const OtpVerificationScreen(),
+  ),
+  GoRoute(
+    path: AppRoutes.resetPassword,
+    builder: (_, _) => const ResetPasswordScreen(),
   ),
   GoRoute(
     path: AppRoutes.emailVerification,

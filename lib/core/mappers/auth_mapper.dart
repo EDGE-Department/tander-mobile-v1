@@ -60,14 +60,6 @@ abstract final class AuthMapper {
     };
   }
 
-  /// Returns a non-empty [String] or throws [FormatException].
-  static String _requireString(Object? rawValue, {required String fieldName}) {
-    if (rawValue is String && rawValue.isNotEmpty) return rawValue;
-    throw FormatException(
-      'Invalid or missing "$fieldName" in /user/me response',
-    );
-  }
-
   /// Returns a [String] if present and non-empty, otherwise `null`.
   static String? _parseOptionalString(Object? rawValue) {
     if (rawValue is String && rawValue.isNotEmpty) return rawValue;

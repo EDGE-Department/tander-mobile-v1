@@ -166,7 +166,7 @@ class DateOfBirthPicker extends StatelessWidget {
 // ── Multi-select chip selector ──────────────────────────────────────────
 
 class _ChipSelector extends StatelessWidget {
-  const _ChipSelector({required this.allOptions, required this.selectedValues, required this.onChanged, required this.displayLabel, this.maxSelections, super.key});
+  const _ChipSelector({required this.allOptions, required this.selectedValues, required this.onChanged, required this.displayLabel, this.maxSelections});
   final List<String> allOptions;
   final List<String> selectedValues;
   final ValueChanged<List<String>> onChanged;

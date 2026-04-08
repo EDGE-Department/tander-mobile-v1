@@ -217,7 +217,7 @@ class _RailTabIcon extends StatelessWidget {
         children: [
           Center(
             child: Image.asset(
-              descriptor.iconAsset,
+              descriptor.iconAsset!,
               width: 22,
               height: 22,
               color: isActive ? AppColors.textInverse : null,

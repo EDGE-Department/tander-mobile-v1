@@ -122,7 +122,7 @@ class _DiscoverProfileScreenState
   Widget _buildProfileContent(DiscoveryCandidate candidate) {
     final allPhotos = _allPhotos(candidate);
     final displayLocation = [candidate.city, candidate.country]
-        .where((part) => part != null && part!.isNotEmpty)
+        .where((part) => part != null && part.isNotEmpty)
         .join(', ');
 
     return Column(

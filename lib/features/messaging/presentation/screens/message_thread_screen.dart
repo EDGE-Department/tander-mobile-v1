@@ -7,6 +7,7 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/conversations_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/message_thread_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/states/conversations_state.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/states/message_thread_state.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/message_bubble.dart';
@@ -74,7 +75,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   Future<void> _initiateCall(
     WidgetRef ref,
     BuildContext context,
-    dynamic conversation,
+    ConversationItem? conversation,
     CallType callType,
   ) async {
     if (conversation == null) return;

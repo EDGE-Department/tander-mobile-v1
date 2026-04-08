@@ -237,34 +237,37 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
           ),
           SingleChildScrollView(
-            child: Column(
-              children: [
-                ForgotPasswordMobileHeader(
-                  headerHeight: headerHeight,
-                  onlineCount: _onlineCount,
-                ),
-                Transform.translate(
-                      offset: const Offset(0, -headerOverlap),
-                      child: _ForgotMobileParchmentSheet(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 32),
-                          child: ForgotPasswordFormCard(
-                            isWide: false,
-                            isCodeSent: _isCodeSent,
-                            formContent: _buildFormContent(),
-                            successContent: _buildSuccessContent(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: screenHeight),
+              child: Column(
+                children: [
+                  ForgotPasswordMobileHeader(
+                    headerHeight: headerHeight,
+                    onlineCount: _onlineCount,
+                  ),
+                  Transform.translate(
+                        offset: const Offset(0, -headerOverlap),
+                        child: _ForgotMobileParchmentSheet(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 32),
+                            child: ForgotPasswordFormCard(
+                              isWide: false,
+                              isCodeSent: _isCodeSent,
+                              formContent: _buildFormContent(),
+                              successContent: _buildSuccessContent(),
+                            ),
                           ),
                         ),
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(
+                      )
+                      .animate()
+                      .fadeIn(
                       duration: 700.ms,
                       delay: 100.ms,
                       curve: AppCurves.premiumEase,
                     )
                     .slideY(begin: 0.08, curve: AppCurves.premiumEase),
               ],
+              ),
             ),
           ),
         ],

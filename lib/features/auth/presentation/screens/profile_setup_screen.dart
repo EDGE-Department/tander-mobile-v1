@@ -42,7 +42,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   DateTime? _selectedBirthDate;
   String? _selectedGender;
   bool _isSubmitting = false;
-  bool _isLoadingIdentity = true;
   bool _dobLocked = false;
   String? _apiErrorMessage;
 
@@ -92,14 +91,19 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           }
         }
         if (gender != null && gender.isNotEmpty) {
-          _selectedGender = _cleanName(gender);
+          final normalizedGender = gender.trim().toUpperCase();
+          if (normalizedGender == 'M' || normalizedGender == 'MALE') {
+            _selectedGender = 'Male';
+          } else if (normalizedGender == 'F' || normalizedGender == 'FEMALE') {
+            _selectedGender = 'Female';
+          }
         }
         setState(() {});
       }
     } catch (_) {
       // Non-fatal — user can still fill manually
     } finally {
-      if (mounted) setState(() => _isLoadingIdentity = false);
+      if (mounted) setState(() {});
     }
   }
 

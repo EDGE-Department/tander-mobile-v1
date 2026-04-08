@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import 'package:tander_flutter_v3/core/network/dio_client.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';

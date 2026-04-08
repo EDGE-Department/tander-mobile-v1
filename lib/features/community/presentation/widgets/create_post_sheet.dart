@@ -12,7 +12,6 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/community/presentation/providers/community_providers.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 
 /// Maximum number of photos allowed per post.

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 /// Detection sub-state for the scanner overlay.
@@ -52,17 +50,19 @@ class AutoTrackOverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final isTablet = math.min(size.width, size.height) >= 600;
-    final frameWidth = math.min(
-      size.width * 0.84,
-      isTablet ? 520.0 : 360.0,
-    );
-    final frameHeight = frameWidth / 1.586;
+    // Tall vertical rectangle — fills the space below the header.
+    // screenSize is passed in so we can estimate the header height.
+    final marginH = size.width * 0.04;
+    final headerClearance = size.height * 0.32;
+    final marginBottom = size.height * 0.06;
+    final frameWidth = size.width - marginH * 2;
+    final frameHeight = size.height - headerClearance - marginBottom;
 
-    final frameRect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
-      width: frameWidth,
-      height: frameHeight,
+    final frameRect = Rect.fromLTWH(
+      marginH,
+      headerClearance,
+      frameWidth,
+      frameHeight,
     );
 
     // Dark scrim with rounded-rect cutout.

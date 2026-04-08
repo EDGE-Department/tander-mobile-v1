@@ -218,7 +218,7 @@ final class CallSetup {
       await flushPendingIceCandidates();
 
       final answerSdp =
-          await callRefs.peer!.createAnswer(isVideo: capturedIsVideo ?? false);
+          await callRefs.peer!.createAnswer(isVideo: capturedIsVideo);
 
       AppLogger.info('Sending SDP answer', operation: 'CallSetup.processRemoteOffer',
         context: {'roomName': capturedCallInfo.roomName, 'answerLength': answerSdp.length},
