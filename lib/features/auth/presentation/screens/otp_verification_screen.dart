@@ -9,6 +9,7 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/domain/repositories/auth_repository.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
@@ -203,6 +204,17 @@ class _OtpVerificationScreenState
 
         if (!mounted) return;
 
+        final stateAfterRegister = ref.read(authNotifierProvider);
+        if (stateAfterRegister is AuthError) {
+          setState(() {
+            _isVerifying = false;
+            _hasError = true;
+            _errorMessage = stateAfterRegister.exception.userMessage;
+          });
+          _shakeController.forward(from: 0);
+          return;
+        }
+
         // Auto-login to get JWT tokens (register doesn't issue them)
         final contact = email.isNotEmpty ? email : phone;
         await ref.read(authNotifierProvider.notifier).signIn(
@@ -211,6 +223,17 @@ class _OtpVerificationScreenState
             );
 
         if (!mounted) return;
+
+        final stateAfterSignIn = ref.read(authNotifierProvider);
+        if (stateAfterSignIn is AuthError) {
+          setState(() {
+            _isVerifying = false;
+            _hasError = true;
+            _errorMessage = stateAfterSignIn.exception.userMessage;
+          });
+          _shakeController.forward(from: 0);
+          return;
+        }
 
         // Clean up pending data
         await secureStorage.clearPendingRegistration();

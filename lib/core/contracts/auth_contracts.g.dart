@@ -61,7 +61,7 @@ Map<String, dynamic> _$LoginResponseDtoToJson(LoginResponseDto instance) =>
 
 RegisterRequestDto _$RegisterRequestDtoFromJson(Map<String, dynamic> json) =>
     RegisterRequestDto(
-      email: json['email'] as String,
+      email: json['email'] as String?,
       password: json['password'] as String,
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
@@ -81,7 +81,7 @@ Map<String, dynamic> _$RegisterRequestDtoToJson(RegisterRequestDto instance) {
     if (instance.firstName != null) 'firstName': instance.firstName,
     if (instance.lastName != null) 'lastName': instance.lastName,
     if (instance.email != null) 'email': instance.email,
-    if (instance.phone != null) 'phone': instance.phone,
+    if (instance.phone != null) 'phoneNumber': instance.phone,
     if (instance.username != null) 'username': instance.username,
     if (instance.dateOfBirth != null) 'dateOfBirth': instance.dateOfBirth,
     if (instance.gender != null) 'gender': instance.gender,
