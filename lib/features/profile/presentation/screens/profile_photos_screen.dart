@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -47,6 +48,19 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
   Future<void> _handleAddPhoto(int slotIndex) async {
     final source = await _showSourcePicker();
     if (source == null || !mounted) return;
+
+    if (source == ImageSource.camera) {
+      final camStatus = await Permission.camera.request();
+      if (!camStatus.isGranted) {
+        if ((camStatus.isPermanentlyDenied || camStatus.isRestricted) && mounted) {
+          await _showPermissionSettingsDialog(
+            'Camera Access Required',
+            'Camera permission was denied. Please enable camera access in Settings to take a photo.',
+          );
+        }
+        return;
+      }
+    }
 
     final pickedFile = await _imagePicker.pickImage(
       source: source,
@@ -91,6 +105,28 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _showPermissionSettingsDialog(String title, String message) async {
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await openAppSettings();
   }
 
   Future<ImageSource?> _showSourcePicker() async {

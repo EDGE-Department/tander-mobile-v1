@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
-import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/message_thread_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/states/message_thread_state.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/composer_recording_row.dart';
@@ -105,6 +105,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   /// Capture a single photo from camera and add to pending queue.
   Future<void> _handleCameraCapture() async {
+    if (!await _requestCameraPermission()) return;
+
     final pickedFile = await _imagePicker.pickImage(
       source: ImageSource.camera,
       imageQuality: 80,
@@ -116,10 +118,44 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     });
   }
 
+  Future<bool> _requestCameraPermission() async {
+    final status = await Permission.camera.request();
+    if (status.isGranted) return true;
+    if ((status.isPermanentlyDenied || status.isRestricted) && mounted) {
+      await _showPermissionSettingsDialog(
+        'Camera Access Required',
+        'Camera permission was denied. Please enable camera access in Settings to take photos.',
+      );
+    }
+    return false;
+  }
+
   void _removePhoto(int index) {
     setState(() {
       _pendingPhotos.removeAt(index);
     });
+  }
+
+  Future<void> _showPermissionSettingsDialog(String title, String message) async {
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await openAppSettings();
   }
 
   /// Send all pending photos as individual image messages, then clear.
@@ -143,9 +179,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   // ── Voice recording ───────────────────────────────────────────────
 
   Future<void> _handleRecordStart() async {
-    final hasPermission = await _audioRecorder.hasPermission();
-    if (!hasPermission) {
-      AppLogger.warning('Microphone permission denied', operation: 'MessageComposer');
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      if ((micStatus.isPermanentlyDenied || micStatus.isRestricted) && mounted) {
+        await _showPermissionSettingsDialog(
+          'Microphone Access Required',
+          'Microphone permission was denied. Please enable microphone access in Settings to send voice messages.',
+        );
+      }
       return;
     }
 
