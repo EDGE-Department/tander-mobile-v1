@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,6 +12,7 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_connection_showcase.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
@@ -220,47 +223,36 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   // ── Portrait tablet (768–1024) ─────────────────────────────────────
 
   Widget _buildTabletPortraitLayout() {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final leftPanelWidth = screenWidth * 0.42;
+
     return Scaffold(
-      backgroundColor: AppColors.card,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: _parchmentGradient),
-        child: SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(32, 40, 32, 36),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 940),
-                child: Column(
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 96),
-                          child: TabletPortraitHeroPanel(
-                            onlineCount: _onlineCount,
-                          ),
-                        ),
-                        Positioned(
-                          left: 40,
-                          right: 40,
-                          bottom: 0,
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 720),
-                              child: _buildFormCard(isWide: true),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+      body: Stack(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: leftPanelWidth,
+                child: _ResetTabletBrandPanel(onlineCount: _onlineCount),
+              ),
+              Expanded(
+                child: _ResetTabletFormPanel(
+                  child: _buildFormCard(isWide: true),
                 ),
               ),
+            ],
+          ),
+          Positioned(
+            left: leftPanelWidth - 64,
+            top: 0,
+            bottom: 0,
+            width: 128,
+            child: const IgnorePointer(
+              child: CustomPaint(painter: _ResetWaveSeamPainter()),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -712,4 +704,330 @@ class _MobileParchmentSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Tablet portrait brand panel (left 42%) ────────────────────────────────
+
+class _ResetTabletBrandPanel extends StatelessWidget {
+  const _ResetTabletBrandPanel({required this.onlineCount});
+
+  final SimulatedOnlineCount onlineCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final panelWidth = MediaQuery.sizeOf(context).width * 0.42;
+    final wordmarkSize = (panelWidth * 0.18).clamp(56.0, 88.0);
+    final ghostSize = (panelWidth * 0.60).clamp(140.0, 220.0);
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment(-1, -1),
+          end: Alignment(1, 1),
+          colors: [
+            Color(0xFFF07040),
+            Color(0xFFE86035),
+            Color(0xFF2EC878),
+            Color(0xFF20BF68),
+          ],
+          stops: [0.0, 0.30, 0.70, 1.0],
+        ),
+      ),
+      child: Stack(
+        children: [
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: LoginHeaderBackground(
+                headerHeight: double.infinity,
+                showSocialOrbs: false,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: Text(
+                    'Tander',
+                    style: AppTypography.brandWordmark(
+                      fontSize: ghostSize,
+                      color: Colors.white.withValues(alpha: 0.07),
+                      letterSpacing: -0.02 * ghostSize,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 160,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      const Color(0xFF120400).withValues(alpha: 0.32),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 20, right: 20),
+                child: ValueListenableBuilder<int>(
+                  valueListenable: onlineCount,
+                  builder: (context, count, child) => OnlineCountBadge(count: count),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            right: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 64, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'MADE FOR FILIPINO SENIORS 60+',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.65),
+                      letterSpacing: 2.8,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  LoginLogoWordmarkRow(
+                    alignment: MainAxisAlignment.start,
+                    logoSize: wordmarkSize * 0.82,
+                    wordmarkSize: wordmarkSize,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Connect with fellow seniors\nwho understand your world',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const LoginFilipinoValuesMarquee(),
+                  const SizedBox(height: 20),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.16),
+                          ),
+                        ),
+                        child: const ConnectionShowcase(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tablet portrait form panel (right 58%) ────────────────────────────────
+
+class _ResetTabletFormPanel extends StatelessWidget {
+  const _ResetTabletFormPanel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: _parchmentGradient),
+      child: Stack(
+        children: [
+          const Positioned.fill(
+            child: IgnorePointer(child: _ResetLandscapeDecor()),
+          ),
+          SafeArea(
+            left: false,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(40),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Parchment decorations ─────────────────────────────────────────────────
+
+class _ResetLandscapeDecor extends StatelessWidget {
+  const _ResetLandscapeDecor();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: Opacity(
+            opacity: 0.45,
+            child: CustomPaint(painter: _ResetDotGridPainter()),
+          ),
+        ),
+        Positioned.fill(
+          child: Center(
+            child: Container(
+              width: 420,
+              height: 420,
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0x1AE67E22),
+                    Color(0x0AE67E22),
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.45, 0.85],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 80,
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0x0FE67E22), Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          right: 0,
+          child: Container(
+            width: 280,
+            height: 280,
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topRight,
+                radius: 0.95,
+                colors: [Color(0x0FE6A03C), Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ResetDotGridPainter extends CustomPainter {
+  const _ResetDotGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0x14B46414)
+      ..style = PaintingStyle.fill;
+    const spacing = 24.0;
+    for (double x = 0; x <= size.width; x += spacing) {
+      for (double y = 0; y <= size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 0.8, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ── Wave seam between brand panel and form panel ──────────────────────────
+
+class _ResetWaveSeamPainter extends CustomPainter {
+  const _ResetWaveSeamPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width * 0.53, 0)
+      ..cubicTo(
+        size.width * 0.66,
+        size.height * 0.078,
+        size.width * 0.80,
+        size.height * 0.143,
+        size.width * 0.59,
+        size.height * 0.266,
+      )
+      ..cubicTo(
+        size.width * 0.44,
+        size.height * 0.39,
+        size.width * 0.71,
+        size.height * 0.456,
+        size.width * 0.55,
+        size.height * 0.578,
+      )
+      ..cubicTo(
+        size.width * 0.40,
+        size.height * 0.70,
+        size.width * 0.68,
+        size.height * 0.78,
+        size.width * 0.52,
+        size.height * 0.90,
+      )
+      ..cubicTo(
+        size.width * 0.40,
+        size.height * 0.97,
+        size.width * 0.48,
+        size.height,
+        size.width * 0.50,
+        size.height,
+      );
+
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.18)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
