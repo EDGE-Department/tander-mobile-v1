@@ -18,7 +18,8 @@ abstract interface class AuthRepository {
 
   /// Creates a new account and returns the initial session.
   Future<Result<AuthSession>> register({
-    required String email,
+    String? email,
+    String? phone,
     required String password,
     required String auditId,
   });

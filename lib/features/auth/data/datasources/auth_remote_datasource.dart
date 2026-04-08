@@ -52,7 +52,10 @@ final class AuthRemoteDatasource {
     AppLogger.debug(
       'Registering new user',
       operation: 'AuthRemoteDatasource.register',
-      context: {'email': request.email},
+      context: {
+        if (request.email != null) 'email': request.email!,
+        if (request.phone != null) 'phone': request.phone!,
+      },
     );
 
     return _dioClient.post<Map<String, Object?>>(

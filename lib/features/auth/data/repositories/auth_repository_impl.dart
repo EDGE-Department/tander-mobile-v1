@@ -106,13 +106,15 @@ final class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<AuthSession>> register({
-    required String email,
+    String? email,
+    String? phone,
     required String password,
     required String auditId,
   }) {
     return _runSafe('register', () async {
       final requestDto = RegisterRequestDto(
         email: email,
+        phone: phone,
         password: password,
         auditId: auditId,
         consentTerms: true,

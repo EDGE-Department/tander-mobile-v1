@@ -191,12 +191,12 @@ class _OtpVerificationScreenState
           return;
         }
 
-        final email = pending.email ?? _email;
-        final phone = pending.phone ?? _phone;
-        final contact = email.isNotEmpty ? email : phone;
+        final email = (pending.email ?? _email).trim();
+        final phone = (pending.phone ?? _phone).trim();
 
         await ref.read(authNotifierProvider.notifier).register(
-              email: contact,
+              email: email.isNotEmpty ? email : null,
+              phone: phone.isNotEmpty ? phone : null,
               password: pending.password!,
               auditId: pending.auditId!,
             );
@@ -204,6 +204,7 @@ class _OtpVerificationScreenState
         if (!mounted) return;
 
         // Auto-login to get JWT tokens (register doesn't issue them)
+        final contact = email.isNotEmpty ? email : phone;
         await ref.read(authNotifierProvider.notifier).signIn(
               email: contact,
               password: pending.password!,

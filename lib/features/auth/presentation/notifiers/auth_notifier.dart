@@ -84,7 +84,8 @@ final class AuthNotifier extends Notifier<AuthState> {
 
   /// Creates a new account and transitions to [AuthOnboarding].
   Future<void> register({
-    required String email,
+    String? email,
+    String? phone,
     required String password,
     required String auditId,
   }) async {
@@ -92,6 +93,7 @@ final class AuthNotifier extends Notifier<AuthState> {
 
     final registerResult = await _repository.register(
       email: email,
+      phone: phone,
       password: password,
       auditId: auditId,
     );

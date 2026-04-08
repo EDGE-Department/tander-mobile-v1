@@ -84,11 +84,11 @@ class LoginResponseDto {
 @JsonSerializable()
 class RegisterRequestDto {
   const RegisterRequestDto({
-    required this.email,
     required this.password,
+    this.email,
+    this.phone,
     this.firstName,
     this.lastName,
-    this.phone,
     this.username,
     this.dateOfBirth,
     this.gender,
@@ -96,14 +96,17 @@ class RegisterRequestDto {
     this.consentTerms,
     this.consentDataPrivacy,
     this.consentVersion,
-  });
+  }) : assert(
+          email != null || phone != null,
+          'Either email or phone must be provided',
+        );
 
   factory RegisterRequestDto.fromJson(Map<String, Object?> json) =>
       _$RegisterRequestDtoFromJson(json);
 
   final String? firstName;
   final String? lastName;
-  final String email;
+  final String? email;
   final String? phone;
   final String? username;
   final String password;

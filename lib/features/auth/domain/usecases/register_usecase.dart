@@ -11,12 +11,14 @@ final class RegisterUseCase {
 
   /// Delegates to [AuthRepository.register] with the provided registration details.
   Future<Result<AuthSession>> execute({
-    required String email,
+    String? email,
+    String? phone,
     required String password,
     required String auditId,
   }) {
     return _repository.register(
       email: email,
+      phone: phone,
       password: password,
       auditId: auditId,
     );
