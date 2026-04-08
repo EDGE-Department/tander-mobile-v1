@@ -66,5 +66,28 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+	<!-- ── Permission usage descriptions ─────────────────────────────── -->
+	<key>NSCameraUsageDescription</key>
+	<string>Tander needs camera access to scan your ID for verification, detect your face for liveness checks, and enable video calls.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Tander needs microphone access to make audio and video calls, and to record voice messages.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Tander needs access to your photo library so you can choose a profile photo or share images in messages.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Tander needs permission to save photos to your library.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Tander uses your local network to establish peer-to-peer connections for calls.</string>
+
+	<!-- ── Background modes ───────────────────────────────────────────── -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>voip</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>processing</string>
+	</array>
+
 </dict>
 </plist>
