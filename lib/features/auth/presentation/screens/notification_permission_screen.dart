@@ -84,6 +84,33 @@ class _NotificationPermissionScreenState
         'Notification permission result: ${status.name}',
         operation: 'NotificationPermissionScreen._enableNotifications',
       );
+
+      if ((status.isPermanentlyDenied || status.isRestricted) && mounted) {
+        setState(() => _isEnabling = false);
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Enable Notifications'),
+            content: const Text(
+              'Notification permission was denied. To receive messages and call alerts, please enable notifications in your device Settings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Skip'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Open Settings'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) {
+          await openAppSettings();
+          return;
+        }
+      }
     } on Exception catch (error, stackTrace) {
       AppLogger.error(
         'Notification permission request failed',
@@ -91,9 +118,9 @@ class _NotificationPermissionScreenState
         error: error,
         stackTrace: stackTrace,
       );
-    } finally {
-      await _navigateToHome();
     }
+
+    await _navigateToHome();
   }
 
   Future<void> _skipNotifications() async {

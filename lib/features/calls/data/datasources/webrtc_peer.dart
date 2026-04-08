@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_constants.dart';
@@ -104,6 +105,27 @@ final class WebrtcPeer {
   /// For video calls, falls back to audio-only if camera is denied.
   /// Throws [MediaPermissionException] if microphone is denied.
   Future<MediaStream> acquireMedia({required bool isVideo}) async {
+    // Request permissions explicitly so iOS shows the system dialog on first
+    // use, and so we can detect permanentlyDenied before getUserMedia throws
+    // an opaque error.
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      throw MediaPermissionException(
+        micStatus.isPermanentlyDenied || micStatus.isRestricted
+            ? 'microphone:settings'
+            : 'Microphone access is required to make calls. '
+                'Please allow microphone access in your device settings.',
+      );
+    }
+
+    if (isVideo) {
+      final camStatus = await Permission.camera.request();
+      if (!camStatus.isGranted && (camStatus.isPermanentlyDenied || camStatus.isRestricted)) {
+        // Camera is permanently denied — fall back to audio-only silently
+        isVideo = false;
+      }
+    }
+
     final audioConstraints = CallMediaConstraints.audioConstraints;
     final videoConstraints = isVideo
         ? CallMediaConstraints.videoConstraints

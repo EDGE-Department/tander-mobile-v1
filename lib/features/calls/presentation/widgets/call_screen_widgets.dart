@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/states/call_state.dart';
@@ -432,7 +433,8 @@ class CallEndedOverlay extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (callState.errorMessage != null) ...[
+            if (callState.errorMessage != null &&
+                callState.errorMessage != 'microphone:settings') ...[
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -441,6 +443,40 @@ class CallEndedOverlay extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+            if (callState.endReason == CallEndReason.permissionDenied) ...[
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'Microphone access is required to make calls.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () async => openAppSettings(),
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.orange.withValues(alpha: 0.2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Open Settings',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
                 ),
