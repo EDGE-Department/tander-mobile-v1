@@ -148,7 +148,12 @@ class _DocumentScanViewState extends State<DocumentScanView>
     try {
       final permission = await Permission.camera.request();
       if (!permission.isGranted) {
-        _setError('Camera permission is required to scan your ID.');
+        if ((permission.isPermanentlyDenied || permission.isRestricted) &&
+            mounted) {
+          await _showSettingsDialog();
+        } else {
+          _setError('Camera permission is required to scan your ID.');
+        }
         return;
       }
 
@@ -432,6 +437,30 @@ class _DocumentScanViewState extends State<DocumentScanView>
       _status = message;
     });
     widget.onError(message);
+  }
+
+  Future<void> _showSettingsDialog() async {
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Camera Access Required'),
+        content: const Text(
+          'Camera permission was denied. To scan your ID, please enable camera access in your device Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await openAppSettings();
   }
 
   void _announce(String message) {

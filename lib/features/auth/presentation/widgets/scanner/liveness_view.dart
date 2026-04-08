@@ -183,7 +183,13 @@ class _LivenessViewState extends State<LivenessView>
     try {
       final cameraPermission = await Permission.camera.request();
       if (!cameraPermission.isGranted) {
-        _setError('Camera permission is required for face verification.');
+        if ((cameraPermission.isPermanentlyDenied ||
+                cameraPermission.isRestricted) &&
+            mounted) {
+          await _showSettingsDialog('face verification');
+        } else {
+          _setError('Camera permission is required for face verification.');
+        }
         return;
       }
 
@@ -585,6 +591,30 @@ class _LivenessViewState extends State<LivenessView>
     });
     widget.onError?.call(message);
     unawaited(_stopImageStreamIfRunning());
+  }
+
+  Future<void> _showSettingsDialog(String feature) async {
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Camera Access Required'),
+        content: Text(
+          'Camera permission was denied. To use $feature, please enable camera access in your device Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await openAppSettings();
   }
 
   void _resetEvidenceState() {
