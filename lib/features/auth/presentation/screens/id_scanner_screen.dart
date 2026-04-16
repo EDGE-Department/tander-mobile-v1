@@ -107,6 +107,18 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     _transitionTimer?.cancel();
     _cleanupPhotos();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Unlock orientation via native channel for iOS, then fallback to Flutter API
+    _unlockOrientationOnDispose();
+    super.dispose();
+  }
+
+  Future<void> _unlockOrientationOnDispose() async {
+    if (Platform.isIOS) {
+      try {
+        await _orientationChannel.invokeMethod('unlockOrientation');
+      } catch (_) {}
+    }
+    // Always set Flutter preferences as well
     if (_isPhone) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
@@ -120,7 +132,6 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         DeviceOrientation.landscapeRight,
       ]);
     }
-    super.dispose();
   }
 
   void _applySystemUiModeForPhase(_ScanPhase phase) {
@@ -592,29 +603,44 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   static const _orientationChannel = MethodChannel('com.tander.app/orientation');
 
   Future<void> _lockPortrait() async {
-    try {
-      await _orientationChannel.invokeMethod('lockPortrait');
-    } catch (_) {
-      // Fallback to Flutter API
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-      ]);
+    // On iOS, call native channel to set AppDelegate.isPortraitLocked = true
+    // This is required for proper iPad orientation lock
+    if (Platform.isIOS) {
+      try {
+        await _orientationChannel.invokeMethod('lockPortrait');
+      } catch (_) {
+        // Continue to set Flutter preferences even if native call fails
+      }
     }
+
+    // Always set Flutter preferences as well (Android primary path, iOS fallback)
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
   }
 
   Future<void> _unlockOrientation() async {
+    // CRITICAL: On iOS, always call native unlockOrientation to clear
+    // AppDelegate.isPortraitLocked, even for phones. Without this, the
+    // native flag stays stuck at true after leaving liveness phase.
+    if (Platform.isIOS) {
+      try {
+        await _orientationChannel.invokeMethod('unlockOrientation');
+      } catch (_) {
+        // Continue to set Flutter preferences even if native call fails
+      }
+    }
+
+    // Set Flutter orientation preferences based on device type
     if (_isPhone) {
-      // Phones stay portrait-locked always
+      // Phones stay portrait-only (app design decision)
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
       ]);
-      return;
-    }
-    try {
-      await _orientationChannel.invokeMethod('unlockOrientation');
-    } catch (_) {
+    } else {
+      // Tablets can rotate freely
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
