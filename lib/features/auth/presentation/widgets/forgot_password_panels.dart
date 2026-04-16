@@ -5,6 +5,7 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/forgot_password_components.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
+import 'package:tander_flutter_v3/features/splash/presentation/widgets/splash_painters.dart';
 
 // ── Form card shell ──────────────────────────────────────────────────
 
@@ -310,8 +311,32 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
   }
 }
 
-class _ForgotMobileHeaderScene extends StatelessWidget {
+class _ForgotMobileHeaderScene extends StatefulWidget {
   const _ForgotMobileHeaderScene();
+
+  @override
+  State<_ForgotMobileHeaderScene> createState() =>
+      _ForgotMobileHeaderSceneState();
+}
+
+class _ForgotMobileHeaderSceneState extends State<_ForgotMobileHeaderScene>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -326,13 +351,16 @@ class _ForgotMobileHeaderScene extends StatelessWidget {
               child: CustomPaint(painter: _ForgotSceneGrainPainter()),
             ),
           ),
-          const Positioned.fill(
+          // Web's 19-node animated constellation at 45% opacity
+          Positioned.fill(
             child: IgnorePointer(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                child: Opacity(
-                  opacity: 0.9,
-                  child: CustomPaint(painter: _ForgotConstellationPainter()),
+              child: Opacity(
+                opacity: 0.45,
+                child: AnimatedBuilder(
+                  animation: _ctrl,
+                  builder: (_, _) => CustomPaint(
+                    painter: SplashConstellationPainter(_ctrl.value),
+                  ),
                 ),
               ),
             ),
@@ -368,117 +396,6 @@ class _ForgotMobileHeaderScene extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ForgotConstellationNode {
-  const _ForgotConstellationNode(this.x, this.y, this.radius, this.color);
-
-  final double x;
-  final double y;
-  final double radius;
-  final Color color;
-}
-
-class _ForgotConstellationPainter extends CustomPainter {
-  const _ForgotConstellationPainter();
-
-  static const List<_ForgotConstellationNode> _nodes = [
-    _ForgotConstellationNode(0.12, 0.34, 2.2, Color(0xE6FFA05A)),
-    _ForgotConstellationNode(0.25, 0.24, 1.7, Color(0xBFFFFFFF)),
-    _ForgotConstellationNode(0.23, 0.58, 1.6, Color(0x8CFFFFFF)),
-    _ForgotConstellationNode(0.39, 0.46, 2.1, Color(0xCCFFFFFF)),
-    _ForgotConstellationNode(0.50, 0.50, 4.4, Color(0xFFFFFFFF)),
-    _ForgotConstellationNode(0.61, 0.45, 2.1, Color(0xCCFFFFFF)),
-    _ForgotConstellationNode(0.76, 0.24, 1.7, Color(0xD996E6DF)),
-    _ForgotConstellationNode(0.85, 0.42, 2.3, Color(0xE678DCD7)),
-    _ForgotConstellationNode(0.78, 0.62, 1.8, Color(0x8CFFFFFF)),
-    _ForgotConstellationNode(0.50, 0.16, 1.7, Color(0xA6FFFFFF)),
-    _ForgotConstellationNode(0.05, 0.20, 1.4, Color(0xB3FFB464)),
-    _ForgotConstellationNode(0.95, 0.18, 1.4, Color(0xB396E6DF)),
-  ];
-
-  static const List<List<int>> _normalEdges = [
-    [0, 1],
-    [0, 3],
-    [2, 3],
-    [5, 6],
-    [5, 7],
-    [7, 8],
-    [9, 4],
-    [10, 0],
-    [11, 6],
-  ];
-
-  static const List<List<int>> _bridgeEdges = [
-    [3, 4],
-    [4, 5],
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.10)
-      ..strokeWidth = 0.75
-      ..style = PaintingStyle.stroke;
-
-    final bridgePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.36)
-      ..strokeWidth = 1.05
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2);
-
-    for (final edge in _normalEdges) {
-      final from = _resolve(size, _nodes[edge[0]]);
-      final to = _resolve(size, _nodes[edge[1]]);
-      canvas.drawLine(from, to, linePaint);
-    }
-
-    for (final edge in _bridgeEdges) {
-      final from = _resolve(size, _nodes[edge[0]]);
-      final to = _resolve(size, _nodes[edge[1]]);
-      canvas.drawLine(from, to, bridgePaint);
-    }
-
-    final hubGlowPaint = Paint()
-      ..color = const Color(0x66FFFFFF)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    final hubCenter = _resolve(size, _nodes[4]);
-    canvas.drawCircle(hubCenter, 18, hubGlowPaint);
-
-    for (final node in _nodes) {
-      final offset = _resolve(size, node);
-      final glowPaint = Paint()
-        ..color = node.color.withValues(alpha: 0.28)
-        ..maskFilter = MaskFilter.blur(
-          BlurStyle.normal,
-          node.radius >= 4 ? 8 : 3,
-        );
-      final fillPaint = Paint()..color = node.color;
-      canvas.drawCircle(offset, node.radius * 2.2, glowPaint);
-      canvas.drawCircle(offset, node.radius, fillPaint);
-    }
-  }
-
-  static Offset _resolve(Size size, _ForgotConstellationNode node) {
-    const horizontalScale = 1.08;
-    const verticalScale = 0.90;
-    const horizontalInset = 0.08;
-    const verticalInset = 0.10;
-
-    final resolvedX = (0.5 + (node.x - 0.5) * horizontalScale).clamp(
-      horizontalInset,
-      1 - horizontalInset,
-    );
-    final resolvedY = (0.5 + (node.y - 0.5) * verticalScale).clamp(
-      verticalInset,
-      1 - verticalInset,
-    );
-
-    return Offset(size.width * resolvedX, size.height * resolvedY);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _ForgotSceneGrainPainter extends CustomPainter {

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -10,14 +8,17 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
 // ── Constants ────────────────────────────────────────────────────────
 
-/// Field background matching web's `#F7F2EC`.
-const Color _fieldBackground = Color(0xFFF7F2EC);
+/// Web: bg-gray-50/30 = rgba(249,250,251,0.30).
+const Color _fieldBackground = Color(0x4DF9FAFB);
 
-/// Field border color matching web's `rgba(180,120,50,0.18)`.
-const Color _fieldBorderColor = Color(0x2EB47832);
+/// Web: border-gray-100 (#F3F4F6) with border-2.
+const Color _fieldBorderColor = Color(0xFFF3F4F6);
 
-/// Field border color on focus matching web's primary.
+/// Web: focus:border-[#E67E22].
 const Color _fieldFocusBorderColor = AppColors.primary;
+
+/// Web: rounded-2xl = 16px.
+const double _fieldRadius = 16;
 
 // ── Styled login text field ─────────────────────────────────────────
 
@@ -53,16 +54,18 @@ class LoginTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: AppTypography.bodySm.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textBody,
-            fontSize: 13.5,
-            letterSpacing: 0.135, // tracking-[0.01em]
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text(
+            label,
+            style: AppTypography.bodySm.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textBody,
+              fontSize: 15,
+            ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         AnimatedSize(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
@@ -80,32 +83,34 @@ class LoginTextField extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: AppTypography.body.copyWith(
-                color: AppColors.textMuted,
+                color: AppColors.textDisabled,
               ),
               filled: true,
               fillColor: _fieldBackground,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.md,
+                horizontal: 24,
+                vertical: 16,
               ),
-              constraints: const BoxConstraints(minHeight: 48),
+              // Web: h-14 = 56px
+              constraints: const BoxConstraints(minHeight: 56),
               prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 16, right: 8),
+                padding: const EdgeInsets.only(left: 24, right: 12),
                 child: Icon(
                   prefixIcon,
-                  size: 17,
-                  color: AppColors.primary.withValues(alpha: 0.50),
+                  size: 24,
+                  color: AppColors.textDisabled,
                 ),
               ),
-              prefixIconConstraints: const BoxConstraints(minWidth: 42),
-              border: _buildBorder(_fieldBorderColor),
-              enabledBorder: _buildBorder(_fieldBorderColor),
+              prefixIconConstraints: const BoxConstraints(minWidth: 60),
+              // Web: border-2 with rounded-2xl
+              border: _buildBorder(_fieldBorderColor, width: 2),
+              enabledBorder: _buildBorder(_fieldBorderColor, width: 2),
               focusedBorder: _buildBorder(_fieldFocusBorderColor, width: 2),
-              errorBorder: _buildBorder(AppColors.danger),
+              errorBorder: _buildBorder(AppColors.danger, width: 2),
               focusedErrorBorder: _buildBorder(AppColors.danger, width: 2),
               errorStyle: AppTypography.caption.copyWith(
                 color: AppColors.danger,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -145,48 +150,41 @@ class LoginPasswordField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Label row with "Forgot password?" link
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
+        // Web: flex items-center justify-between mx-1
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
                 'Password',
                 style: AppTypography.bodySm.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textBody,
-                  fontSize: 13.5,
-                  letterSpacing: 0.135, // tracking-[0.01em]
+                  fontSize: 15,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(4),
-              child: InkWell(
+              GestureDetector(
                 onTap: onForgotPassword,
-                borderRadius: BorderRadius.circular(4),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 2,
-                    horizontal: 4,
+                    vertical: 4,
+                    horizontal: 8,
                   ),
                   child: Text(
-                    'Forgot password?',
+                    'Forgot?',
                     style: AppTypography.bodySm.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryAccessible,
-                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primary,
+                      fontSize: 14,
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         AnimatedSize(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
@@ -200,44 +198,37 @@ class LoginPasswordField extends StatelessWidget {
             validator: _validatePassword,
             style: AppTypography.body.copyWith(color: AppColors.textStrong),
             decoration: InputDecoration(
-              hintText: 'Enter your password',
+              // Web: placeholder="••••••••"
+              hintText: '••••••••',
               hintStyle: AppTypography.body.copyWith(
-                color: AppColors.textMuted,
+                color: AppColors.textDisabled,
               ),
               filled: true,
               fillColor: _fieldBackground,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.md,
+                horizontal: 24,
+                vertical: 16,
               ),
-              constraints: const BoxConstraints(minHeight: 48),
+              constraints: const BoxConstraints(minHeight: 56),
               prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 16, right: 8),
+                padding: const EdgeInsets.only(left: 24, right: 12),
                 child: Icon(
                   PhosphorIconsDuotone.lockSimple,
-                  size: 17,
-                  color: AppColors.primary.withValues(alpha: 0.50),
+                  size: 24,
+                  color: AppColors.textDisabled,
                 ),
               ),
-              prefixIconConstraints: const BoxConstraints(minWidth: 42),
+              prefixIconConstraints: const BoxConstraints(minWidth: 60),
               suffixIcon: GestureDetector(
                 onTap: onToggleVisibility,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: TweenAnimationBuilder<double>(
-                    key: ValueKey(isPasswordVisible),
-                    tween: Tween<double>(begin: 12.0 * math.pi / 180, end: 0),
-                    duration: const Duration(milliseconds: 150),
-                    curve: Curves.easeOut,
-                    builder: (_, rotationAngle, child) =>
-                        Transform.rotate(angle: rotationAngle, child: child),
-                    child: Icon(
-                      isPasswordVisible
-                          ? PhosphorIconsRegular.eyeSlash
-                          : PhosphorIconsRegular.eye,
-                      size: 19,
-                      color: AppColors.primary.withValues(alpha: 0.50),
-                    ),
+                  padding: const EdgeInsets.only(right: 24),
+                  child: Icon(
+                    isPasswordVisible
+                        ? PhosphorIconsRegular.eyeSlash
+                        : PhosphorIconsRegular.eye,
+                    size: 24,
+                    color: AppColors.textDisabled,
                   ),
                 ),
               ),
@@ -247,12 +238,12 @@ class LoginPasswordField extends StatelessWidget {
               ),
               border: _buildBorder(_fieldBorderColor),
               enabledBorder: _buildBorder(_fieldBorderColor),
-              focusedBorder: _buildBorder(_fieldFocusBorderColor, width: 2),
+              focusedBorder: _buildBorder(_fieldFocusBorderColor),
               errorBorder: _buildBorder(AppColors.danger),
-              focusedErrorBorder: _buildBorder(AppColors.danger, width: 2),
+              focusedErrorBorder: _buildBorder(AppColors.danger),
               errorStyle: AppTypography.caption.copyWith(
                 color: AppColors.danger,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -335,9 +326,9 @@ class LoginRememberMeCheckbox extends StatelessWidget {
 
 // ── Shared border builder ───────────────────────────────────────────
 
-OutlineInputBorder _buildBorder(Color color, {double width = 1}) {
+OutlineInputBorder _buildBorder(Color color, {double width = 2}) {
   return OutlineInputBorder(
-    borderRadius: BorderRadius.circular(999),
+    borderRadius: BorderRadius.circular(_fieldRadius),
     borderSide: BorderSide(color: color, width: width),
   );
 }

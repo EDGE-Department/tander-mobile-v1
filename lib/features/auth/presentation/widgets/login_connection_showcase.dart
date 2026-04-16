@@ -374,7 +374,7 @@ class _TestimonialCardState extends State<_TestimonialCard> {
             alignment: Alignment.topLeft,
             children: [
               ...previousChildren,
-              ?currentChild,
+              if (currentChild != null) currentChild,
             ],
           );
         },

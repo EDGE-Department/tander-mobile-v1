@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
@@ -25,9 +26,78 @@ class CreatePostSheet extends ConsumerStatefulWidget {
 
   final VoidCallback onPostCreated;
 
-  /// Present the create-post as a centered dialog modal.
-  /// Uses showDialog so it renders on top of ALL content (including split panels).
+  /// Present the create-post UI.
+  /// Mobile (<768): bottom sheet matching web's SlideUpSheet.
+  /// Tablet/desktop (>=768): centered dialog.
   static Future<void> show({
+    required BuildContext context,
+    required WidgetRef ref,
+    required VoidCallback onPostCreated,
+  }) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    if (screenWidth >= 768) {
+      return _showAsDialog(context: context, onPostCreated: onPostCreated);
+    }
+    return _showAsSheet(context: context, ref: ref, onPostCreated: onPostCreated);
+  }
+
+  static Future<void> _showAsSheet({
+    required BuildContext context,
+    required WidgetRef ref,
+    required VoidCallback onPostCreated,
+  }) {
+    ref.read(modalVisibleProvider.notifier).state = true;
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header: X + "New post" + Post button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 12, 16, 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 24),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'New post',
+                      style: AppTypography.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    // Post button placeholder — actual submit is inside CreatePostSheet
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: AppColors.border),
+              CreatePostSheet(onPostCreated: () {
+                onPostCreated();
+                Navigator.of(sheetContext).pop();
+              }),
+            ],
+          ),
+        ),
+      ),
+    ).whenComplete(() {
+      ref.read(modalVisibleProvider.notifier).state = false;
+    });
+  }
+
+  static Future<void> _showAsDialog({
     required BuildContext context,
     required VoidCallback onPostCreated,
   }) {
@@ -38,10 +108,11 @@ class CreatePostSheet extends ConsumerStatefulWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520, maxHeight: 600),
           child: Material(
-            color: AppColors.card,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             clipBehavior: Clip.antiAlias,
             elevation: 8,
+            surfaceTintColor: Colors.transparent,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

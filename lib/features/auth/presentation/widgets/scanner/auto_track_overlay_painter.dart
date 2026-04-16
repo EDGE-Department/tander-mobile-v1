@@ -36,6 +36,8 @@ class AutoTrackOverlayPainter extends CustomPainter {
   final double pulseValue;
   final Size screenSize;
   final double confidenceLevel;
+  final double reservedTopInset;
+  final double reservedBottomInset;
 
   AutoTrackOverlayPainter({
     required this.detectionState,
@@ -43,6 +45,8 @@ class AutoTrackOverlayPainter extends CustomPainter {
     required this.pulseValue,
     required this.screenSize,
     this.confidenceLevel = 0.0,
+    this.reservedTopInset = 0,
+    this.reservedBottomInset = 0,
   });
 
   static const _scannerBlue = Color(0xFF2979FF);
@@ -51,12 +55,11 @@ class AutoTrackOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // Tall vertical rectangle — fills the space below the header.
-    // screenSize is passed in so we can estimate the header height.
     final marginH = size.width * 0.04;
-    final headerClearance = size.height * 0.32;
-    final marginBottom = size.height * 0.06;
+    final headerClearance = reservedTopInset + 16;
+    final marginBottom = reservedBottomInset + 16;
     final frameWidth = size.width - marginH * 2;
-    final frameHeight = size.height - headerClearance - marginBottom;
+    final frameHeight = (size.height - headerClearance - marginBottom).clamp(0.0, size.height).toDouble();
 
     final frameRect = Rect.fromLTWH(
       marginH,

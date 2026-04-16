@@ -16,27 +16,35 @@ class PasswordRequirementsChecklist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _RequirementRow(
-          met: password.length >= 8,
-          label: 'At least 8 characters',
-        ),
-        _RequirementRow(
-          met: RegExp(r'[A-Z]').hasMatch(password),
-          label: 'Contains an uppercase letter',
-        ),
-        _RequirementRow(
-          met: RegExp(r'[0-9]').hasMatch(password),
-          label: 'Contains a number',
-        ),
-        if (confirmPassword != null && confirmPassword!.isNotEmpty)
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           _RequirementRow(
-            met: password == confirmPassword && password.isNotEmpty,
-            label: 'Passwords match',
+            met: password.length >= 8,
+            label: 'At least 8 characters',
           ),
-      ],
+          _RequirementRow(
+            met: RegExp(r'[A-Z]').hasMatch(password),
+            label: 'Contains an uppercase letter',
+          ),
+          _RequirementRow(
+            met: RegExp(r'[0-9]').hasMatch(password),
+            label: 'Contains a number',
+          ),
+          if (confirmPassword != null && confirmPassword!.isNotEmpty)
+            _RequirementRow(
+              met: password == confirmPassword && password.isNotEmpty,
+              label: 'Passwords match',
+            ),
+        ],
+      ),
     );
   }
 }

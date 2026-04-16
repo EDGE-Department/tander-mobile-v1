@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
@@ -64,8 +63,19 @@ class TanderTextField extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (label != null) ...[
-          Text(label!, style: AppTypography.label),
-          const SizedBox(height: AppSpacing.xs),
+          // Web: text-[15px] font-bold text-gray-700 ml-1
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              label!,
+              style: AppTypography.bodySm.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: AppColors.textBody,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
         ],
         _buildInputField(),
         if (_hasError) ...[
@@ -98,33 +108,36 @@ class TanderTextField extends StatelessWidget {
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
+        // Web: placeholder:text-gray-400
+        hintStyle: AppTypography.body.copyWith(color: AppColors.textDisabled),
         filled: true,
-        fillColor: enabled ? AppColors.card : AppColors.subtle,
+        // Web: bg-gray-50/30
+        fillColor: enabled ? const Color(0x4DF9FAFB) : AppColors.subtle,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+          horizontal: 24,
+          vertical: 16,
         ),
-        constraints: const BoxConstraints(
-          minHeight: AppSpacing.touchComfortable,
-        ),
+        // Web: h-14 (56px)
+        constraints: const BoxConstraints(minHeight: 56),
         prefixIcon: _buildPrefixIcon(),
         suffixIcon: _buildSuffixIcon(),
         counterText: '',
-        border: _buildBorder(AppColors.border),
-        enabledBorder: _buildBorder(AppColors.border),
-        focusedBorder: _buildBorder(AppColors.primary, width: 1.5),
+        // Web: border-2, rounded-2xl (16px)
+        border: _buildBorder(const Color(0xFFF3F4F6)),
+        enabledBorder: _buildBorder(const Color(0xFFF3F4F6)),
+        focusedBorder: _buildBorder(AppColors.primary),
         errorBorder: _buildBorder(AppColors.danger),
-        focusedErrorBorder: _buildBorder(AppColors.danger, width: 1.5),
+        focusedErrorBorder: _buildBorder(AppColors.danger),
         disabledBorder: _buildBorder(AppColors.borderLight),
         errorStyle: const TextStyle(fontSize: 0, height: 0),
       ),
     );
   }
 
-  OutlineInputBorder _buildBorder(Color color, {double width = 1.0}) {
+  OutlineInputBorder _buildBorder(Color color, {double width = 2.0}) {
     return OutlineInputBorder(
-      borderRadius: AppRadius.borderSm,
+      // Web: rounded-2xl = 16px
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: color, width: width),
     );
   }
@@ -132,8 +145,9 @@ class TanderTextField extends StatelessWidget {
   Widget? _buildPrefixIcon() {
     if (prefixIcon == null) return null;
     return Padding(
-      padding: const EdgeInsets.only(left: AppSpacing.sm, right: AppSpacing.xs),
-      child: Icon(prefixIcon, size: 20, color: AppColors.textMuted),
+      // Web: left-6 (24px)
+      padding: const EdgeInsets.only(left: 24, right: 12),
+      child: Icon(prefixIcon, size: 24, color: AppColors.textDisabled),
     );
   }
 

@@ -147,6 +147,8 @@ class ProfileLoadedBody extends StatelessWidget {
             gender: gender,
             lookingFor: lookingFor,
             onChangePhoto: () => _openPhotosSheet(context),
+            interestsCount: interests.length,
+            bio: bio,
           ),
           _ProfileContent(
             gallery: gallery,
@@ -294,7 +296,7 @@ class _ProfileContent extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           // Sign out button
           _SignOutButton(),
-          const SizedBox(height: 120), // extra space so content isn't hidden behind floating nav bar
+          const SizedBox(height: 160), // extra space so content isn't hidden behind floating nav bar
         ],
       ),
     );

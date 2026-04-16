@@ -10,7 +10,8 @@ import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_submi
 import 'package:tander_flutter_v3/shared/widgets/data_privacy_sheet.dart';
 import 'package:tander_flutter_v3/shared/widgets/terms_conditions_sheet.dart';
 
-const Color _cardBorderColor = Color(0x1AE6A032);
+/// Web: border-white/20 = rgba(255,255,255,0.20).
+const Color _cardBorderColor = Color(0x33FFFFFF);
 
 enum LoginFormCardLayout { mobile, tablet, desktop }
 
@@ -71,43 +72,26 @@ class _LoginFormCardState extends State<LoginFormCard> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = widget.layout == LoginFormCardLayout.desktop;
-    final borderRadius = BorderRadius.circular(isDesktop ? 32 : 28);
-    final padding = EdgeInsets.fromLTRB(
-      isDesktop ? 40 : 32,
-      isDesktop ? 36 : 32,
-      isDesktop ? 40 : 32,
-      isDesktop ? 36 : 32,
+    final borderRadius = BorderRadius.circular(32);
+    // Web: px-6 py-8 (mobile), lg:px-10 lg:py-8 (desktop)
+    final padding = EdgeInsets.symmetric(
+      horizontal: isDesktop ? 40 : 24,
+      vertical: 32,
     );
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFF), Color(0xFFFFFCF8)],
-        ),
+        // Web: bg-white/95
+        color: const Color(0xF2FFFFFF),
         borderRadius: borderRadius,
         border: Border.all(color: _cardBorderColor),
+        // Web: shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-          BoxShadow(
-            color: Color(0x0FB46414),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Color(0x1AC85A12),
-            blurRadius: 48,
-            offset: Offset(0, 16),
-          ),
-          BoxShadow(
-            color: Color(0x0F000000),
+            color: Color(0x1F000000),
             blurRadius: 80,
-            offset: Offset(0, 32),
+            offset: Offset(0, 48),
+            spreadRadius: -16,
           ),
         ],
       ),
@@ -117,12 +101,23 @@ class _LoginFormCardState extends State<LoginFormCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Web: h-2 = 8px accent bar with glow
             Container(
-              height: 2.5,
+              height: 8,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
+                  colors: [
+                    Color(0xFFE67E22),
+                    Color(0xFFF39C12),
+                    Color(0xFFE67E22),
+                  ],
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x4DE67E22),
+                    blurRadius: 12,
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -131,7 +126,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const _HeadingBlock()
+                  _HeadingBlock(layout: widget.layout)
                       .animate()
                       .fadeIn(
                         duration: 550.ms,
@@ -179,7 +174,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
         children: [
           LoginTextField(
             label: 'Email or phone number',
-            hint: 'name@email.com or 09XXXXXXXXX',
+            hint: 'Enter your contact info',
             controller: widget.emailController,
             focusNode: widget.emailFocusNode,
             prefixIcon: Icons.mail_outline,
@@ -199,10 +194,16 @@ class _LoginFormCardState extends State<LoginFormCard> {
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F4F0),
-              borderRadius: BorderRadius.circular(12),
+              // Web: bg-gray-50/80 = rgba(249,250,251,0.80)
+              color: const Color(0xCCF9FAFB),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                // Web: border-gray-100/50
+                color: const Color(0x80F3F4F6),
+                width: 2,
+              ),
             ),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             child: AgreementCheckboxes(
               agreedToTerms: _agreedToTerms,
               agreedToPrivacy: _agreedToPrivacy,
@@ -235,15 +236,14 @@ class _LoginFormCardState extends State<LoginFormCard> {
                 : const SizedBox.shrink(),
           ),
           const SizedBox(height: 20),
+          const SizedBox(height: 8),
           LoginSubmitButton(
             isLoading: widget.isLoading,
             onPressed: _handleSubmit,
           ),
-          const SizedBox(height: 12),
+          // Web: trust badges right after button, then register link
           const _PrivacyNotice(),
-          const SizedBox(height: 18),
-          Divider(height: 1, color: AppColors.primary.withValues(alpha: 0.12)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _CreateAccountPrompt(onTap: widget.onRegister),
         ],
       ),
@@ -259,21 +259,37 @@ class _LoginFormCardState extends State<LoginFormCard> {
 }
 
 class _HeadingBlock extends StatelessWidget {
-  const _HeadingBlock();
+  const _HeadingBlock({required this.layout});
+
+  final LoginFormCardLayout layout;
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = layout == LoginFormCardLayout.desktop;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Welcome back',
+          "It's good to see you again",
+          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
           style: AppTypography.displayLg.copyWith(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            height: 1.08,
-            letterSpacing: -0.32,
+            fontSize: isDesktop ? 30 : 28,
+            fontWeight: FontWeight.w900,
+            height: 1.1,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Sign in to catch up with your community and friends.',
+          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+          style: AppTypography.body.copyWith(
+            fontSize: isDesktop ? 16 : 15,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textMuted,
+            height: 1.5,
           ),
         ),
       ],
@@ -354,29 +370,47 @@ class _ApiErrorBannerState extends State<_ApiErrorBanner>
   }
 }
 
+/// Web: trust badges — "ID Verified" + "Secure" with teal icons.
 class _PrivacyNotice extends StatelessWidget {
   const _PrivacyNotice();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.verified_user, size: 12, color: AppColors.secondary),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            'Your privacy and safety are our top priority',
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade200),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.check_circle, size: 22, color: AppColors.secondary),
+          const SizedBox(width: 10),
+          Text(
+            'ID VERIFIED',
             style: AppTypography.caption.copyWith(
-              fontSize: 11,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
               color: AppColors.textMuted,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+          const SizedBox(width: 32),
+          const Icon(Icons.verified_user, size: 22, color: AppColors.secondary),
+          const SizedBox(width: 10),
+          Text(
+            'SECURE',
+            style: AppTypography.caption.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -388,55 +422,28 @@ class _CreateAccountPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
+    // Web: text-center, text-[16px] font-bold text-gray-500
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: AppTypography.body.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+            ),
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.person_add_alt_1_rounded,
-                  size: 16,
+              const TextSpan(text: 'New to Tander? '),
+              TextSpan(
+                text: 'Join our community',
+                style: AppTypography.body.copyWith(
+                  fontWeight: FontWeight.w700,
                   color: AppColors.primary,
+                  decoration: TextDecoration.underline,
+                  decorationThickness: 2,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: AppTypography.bodySm.copyWith(
-                      color: AppColors.textMuted,
-                      height: 1.35,
-                    ),
-                    children: [
-                      const TextSpan(text: 'New to Tander? '),
-                      TextSpan(
-                        text: 'Create an account',
-                        style: AppTypography.bodySm.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const TextSpan(text: ' to get started'),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                size: 18,
-                color: AppColors.primaryAccessible,
               ),
             ],
           ),

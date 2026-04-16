@@ -78,6 +78,10 @@
 	<string>Tander needs permission to save photos to your library.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Tander uses your local network to establish peer-to-peer connections for calls.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Tander needs your location to show you nearby matches and enable location-based features.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Tander needs your location to show you nearby matches even when the app is in the background.</string>
 
 	<!-- ── Background modes ───────────────────────────────────────────── -->
 	<key>UIBackgroundModes</key>

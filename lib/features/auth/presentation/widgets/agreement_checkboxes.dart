@@ -83,18 +83,18 @@ class _CheckboxRow extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Padding(
         // web: px-1 py-1
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // web: w-[20px] h-[20px] rounded-[5px] border-[1.5px]
             AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              width: 20,
-              height: 20,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 color: isChecked ? checkedColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isChecked ? checkedColor : _uncheckedBorder,
                   width: 1.5,
@@ -113,9 +113,9 @@ class _CheckboxRow extends StatelessWidget {
               child: Text.rich(
                 TextSpan(
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF374151), // web: text-text-body #374151
+                    color: Color(0xFF374151),
                     height: 1.4,
                   ),
                   children: [
@@ -128,7 +128,7 @@ class _CheckboxRow extends StatelessWidget {
                         child: Text(
                           linkText,
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: linkColor,
                             decoration: TextDecoration.underline,

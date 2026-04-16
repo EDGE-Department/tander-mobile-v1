@@ -461,7 +461,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
                 },
                 enabled: !_isLoading,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               if (_method == RegistrationMethod.phone)
                 _buildTextField(
                   label: 'Mobile Number',
@@ -496,7 +496,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
                   prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF9CA3AF)),
                   suffixIcon: AvailabilitySuffixIcon(status: _emailAvailability),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               _buildTextField(
                 label: 'Password',
                 hint: '8+ characters with uppercase and number',
@@ -512,7 +512,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
                 enabled: !_isLoading,
                 prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF9CA3AF)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               if (_showPasswordChecklist) ...[
                 PasswordRequirementsChecklist(
                   password: _passwordCtrl.text,
@@ -520,7 +520,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
                       ? _confirmCtrl.text
                       : null,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
               ],
               _buildTextField(
                 label: 'Confirm Password',
@@ -739,7 +739,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
         Text(
           label,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
             color: Color(0xFF374151),
           ),

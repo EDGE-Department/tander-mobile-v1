@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:tander_flutter_v3/features/splash/presentation/widgets/splash_painters.dart';
+
 // ── Gradients ────────────────────────────────────────────────────────
 
 /// Web: --gradient-auth-bg: linear-gradient(135deg, #F07040…#20BF68)
@@ -218,8 +220,31 @@ class WaveSeamPainter extends CustomPainter {
 
 // ── Header scene (constellation + grain + 60+ watermark) ─────────────
 
-class AuthHeaderScene extends StatelessWidget {
+class AuthHeaderScene extends StatefulWidget {
   const AuthHeaderScene({super.key});
+
+  @override
+  State<AuthHeaderScene> createState() => _AuthHeaderSceneState();
+}
+
+class _AuthHeaderSceneState extends State<AuthHeaderScene>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -234,13 +259,16 @@ class AuthHeaderScene extends StatelessWidget {
               child: CustomPaint(painter: AuthGrainPainter()),
             ),
           ),
-          const Positioned.fill(
+          // Web's 19-node animated constellation at 45% opacity
+          Positioned.fill(
             child: IgnorePointer(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                child: Opacity(
-                  opacity: 0.9,
-                  child: CustomPaint(painter: AuthConstellationPainter()),
+              child: Opacity(
+                opacity: 0.45,
+                child: AnimatedBuilder(
+                  animation: _ctrl,
+                  builder: (_, _) => CustomPaint(
+                    painter: SplashConstellationPainter(_ctrl.value),
+                  ),
                 ),
               ),
             ),

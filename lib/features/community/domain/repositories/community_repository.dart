@@ -21,6 +21,15 @@ abstract interface class CommunityRepository {
     List<String> photoPaths,
   });
 
+  /// Updates an existing post's content.
+  Future<Result<CommunityPostItem>> updatePost({
+    required int postId,
+    required String content,
+  });
+
+  /// Deletes a post by ID.
+  Future<Result<void>> deletePost({required int postId});
+
   /// Fetches comments for a post, optionally paging with [cursor].
   Future<Result<CommentsPage>> fetchComments({
     required int postId,

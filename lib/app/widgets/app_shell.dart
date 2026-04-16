@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/app/router/app_router.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/app/widgets/bottom_nav_bar.dart';
 import 'package:tander_flutter_v3/app/widgets/top_nav_bar.dart';
 import 'package:tander_flutter_v3/features/auth/data/datasources/notification_handler.dart';
@@ -372,7 +373,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final bool isInCall = callState.status is! CallIdle &&
         callState.status is! CallEnded &&
         callState.callInfo != null;
-    final bool hideNav = showOverlay || isInCall;
+    final bool isModalOpen = ref.watch(modalVisibleProvider);
+    final bool hideNav = showOverlay || isInCall || isModalOpen;
     final double screenWidth = MediaQuery.sizeOf(context).width;
     final bool useTopNav = screenWidth >= 1024;
 

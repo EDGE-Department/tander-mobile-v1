@@ -15,14 +15,40 @@ import 'package:tander_flutter_v3/features/community/presentation/states/communi
 import 'package:tander_flutter_v3/features/community/presentation/widgets/post_detail_parts.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
-class CommunityPostScreen extends ConsumerWidget {
+class CommunityPostScreen extends ConsumerStatefulWidget {
   const CommunityPostScreen({required this.postId, super.key});
 
   final int postId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final postState = ref.watch(communityPostNotifierProvider(postId));
+  ConsumerState<CommunityPostScreen> createState() =>
+      _CommunityPostScreenState();
+}
+
+class _CommunityPostScreenState extends ConsumerState<CommunityPostScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Hide bottom nav when post detail is open.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(modalVisibleProvider.notifier).state = true;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Restore bottom nav when leaving.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(modalVisibleProvider.notifier).state = false;
+    });
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final postState = ref.watch(communityPostNotifierProvider(widget.postId));
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -72,7 +98,7 @@ class CommunityPostScreen extends ConsumerWidget {
                       onToggleReaction: () {
                         ref
                             .read(
-                              communityPostNotifierProvider(postId).notifier,
+                              communityPostNotifierProvider(widget.postId).notifier,
                             )
                             .toggleReaction();
                       },
@@ -106,21 +132,21 @@ class CommunityPostScreen extends ConsumerWidget {
                     depth: 0,
                     onReply: (target) {
                       ref
-                          .read(communityPostNotifierProvider(postId).notifier)
+                          .read(communityPostNotifierProvider(widget.postId).notifier)
                           .setReplyTarget(target);
                     },
                     expandedReplies: expandedReplies[comment.commentId] ?? const [],
                     onExpandReplies: comment.replyCount > 0
                         ? () {
                             ref
-                                .read(communityPostNotifierProvider(postId).notifier)
+                                .read(communityPostNotifierProvider(widget.postId).notifier)
                                 .loadReplies(commentId: comment.commentId);
                           }
                         : null,
                     currentUserId: currentUserId,
                     onDelete: () {
                       ref
-                          .read(communityPostNotifierProvider(postId).notifier)
+                          .read(communityPostNotifierProvider(widget.postId).notifier)
                           .deleteCommentById(commentId: comment.commentId);
                     },
                   );
@@ -128,12 +154,12 @@ class CommunityPostScreen extends ConsumerWidget {
               ),
             ),
             PostCommentInput(
-              postId: postId,
+              postId: widget.postId,
               isSending: isSendingComment,
               replyTarget: replyTarget,
               onClearReply: () {
                 ref
-                    .read(communityPostNotifierProvider(postId).notifier)
+                    .read(communityPostNotifierProvider(widget.postId).notifier)
                     .clearReplyTarget();
               },
             ),

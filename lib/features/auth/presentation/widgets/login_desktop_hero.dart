@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_connection_showcase.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_constellation.dart';
 
 /// Desktop/landscape left panel for the login screen.
 ///
@@ -40,6 +41,7 @@ class DesktopHeroPanel extends StatelessWidget {
       child: Stack(
         children: [
           _buildAuroraBlobs(),
+          LoginConstellation(),
           // Warm center glow — matches web's ambient golden light
           Positioned.fill(
             child: Center(
@@ -327,6 +329,7 @@ class TabletPortraitHeroPanel extends StatelessWidget {
                   showSocialOrbs: false,
                 ),
               ),
+              LoginConstellation(),
               Positioned.fill(
                 child: Align(
                   alignment: Alignment.center,

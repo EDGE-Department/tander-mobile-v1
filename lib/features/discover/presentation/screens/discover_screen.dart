@@ -54,6 +54,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   void _openCreatePostSheet() {
     CreatePostSheet.show(
       context: context,
+      ref: ref,
       onPostCreated: () {},
     );
   }

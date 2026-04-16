@@ -70,3 +70,9 @@ final dioClientProvider = Provider<DioClient>((ref) {
     onTokenRefreshed: ref.watch(onTokenRefreshedProvider),
   );
 });
+
+// ---------------------------------------------------------------------------
+// Modal visibility — set true when a modal/sheet is open to hide bottom nav
+// ---------------------------------------------------------------------------
+
+final modalVisibleProvider = StateProvider<bool>((ref) => false);

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_radius.dart';
-import 'package:tander_flutter_v3/core/theme/app_shadows.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
@@ -122,7 +120,8 @@ class _TanderButtonState extends State<TanderButton>
             decoration: BoxDecoration(
               gradient: specs.gradient,
               color: specs.gradient == null ? specs.backgroundColor : null,
-              borderRadius: AppRadius.borderSm,
+              // Web: rounded-[20px]
+              borderRadius: BorderRadius.circular(20),
               border: specs.borderSide != null
                   ? Border.all(
                       color: specs.borderSide!.color,
@@ -180,7 +179,7 @@ class _TanderButtonState extends State<TanderButton>
     }
 
     final label = Text(
-      widget.label,
+      widget.label.toUpperCase(),
       style: _resolveLabelStyle(specs.foregroundColor),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -217,17 +216,20 @@ class _TanderButtonState extends State<TanderButton>
       TanderButtonSize.normal => AppTypography.body,
       TanderButtonSize.large => AppTypography.bodyLg,
     };
+    // Web: font-black uppercase tracking-[0.12em]
     return baseStyle.copyWith(
       color: color,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w900,
       height: 1.0,
+      letterSpacing: 0.12 * 16,
     );
   }
 
   double _resolveMinHeight() {
     return switch (widget.size) {
       TanderButtonSize.compact => 40,
-      TanderButtonSize.normal => AppSpacing.touchComfortable,
+      // Web: h-[60px]
+      TanderButtonSize.normal => 60,
       TanderButtonSize.large => 64,
     };
   }
@@ -260,18 +262,27 @@ class _VariantSpecs {
   final BorderSide? borderSide;
   final List<BoxShadow>? boxShadow;
 
+  // Web: bg-gradient-to-r from-[#E67E22] to-[#D35400]
   static const _primaryGradient = LinearGradient(
-    begin: Alignment(-0.7, -1),
-    end: Alignment(0.7, 1),
-    colors: [Color(0xFFE67E22), Color(0xFFC96D18)],
+    colors: [Color(0xFFE67E22), Color(0xFFD35400)],
   );
+
+  // Web: shadow-[0_20px_40px_-12px_rgba(230,126,34,0.35)]
+  static const _primaryShadow = [
+    BoxShadow(
+      color: Color(0x59E67E22),
+      blurRadius: 40,
+      offset: Offset(0, 20),
+      spreadRadius: -12,
+    ),
+  ];
 
   static _VariantSpecs resolve(TanderButtonVariant variant) {
     return switch (variant) {
       TanderButtonVariant.primary => const _VariantSpecs(
             foregroundColor: AppColors.textInverse,
             gradient: _primaryGradient,
-            boxShadow: AppShadows.warmMd,
+            boxShadow: _primaryShadow,
           ),
       TanderButtonVariant.secondary => const _VariantSpecs(
             foregroundColor: AppColors.textInverse,

@@ -59,6 +59,7 @@ class CommunityPostItem {
   final DateTime createdAt;
 
   CommunityPostItem copyWith({
+    String? content,
     int? reactionCount,
     int? commentCount,
     bool? hasReacted,
@@ -66,7 +67,7 @@ class CommunityPostItem {
     return CommunityPostItem(
       postId: postId,
       author: author,
-      content: content,
+      content: content ?? this.content,
       mediaUrls: mediaUrls,
       reactionCount: reactionCount ?? this.reactionCount,
       commentCount: commentCount ?? this.commentCount,

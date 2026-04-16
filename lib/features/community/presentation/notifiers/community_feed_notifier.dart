@@ -145,4 +145,65 @@ final class CommunityFeedNotifier extends Notifier<CommunityFeedState> {
       );
     }
   }
+
+  /// Updates a post's content and refreshes it in the feed.
+  Future<bool> updatePost({
+    required String postId,
+    required String content,
+  }) async {
+    final parsedId = int.tryParse(postId);
+    if (parsedId == null) return false;
+
+    final result = await _repository.updatePost(
+      postId: parsedId,
+      content: content,
+    );
+
+    if (result.isSuccess) {
+      final currentState = state;
+      if (currentState is CommunityFeedLoaded) {
+        final updatedPosts = currentState.posts.map((post) {
+          if (post.postId != postId) return post;
+          return post.copyWith(content: content);
+        }).toList();
+        state = currentState.copyWith(posts: updatedPosts);
+      }
+      return true;
+    }
+
+    AppLogger.error(
+      'Failed to update post',
+      operation: _tag,
+      error: result.exceptionOrNull,
+    );
+    return false;
+  }
+
+  /// Deletes a post and removes it from the feed optimistically.
+  Future<bool> deletePost({required String postId}) async {
+    final currentState = state;
+    if (currentState is! CommunityFeedLoaded) return false;
+
+    // Optimistic removal.
+    final updatedPosts =
+        currentState.posts.where((post) => post.postId != postId).toList();
+    state = currentState.copyWith(posts: updatedPosts);
+
+    final parsedId = int.tryParse(postId);
+    if (parsedId == null) return false;
+
+    final result = await _repository.deletePost(postId: parsedId);
+
+    if (result.isFailure) {
+      // Revert optimistic removal.
+      state = currentState;
+      AppLogger.error(
+        'Failed to delete post',
+        operation: _tag,
+        error: result.exceptionOrNull,
+      );
+      return false;
+    }
+    return true;
+  }
 }

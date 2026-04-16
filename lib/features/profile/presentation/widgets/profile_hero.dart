@@ -1,24 +1,15 @@
-/// Hero banner for the profile screen with cover image, avatar, identity,
-/// completion badge, and meta pills.
+/// Profile hero section — 1:1 replica of web's ProfileHero.
 ///
-/// Phone layout: centered avatar + name stack, 96 px avatar, 140 px cover.
-/// Tablet layout (>= 600 px): side-by-side avatar + name, 112 px avatar,
-/// 180 px cover. A [CompletionRingPainter] draws the progress arc.
+/// No cover banner. Flat layout with ambient glows, large rounded avatar
+/// with gradient ring, social stats row, bio, and meta pills.
+/// Phone: centered column. Tablet (>=640): side-by-side row.
 library;
 
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
-import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_hero_parts.dart';
+import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_badge.dart';
-
-const double _mobileAvatarSize = 96;
-const double _tabletAvatarSize = 112;
-const double _coverHeightMobile = 140;
-const double _coverHeightTablet = 180;
-const double _changePhotoSize = 32;
-const double _tabletChangePhotoSize = 36;
 
 class ProfileHero extends StatelessWidget {
   const ProfileHero({
@@ -35,6 +26,8 @@ class ProfileHero extends StatelessWidget {
     required this.gender,
     required this.lookingFor,
     required this.onChangePhoto,
+    this.interestsCount = 0,
+    this.bio = '',
     super.key,
   });
 
@@ -51,201 +44,414 @@ class ProfileHero extends StatelessWidget {
   final String? gender;
   final String? lookingFor;
   final VoidCallback onChangePhoto;
+  final int interestsCount;
+  final String bio;
 
   @override
   Widget build(BuildContext context) {
-    final bool isTablet =
-        MediaQuery.of(context).size.width >= 1024;
-    final double avatarSize =
-        isTablet ? _tabletAvatarSize : _mobileAvatarSize;
-    final double coverHeight =
-        isTablet ? _coverHeightTablet : _coverHeightMobile;
-    final double horizontalPadding =
-        isTablet ? AppSpacing.lg : AppSpacing.sm;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isTablet = screenWidth >= 640;
+    // Web: h-32 w-32 (128px) mobile, sm:h-44 sm:w-44 (176px) tablet
+    final avatarSize = isTablet ? 176.0 : 128.0;
 
-    return Column(
+    return Stack(
       children: [
-        _buildCoverBanner(coverHeight, isTablet, horizontalPadding),
-        _buildAvatarAndIdentity(
-          avatarSize,
-          isTablet,
-          horizontalPadding,
+        // Ambient glows behind identity
+        Positioned(
+          top: 0,
+          left: screenWidth * 0.15,
+          child: Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary.withValues(alpha: 0.08),
+            ),
+          ),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        _buildBadgesAndMeta(isTablet, horizontalPadding),
-        SizedBox(height: isTablet ? AppSpacing.sm : AppSpacing.xs),
+        Positioned(
+          top: 60,
+          right: screenWidth * 0.15,
+          child: Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.secondary.withValues(alpha: 0.08),
+            ),
+          ),
+        ),
+
+        // Content
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            isTablet ? 64 : 40,
+            16,
+            isTablet ? 48 : 32,
+          ),
+          child: isTablet
+              ? _buildTabletLayout(avatarSize)
+              : _buildMobileLayout(avatarSize),
+        ),
       ],
     );
   }
 
-  // ── Cover banner ──────────────────────────────────────────────────
+  Widget _buildMobileLayout(double avatarSize) {
+    return Column(
+      children: [
+        _buildAvatar(avatarSize),
+        const SizedBox(height: 32),
+        _buildIdentity(centered: true),
+      ],
+    );
+  }
 
-  Widget _buildCoverBanner(
-    double coverHeight,
-    bool isTablet,
-    double horizontalPadding,
-  ) {
-    final coverUrl = gallery.length > 1 ? gallery[1] : gallery.firstOrNull;
-    final photoButtonSize =
-        isTablet ? _tabletChangePhotoSize : _changePhotoSize;
+  Widget _buildTabletLayout(double avatarSize) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildAvatar(avatarSize),
+        const SizedBox(width: 48),
+        Expanded(child: _buildIdentity(centered: false)),
+      ],
+    );
+  }
 
-    return SizedBox(
-      height: coverHeight,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (coverUrl != null && coverUrl.isNotEmpty)
-            Image.network(
-                  coverUrl,
-              fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => heroDefaultGradient(),
-            )
-          else
-            heroDefaultGradient(),
-          heroBottomGradientOverlay(),
+  // ── Avatar with gradient ring + online badge ────────────────────────
+
+  Widget _buildAvatar(double size) {
+    final hasPhoto = gallery.isNotEmpty;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Web: rounded-[40px] p-1.5 gradient ring, shadow
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(40),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primary,
+                AppColors.secondary,
+                Color(0xFFFB923C), // orange-400
+              ],
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x4DE67E22),
+                blurRadius: 64,
+                offset: Offset(0, 32),
+                spreadRadius: -12,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(6),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(34),
+              border: Border.all(color: Colors.white, width: 5),
+              color: AppColors.subtle,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: hasPhoto
+                ? Image.network(
+                    gallery[0],
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    errorBuilder: (_, _, _) => _avatarFallback(),
+                  )
+                : _avatarFallback(),
+          ),
+        ),
+
+        // Web: online badge — -bottom-2 -right-2, "ACTIVE" text
+        if (isOnline)
           Positioned(
-            top: AppSpacing.sm,
-            left: horizontalPadding,
-            right: horizontalPadding,
-            child: SafeArea(
-              bottom: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  HeroCompletionPill(
-                    completionPercent: completionPercent,
-                    isProfileComplete: isProfileComplete,
+            bottom: -8,
+            right: -8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 16,
+                    offset: Offset(0, 4),
                   ),
-                  GestureDetector(
-                    onTap: onChangePhoto,
-                    child: Container(
-                      width: photoButtonSize,
-                      height: photoButtonSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.12),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 14,
-                        color: AppColors.textInverse,
-                      ),
+                ],
+                border: Border.all(color: const Color(0xFFECFDF5)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF22C55E),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'ACTIVE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2.0,
+                      color: Color(0xFF16A34A),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
+      ],
+    );
+  }
+
+  Widget _avatarFallback() {
+    return Container(
+      color: AppColors.primaryLight,
+      child: const Center(
+        child: Icon(Icons.person, size: 56, color: AppColors.primary),
       ),
     );
   }
 
-  // ── Avatar + Identity ─────────────────────────────────────────────
+  // ── Identity: name, badges, stats, username, bio, meta ──────────────
 
-  Widget _buildAvatarAndIdentity(
-    double avatarSize,
-    bool isTablet,
-    double horizontalPadding,
-  ) {
-    final avatarWidget = HeroAvatar(
-      gallery: gallery,
-      displayName: displayName,
-      isOnline: isOnline,
-      completionPercent: completionPercent,
-      avatarSize: avatarSize,
-      borderWidth: isTablet ? 4.0 : 3.5,
-      onChangePhoto: onChangePhoto,
-    );
+  Widget _buildIdentity({required bool centered}) {
+    final alignment = centered ? CrossAxisAlignment.center : CrossAxisAlignment.start;
+    final textAlign = centered ? TextAlign.center : TextAlign.left;
+    final wrapAlignment = centered ? WrapAlignment.center : WrapAlignment.start;
 
-    final identityWidget = HeroIdentityText(
-      displayName: displayName,
-      username: username,
-      isOnline: isOnline,
-      isTablet: isTablet,
-    );
-
-    return Transform.translate(
-      offset: Offset(0, -avatarSize / 2),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-        child: isTablet
-            ? Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  avatarWidget,
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: AppSpacing.xs),
-                      child: identityWidget,
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                children: [
-                  avatarWidget,
-                  const SizedBox(height: AppSpacing.xs),
-                  identityWidget,
-                ],
+    return Column(
+      crossAxisAlignment: alignment,
+      children: [
+        // Name + verification + tier badge
+        Wrap(
+          alignment: wrapAlignment,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            // Web: font-display text-3xl sm:text-4xl font-black
+            Text(
+              displayName,
+              textAlign: textAlign,
+              style: AppTypography.h1.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
-      ),
+            ),
+            if (isVerified)
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFD1FAE5)),
+                ),
+                child: const Icon(
+                  Icons.verified_user,
+                  size: 22,
+                  color: AppColors.secondary,
+                ),
+              ),
+            TanderBadge(label: tierLabel),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Social stats row — Web: gap-10 sm:gap-14
+        Row(
+          mainAxisAlignment:
+              centered ? MainAxisAlignment.center : MainAxisAlignment.start,
+          children: [
+            _StatTile(
+              value: '${gallery.length}',
+              label: 'PHOTOS',
+              valueColor: AppColors.textStrong,
+            ),
+            SizedBox(width: centered ? 40 : 56),
+            _StatTile(
+              value: '$interestsCount',
+              label: 'INTERESTS',
+              valueColor: AppColors.secondary,
+            ),
+            SizedBox(width: centered ? 40 : 56),
+            _StatTile(
+              value: '$completionPercent',
+              label: 'STRENGTH',
+              valueColor: AppColors.primaryAccessible,
+              suffix: '%',
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
+
+        // @username + bio
+        Text(
+          '@$username',
+          textAlign: textAlign,
+          style: AppTypography.body.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textStrong,
+          ),
+        ),
+        if (bio.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            bio,
+            textAlign: textAlign,
+            maxLines: centered ? 3 : null,
+            overflow: centered ? TextOverflow.ellipsis : null,
+            style: AppTypography.bodySm.copyWith(
+              color: AppColors.textBody,
+              height: 1.6,
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+
+        // Meta pills — Web: text-[13px] font-black uppercase tracking-wider
+        Wrap(
+          alignment: wrapAlignment,
+          spacing: 20,
+          runSpacing: 10,
+          children: [
+            if (displayLocation.isNotEmpty)
+              _MetaPill(
+                icon: Icons.location_on,
+                iconColor: AppColors.primary,
+                label: displayLocation,
+              ),
+            if (age != null)
+              _MetaPill(
+                icon: Icons.calendar_today,
+                iconColor: AppColors.secondary,
+                label: '$age Yrs',
+              ),
+            if (gender != null)
+              _MetaPill(
+                icon: Icons.people,
+                iconColor: AppColors.primary,
+                label: gender!,
+              ),
+            if (lookingFor != null)
+              _MetaPill(
+                icon: Icons.favorite,
+                iconColor: AppColors.danger,
+                label: lookingFor!,
+              ),
+          ],
+        ),
+      ],
     );
   }
+}
 
-  // ── Badges and meta ───────────────────────────────────────────────
+// ── Stat tile ─────────────────────────────────────────────────────────
 
-  Widget _buildBadgesAndMeta(bool isTablet, double horizontalPadding) {
-    final alignment =
-        isTablet ? WrapAlignment.start : WrapAlignment.center;
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.value,
+    required this.label,
+    required this.valueColor,
+    this.suffix,
+  });
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: Wrap(
-        alignment: alignment,
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xxs,
-        children: [
-          TanderBadge(label: tierLabel),
-          if (isVerified)
-            const TanderBadge(
-              label: 'Verified',
-              variant: TanderBadgeVariant.info,
-              icon: Icons.verified_user,
+  final String value;
+  final String label;
+  final Color valueColor;
+  final String? suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: valueColor,
+                height: 1.0,
+              ),
             ),
-          if (displayLocation.isNotEmpty)
-            HeroMetaPill(
-              icon: Icons.location_on,
-              iconColor: AppColors.primary,
-              label: displayLocation,
-            ),
-          if (age != null)
-            HeroMetaPill(
-              icon: Icons.calendar_today,
-              iconColor: AppColors.secondary,
-              label: '$age years old',
-            ),
-          if (gender != null)
-            HeroMetaPill(
-              icon: Icons.people,
-              iconColor: AppColors.primary,
-              label: gender!,
-            ),
-          if (lookingFor != null)
-            HeroMetaPill(
-              icon: Icons.favorite,
-              iconColor: AppColors.danger,
-              label: lookingFor!,
-            ),
-        ],
-      ),
+            if (suffix != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  suffix!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: valueColor.withValues(alpha: 0.60),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2.2,
+            color: AppColors.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Meta pill ─────────────────────────────────────────────────────────
+
+class _MetaPill extends StatelessWidget {
+  const _MetaPill({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(width: 8),
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+            color: AppColors.textMuted,
+          ),
+        ),
+      ],
     );
   }
 }

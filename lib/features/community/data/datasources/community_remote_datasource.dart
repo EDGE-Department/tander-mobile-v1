@@ -89,6 +89,46 @@ final class CommunityRemoteDatasource {
   }
 
   // -----------------------------------------------------------------------
+  // Update Post
+  // -----------------------------------------------------------------------
+
+  /// Updates an existing community post's content.
+  Future<Response<Map<String, Object?>>> updatePost({
+    required int postId,
+    required String content,
+  }) {
+    AppLogger.debug(
+      'Updating community post',
+      operation: '$_tag.updatePost',
+      context: {'postId': postId},
+    );
+
+    return _dioClient.patch<Map<String, Object?>>(
+      ApiEndpoints.communityPost(postId),
+      data: <String, Object>{'content': content},
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Delete Post
+  // -----------------------------------------------------------------------
+
+  /// Deletes a community post by [postId].
+  Future<Response<Map<String, Object?>>> deletePost({
+    required int postId,
+  }) {
+    AppLogger.debug(
+      'Deleting community post',
+      operation: '$_tag.deletePost',
+      context: {'postId': postId},
+    );
+
+    return _dioClient.delete<Map<String, Object?>>(
+      ApiEndpoints.communityPost(postId),
+    );
+  }
+
+  // -----------------------------------------------------------------------
   // Comments
   // -----------------------------------------------------------------------
 

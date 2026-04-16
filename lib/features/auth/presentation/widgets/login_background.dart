@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_constellation.dart';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -78,6 +79,8 @@ class _LoginHeaderBackgroundState extends State<LoginHeaderBackground>
               ),
             ),
           ),
+
+          const LoginConstellation(),
 
           // Vivid aurora: warm orange blob top-left (with drift)
           AnimatedBuilder(

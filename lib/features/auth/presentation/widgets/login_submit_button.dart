@@ -5,24 +5,18 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
 // ── Constants ────────────────────────────────────────────────────────
 
-/// Primary button gradient matching web's `var(--gradient-primary-button)`.
+/// Web: bg-gradient-to-r from-[#E67E22] to-[#D35400].
 const LinearGradient _buttonGradient = LinearGradient(
-  begin: Alignment(-0.7, -1),
-  end: Alignment(0.7, 1),
-  colors: [Color(0xFFE67E22), Color(0xFFC96D18)],
+  colors: [Color(0xFFE67E22), Color(0xFFD35400)],
 );
 
-/// Button shadow matching web's `0 8px 28px rgba(230,126,34,0.38), 0 2px 8px rgba(0,0,0,0.08)`.
+/// Web: shadow-[0_20px_40px_-12px_rgba(230,126,34,0.35)].
 const List<BoxShadow> _submitButtonShadow = [
   BoxShadow(
-    color: Color(0x61E67E22), // rgba(230,126,34,0.38)
-    blurRadius: 28,
-    offset: Offset(0, 8),
-  ),
-  BoxShadow(
-    color: Color(0x14000000), // rgba(0,0,0,0.08)
-    blurRadius: 8,
-    offset: Offset(0, 2),
+    color: Color(0x59E67E22),
+    blurRadius: 40,
+    offset: Offset(0, 20),
+    spreadRadius: -12,
   ),
 ];
 
@@ -84,58 +78,66 @@ class _LoginSubmitButtonState extends State<LoginSubmitButton>
           onTapCancel: isInteractive ? _scaleController.reverse : null,
           onTap: isInteractive ? widget.onPressed : null,
           child: Container(
-            constraints: const BoxConstraints(
-              minHeight: 48, // web: h-12
-            ),
+            // Web: h-[60px] rounded-[20px]
+            height: 60,
             decoration: BoxDecoration(
               gradient: _buttonGradient,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: _submitButtonShadow,
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Shimmer sweep overlay
                 const _ShimmerSweep(),
-
-                // Button content
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  child: widget.isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Sign In',
-                              style: AppTypography.body.copyWith(
-                                fontSize: 16, // web: text-[16px]
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                height: 1.0,
+                widget.isLoading
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            const Icon(
-                              PhosphorIconsBold.arrowRight,
-                              size: 18, // web: size={18}
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'SIGNING IN...',
+                            style: AppTypography.body.copyWith(
+                              fontSize: 16,
                               color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.12 * 16,
+                              height: 1.0,
                             ),
-                          ],
-                        ),
-                ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Web: font-black uppercase tracking-[0.12em] text-base
+                          Text(
+                            'SIGN IN NOW',
+                            style: AppTypography.body.copyWith(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.12 * 16,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Icon(
+                            PhosphorIconsBold.arrowRight,
+                            size: 24,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
               ],
             ),
           ),
@@ -179,7 +181,7 @@ class _ShimmerSweepState extends State<_ShimmerSweep>
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(20),
         child: AnimatedBuilder(
           animation: _shimmerController,
           builder: (_, _) {

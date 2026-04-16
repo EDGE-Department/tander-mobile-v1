@@ -23,12 +23,14 @@ class DocumentScanView extends StatefulWidget {
   final int minimumAge;
   final void Function(String photoPath, OcrResult ocrResult) onScanned;
   final ValueChanged<String> onError;
+  final double reservedTopInset;
 
   const DocumentScanView({
     super.key,
     required this.minimumAge,
     required this.onScanned,
     required this.onError,
+    this.reservedTopInset = 0,
   });
 
   @override
@@ -186,7 +188,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
 
       if (!mounted || _isDisposed) return;
 
-      _setPhase(ScanPhase.scanning, 'Point your camera at your ID');
+      _setPhase(ScanPhase.scanning, 'Place your ID inside the frame');
       _detection = DetectionState.searching;
 
       // 45-second timeout.
@@ -275,7 +277,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
         _confidence = 0.0;
         _setDetection(
           DetectionState.searching,
-          'Point your camera at your ID',
+          'Place your ID inside the frame',
         );
       }
     }
@@ -393,7 +395,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
         await camera.startImageStream(_onCameraFrame);
       }
     } catch (_) {}
-    _setPhase(ScanPhase.scanning, 'Point your camera at your ID');
+    _setPhase(ScanPhase.scanning, 'Place your ID inside the frame');
     _detection = DetectionState.searching;
   }
 
@@ -500,6 +502,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
     final previewSize = camera.value.previewSize;
     if (previewSize == null) return _loadingView();
 
+    final mediaPadding = MediaQuery.paddingOf(context);
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -528,6 +532,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
                     pulseValue: _pulseCtrl.value,
                     screenSize: MediaQuery.sizeOf(context),
                     confidenceLevel: _confidence,
+                    reservedTopInset: widget.reservedTopInset,
+                    reservedBottomInset: mediaPadding.bottom + 96,
                   ),
                 );
               },
@@ -592,7 +598,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
     }
 
     return Positioned(
-      bottom: 80,
+      bottom: MediaQuery.paddingOf(context).bottom + 24,
       left: 0,
       right: 0,
       child: Center(
@@ -640,7 +646,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
                   _status,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

@@ -22,6 +22,9 @@ export 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_
 
 // ── Action row ─────────────────────────────────────────────────────────
 
+/// Web: flex items-center gap-4
+/// Edit Profile: flex-1 h-14 rounded-[24px] bg-primary text-white
+/// Settings/Help: w-14 h-14 rounded-[24px] border-2 bg-white icon-only
 class ProfileActionRow extends StatelessWidget {
   const ProfileActionRow({
     required this.onEdit,
@@ -38,87 +41,58 @@ class ProfileActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _PrimaryAction(label: 'Edit profile', onTap: onEdit),
-          const SizedBox(width: AppSpacing.xs),
-          _SecondaryAction(
-            icon: Icons.photo_library,
-            label: 'Photos',
-            onTap: onPhotos,
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          _SecondaryAction(
-            icon: Icons.settings,
-            label: 'Settings',
-            onTap: onSettings,
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          _SecondaryAction(
-            icon: Icons.help_outline,
-            label: 'Help',
-            onTap: onHelp,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PrimaryAction extends StatelessWidget {
-  const _PrimaryAction({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        constraints:
-            const BoxConstraints(minHeight: AppSpacing.touchMinimum),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: AppRadius.borderMd,
-          boxShadow: AppShadows.warmSm,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.edit,
-              size: 16,
-              color: AppColors.textInverse,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              label,
-              style: AppTypography.label.copyWith(
-                color: AppColors.textInverse,
+    return Row(
+      children: [
+        // Web: flex-1 h-14 rounded-[24px] bg-primary, font-black
+        Expanded(
+          child: GestureDetector(
+            onTap: onEdit,
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x80E67E22),
+                    blurRadius: 24,
+                    offset: Offset(0, 12),
+                    spreadRadius: -8,
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.edit, size: 20, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Edit Profile',
+                    style: AppTypography.body.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(width: 16),
+        // Web: w-14 h-14 rounded-[24px] border-2 border-border bg-white
+        _IconAction(icon: Icons.settings, onTap: onSettings),
+        const SizedBox(width: 16),
+        _IconAction(icon: Icons.help_outline, onTap: onHelp),
+      ],
     );
   }
 }
 
-class _SecondaryAction extends StatelessWidget {
-  const _SecondaryAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
+class _IconAction extends StatelessWidget {
+  const _IconAction({required this.icon, required this.onTap});
   final IconData icon;
-  final String label;
   final VoidCallback onTap;
 
   @override
@@ -126,25 +100,15 @@ class _SecondaryAction extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        constraints:
-            const BoxConstraints(minHeight: AppSpacing.touchMinimum),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: AppRadius.borderMd,
-          border: Border.all(color: AppColors.border),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border, width: 2),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: AppColors.textBody),
-            const SizedBox(width: AppSpacing.xxs),
-            Text(label, style: AppTypography.label),
-          ],
-        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 24, color: AppColors.textBody),
       ),
     );
   }

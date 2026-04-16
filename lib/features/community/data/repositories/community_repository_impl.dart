@@ -75,6 +75,38 @@ final class CommunityRepositoryImpl implements CommunityRepository {
   }
 
   // -----------------------------------------------------------------------
+  // Update Post
+  // -----------------------------------------------------------------------
+
+  @override
+  Future<Result<CommunityPostItem>> updatePost({
+    required int postId,
+    required String content,
+  }) {
+    return _runSafe('updatePost', () async {
+      final response = await _remoteDatasource.updatePost(
+        postId: postId,
+        content: content,
+      );
+      final body = _requireResponseBody(response.data, 'update post');
+      return CommunityMapper.mapPostDto(
+        CommunityPostDto.fromJson(body),
+      );
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Delete Post
+  // -----------------------------------------------------------------------
+
+  @override
+  Future<Result<void>> deletePost({required int postId}) {
+    return _runSafe('deletePost', () async {
+      await _remoteDatasource.deletePost(postId: postId);
+    });
+  }
+
+  // -----------------------------------------------------------------------
   // Comments
   // -----------------------------------------------------------------------
 
