@@ -73,54 +73,31 @@ class _LoginFormCardState extends State<LoginFormCard> {
   Widget build(BuildContext context) {
     final isDesktop = widget.layout == LoginFormCardLayout.desktop;
     final borderRadius = BorderRadius.circular(32);
-    // Web: px-6 py-8 (mobile), lg:px-10 lg:py-8 (desktop)
     final padding = EdgeInsets.symmetric(
       horizontal: isDesktop ? 40 : 24,
       vertical: 32,
     );
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        // Web: bg-white/95
-        color: const Color(0xF2FFFFFF),
-        borderRadius: borderRadius,
-        border: Border.all(color: _cardBorderColor),
-        // Web: shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1F000000),
-            blurRadius: 80,
-            offset: Offset(0, 48),
-            spreadRadius: -16,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Web: h-2 = 8px accent bar with glow
-            Container(
-              height: 8,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFFE67E22),
-                    Color(0xFFF39C12),
-                    Color(0xFFE67E22),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x4DE67E22),
-                    blurRadius: 12,
-                  ),
-                ],
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Orange accent bar at top
+          Container(
+            height: 6,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFF07040), Color(0xFFE86035)],
               ),
             ),
-            Padding(
+          ),
+          // White card content
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFBF8),
+            ),
+            child: Padding(
               padding: padding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -159,8 +136,8 @@ class _LoginFormCardState extends State<LoginFormCard> {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -203,7 +180,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
                 width: 2,
               ),
             ),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: AgreementCheckboxes(
               agreedToTerms: _agreedToTerms,
               agreedToPrivacy: _agreedToPrivacy,
@@ -266,33 +243,15 @@ class _HeadingBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDesktop = layout == LoginFormCardLayout.desktop;
-    return Column(
-      crossAxisAlignment:
-          isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          "It's good to see you again",
-          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
-          style: AppTypography.displayLg.copyWith(
-            fontSize: isDesktop ? 30 : 28,
-            fontWeight: FontWeight.w900,
-            height: 1.1,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Sign in to catch up with your community and friends.',
-          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
-          style: AppTypography.body.copyWith(
-            fontSize: isDesktop ? 16 : 15,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textMuted,
-            height: 1.5,
-          ),
-        ),
-      ],
+    return Text(
+      'Sign in',
+      textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+      style: AppTypography.displayLg.copyWith(
+        fontSize: isDesktop ? 30 : 28,
+        fontWeight: FontWeight.w900,
+        height: 1.1,
+        letterSpacing: -0.5,
+      ),
     );
   }
 }

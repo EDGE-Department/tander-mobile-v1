@@ -28,35 +28,32 @@ class BackToSignInPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: parchmentBg,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: primaryBorderSubtle),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.arrow_back,
-                size: 15,
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: parchmentBg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: primaryBorderSubtle),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.arrow_back,
+              size: 15,
+              color: AppColors.textMuted,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              'Back to sign in',
+              style: AppTypography.bodySm.copyWith(
+                fontWeight: FontWeight.w600,
                 color: AppColors.textMuted,
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Back to sign in',
-                style: AppTypography.bodySm.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -73,34 +70,31 @@ class ForgotPasswordBrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0x38E67E22)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.lock,
-                size: 12,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0x38E67E22)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.lock,
+              size: 12,
+              color: AppColors.primaryAccessible,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Secure Recovery',
+              style: AppTypography.caption.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
                 color: AppColors.primaryAccessible,
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Secure Recovery',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryAccessible,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

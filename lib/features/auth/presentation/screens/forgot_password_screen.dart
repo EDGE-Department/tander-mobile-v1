@@ -81,19 +81,23 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   void initState() {
     super.initState();
     _onlineCount = SimulatedOnlineCount();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      systemNavigationBarColor: _navBarColor,
-      systemNavigationBarDividerColor: Colors.transparent,
-      systemNavigationBarContrastEnforced: false,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: _navBarColor,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: false,
+      ),
+    );
   }
 
   @override
   void dispose() {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarContrastEnforced: false,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: false,
+      ),
+    );
     _emailController.dispose();
     _phoneController.dispose();
     _emailFocusNode.dispose();
@@ -264,12 +268,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       )
                       .animate()
                       .fadeIn(
-                      duration: 700.ms,
-                      delay: 100.ms,
-                      curve: AppCurves.premiumEase,
-                    )
-                    .slideY(begin: 0.08, curve: AppCurves.premiumEase),
-              ],
+                        duration: 700.ms,
+                        delay: 100.ms,
+                        curve: AppCurves.premiumEase,
+                      )
+                      .slideY(begin: 0.08, curve: AppCurves.premiumEase),
+                ],
               ),
             ),
           ),
@@ -325,9 +329,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        BackToSignInPill(onPressed: _navigateToLogin),
-        const SizedBox(height: 20),
-        const ForgotPasswordBrandHeader(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            BackToSignInPill(onPressed: _navigateToLogin),
+            const ForgotPasswordBrandHeader(),
+          ],
+        ),
         const SizedBox(height: AppSpacing.md),
         const Center(child: StepIconHero()),
         const SizedBox(height: AppSpacing.md),
@@ -565,7 +573,7 @@ class _ForgotTabletBrandPanel extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 20, right: 20),
                 child: ValueListenableBuilder<int>(
                   valueListenable: onlineCount,
-                  builder: (_, count, __) => OnlineCountBadge(count: count),
+                  builder: (_, count, _) => OnlineCountBadge(count: count),
                 ),
               ),
             ),
@@ -646,9 +654,7 @@ class _ForgotTabletFormPanel extends StatelessWidget {
       decoration: const BoxDecoration(gradient: _parchmentGradient),
       child: Stack(
         children: [
-          const Positioned.fill(
-            child: IgnorePointer(child: _LandscapeDecor()),
-          ),
+          const Positioned.fill(child: IgnorePointer(child: _LandscapeDecor())),
           SafeArea(
             left: false,
             child: Center(
@@ -676,39 +682,9 @@ class _ForgotMobileParchmentSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0.14),
-            Colors.white.withValues(alpha: 0.08),
-            Colors.white.withValues(alpha: 0.04),
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(36),
-          topRight: Radius.circular(36),
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x26000000),
-            blurRadius: 28,
-            offset: Offset(0, -8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-          const _SheetHandle(),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: child,
     );
   }
 }

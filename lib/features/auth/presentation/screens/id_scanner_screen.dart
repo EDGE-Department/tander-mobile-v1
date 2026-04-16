@@ -34,7 +34,7 @@ enum _ScanPhase {
   selfieToIdTransition,
   documentScan,
   preview,
-  complete
+  complete,
 }
 
 /// Pre-registration ID scanner screen.
@@ -135,11 +135,12 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   }
 
   void _applySystemUiModeForPhase(_ScanPhase phase) {
-    final immersive = phase == _ScanPhase.tutorial ||
+    final immersive =
+        phase == _ScanPhase.tutorial ||
         phase == _ScanPhase.liveness ||
         phase == _ScanPhase.selfieToIdTransition ||
         phase == _ScanPhase.documentScan;
-    
+
     SystemChrome.setEnabledSystemUIMode(
       immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
     );
@@ -186,8 +187,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   Future<void> _resolveMinimumAgeIfNeeded() async {
     if (widget.minimumAge != null) return;
     try {
-      final age =
-          await ref.read(authNotifierProvider.notifier).getMinimumAge();
+      final age = await ref.read(authNotifierProvider.notifier).getMinimumAge();
       if (!mounted) return;
       setState(() => _resolvedMinimumAge = age);
     } catch (_) {}
@@ -198,12 +198,12 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     _selfiePath = photoPath;
     _livenessMetadata = metadata;
     _transitionTimer?.cancel();
-    
+
     _setPhase(
       _ScanPhase.selfieToIdTransition,
       mutate: () => _feedbackMessage = null,
     );
-    
+
     _transitionTimer = Timer(const Duration(milliseconds: 1200), () {
       if (mounted) _setPhase(_ScanPhase.documentScan);
     });
@@ -213,7 +213,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     if (!mounted) return;
     final normalized = message.trim().toUpperCase();
     if (normalized == 'AUTO_CAPTURE_TIMEOUT') {
-      // Parent no longer shows feedback for liveness timeout 
+      // Parent no longer shows feedback for liveness timeout
       // as LivenessView now owns its own retry UI.
       return;
     }
@@ -239,10 +239,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       _setPhase(_ScanPhase.liveness);
       return;
     }
-    _setPhase(
-      _ScanPhase.complete,
-      mutate: () => _isVerifying = true,
-    );
+    _setPhase(_ScanPhase.complete, mutate: () => _isVerifying = true);
 
     try {
       final repository = ref.read(authRepositoryProvider);
@@ -258,13 +255,11 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       verifyResult.when(
         success: (auditId) async {
           if (auditId.isEmpty) {
-            _setPhase(
-              _ScanPhase.complete,
-              mutate: () => _isVerifying = false,
-            );
+            _setPhase(_ScanPhase.complete, mutate: () => _isVerifying = false);
             await _showResultScreen(
               IdVerificationResultType.error,
-              message: 'ID verification returned empty result. Please try again.',
+              message:
+                  'ID verification returned empty result. Please try again.',
             );
             return;
           }
@@ -283,7 +278,8 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           final errorMsg = exception.userMessage;
           final errorCode = exception.code;
 
-          final isLivenessIssue = errorCode == 'LIVENESS_REQUIRED' ||
+          final isLivenessIssue =
+              errorCode == 'LIVENESS_REQUIRED' ||
               errorCode == 'LIVENESS_CHECK_FAILED' ||
               errorCode == 'LIVENESS_WEAK_EVIDENCE' ||
               errorCode == 'INVALID_LIVENESS_METADATA' ||
@@ -329,10 +325,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           }
 
           if (errorCode == 'AGE_REQUIREMENT_NOT_MET') {
-            _setPhase(
-              _ScanPhase.complete,
-              mutate: () => _isVerifying = false,
-            );
+            _setPhase(_ScanPhase.complete, mutate: () => _isVerifying = false);
             await _showResultScreen(
               IdVerificationResultType.ageRejected,
               message: errorMsg,
@@ -341,10 +334,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           }
 
           if (errorCode == 'FRAUD_DETECTED') {
-            _setPhase(
-              _ScanPhase.complete,
-              mutate: () => _isVerifying = false,
-            );
+            _setPhase(_ScanPhase.complete, mutate: () => _isVerifying = false);
             await _showResultScreen(IdVerificationResultType.fraudRejected);
             return;
           }
@@ -355,10 +345,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
             return;
           }
 
-          _setPhase(
-            _ScanPhase.complete,
-            mutate: () => _isVerifying = false,
-          );
+          _setPhase(_ScanPhase.complete, mutate: () => _isVerifying = false);
           await _showResultScreen(
             IdVerificationResultType.error,
             message: errorMsg,
@@ -367,10 +354,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _setPhase(
-        _ScanPhase.complete,
-        mutate: () => _isVerifying = false,
-      );
+      _setPhase(_ScanPhase.complete, mutate: () => _isVerifying = false);
       await _showResultScreen(
         IdVerificationResultType.error,
         message: 'Something went wrong. Please try again.',
@@ -381,18 +365,21 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   void _onScanError(String error) {
     if (!mounted) return;
     final isAgeRejection = error.contains('Age requirement');
-    final isTimeout = error == 'AUTO_CAPTURE_TIMEOUT' ||
+    final isTimeout =
+        error == 'AUTO_CAPTURE_TIMEOUT' ||
         error.toLowerCase().contains('timed out');
-    unawaited(_showResultScreen(
-      isAgeRejection
-          ? IdVerificationResultType.ageRejected
-          : (isTimeout
-              ? IdVerificationResultType.retakePhoto
-              : IdVerificationResultType.error),
-      message: isTimeout
-          ? 'We couldn\'t read your ID. Try with better lighting and a flat surface.'
-          : error,
-    ));
+    unawaited(
+      _showResultScreen(
+        isAgeRejection
+            ? IdVerificationResultType.ageRejected
+            : (isTimeout
+                  ? IdVerificationResultType.retakePhoto
+                  : IdVerificationResultType.error),
+        message: isTimeout
+            ? 'We couldn\'t read your ID. Try with better lighting and a flat surface.'
+            : error,
+      ),
+    );
   }
 
   void _showDuplicateIdDialog(String message, String title) {
@@ -410,20 +397,31 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                 color: Color(0xFFFFF3E0),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.info_outline, color: Color(0xFFE65100), size: 22),
+              child: const Icon(
+                Icons.info_outline,
+                color: Color(0xFFE65100),
+                size: 22,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
         ),
         content: Text(
           message,
-          style: const TextStyle(fontSize: 15, color: Color(0xFF64748B), height: 1.4),
+          style: const TextStyle(
+            fontSize: 15,
+            color: Color(0xFF64748B),
+            height: 1.4,
+          ),
         ),
         actions: [
           SizedBox(
@@ -437,9 +435,14 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                 backgroundColor: const Color(0xFFE86035),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Go to Login', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Go to Login',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -452,8 +455,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     String? message,
     String? retakeGuidance,
   }) async {
-    final action =
-        await Navigator.of(context).push<IdVerificationResultAction>(
+    final action = await Navigator.of(context).push<IdVerificationResultAction>(
       MaterialPageRoute(
         builder: (_) => IdVerificationResultScreen(
           resultType: type,
@@ -578,14 +580,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
               ),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 350),
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: child,
-              ),
-              child: KeyedSubtree(
-                key: ValueKey(_phase),
-                child: _cameraView(),
-              ),
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: KeyedSubtree(key: ValueKey(_phase), child: _cameraView()),
             ),
             if (_phase != _ScanPhase.preview &&
                 _phase != _ScanPhase.complete &&
@@ -599,8 +596,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     );
   }
 
-
-  static const _orientationChannel = MethodChannel('com.tander.app/orientation');
+  static const _orientationChannel = MethodChannel(
+    'com.tander.app/orientation',
+  );
 
   Future<void> _lockPortrait() async {
     // On iOS, call native channel to set AppDelegate.isPortraitLocked = true
@@ -653,30 +651,30 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   Widget _cameraView() {
     return switch (_phase) {
       _ScanPhase.tutorial => LivenessTutorialContent(
-          onStart: () {
-            if (!mounted) return;
-            _setPhase(_ScanPhase.liveness);
-          },
-          onBack: _goBack,
-        ),
+        onStart: () {
+          if (!mounted) return;
+          _setPhase(_ScanPhase.liveness);
+        },
+        onBack: _goBack,
+      ),
       _ScanPhase.liveness => LivenessView(
-          onVerified: _onLivenessVerified,
-          onError: _onLivenessError,
-          reservedTopInset: _headerHeight,
-        ),
+        onVerified: _onLivenessVerified,
+        onError: _onLivenessError,
+        reservedTopInset: _headerHeight,
+      ),
       _ScanPhase.selfieToIdTransition => const _SelfieTransitionView(),
       _ScanPhase.documentScan => DocumentScanView(
-          minimumAge: _minimumAge,
-          onScanned: _onDocumentScanned,
-          onError: _onScanError,
-          reservedTopInset: _headerHeight,
-        ),
+        minimumAge: _minimumAge,
+        onScanned: _onDocumentScanned,
+        onError: _onScanError,
+        reservedTopInset: _headerHeight,
+      ),
       _ScanPhase.preview => IdPreviewView(
-          idPhotoPath: _capturedIdPath!,
-          isVerifying: _isVerifying,
-          onRetake: _retryDocumentScan,
-          onContinue: _verifyWithBackend,
-        ),
+        idPhotoPath: _capturedIdPath!,
+        isVerifying: _isVerifying,
+        onRetake: _retryDocumentScan,
+        onContinue: _verifyWithBackend,
+      ),
       _ScanPhase.complete => _completePlaceholder(),
     };
   }
@@ -695,7 +693,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         key: _headerKey,
         decoration: BoxDecoration(
           color: const Color(0xF2FFFFFF),
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(32),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
@@ -705,7 +705,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(32),
+          ),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Column(
@@ -716,7 +718,11 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFFE67E22), Color(0xFFF39C12), Color(0xFFE67E22)],
+                      colors: [
+                        Color(0xFFE67E22),
+                        Color(0xFFF39C12),
+                        Color(0xFFE67E22),
+                      ],
                     ),
                   ),
                 ),
@@ -737,7 +743,11 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.05),
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+                                    border: Border.all(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
+                                    ),
                                   ),
                                   child: const Icon(
                                     PhosphorIconsBold.arrowLeft,
@@ -793,28 +803,27 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   }
 
   String _phaseTitle() => switch (_phase) {
-        _ScanPhase.tutorial => 'Identity Verification',
-        _ScanPhase.liveness => 'Face Verification',
-        _ScanPhase.selfieToIdTransition => 'Face Verified',
-        _ScanPhase.documentScan => 'Scan Your ID',
-        _ScanPhase.preview => 'Review ID Photo',
-        _ScanPhase.complete => 'Verifying Your Identity',
-      };
+    _ScanPhase.tutorial => 'Identity Verification',
+    _ScanPhase.liveness => 'Face Verification',
+    _ScanPhase.selfieToIdTransition => 'Face Verified',
+    _ScanPhase.documentScan => 'Scan Your ID',
+    _ScanPhase.preview => 'Review ID Photo',
+    _ScanPhase.complete => 'Verifying Your Identity',
+  };
 
   String? _phaseSubtitle() => switch (_phase) {
-        _ScanPhase.tutorial =>
-          'We will guide you through a quick selfie and ID check.',
-        _ScanPhase.liveness =>
-          'Just look at the camera. We\'ll do the rest automatically.',
-        _ScanPhase.selfieToIdTransition =>
-          'Great. Preparing the document scanner now.',
-        _ScanPhase.documentScan =>
-          'Place your ID inside the frame. We\'ll scan it automatically.',
-        _ScanPhase.preview =>
-          'Confirm details are clear before we submit for validation.',
-        _ScanPhase.complete =>
-          'Please wait while we complete final checks.',
-      };
+    _ScanPhase.tutorial =>
+      'We will guide you through a quick selfie and ID check.',
+    _ScanPhase.liveness =>
+      'Just look at the camera. We\'ll do the rest automatically.',
+    _ScanPhase.selfieToIdTransition =>
+      'Great. Preparing the document scanner now.',
+    _ScanPhase.documentScan =>
+      'Place your ID inside the frame. We\'ll scan it automatically.',
+    _ScanPhase.preview =>
+      'Confirm details are clear before we submit for validation.',
+    _ScanPhase.complete => 'Please wait while we complete final checks.',
+  };
 
   Widget _phaseIndicator() {
     final livenessActive =
@@ -829,8 +838,12 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _stepDot('Selfie', PhosphorIconsDuotone.user,
-                isActive: livenessActive, isDone: livenessComplete),
+            _stepDot(
+              'Selfie',
+              PhosphorIconsDuotone.user,
+              isActive: livenessActive,
+              isDone: livenessComplete,
+            ),
             const SizedBox(width: 12),
             Container(
               width: 40,
@@ -839,23 +852,35 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                 borderRadius: BorderRadius.circular(2),
                 gradient: LinearGradient(
                   colors: [
-                    livenessComplete ? const Color(0xFF5BBFB3) : const Color(0xFFE2E6EE),
-                    docActive || docComplete ? const Color(0xFF5BBFB3) : const Color(0xFFE2E6EE),
+                    livenessComplete
+                        ? const Color(0xFF5BBFB3)
+                        : const Color(0xFFE2E6EE),
+                    docActive || docComplete
+                        ? const Color(0xFF5BBFB3)
+                        : const Color(0xFFE2E6EE),
                   ],
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            _stepDot('ID Card', PhosphorIconsDuotone.creditCard,
-                isActive: docActive, isDone: docComplete),
+            _stepDot(
+              'ID Card',
+              PhosphorIconsDuotone.creditCard,
+              isActive: docActive,
+              isDone: docComplete,
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _stepDot(String label, IconData icon,
-      {required bool isActive, required bool isDone}) {
+  Widget _stepDot(
+    String label,
+    IconData icon, {
+    required bool isActive,
+    required bool isDone,
+  }) {
     final Color color;
     final Color iconColor;
     final List<BoxShadow> shadows;
@@ -920,7 +945,8 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     final message = _feedbackMessage ?? '';
     final lower = message.toLowerCase();
     final isSuccess = lower.contains('verified') || lower.contains('success');
-    final isError = lower.contains('failed') ||
+    final isError =
+        lower.contains('failed') ||
         lower.contains('error') ||
         lower.contains('timed out') ||
         lower.contains('unable') ||
@@ -931,8 +957,8 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     final icon = isSuccess
         ? PhosphorIconsDuotone.checkCircle
         : (isError
-            ? PhosphorIconsDuotone.warningCircle
-            : PhosphorIconsDuotone.info);
+              ? PhosphorIconsDuotone.warningCircle
+              : PhosphorIconsDuotone.info);
 
     return Positioned(
       bottom: 100,
@@ -948,8 +974,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
             child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
           ),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
               color: bgColor.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(24),
@@ -992,9 +1017,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       child: _verifyComplete
           ? _VerifiedView(
               key: const ValueKey('verified'),
-              onContinue: () async {
+              onContinue: () {
                 HapticFeedback.mediumImpact();
-                await _showResultScreen(IdVerificationResultType.success);
+                _navigateToSignUp();
               },
             )
           : const _AnalyzingView(key: ValueKey('analyzing')),
@@ -1090,11 +1115,14 @@ class _HeaderSceneState extends State<_HeaderScene>
                     ),
                   ),
                 ),
-                
+
                 ...List.generate(3, (i) {
                   final seed = i * 133;
-                  final tx = math.sin((_driftCtrl.value + seed) * math.pi * 2) * 20;
-                  final ty = math.cos((_driftCtrl.value + seed * 0.7) * math.pi * 2) * 15;
+                  final tx =
+                      math.sin((_driftCtrl.value + seed) * math.pi * 2) * 20;
+                  final ty =
+                      math.cos((_driftCtrl.value + seed * 0.7) * math.pi * 2) *
+                      15;
                   final basePos = [
                     Offset(w * 0.2, h * 0.3),
                     Offset(w * 0.8, h * 0.25),
@@ -1108,8 +1136,12 @@ class _HeaderSceneState extends State<_HeaderScene>
                       height: 40 + (i * 10),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.03 + (i * 0.01)),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        color: Colors.white.withValues(
+                          alpha: 0.03 + (i * 0.01),
+                        ),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
                       ),
                     ),
                   );
@@ -1129,7 +1161,8 @@ class _HeaderSceneState extends State<_HeaderScene>
                         animation: _constellationCtrl,
                         builder: (_, _) => CustomPaint(
                           painter: SplashConstellationPainter(
-                              _constellationCtrl.value),
+                            _constellationCtrl.value,
+                          ),
                         ),
                       ),
                     ),
@@ -1202,7 +1235,10 @@ class _MobileSceneGrainPainter extends CustomPainter {
     final random = math.Random(42);
     for (int index = 0; index < 520; index++) {
       canvas.drawCircle(
-        Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
+        Offset(
+          random.nextDouble() * size.width,
+          random.nextDouble() * size.height,
+        ),
         0.2 + random.nextDouble() * 0.6,
         paint,
       );
@@ -1235,17 +1271,22 @@ class _AnalyzingViewState extends State<_AnalyzingView>
   void initState() {
     super.initState();
     _enterCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600))
-      ..forward();
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
     _pulseCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1400))
-      ..repeat(reverse: true);
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
     _enterFade = CurvedAnimation(parent: _enterCtrl, curve: Curves.easeOut);
-    _enterSlide =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-            CurvedAnimation(parent: _enterCtrl, curve: Curves.easeOutCubic));
-    _pulse = Tween<double>(begin: 0.10, end: 0.30).animate(
-        CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+    _enterSlide = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _enterCtrl, curve: Curves.easeOutCubic));
+    _pulse = Tween<double>(
+      begin: 0.10,
+      end: 0.30,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -1274,12 +1315,14 @@ class _AnalyzingViewState extends State<_AnalyzingView>
                     height: 88,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF5BBFB3)
-                          .withValues(alpha: _pulse.value * 0.15),
+                      color: const Color(
+                        0xFF5BBFB3,
+                      ).withValues(alpha: _pulse.value * 0.15),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5BBFB3)
-                              .withValues(alpha: _pulse.value),
+                          color: const Color(
+                            0xFF5BBFB3,
+                          ).withValues(alpha: _pulse.value),
                           blurRadius: 30,
                           spreadRadius: 4,
                         ),
@@ -1288,20 +1331,30 @@ class _AnalyzingViewState extends State<_AnalyzingView>
                     child: const Padding(
                       padding: EdgeInsets.all(22),
                       child: CircularProgressIndicator(
-                          color: Color(0xFF5BBFB3), strokeWidth: 4),
+                        color: Color(0xFF5BBFB3),
+                        strokeWidth: 4,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                const Text('Analyzing Data',
-                    style: TextStyle(
-                        color: Color(0xFF141A28),
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800)),
+                const Text(
+                  'Analyzing Data',
+                  style: TextStyle(
+                    color: Color(0xFF141A28),
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 10),
-                const Text('Checking secure details...',
-                    style: TextStyle(
-                        color: Color(0xFF747E93), fontSize: 18, height: 1.5)),
+                const Text(
+                  'Checking secure details...',
+                  style: TextStyle(
+                    color: Color(0xFF747E93),
+                    fontSize: 18,
+                    height: 1.5,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1334,24 +1387,31 @@ class _VerifiedViewState extends State<_VerifiedView>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900))
-      ..forward();
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
     _iconScale = CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.55, curve: Curves.elasticOut));
+      parent: _ctrl,
+      curve: const Interval(0.0, 0.55, curve: Curves.elasticOut),
+    );
     _fade = CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.45, curve: Curves.easeOut));
-    _textSlide =
-        Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero).animate(
-            CurvedAnimation(
-                parent: _ctrl,
-                curve: const Interval(0.3, 0.7, curve: Curves.easeOutCubic)));
-    _btnSlide =
-        Tween<Offset>(begin: const Offset(0, 0.6), end: Offset.zero).animate(
-            CurvedAnimation(
-                parent: _ctrl,
-                curve: const Interval(0.5, 0.9, curve: Curves.easeOutCubic)));
+      parent: _ctrl,
+      curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+    );
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _ctrl,
+            curve: const Interval(0.3, 0.7, curve: Curves.easeOutCubic),
+          ),
+        );
+    _btnSlide = Tween<Offset>(begin: const Offset(0, 0.6), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _ctrl,
+            curve: const Interval(0.5, 0.9, curve: Curves.easeOutCubic),
+          ),
+        );
   }
 
   @override
@@ -1385,18 +1445,24 @@ class _VerifiedViewState extends State<_VerifiedView>
                           shape: BoxShape.circle,
                           color: Colors.white,
                           border: Border.all(
-                              color: const Color(0xFF5BBFB3), width: 3),
+                            color: const Color(0xFF5BBFB3),
+                            width: 3,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF5BBFB3)
-                                  .withValues(alpha: 0.22),
+                              color: const Color(
+                                0xFF5BBFB3,
+                              ).withValues(alpha: 0.22),
                               blurRadius: 36,
                               offset: const Offset(0, 10),
                             ),
                           ],
                         ),
-                        child: const Icon(PhosphorIconsBold.checkCircle,
-                            color: Color(0xFF5BBFB3), size: 58),
+                        child: const Icon(
+                          PhosphorIconsBold.checkCircle,
+                          color: Color(0xFF5BBFB3),
+                          size: 58,
+                        ),
                       ),
                     ),
                   ),
@@ -1407,20 +1473,26 @@ class _VerifiedViewState extends State<_VerifiedView>
                       opacity: _fade,
                       child: const Column(
                         children: [
-                          Text('Verified!',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  color: Color(0xFF141A28),
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.1)),
+                          Text(
+                            'Verified!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFF141A28),
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              height: 1.1,
+                            ),
+                          ),
                           SizedBox(height: 12),
-                          Text('Identity validated successfully.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  color: Color(0xFF747E93),
-                                  fontSize: 18,
-                                  height: 1.5)),
+                          Text(
+                            'Identity validated successfully.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFF747E93),
+                              fontSize: 18,
+                              height: 1.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1447,11 +1519,16 @@ class _VerifiedViewState extends State<_VerifiedView>
                       elevation: 6,
                       shadowColor: const Color(0x4DFF8266),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
-                    child: const Text('Continue',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w700)),
+                    child: const Text(
+                      'Continue',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1540,19 +1617,24 @@ class _SelfieTransitionViewState extends State<_SelfieTransitionView>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700))
-      ..forward();
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..forward();
     _scale = CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut));
+      parent: _ctrl,
+      curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+    );
     _fade = CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut));
-    _slideText = Tween<Offset>(
-            begin: const Offset(0, 0.4), end: Offset.zero)
-        .animate(CurvedAnimation(
+      parent: _ctrl,
+      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+    );
+    _slideText = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
             parent: _ctrl,
-            curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic)));
+            curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
+          ),
+        );
   }
 
   @override
@@ -1583,15 +1665,19 @@ class _SelfieTransitionViewState extends State<_SelfieTransitionView>
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              const Color(0xFF5BBFB3).withValues(alpha: 0.25),
+                          color: const Color(
+                            0xFF5BBFB3,
+                          ).withValues(alpha: 0.25),
                           blurRadius: 30,
                           offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: const Icon(PhosphorIconsBold.checkCircle,
-                        color: Color(0xFF5BBFB3), size: 52),
+                    child: const Icon(
+                      PhosphorIconsBold.checkCircle,
+                      color: Color(0xFF5BBFB3),
+                      size: 52,
+                    ),
                   ),
                 ),
               ),
@@ -1602,19 +1688,25 @@ class _SelfieTransitionViewState extends State<_SelfieTransitionView>
                   opacity: _fade,
                   child: const Column(
                     children: [
-                      Text('Perfect!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: Color(0xFF141A28),
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700)),
+                      Text(
+                        'Perfect!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFF141A28),
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       SizedBox(height: 8),
-                      Text('Preparing the document scanner.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: Color(0xFF747E93),
-                              fontSize: 18,
-                              height: 1.5)),
+                      Text(
+                        'Preparing the document scanner.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFF747E93),
+                          fontSize: 18,
+                          height: 1.5,
+                        ),
+                      ),
                     ],
                   ),
                 ),

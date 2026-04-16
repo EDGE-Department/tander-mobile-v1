@@ -32,10 +32,10 @@ const LinearGradient _parchmentGradient = LinearGradient(
   begin: Alignment(-0.15, -1.0),
   end: Alignment(0.15, 1.0),
   colors: [
-    Color(0xFFFEF7EE),
-    Color(0xFFFEFAF4),
-    Color(0xFFFFF8EF),
-    Color(0xFFFDF4E8),
+    Color(0xFFFFFBF8), // warm white
+    Color(0xFFFFFAF6), // soft cream
+    Color(0xFFFFF9F4), // warm off-white
+    Color(0xFFFFF8F2), // light cream
   ],
   stops: [0.0, 0.35, 0.65, 1.0],
 );
@@ -75,8 +75,7 @@ class _LivenessTutorialContentState extends State<LivenessTutorialContent> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     final isLandscape = screenSize.width >= 1024;
-    final isTabletPortrait =
-        screenSize.width >= 768 && screenSize.width < 1024;
+    final isTabletPortrait = screenSize.width >= 768 && screenSize.width < 1024;
 
     if (isLandscape) {
       return _LandscapeLayout(
@@ -119,12 +118,13 @@ class _PhonePortraitLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     final headerHeight = screenSize.height * 0.30;
+    const double sheetOverlap = 32;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Full-screen gradient
+          // Full-screen gradient background
           const Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(
@@ -133,77 +133,91 @@ class _PhonePortraitLayout extends StatelessWidget {
             ),
           ),
           SingleChildScrollView(
-            child: Column(
-              children: [
-                // Compact header with branding
-                SizedBox(
-                  height: headerHeight,
-                  child: Stack(
-                    children: [
-                      const Positioned.fill(
-                        child: IgnorePointer(child: _HeaderScene()),
-                      ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 20, top: 12),
-                            child: ValueListenableBuilder<int>(
-                              valueListenable: onlineCount,
-                              builder: (_, count, _) => OnlineCountBadge(
-                                  count: count, useSeniorsLabel: false),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: screenSize.height),
+              child: Column(
+                children: [
+                  // Compact header with branding (clean, no scene effects)
+                  SizedBox(
+                    height: headerHeight,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: SafeArea(
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                right: 20,
+                                top: 12,
+                              ),
+                              child: ValueListenableBuilder<int>(
+                                valueListenable: onlineCount,
+                                builder: (_, count, __) => OnlineCountBadge(
+                                  count: count,
+                                  useSeniorsLabel: false,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const Positioned.fill(
-                        child: Center(child: _TanderBranding()),
-                      ),
-                    ],
-                  ),
-                ),
-                // Opaque parchment content area
-                Transform.translate(
-                  offset: const Offset(0, -32),
-                  child: Container(
-                    constraints: BoxConstraints(
-                      minHeight: screenSize.height - headerHeight + 32,
-                    ),
-                    decoration: const BoxDecoration(
-                      gradient: _parchmentGradient,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(40),
-                        topRight: Radius.circular(40),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0x24000000),
-                          blurRadius: 32,
-                          offset: Offset(0, -10),
+                        const Positioned.fill(
+                          child: Center(child: _TanderBranding()),
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
-                      child: Column(
-                        children: [
-                          const _SheetHandle(),
-                          const SizedBox(height: 24),
-                          _ContentBody(onStart: onStart),
-                        ],
-                      ),
-                    ),
                   ),
-                )
-                    .animate()
-                    .fadeIn(
-                      duration: 700.ms,
-                      delay: 100.ms,
-                      curve: AppCurves.premiumEase,
-                    )
-                    .slideY(begin: 0.08, curve: AppCurves.premiumEase),
-              ],
+                  // White pill-shaped content card with orange accent
+                  Transform.translate(
+                        offset: const Offset(0, -sheetOverlap),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(32),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(32),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Orange accent bar at top
+                                  Container(
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Color(0xFFF07040),
+                                          Color(0xFFE86035),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  // Content area
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: _parchmentGradient,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                                      child: _ContentBody(onStart: onStart),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(
+                        duration: 700.ms,
+                        delay: 100.ms,
+                        curve: AppCurves.premiumEase,
+                      )
+                      .slideY(begin: 0.08, curve: AppCurves.premiumEase),
+                ],
+              ),
             ),
           ),
           // Back button
@@ -244,9 +258,7 @@ class _TabletPortraitLayout extends StatelessWidget {
                 child: _BrandPanel(onBack: onBack, onlineCount: onlineCount),
               ),
               // Right 58% — parchment form panel
-              Expanded(
-                child: _FormPanel(onStart: onStart),
-              ),
+              Expanded(child: _FormPanel(onStart: onStart)),
             ],
           ),
           // Wave seam at boundary
@@ -291,10 +303,7 @@ class _LandscapeLayout extends StatelessWidget {
                 flex: 55,
                 child: _BrandPanel(onBack: onBack, onlineCount: onlineCount),
               ),
-              Expanded(
-                flex: 45,
-                child: _FormPanel(onStart: onStart),
-              ),
+              Expanded(flex: 45, child: _FormPanel(onStart: onStart)),
             ],
           ),
           // Wave seam
@@ -325,7 +334,8 @@ class _BrandPanel extends StatefulWidget {
   State<_BrandPanel> createState() => _BrandPanelState();
 }
 
-class _BrandPanelState extends State<_BrandPanel> with TickerProviderStateMixin {
+class _BrandPanelState extends State<_BrandPanel>
+    with TickerProviderStateMixin {
   late final AnimationController _constellationCtrl;
   late final AnimationController _driftCtrl;
 
@@ -382,7 +392,9 @@ class _BrandPanelState extends State<_BrandPanel> with TickerProviderStateMixin 
                 child: AnimatedBuilder(
                   animation: _constellationCtrl,
                   builder: (_, _) => CustomPaint(
-                    painter: SplashConstellationPainter(_constellationCtrl.value),
+                    painter: SplashConstellationPainter(
+                      _constellationCtrl.value,
+                    ),
                   ),
                 ),
               ),
@@ -428,7 +440,10 @@ class _BrandPanelState extends State<_BrandPanel> with TickerProviderStateMixin 
             child: CustomScrollView(
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 24,
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       // Top Row: Back button + Online count
@@ -441,7 +456,8 @@ class _BrandPanelState extends State<_BrandPanel> with TickerProviderStateMixin 
                             const SizedBox.shrink(),
                           ValueListenableBuilder<int>(
                             valueListenable: widget.onlineCount,
-                            builder: (_, count, __) => OnlineCountBadge(count: count),
+                            builder: (_, count, __) =>
+                                OnlineCountBadge(count: count),
                           ),
                         ],
                       ),
@@ -463,31 +479,34 @@ class _BrandPanelState extends State<_BrandPanel> with TickerProviderStateMixin 
                           ).animate().fadeIn(duration: 400.ms),
                           const SizedBox(height: 12),
                           LoginLogoWordmarkRow(
-                            alignment: MainAxisAlignment.center,
-                            wordmarkSize: wordmarkSize,
-                            logoSize: wordmarkSize * 0.82,
-                          )
+                                alignment: MainAxisAlignment.center,
+                                wordmarkSize: wordmarkSize,
+                                logoSize: wordmarkSize * 0.82,
+                              )
                               .animate()
                               .fadeIn(duration: 600.ms, delay: 100.ms)
                               .slideY(begin: 0.1),
                           const SizedBox(height: 24),
                           Text(
-                            'Connect with fellow seniors\nwho understand your world',
-                            textAlign: TextAlign.center,
-                            style: AppTypography.h2.copyWith(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withValues(alpha: 0.85),
-                              height: 1.3,
-                              shadows: const [
-                                Shadow(
-                                  color: Color(0x2E000000),
-                                  blurRadius: 16,
-                                  offset: Offset(0, 2),
+                                'Connect with fellow seniors\nwho understand your world',
+                                textAlign: TextAlign.center,
+                                style: AppTypography.h2.copyWith(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  height: 1.3,
+                                  shadows: const [
+                                    Shadow(
+                                      color: Color(0x2E000000),
+                                      blurRadius: 16,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ).animate().fadeIn(duration: 500.ms, delay: 300.ms).moveY(begin: 10),
+                              )
+                              .animate()
+                              .fadeIn(duration: 500.ms, delay: 300.ms)
+                              .moveY(begin: 10),
                           const SizedBox(height: 16),
                           const SizedBox(
                             width: 320,
@@ -500,27 +519,32 @@ class _BrandPanelState extends State<_BrandPanel> with TickerProviderStateMixin 
 
                       // Connection Showcase Card
                       Align(
-                        alignment: Alignment.center,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 380),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x2E0C0400),
-                                  blurRadius: 56,
-                                  offset: Offset(0, 22),
+                            alignment: Alignment.center,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 380),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.16),
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x2E0C0400),
+                                      blurRadius: 56,
+                                      offset: Offset(0, 22),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                                child: const ConnectionShowcase(),
+                              ),
                             ),
-                            child: const ConnectionShowcase(),
-                          ),
-                        ),
-                      ).animate().fadeIn(duration: 700.ms, delay: 700.ms).scale(begin: const Offset(0.98, 0.95)),
+                          )
+                          .animate()
+                          .fadeIn(duration: 700.ms, delay: 700.ms)
+                          .scale(begin: const Offset(0.98, 0.95)),
                     ]),
                   ),
                 ),
@@ -539,8 +563,14 @@ class _BrandPanelState extends State<_BrandPanel> with TickerProviderStateMixin 
                           spacing: 12,
                           runSpacing: 12,
                           children: [
-                            _HeroBadge(icon: Icons.people, label: '2,400+ members'),
-                            _HeroBadge(icon: Icons.verified_user, label: 'ID-verified'),
+                            _HeroBadge(
+                              icon: Icons.people,
+                              label: '2,400+ members',
+                            ),
+                            _HeroBadge(
+                              icon: Icons.verified_user,
+                              label: 'ID-verified',
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -704,7 +734,11 @@ class _BackIcon extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
         ),
-        child: const Icon(PhosphorIconsBold.arrowLeft, color: Colors.white, size: 22),
+        child: const Icon(
+          PhosphorIconsBold.arrowLeft,
+          color: Colors.white,
+          size: 22,
+        ),
       ),
     ).animate().fadeIn(duration: 400.ms);
   }
@@ -792,10 +826,7 @@ class _TutorialCard extends StatelessWidget {
                   ],
                 ),
                 boxShadow: [
-                  BoxShadow(
-                    color: Color(0x4DE67E22),
-                    blurRadius: 12,
-                  ),
+                  BoxShadow(color: Color(0x4DE67E22), blurRadius: 12),
                 ],
               ),
             ),
@@ -875,8 +906,11 @@ class _ContentBody extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(PhosphorIconsFill.shieldCheck,
-                size: 16, color: AppColors.secondary.withValues(alpha: 0.6)),
+            Icon(
+              PhosphorIconsFill.shieldCheck,
+              size: 16,
+              color: AppColors.secondary.withValues(alpha: 0.6),
+            ),
             const SizedBox(width: 8),
             Text(
               'SECURE & ENCRYPTED',
@@ -912,60 +946,63 @@ class _HintCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.06),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        color.withValues(alpha: 0.15),
-                        color.withValues(alpha: 0.05),
-                      ],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            color.withValues(alpha: 0.15),
+                            color.withValues(alpha: 0.05),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: color, size: 24),
                     ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: AppTypography.bodySm.copyWith(
-                      fontSize: 15,
-                      color: AppColors.textStrong,
-                      height: 1.35,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        text,
+                        style: AppTypography.bodySm.copyWith(
+                          fontSize: 15,
+                          color: AppColors.textStrong,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 600.ms, delay: delay).moveX(begin: 16, curve: AppCurves.premiumEase);
+        )
+        .animate()
+        .fadeIn(duration: 600.ms, delay: delay)
+        .moveX(begin: 16, curve: AppCurves.premiumEase);
   }
 }
 
@@ -986,9 +1023,10 @@ class _StartButtonState extends State<_StartButton>
   @override
   void initState() {
     super.initState();
-    _shimmerCtrl =
-        AnimationController(vsync: this, duration: const Duration(seconds: 3))
-          ..repeat();
+    _shimmerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
   }
 
   @override
@@ -1000,77 +1038,83 @@ class _StartButtonState extends State<_StartButton>
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 64,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE67E22), Color(0xFFD35400)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE67E22).withValues(alpha: 0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            widget.onStart();
-          },
-          borderRadius: BorderRadius.circular(32),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Shimmer
-              Positioned.fill(
-                child: AnimatedBuilder(
-                  animation: _shimmerCtrl,
-                  builder: (context, child) {
-                    return FractionallySizedBox(
-                      alignment: Alignment(-1.5 + (_shimmerCtrl.value * 3), 0),
-                      widthFactor: 0.3,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.white.withValues(alpha: 0),
-                              Colors.white.withValues(alpha: 0.2),
-                              Colors.white.withValues(alpha: 0),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'START VERIFICATION',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Icon(PhosphorIconsBold.arrowRight,
-                      color: Colors.white, size: 20),
-                ],
+          width: double.infinity,
+          height: 64,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFE67E22).withValues(alpha: 0.35),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-        ),
-      ),
-    )
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.mediumImpact();
+                widget.onStart();
+              },
+              borderRadius: BorderRadius.circular(32),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Shimmer
+                  Positioned.fill(
+                    child: AnimatedBuilder(
+                      animation: _shimmerCtrl,
+                      builder: (context, child) {
+                        return FractionallySizedBox(
+                          alignment: Alignment(
+                            -1.5 + (_shimmerCtrl.value * 3),
+                            0,
+                          ),
+                          widthFactor: 0.3,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withValues(alpha: 0),
+                                  Colors.white.withValues(alpha: 0.2),
+                                  Colors.white.withValues(alpha: 0),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'START VERIFICATION',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        PhosphorIconsBold.arrowRight,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
         .animate()
         .fadeIn(duration: 600.ms, delay: 1200.ms)
         .moveY(begin: 20, curve: AppCurves.premiumEase);
@@ -1172,24 +1216,22 @@ class _TanderBranding extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Tander',
-          style: AppTypography.brandWordmark(
-            fontSize: wordmarkSize,
-            color: Colors.white,
-            letterSpacing: -0.03 * wordmarkSize,
-          ).copyWith(
-            height: 0.95,
-            shadows: const [
-              Shadow(
-                offset: Offset(0, 4),
-                blurRadius: 24,
-                color: Color(0x38000000),
+          style:
+              AppTypography.brandWordmark(
+                fontSize: wordmarkSize,
+                color: Colors.white,
+                letterSpacing: -0.03 * wordmarkSize,
+              ).copyWith(
+                height: 0.95,
+                shadows: const [
+                  Shadow(
+                    offset: Offset(0, 4),
+                    blurRadius: 24,
+                    color: Color(0x38000000),
+                  ),
+                  Shadow(blurRadius: 50, color: Color(0x47FFA050)),
+                ],
               ),
-              Shadow(
-                blurRadius: 50,
-                color: Color(0x47FFA050),
-              ),
-            ],
-          ),
         ),
       ],
     );
@@ -1294,7 +1336,7 @@ class _HeaderSceneState extends State<_HeaderScene>
                       math.sin((_driftCtrl.value + seed) * math.pi * 2) * 20;
                   final ty =
                       math.cos((_driftCtrl.value + seed * 0.7) * math.pi * 2) *
-                          15;
+                      15;
                   final basePos = [
                     Offset(w * 0.2, h * 0.3),
                     Offset(w * 0.8, h * 0.25),
@@ -1308,9 +1350,12 @@ class _HeaderSceneState extends State<_HeaderScene>
                       height: 40 + (i * 10),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.03 + (i * 0.01)),
+                        color: Colors.white.withValues(
+                          alpha: 0.03 + (i * 0.01),
+                        ),
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.08)),
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
                       ),
                     ),
                   );
@@ -1332,7 +1377,8 @@ class _HeaderSceneState extends State<_HeaderScene>
                         animation: _constellationCtrl,
                         builder: (_, _) => CustomPaint(
                           painter: SplashConstellationPainter(
-                              _constellationCtrl.value),
+                            _constellationCtrl.value,
+                          ),
                         ),
                       ),
                     ),
@@ -1410,8 +1456,7 @@ class _ParchmentDecor extends StatelessWidget {
         const Positioned.fill(
           child: Opacity(
             opacity: 0.45,
-            child:
-                CustomPaint(painter: _ParchmentDotGridPainter(spacing: 24)),
+            child: CustomPaint(painter: _ParchmentDotGridPainter(spacing: 24)),
           ),
         ),
         Positioned.fill(
@@ -1490,16 +1535,21 @@ class _MobileParchmentSheet extends StatelessWidget {
           colors: [
             Colors.white.withValues(alpha: 0.16),
             Colors.white.withValues(alpha: 0.10),
-            Colors.white.withValues(alpha: 0.06)
+            Colors.white.withValues(alpha: 0.06),
           ],
           stops: const [0.0, 0.48, 1.0],
         ),
         borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+          topLeft: Radius.circular(40),
+          topRight: Radius.circular(40),
+        ),
         border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x24000000), blurRadius: 32, offset: Offset(0, -10))
+            color: Color(0x24000000),
+            blurRadius: 32,
+            offset: Offset(0, -10),
+          ),
         ],
       ),
       child: Column(

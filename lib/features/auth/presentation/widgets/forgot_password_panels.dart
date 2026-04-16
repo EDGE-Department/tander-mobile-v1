@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -5,7 +6,6 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/forgot_password_components.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
-import 'package:tander_flutter_v3/features/splash/presentation/widgets/splash_painters.dart';
 
 // ── Form card shell ──────────────────────────────────────────────────
 
@@ -27,66 +27,39 @@ class ForgotPasswordFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFF), Color(0xFFFFFCF8)],
-        ),
-        borderRadius: BorderRadius.circular(isWide ? 32 : 28),
-        border: Border.all(color: const Color(0x1AE6A032)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-          BoxShadow(
-            color: Color(0x0FB46414),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Color(0x1AC85A12),
-            blurRadius: 48,
-            offset: Offset(0, 16),
-          ),
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 80,
-            offset: Offset(0, 32),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(isWide ? 32 : 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildAccentBar(),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                isWide ? 40 : 32,
-                isWide ? 36 : 32,
-                isWide ? 40 : 32,
-                isWide ? 32 : 32,
+    final borderRadius = BorderRadius.circular(32);
+
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Orange accent bar at top (matching login)
+          _buildAccentBar(),
+          // White card content
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFBF8),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isWide ? 40 : 24,
+                vertical: 32,
               ),
               child: isCodeSent ? successContent : formContent,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildAccentBar() {
     return Container(
-      height: 2.5,
+      height: 6,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
+          colors: [Color(0xFFF07040), Color(0xFFE86035)],
         ),
       ),
     );
@@ -218,8 +191,7 @@ class SuccessIconOrb extends StatelessWidget {
 
 // ── Mobile header ────────────────────────────────────────────────────
 
-/// Gradient header for the phone layout, matching the web's mobile header
-/// for the forgot-password page: "Account Recovery" + tagline + badge.
+/// Simple gradient header for the phone layout (matching login screen).
 class ForgotPasswordMobileHeader extends StatelessWidget {
   const ForgotPasswordMobileHeader({
     required this.headerHeight,
@@ -228,40 +200,96 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
   });
 
   final double headerHeight;
-  final SimulatedOnlineCount onlineCount;
+  final ValueListenable<int> onlineCount;
 
   @override
   Widget build(BuildContext context) {
-    final horizontalOverscan = MediaQuery.sizeOf(context).width * 0.10;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final wordmarkSize = (screenWidth * 0.17).clamp(56.0, 72.0);
 
     return SizedBox(
       height: headerHeight + headerOverlap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            left: -horizontalOverscan,
-            right: -horizontalOverscan,
-            top: 0,
-            bottom: 0,
-            child: const IgnorePointer(child: _ForgotMobileHeaderScene()),
+          // Ghost wordmark background
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(0, -(screenWidth * 0.26).clamp(82.0, 108.0) * 0.08),
+                  child: Text(
+                    'Tander',
+                    style: AppTypography.brandWordmark(
+                      fontSize: (screenWidth * 0.26).clamp(82.0, 108.0),
+                      color: Colors.white.withValues(alpha: 0.09),
+                      letterSpacing: -0.03 * (screenWidth * 0.26).clamp(82.0, 108.0),
+                    ).copyWith(height: 1),
+                  ),
+                ),
+              ),
+            ),
           ),
+
+          // Online badge — top-right
+          Positioned(
+            top: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              left: false,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20, top: 8),
+                child: ValueListenableBuilder<int>(
+                  valueListenable: onlineCount,
+                  builder: (_, count, _) =>
+                      OnlineCountBadge(count: count, useSeniorsLabel: true),
+                ),
+              ),
+            ),
+          ),
+
+          // Brand content — logo and wordmark
           Positioned.fill(
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 2, 24, 8),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    _buildLogoRow(),
-                    const SizedBox(height: 6),
-                    _buildHeading(),
-                    const SizedBox(height: 6),
-                    ValueListenableBuilder<int>(
-                      valueListenable: onlineCount,
-                      builder: (_, count, _) =>
-                          OnlineCountBadge(count: count, useSeniorsLabel: true),
+                    // Logo
+                    ClipOval(
+                      child: Image.asset(
+                        'assets/icons/tander_icon.png',
+                        width: 68,
+                        height: 68,
+                        semanticLabel: 'Tander logo',
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+
+                    // Wordmark
+                    Text(
+                      'Tander',
+                      style: AppTypography.brandWordmark(
+                        fontSize: wordmarkSize,
+                        color: Colors.white,
+                        letterSpacing: -0.03 * wordmarkSize,
+                      ).copyWith(
+                        height: 0.95,
+                        shadows: const [
+                          Shadow(
+                            offset: Offset(0, 4),
+                            blurRadius: 24,
+                            color: Color(0x38000000),
+                          ),
+                          Shadow(
+                            blurRadius: 50,
+                            color: Color(0x47FFA050),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -272,146 +300,4 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildLogoRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(
-          'assets/icons/tander_icon.png',
-          width: 32,
-          height: 32,
-          semanticLabel: 'Tander logo',
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'Tander',
-          style: AppTypography.brandWordmark(
-            fontSize: 21,
-            color: Colors.white,
-            letterSpacing: -0.3,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeading() {
-    return Text(
-      'Forgot Password',
-      style: AppTypography.h1.copyWith(
-        fontSize: 27,
-        fontWeight: FontWeight.w800,
-        color: Colors.white,
-        letterSpacing: -0.5,
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-}
-
-class _ForgotMobileHeaderScene extends StatefulWidget {
-  const _ForgotMobileHeaderScene();
-
-  @override
-  State<_ForgotMobileHeaderScene> createState() =>
-      _ForgotMobileHeaderSceneState();
-}
-
-class _ForgotMobileHeaderSceneState extends State<_ForgotMobileHeaderScene>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const Positioned.fill(
-            child: Opacity(
-              opacity: 0.05,
-              child: CustomPaint(painter: _ForgotSceneGrainPainter()),
-            ),
-          ),
-          // Web's 19-node animated constellation at 45% opacity
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.45,
-                child: AnimatedBuilder(
-                  animation: _ctrl,
-                  builder: (_, _) => CustomPaint(
-                    painter: SplashConstellationPainter(_ctrl.value),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final fontSize = (constraints.maxWidth * 0.34).clamp(
-                    116.0,
-                    176.0,
-                  );
-                  return Center(
-                    child: Transform.translate(
-                      offset: Offset(0, fontSize * 0.08),
-                      child: Text(
-                        '60+',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: fontSize,
-                          color: Colors.white.withValues(alpha: 0.05),
-                          height: 1,
-                          letterSpacing: -0.05 * fontSize,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ForgotSceneGrainPainter extends CustomPainter {
-  const _ForgotSceneGrainPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white;
-    for (int index = 0; index < 320; index++) {
-      final x = (index * 37 % 997) / 997 * size.width;
-      final y = (index * 91 % 673) / 673 * size.height;
-      final radius = 0.2 + ((index * 13 % 10) / 10) * 0.6;
-      canvas.drawCircle(Offset(x, y), radius, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

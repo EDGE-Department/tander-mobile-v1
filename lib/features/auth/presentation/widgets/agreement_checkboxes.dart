@@ -39,7 +39,7 @@ class AgreementCheckboxes extends StatelessWidget {
           linkColor: const Color(0xFF0F766E),
           onLinkTapped: onTermsTapped,
         ),
-        const SizedBox(height: 8), // web: space-y-2
+        const SizedBox(height: 2),
         _CheckboxRow(
           isChecked: agreedToPrivacy,
           onChanged: () => onPrivacyChanged(!agreedToPrivacy),
@@ -82,16 +82,16 @@ class _CheckboxRow extends StatelessWidget {
       onTap: onChanged,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        // web: px-1 py-1
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        // web: px-1 py-1 — compact for mobile
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // web: w-[20px] h-[20px] rounded-[5px] border-[1.5px]
             AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              width: 24,
-              height: 24,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(
                 color: isChecked ? checkedColor : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
@@ -107,13 +107,13 @@ class _CheckboxRow extends StatelessWidget {
                     )
                   : null,
             ),
-            const SizedBox(width: 10), // web: gap-2.5
+            const SizedBox(width: 8), // web: gap-2.5
             Expanded(
               // web: text-[13px] text-text-body
               child: Text.rich(
                 TextSpan(
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 13,
                     fontWeight: FontWeight.w400,
                     color: Color(0xFF374151),
                     height: 1.4,
@@ -128,7 +128,7 @@ class _CheckboxRow extends StatelessWidget {
                         child: Text(
                           linkText,
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: linkColor,
                             decoration: TextDecoration.underline,

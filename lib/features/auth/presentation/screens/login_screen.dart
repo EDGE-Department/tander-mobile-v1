@@ -158,8 +158,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         : null;
 
     final screenSize = MediaQuery.sizeOf(context);
-    // Web login: minHeight 36dvh, maxHeight 44dvh — use 40% (not shared 20%).
-    final headerHeight = screenSize.height * 0.40;
+    // Reduced header height to bring form closer to branding
+    final headerHeight = screenSize.height * 0.22;
 
     final isLandscapeLayout = screenSize.width >= 1024;
     final isTabletPortraitLayout =
@@ -285,40 +285,9 @@ class _MobileParchmentSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0.16),
-            Colors.white.withValues(alpha: 0.10),
-            Colors.white.withValues(alpha: 0.06),
-          ],
-          stops: const [0.0, 0.48, 1.0],
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(40),
-          topRight: Radius.circular(40),
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x24000000), // rgba(0,0,0,0.14)
-            blurRadius: 32,
-            offset: Offset(0, -10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-          const _SheetHandle(),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: child,
     );
   }
 }
@@ -835,11 +804,6 @@ class _HeaderSection extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Background scene (constellation, aurora, grain, "60+")
-          const Positioned.fill(
-            child: IgnorePointer(child: _MobilePortraitHeaderScene()),
-          ),
-
           // DESIGN SIGNATURE — horizontal chancery wordmark ghosted at 9%, spans full width
           // web: fontSize: clamp(82px, 26vw, 108px), opacity: 0.09, translateY(-8%)
           Positioned.fill(
@@ -878,29 +842,16 @@ class _HeaderSection extends StatelessWidget {
             ),
           ).animate().fadeIn(duration: 600.ms, delay: 100.ms),
 
-          // Brand content — centered in the tall zone
+          // Brand content — positioned near top
           Positioned.fill(
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    // "MADE FOR FILIPINO SENIORS 60+"
-                    Text(
-                      'MADE FOR FILIPINO SENIORS 60+',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.28 * 9,
-                        color: Colors.white.withValues(alpha: 0.60),
-                      ),
-                    ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
-                    const SizedBox(height: 4),
-
-                    // Logo (web: scale 0.9 entrance)
+                    // Logo
                     ClipOval(
                       child: Image.asset(
                         'assets/icons/tander_icon.png',
@@ -941,41 +892,6 @@ class _HeaderSection extends StatelessWidget {
                           end: 0,
                           curve: AppCurves.premiumEase,
                         ),
-                    const SizedBox(height: 6),
-
-                    // Tagline
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 240),
-                      child: Text(
-                        'Connect with fellow seniors\nwho understand your world',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.80),
-                          height: 1.35,
-                          shadows: const [
-                            Shadow(
-                              offset: Offset(0, 2),
-                              blurRadius: 10,
-                              color: Color(0x2E000000),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ).animate().fadeIn(duration: 400.ms, delay: 650.ms).moveY(
-                          begin: 6,
-                          end: 0,
-                          curve: AppCurves.premiumEase,
-                        ),
-
-                    const SizedBox(height: 12),
-
-                    // Filipino values marquee
-                    const _MobileFilipinoValuesMarquee()
-                        .animate()
-                        .fadeIn(duration: 800.ms, delay: 800.ms),
                   ],
                 ),
               ),
