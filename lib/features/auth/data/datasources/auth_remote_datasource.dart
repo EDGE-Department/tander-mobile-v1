@@ -337,6 +337,7 @@ final class AuthRemoteDatasource {
     String? selfiePath,
     Map<String, dynamic>? livenessMetadata,
     Map<String, dynamic>? frontendOcrData,
+    String? deviceFingerprint,
   }) async {
     AppLogger.debug(
       'Verifying ID pre-register',
@@ -363,6 +364,10 @@ final class AuthRemoteDatasource {
 
     if (frontendOcrData != null) {
       formMap['frontendOcrData'] = jsonEncode(frontendOcrData);
+    }
+
+    if (deviceFingerprint != null && deviceFingerprint.isNotEmpty) {
+      formMap['deviceFingerprint'] = deviceFingerprint;
     }
 
     final formData = FormData.fromMap(formMap);

@@ -429,6 +429,7 @@ final class AuthRepositoryImpl implements AuthRepository {
     String? selfiePath,
     Map<String, dynamic>? livenessMetadata,
     Map<String, dynamic>? frontendOcrData,
+    String? deviceFingerprint,
   }) {
     return _runSafe('verifyIdPreRegister', () async {
       final response = await _remoteDatasource.verifyIdPreRegister(
@@ -436,6 +437,7 @@ final class AuthRepositoryImpl implements AuthRepository {
         selfiePath: selfiePath,
         livenessMetadata: livenessMetadata,
         frontendOcrData: frontendOcrData,
+        deviceFingerprint: deviceFingerprint,
       );
 
       final body = response.data;

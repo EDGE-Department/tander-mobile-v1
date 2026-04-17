@@ -243,14 +243,31 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
 
     try {
       final repository = ref.read(authRepositoryProvider);
+      final deviceId = ref.read(deviceIdServiceProvider).getDeviceId();
       final verifyResult = await repository.verifyIdPreRegister(
         idPhotoFrontPath: _capturedIdPath!,
         selfiePath: _selfiePath,
         livenessMetadata: _livenessMetadata?.toJson(),
         frontendOcrData: _ocrResult!.toFrontendOcrData(),
+        deviceFingerprint: deviceId,
       );
 
       if (!mounted) return;
+
+      // Helper to convert rate limit seconds to friendly format
+      String friendlyErrorMessage(String msg) {
+        final match = RegExp(r'wait (\d+) seconds?').firstMatch(msg);
+        if (match == null) return msg;
+        final seconds = int.tryParse(match.group(1) ?? '') ?? 0;
+        final friendly = seconds < 60
+            ? 'a moment'
+            : seconds < 120
+                ? 'about a minute'
+                : seconds < 3600
+                    ? 'about ${(seconds / 60).round()} minutes'
+                    : 'about ${(seconds / 3600).round()} hour${(seconds / 3600).round() == 1 ? '' : 's'}';
+        return 'You\'ve made too many attempts. Please wait $friendly and try again.';
+      }
 
       verifyResult.when(
         success: (auditId) async {
@@ -339,9 +356,12 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
             return;
           }
 
-          if (errorCode == 'RATE_LIMITED') {
+          if (errorCode == 'RATE_LIMITED' ||
+              errorMsg.toLowerCase().contains('too many')) {
             setState(() => _isVerifying = false);
-            _showFeedback(errorMsg);
+            _showFeedback(friendlyErrorMessage(errorMsg));
+            await Future.delayed(const Duration(seconds: 3));
+            if (mounted) context.go(AppRoutes.login);
             return;
           }
 

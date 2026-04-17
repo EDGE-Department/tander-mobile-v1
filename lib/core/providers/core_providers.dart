@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:tander_flutter_v3/core/auth/session_manager.dart';
 import 'package:tander_flutter_v3/core/network/dio_client.dart';
+import 'package:tander_flutter_v3/core/services/device_id_service.dart';
 import 'package:tander_flutter_v3/core/storage/local_storage.dart';
 import 'package:tander_flutter_v3/core/storage/secure_storage.dart';
 
@@ -30,6 +31,10 @@ final secureStorageProvider = Provider<SecureStorage>((ref) {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   return const SecureStorage(flutterSecureStorage);
+});
+
+final deviceIdServiceProvider = Provider<DeviceIdService>((ref) {
+  return DeviceIdService(ref.watch(sharedPreferencesProvider));
 });
 
 // ---------------------------------------------------------------------------

@@ -97,9 +97,23 @@ final class RateLimitException extends AppException {
 
   final int retryAfterSeconds;
 
+  String get _friendlyWaitTime {
+    if (retryAfterSeconds < 60) {
+      return 'a moment';
+    } else if (retryAfterSeconds < 120) {
+      return 'about a minute';
+    } else if (retryAfterSeconds < 3600) {
+      final minutes = (retryAfterSeconds / 60).round();
+      return 'about $minutes minutes';
+    } else {
+      final hours = (retryAfterSeconds / 3600).round();
+      return hours == 1 ? 'about an hour' : 'about $hours hours';
+    }
+  }
+
   @override
   String get userMessage =>
-      'Too many requests. Please wait $retryAfterSeconds seconds and try again.';
+      'You\'ve made too many attempts. Please wait $_friendlyWaitTime and try again.';
 }
 
 final class NotFoundException extends AppException {

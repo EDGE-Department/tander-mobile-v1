@@ -85,5 +85,6 @@ abstract interface class AuthRepository {
     String? selfiePath,
     Map<String, dynamic>? livenessMetadata,
     Map<String, dynamic>? frontendOcrData,
+    String? deviceFingerprint,
   });
 }
