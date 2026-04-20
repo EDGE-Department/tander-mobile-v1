@@ -48,7 +48,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
   final _passwordFocus = FocusNode();
   final _confirmFocus = FocusNode();
 
-  RegistrationMethod _method = RegistrationMethod.email;
+  RegistrationMethod _method = RegistrationMethod.phone;
 
   bool _agreedToTerms = false;
   bool _agreedToPrivacy = false;
@@ -76,16 +76,12 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
     super.initState();
     _scaleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 110),
-      reverseDuration: const Duration(milliseconds: 220),
-      lowerBound: 0.96,
-      upperBound: 1.0,
-      value: 1.0,
+      duration: const Duration(milliseconds: 100),
     );
     _glowController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
+      duration: const Duration(milliseconds: 4000),
+    )..repeat();
     _glowAnimation = Tween<double>(begin: 0.22, end: 0.42).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
@@ -570,12 +566,41 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
       ],
     );
 
+    // Wrap in pill form card with orange accent bar (matching login)
+    final cardContent = ClipRRect(
+      borderRadius: BorderRadius.circular(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Orange accent bar at top (matching login)
+          Container(
+            height: 6,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFF07040), Color(0xFFE86035)],
+              ),
+            ),
+          ),
+          // White card content
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFBF8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: columnContent,
+            ),
+          ),
+        ],
+      ),
+    );
+
     if (widget.isBottomSheet) {
       return FadeSlideTransition(
         animation: widget.entrance,
         interval: const Interval(0.35, 0.65, curve: Curves.easeOut),
         slideY: 0,
-        child: columnContent,
+        child: cardContent,
       );
     }
 
@@ -583,26 +608,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
       animation: widget.entrance,
       interval: const Interval(0.30, 0.60, curve: Curves.easeOut),
       slideY: 40,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFFFFF), Color(0xFFFDFDFD)],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xCCFFFFFF), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              offset: const Offset(0, 14),
-              blurRadius: 32,
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(24),
-        child: columnContent,
-      ),
+      child: cardContent,
     );
   }
 
@@ -636,83 +642,17 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
   }
 
   Widget _cardIntro() {
-    if (widget.isBottomSheet) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 5,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
-              ),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Create Account',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF111827),
-                    letterSpacing: -0.5,
-                    height: 1.1,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  "Choose how you'd like to sign in.",
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF6B7280),
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+    // Simple heading matching login screen style
+    return const Text(
+      'Create Account',
+      style: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w900,
+        color: Color(0xFF111827),
+        letterSpacing: -0.5,
+        height: 1.1,
       ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Account Credentials',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF111827),
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Choose how you want to sign in, then create a secure password.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF4B5563),
-              height: 1.35,
-            ),
-          ),
-        ],
-      ),
+      textAlign: TextAlign.center,
     );
   }
 
@@ -821,101 +761,122 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard>
   }
 
   Widget _submitButton() {
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_scaleController, _glowAnimation]),
-        builder: (context, child) => Transform.scale(
-          scale: _scaleController.value,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: 56,
-              minWidth: double.infinity,
-            ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: (_isLoading || !_canSubmit)
-                    ? null
-                    : const LinearGradient(
-                        colors: [Color(0xFFFF8A60), Color(0xFFFF5C35)],
+    final isInteractive = !_isLoading && _canSubmit;
+
+    return ScaleTransition(
+      scale: Tween<double>(begin: 1.0, end: 0.97).animate(_scaleController),
+      child: Opacity(
+        opacity: _isLoading ? 0.6 : 1.0,
+        child: GestureDetector(
+          onTapDown: isInteractive ? (_) => _scaleController.forward() : null,
+          onTapUp: isInteractive ? (_) => _scaleController.reverse() : null,
+          onTapCancel: isInteractive ? _scaleController.reverse : null,
+          onTap: isInteractive ? _handleSignUp : null,
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: _canSubmit
+                  ? const LinearGradient(
+                      colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+                    )
+                  : null,
+              color: _canSubmit ? null : const Color(0xFFD1D5DB),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: _canSubmit
+                  ? const [
+                      BoxShadow(
+                        color: Color(0x59E67E22),
+                        blurRadius: 40,
+                        offset: Offset(0, 20),
+                        spreadRadius: -12,
                       ),
-                color: (_isLoading || !_canSubmit)
-                    ? const Color(0xFFD1D5DB)
-                    : null,
-                borderRadius: BorderRadius.circular(100),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF5C35).withValues(
-                      alpha: (_isLoading || !_canSubmit)
-                          ? 0.0
-                          : _glowAnimation.value,
+                    ]
+                  : null,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Shimmer sweep
+                if (_canSubmit)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: AnimatedBuilder(
+                        animation: _glowController,
+                        builder: (_, __) {
+                          final translateX = (_glowController.value * 3.0 - 1.0);
+                          return Transform.translate(
+                            offset: Offset(
+                              translateX * MediaQuery.sizeOf(context).width,
+                              0,
+                            ),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0x00FFFFFF),
+                                    Color(0x38FFFFFF),
+                                    Color(0x00FFFFFF),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                    offset: const Offset(0, 6),
-                    blurRadius: 22,
                   ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: (_isLoading || !_canSubmit) ? null : _handleSignUp,
-                  borderRadius: BorderRadius.circular(100),
-                  splashColor: Colors.white.withValues(alpha: 0.12),
-                  highlightColor: Colors.white.withValues(alpha: 0.06),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 14),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_isLoading) ...[
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
+                // Content
+                _isLoading
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white),
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Creating account...',
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ] else ...[
+                          SizedBox(width: 12),
                           Text(
-                            'Continue',
+                            'CREATING ACCOUNT...',
                             style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w700,
-                              color: (_isLoading || !_canSubmit)
-                                  ? const Color(0xFF6B7280)
-                                  : Colors.white,
-                              letterSpacing: 0.3,
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.92,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: (_isLoading || !_canSubmit)
-                                ? const Color(0xFF6B7280)
-                                : Colors.white,
-                            size: 22,
                           ),
                         ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'CONTINUE',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: _canSubmit
+                                  ? Colors.white
+                                  : const Color(0xFF6B7280),
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.92,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 24,
+                            color: _canSubmit
+                                ? Colors.white
+                                : const Color(0xFF6B7280),
+                          ),
+                        ],
+                      ),
+              ],
             ),
           ),
         ),

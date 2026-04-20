@@ -125,34 +125,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                     onBack: _onBack,
                   ),
                   Transform.translate(
-                        offset: const Offset(0, -8),
+                        offset: const Offset(0, -20),
                         child: _SignUpSheet(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 32),
-                            child: Column(
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 8,
-                                  ),
-                                  child: RegistrationStepDots(
-                                    currentStep: 1,
-                                    totalSteps: 4,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  child: SignUpFormCard(
-                                    entrance: _entrance,
-                                    onSignIn: _onSignIn,
-                                    isBottomSheet: true,
-                                  ),
-                                ),
-                              ],
+                            child: SignUpFormCard(
+                              entrance: _entrance,
+                              onSignIn: _onSignIn,
+                              isBottomSheet: true,
                             ),
                           ),
                         ),
@@ -308,7 +288,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   }
 }
 
-// ── Solid white bottom sheet ─────────────────────────────────────────
+// ── Simple parchment sheet (matches login) ─────────────────────────────────
 
 class _SignUpSheet extends StatelessWidget {
   const _SignUpSheet({required this.child});
@@ -317,35 +297,14 @@ class _SignUpSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(36),
-          topRight: Radius.circular(36),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            offset: Offset(0, -8),
-            blurRadius: 24,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-          const AuthSheetHandle(),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: child,
     );
   }
 }
 
-// ── Phone header section (matches login's _HeaderSection) ────────────
+// ── Phone header section (matches login's _HeaderSection exactly) ────────────
 
 class _SignUpHeaderSection extends StatelessWidget {
   const _SignUpHeaderSection({
@@ -360,112 +319,135 @@ class _SignUpHeaderSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalOverscan = MediaQuery.sizeOf(context).width * 0.10;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final wordmarkSize = (screenWidth * 0.17).clamp(56.0, 72.0);
 
     return SizedBox(
       height: headerHeight + headerOverlap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            left: -horizontalOverscan,
-            right: -horizontalOverscan,
-            top: 0,
-            bottom: 0,
-            child: const IgnorePointer(child: AuthHeaderScene()),
-          ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-              child: Column(
-                children: [
-                  _buildNavRow(context),
-                  const Spacer(),
-                  Image.asset(
-                    'assets/icons/tander_icon.png',
-                    width: 40,
-                    height: 40,
-                    semanticLabel: 'Tander logo',
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
+          // Ghost wordmark background (moved down closer to white Tander)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(0, (screenWidth * 0.26).clamp(82.0, 108.0) * 0.25),
+                  child: Text(
                     'Tander',
                     style: AppTypography.brandWordmark(
-                      fontSize: 21,
-                      color: Colors.white,
-                      letterSpacing: -0.3,
+                      fontSize: (screenWidth * 0.26).clamp(82.0, 108.0),
+                      color: Colors.white.withValues(alpha: 0.09),
+                      letterSpacing: -0.03 * (screenWidth * 0.26).clamp(82.0, 108.0),
+                    ).copyWith(height: 1),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Online badge — top-right
+          Positioned(
+            top: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              left: false,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20, top: 8),
+                child: ValueListenableBuilder<int>(
+                  valueListenable: onlineCount,
+                  builder: (_, count, __) =>
+                      OnlineCountBadge(count: count, useSeniorsLabel: false),
+                ),
+              ),
+            ),
+          ),
+
+          // Back button — top-left
+          Positioned(
+            top: 0,
+            left: 0,
+            child: SafeArea(
+              bottom: false,
+              right: false,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, top: 8),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onBack,
+                    customBorder: const CircleBorder(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.18),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  ValueListenableBuilder<int>(
-                    valueListenable: onlineCount,
-                    builder: (_, count, __) =>
-                        OnlineCountBadge(count: count, useSeniorsLabel: true),
-                  ),
-                ],
+                ),
+              ),
+            ),
+          ),
+
+          // Brand content — logo and wordmark (matching login)
+          Positioned.fill(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Logo
+                    ClipOval(
+                      child: Image.asset(
+                        'assets/icons/tander_icon.png',
+                        width: 60,
+                        height: 60,
+                        semanticLabel: 'Tander logo',
+                      ),
+                    ),
+
+                    // Wordmark
+                    Text(
+                      'Tander',
+                      style: AppTypography.brandWordmark(
+                        fontSize: wordmarkSize,
+                        color: Colors.white,
+                        letterSpacing: -0.03 * wordmarkSize,
+                      ).copyWith(
+                        height: 0.95,
+                        shadows: const [
+                          Shadow(
+                            offset: Offset(0, 4),
+                            blurRadius: 24,
+                            color: Color(0x38000000),
+                          ),
+                          Shadow(
+                            blurRadius: 50,
+                            color: Color(0x47FFA050),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildNavRow(BuildContext context) {
-    return Row(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onBack,
-            customBorder: const CircleBorder(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.18),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.all(1.2),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
-            ),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              'Step 1 of 4',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.95),
-              ),
-            ),
-          ),
-        ),
-        const Spacer(),
-        const SizedBox(width: 40),
-      ],
     );
   }
 }

@@ -205,7 +205,8 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final wordmarkSize = (screenWidth * 0.17).clamp(56.0, 72.0);
+    final ghostFontSize = (screenWidth * 0.24).clamp(72.0, 96.0);
+    final wordmarkSize = (screenWidth * 0.14).clamp(48.0, 60.0);
 
     return SizedBox(
       height: headerHeight + headerOverlap,
@@ -217,13 +218,13 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
             child: IgnorePointer(
               child: Center(
                 child: Transform.translate(
-                  offset: Offset(0, -(screenWidth * 0.26).clamp(82.0, 108.0) * 0.08),
+                  offset: Offset(0, -ghostFontSize * 0.08),
                   child: Text(
                     'Tander',
                     style: AppTypography.brandWordmark(
-                      fontSize: (screenWidth * 0.26).clamp(82.0, 108.0),
+                      fontSize: ghostFontSize,
                       color: Colors.white.withValues(alpha: 0.09),
-                      letterSpacing: -0.03 * (screenWidth * 0.26).clamp(82.0, 108.0),
+                      letterSpacing: -0.03 * ghostFontSize,
                     ).copyWith(height: 1),
                   ),
                 ),
@@ -254,7 +255,7 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -262,8 +263,8 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
                     ClipOval(
                       child: Image.asset(
                         'assets/icons/tander_icon.png',
-                        width: 68,
-                        height: 68,
+                        width: 56,
+                        height: 56,
                         semanticLabel: 'Tander logo',
                       ),
                     ),

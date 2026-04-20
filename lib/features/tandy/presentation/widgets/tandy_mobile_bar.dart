@@ -14,158 +14,83 @@ import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_cons
 /// Web: flex lg:hidden, avatar 40px with glow, "Tandy" 15px/800,
 /// "Your Wellness Companion" 11px, online badge with teal dot.
 class TandyMobileHeader extends StatelessWidget {
-  const TandyMobileHeader({super.key});
+  const TandyMobileHeader({
+    this.onClearTap,
+    super.key,
+  });
+
+  final VoidCallback? onClearTap;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.paddingOf(context).top + 8,
+        top: MediaQuery.paddingOf(context).top + 12,
         left: 16,
-        right: 16,
-        bottom: 11,
+        right: 12,
+        bottom: 12,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xF8FFFFFF), // rgba(255,255,255,.97)
-        border: Border(bottom: BorderSide(color: AppColors.borderLight)),
+        color: Colors.white,
       ),
       child: Row(
         children: <Widget>[
-          // Avatar with glow
-          Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: <Color>[Color(0xFFFFF9F2), Color(0xFFFFF0DC)],
-                  ),
-                  border: Border.all(
-                    color: kTandyOrange.withAlpha(64),
-                    width: 2,
-                  ),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: kTandyOrange.withAlpha(31),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child:
-                      Image.asset(
-                        'assets/icons/tandy_icon.png',
-                        width: 22,
-                        height: 22,
-                        fit: BoxFit.contain,
-                      ),
-                ),
-              ),
-              Positioned(
-                bottom: 1,
-                right: 1,
-                child: Container(
-                  width: 11,
-                  height: 11,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF4ADE80),
-                    border: Border.all(color: AppColors.canvas, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 10),
-
-          // Title
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'Tandy',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    color: AppColors.textStrong,
-                    letterSpacing: -0.45,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Your Wellness Companion',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF0C8078),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Online badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              gradient: LinearGradient(
-                colors: <Color>[
-                  kTandyTeal.withAlpha(20),
-                  kTandyTeal.withAlpha(10),
-                ],
-              ),
-              border: Border.all(color: kTandyTeal.withAlpha(46)),
+              shape: BoxShape.circle,
+              color: const Color(0xFFFFF6ED),
+              border: Border.all(color: kTandyOrange.withAlpha(50), width: 2),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: kTandyTeal,
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: kTandyTeal.withAlpha(128),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 5),
-                const Text(
-                  'Online',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF0C8078),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            child: Center(
+              child: Image.asset(
+                'assets/icons/tandy_icon.png',
+                width: 24,
+                height: 24,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Tandy',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                color: AppColors.textStrong,
+              ),
+            ),
+          ),
+          if (onClearTap != null)
+            Material(
+              color: const Color(0xFFF5F3F0),
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: onClearTap,
+                child: const SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: Icon(Icons.refresh, color: Color(0xFFB0A8A0), size: 22),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-// ── Mobile Feature Bar ──────────────────────────────────────────────
+// ── Quick Actions Bar (60+ friendly) ────────────────────────────────
 
-/// Web: lg:hidden, grid 4 cols (Chat/Breathe/Meditate/Support) + clear button.
-class TandyMobileFeatureBar extends StatelessWidget {
-  const TandyMobileFeatureBar({
+class TandyQuickActionsBar extends StatelessWidget {
+  const TandyQuickActionsBar({
     required this.onChatTap,
     required this.onBreatheTap,
     required this.onMeditateTap,
     required this.onSupportTap,
-    required this.onClearTap,
     super.key,
   });
 
@@ -173,139 +98,69 @@ class TandyMobileFeatureBar extends StatelessWidget {
   final VoidCallback onBreatheTap;
   final VoidCallback onMeditateTap;
   final VoidCallback onSupportTap;
-  final VoidCallback onClearTap;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-      decoration: BoxDecoration(
-        color: AppColors.canvas.withAlpha(247),
-        border: const Border(
-          top: BorderSide(color: AppColors.borderLight),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
         children: <Widget>[
-          // 4-col feature grid
-          Row(
-            children: <Widget>[
-              _buildFeatureCell(
-                label: 'Chat',
-                icon: Icons.send_rounded,
-                color: kTandyOrange,
-                onTap: onChatTap,
-              ),
-              const SizedBox(width: 6),
-              _buildFeatureCell(
-                label: 'Breathe',
-                icon: Icons.spa,
-                color: kTandyTeal,
-                onTap: onBreatheTap,
-              ),
-              const SizedBox(width: 6),
-              _buildFeatureCell(
-                label: 'Meditate',
-                icon: Icons.self_improvement,
-                color: kTandyPurple,
-                onTap: onMeditateTap,
-              ),
-              const SizedBox(width: 6),
-              _buildFeatureCell(
-                label: 'Support',
-                icon: Icons.person_outline,
-                color: kTandyBlue,
-                onTap: onSupportTap,
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-
-          // Clear button
-          SizedBox(
-            width: double.infinity,
-            child: GestureDetector(
-              onTap: onClearTap,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 7),
-                decoration: BoxDecoration(
-                  color: AppColors.dangerLight,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppColors.danger.withAlpha(46),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Icon(Icons.delete_outline, size: 11,
-                        color: Color(0xFFC0392B)),
-                    SizedBox(width: 5),
-                    Text(
-                      'Clear conversation',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFC0392B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          _QuickTab(label: 'Chat', icon: Icons.chat_bubble_outline, color: kTandyOrange, onTap: onChatTap),
+          const SizedBox(width: 8),
+          _QuickTab(label: 'Breathe', icon: Icons.spa_outlined, color: kTandyTeal, onTap: onBreatheTap),
+          const SizedBox(width: 8),
+          _QuickTab(label: 'Meditate', icon: Icons.self_improvement, color: kTandyPurple, onTap: onMeditateTap),
+          const SizedBox(width: 8),
+          _QuickTab(label: 'Support', icon: Icons.favorite_outline, color: kTandyBlue, onTap: onSupportTap),
         ],
       ),
     );
   }
+}
 
-  Widget _buildFeatureCell({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+class _QuickTab extends StatelessWidget {
+  const _QuickTab({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withAlpha(38)),
-            color: Colors.white.withAlpha(179),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: color,
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: color.withAlpha(37),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE8E4E0)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(icon, size: 22, color: color),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
                 ),
-                child: Icon(icon, size: 18, color: Colors.white),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

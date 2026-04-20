@@ -79,65 +79,43 @@ class _ActionCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E1DC).withAlpha(153)),
-            boxShadow: <BoxShadow>[
-              BoxShadow(color: glowColor, blurRadius: 16, offset: const Offset(0, 4)),
-            ],
+            border: Border.all(color: const Color(0xFFE5E1DC)),
           ),
           clipBehavior: Clip.antiAlias,
           child: Row(
             children: <Widget>[
-              // Colored panel
               Container(
                 width: 72,
-                constraints: const BoxConstraints(minHeight: 84),
+                constraints: const BoxConstraints(minHeight: 80),
                 decoration: BoxDecoration(gradient: panelGradient),
-                child: Center(
-                  child: Icon(icon, size: 30, color: Colors.white),
-                ),
+                child: Center(child: Icon(icon, size: 32, color: Colors.white)),
               ),
-
-              // Content panel
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1F2937))),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0x0D000000),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: const Color(0x14000000)),
-                            ),
-                            child: Row(
-                              children: <Widget>[
-                                const Icon(Icons.access_time, size: 9, color: Color(0xFF9CA3AF)),
-                                const SizedBox(width: 3),
-                                Text(durationLabel, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF9CA3AF))),
-                              ],
-                            ),
-                          ),
-                        ],
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1F2937),
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: <Widget>[
-                          Text('Begin session', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kTandyTeal)),
-                          const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward, size: 11, color: kTandyTeal),
-                        ],
+                      Text(
+                        '$subtitle · $durationLabel',
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF7B7068)),
                       ),
                     ],
                   ),
                 ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
               ),
             ],
           ),

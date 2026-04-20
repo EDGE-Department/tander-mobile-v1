@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../data/registration_method.dart';
+
+/// Login button gradient matching web: from-[#E67E22] to-[#D35400]
+const LinearGradient _toggleGradient = LinearGradient(
+  colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+);
 
 /// Animated segmented control for Phone | Email registration.
 ///
 /// Orange slider animates between the two options. 56px height,
 /// elder-friendly touch targets.
-class MethodSelector extends StatelessWidget {
+class MethodSelector extends StatefulWidget {
   final RegistrationMethod selected;
   final ValueChanged<RegistrationMethod> onChanged;
   final bool enabled;
@@ -22,8 +26,31 @@ class MethodSelector extends StatelessWidget {
   });
 
   @override
+  State<MethodSelector> createState() => _MethodSelectorState();
+}
+
+class _MethodSelectorState extends State<MethodSelector>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isPhone = selected == RegistrationMethod.phone;
+    final isPhone = widget.selected == RegistrationMethod.phone;
 
     return Container(
       height: 56,
@@ -38,7 +65,7 @@ class MethodSelector extends StatelessWidget {
           final tabWidth = constraints.maxWidth / 2;
           return Stack(
             children: [
-              // Animated slider
+              // Animated slider with shimmer
               AnimatedAlign(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
@@ -48,18 +75,42 @@ class MethodSelector extends StatelessWidget {
                   width: tabWidth,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: enabled ? AppColors.primary : const Color(0xFF9CA3AF),
+                    gradient: widget.enabled ? _toggleGradient : null,
+                    color: widget.enabled ? null : const Color(0xFF9CA3AF),
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (enabled
-                                ? AppColors.primary
-                                : const Color(0xFF9CA3AF))
-                            .withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: widget.enabled
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x59E67E22),
+                              blurRadius: 16,
+                              offset: Offset(0, 6),
+                              spreadRadius: -4,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AnimatedBuilder(
+                      animation: _shimmerController,
+                      builder: (_, __) {
+                        final translateX = (_shimmerController.value * 3.0 - 1.0);
+                        return Transform.translate(
+                          offset: Offset(translateX * tabWidth, 0),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0x00FFFFFF),
+                                  Color(0x30FFFFFF),
+                                  Color(0x00FFFFFF),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -70,11 +121,11 @@ class MethodSelector extends StatelessWidget {
                     icon: PhosphorIconsRegular.phone,
                     label: 'Phone',
                     isSelected: isPhone,
-                    onTap: enabled
+                    onTap: widget.enabled
                         ? () {
                             if (!isPhone) {
                               HapticFeedback.selectionClick();
-                              onChanged(RegistrationMethod.phone);
+                              widget.onChanged(RegistrationMethod.phone);
                             }
                           }
                         : null,
@@ -83,11 +134,11 @@ class MethodSelector extends StatelessWidget {
                     icon: PhosphorIconsRegular.envelope,
                     label: 'Email',
                     isSelected: !isPhone,
-                    onTap: enabled
+                    onTap: widget.enabled
                         ? () {
                             if (isPhone) {
                               HapticFeedback.selectionClick();
-                              onChanged(RegistrationMethod.email);
+                              widget.onChanged(RegistrationMethod.email);
                             }
                           }
                         : null,

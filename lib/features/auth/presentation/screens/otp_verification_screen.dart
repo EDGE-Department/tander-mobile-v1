@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -43,12 +44,13 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 
 class _OtpVerificationScreenState
     extends ConsumerState<OtpVerificationScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final _otpBoxesKey = GlobalKey<OtpDigitBoxesState>();
   final _resendTimerKey = GlobalKey<ResendTimerState>();
 
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
+  late final AnimationController _shimmerController;
 
   bool _isVerifying = false;
   bool _isVerified = false;
@@ -81,6 +83,10 @@ class _OtpVerificationScreenState
       parent: _shakeController,
       curve: Curves.easeInOut,
     ));
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat();
   }
 
   @override
@@ -97,6 +103,7 @@ class _OtpVerificationScreenState
   @override
   void dispose() {
     _shakeController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -311,9 +318,11 @@ class _OtpVerificationScreenState
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final headerHeight = resolveHeaderHeight(screenHeight);
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
       backgroundColor: _navBarColor,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           const Positioned.fill(
@@ -327,8 +336,8 @@ class _OtpVerificationScreenState
             children: [
               _buildHeader(headerHeight),
               Expanded(
-                child: Transform.translate(
-                  offset: const Offset(0, -8),
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: bottomPadding + 8),
                   child: _buildWhiteSheet(),
                 ),
               ),
@@ -340,43 +349,72 @@ class _OtpVerificationScreenState
   }
 
   Widget _buildHeader(double headerHeight) {
-    final horizontalOverscan = MediaQuery.sizeOf(context).width * 0.10;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final ghostFontSize = (screenWidth * 0.24).clamp(72.0, 96.0);
+    final wordmarkSize = (screenWidth * 0.14).clamp(48.0, 60.0);
+
     return SizedBox(
       height: headerHeight + headerOverlap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            left: -horizontalOverscan,
-            right: -horizontalOverscan,
-            top: 0,
-            bottom: 0,
-            child: const IgnorePointer(child: AuthHeaderScene()),
+          // Ghost "Tander" wordmark
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(0, -ghostFontSize * 0.08),
+                  child: Text(
+                    'Tander',
+                    style: AppTypography.brandWordmark(
+                      fontSize: ghostFontSize,
+                      color: Colors.white.withValues(alpha: 0.09),
+                      letterSpacing: -0.03 * ghostFontSize,
+                    ).copyWith(height: 1),
+                  ),
+                ),
+              ),
+            ),
           ),
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
               child: Column(
                 children: [
                   _buildNavRow(),
                   const Spacer(),
-                  Image.asset(
-                    'assets/icons/tander_icon.png',
-                    width: 52,
-                    height: 52,
-                    semanticLabel: 'Tander logo',
+                  // Logo
+                  ClipOval(
+                    child: Image.asset(
+                      'assets/icons/tander_icon.png',
+                      width: 48,
+                      height: 48,
+                      semanticLabel: 'Tander logo',
+                    ),
                   ),
-                  const SizedBox(height: 6),
+                  // White "Tander" wordmark with shadow
                   Text(
                     'Tander',
                     style: AppTypography.brandWordmark(
-                      fontSize: 26,
+                      fontSize: wordmarkSize,
                       color: Colors.white,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.03 * wordmarkSize,
+                    ).copyWith(
+                      height: 0.95,
+                      shadows: const [
+                        Shadow(
+                          offset: Offset(0, 4),
+                          blurRadius: 24,
+                          color: Color(0x38000000),
+                        ),
+                        Shadow(
+                          blurRadius: 50,
+                          color: Color(0x47FFA050),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
                 ],
               ),
             ),
@@ -446,45 +484,36 @@ class _OtpVerificationScreenState
   }
 
   Widget _buildWhiteSheet() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(36),
-          topRight: Radius.circular(36),
+    final borderRadius = BorderRadius.circular(32);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBF8),
+          borderRadius: borderRadius,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            offset: Offset(0, -8),
-            blurRadius: 24,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(36),
-          topRight: Radius.circular(36),
-        ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 12),
-            const AuthSheetHandle(),
-            const SizedBox(height: 4),
-            if (_isRegistration)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                child: Center(
-                  child: RegistrationStepDots(
-                    currentStep: 2,
-                    totalSteps: 4,
-                  ),
+            // Orange accent bar at top
+            Container(
+              height: 6,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF07040), Color(0xFFE86035)],
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: borderRadius.topLeft,
+                  topRight: borderRadius.topRight,
                 ),
               ),
+            ),
+            // Scrollable form content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                 child: _isVerified ? _buildVerifiedState() : _buildOtpForm(),
               ),
             ),
@@ -501,9 +530,9 @@ class _OtpVerificationScreenState
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildIconHero(),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: 16),
         _buildHeading(),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: 20),
         _buildErrorAlert(),
         OtpDigitBoxes(
           key: _otpBoxesKey,
@@ -515,11 +544,11 @@ class _OtpVerificationScreenState
             setState(() => _filledDigitCount = count);
           },
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 16),
         _buildProgressBar(),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: 20),
         _buildVerifyButton(),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: 12),
         ResendTimer(
           key: _resendTimerKey,
           onResend: _resendCode,
@@ -529,62 +558,73 @@ class _OtpVerificationScreenState
     );
   }
 
-  /// Icon hero: shield icon, teal gradient
+  /// Icon hero: shield icon with orange gradient matching login button
   Widget _buildIconHero() {
     return Container(
-      width: 72,
-      height: 72,
+      width: 68,
+      height: 68,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          begin: Alignment(-0.7, -1),
-          end: Alignment(0.7, 1),
-          colors: [Color(0xFF0F9D94), Color(0xFF0B7D73)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE67E22), Color(0xFFD35400)],
         ),
-        borderRadius: AppRadius.borderXl,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x730F9D94),
-            blurRadius: 28,
+            color: Color(0x59E67E22),
+            blurRadius: 24,
             offset: Offset(0, 8),
+            spreadRadius: -4,
           ),
         ],
       ),
       child: const Icon(
-        Icons.verified_user,
-        size: 36,
-        color: AppColors.textInverse,
+        Icons.sms_outlined,
+        size: 32,
+        color: Colors.white,
       ),
     );
   }
 
   Widget _buildHeading() {
+    final contact = _phone.isNotEmpty ? _phone : _email;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Enter your code',
-          style: AppTypography.h1,
+          'Verify Your Number',
+          style: AppTypography.h1.copyWith(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1F2937),
+          ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: AppSpacing.xs),
-        RichText(
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'We sent a 6-digit code to',
+          style: AppTypography.body.copyWith(
+            color: const Color(0xFF6B7280),
+            fontSize: 14,
+          ),
           textAlign: TextAlign.center,
-          text: TextSpan(
-            style: AppTypography.body.copyWith(color: AppColors.textMuted),
-            children: [
-              const TextSpan(text: 'We sent a 6-digit code to '),
-              TextSpan(
-                text: _email.isNotEmpty
-                    ? _email
-                    : _phone.isNotEmpty
-                        ? _phone
-                        : 'your contact',
-                style: AppTypography.body.copyWith(
-                  color: AppColors.textStrong,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            contact.isNotEmpty ? contact : 'your contact',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1F2937),
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ],
@@ -629,31 +669,118 @@ class _OtpVerificationScreenState
 
   Widget _buildProgressBar() {
     final progress = _filledDigitCount / otpLength;
-    return ClipRRect(
-      borderRadius: AppRadius.borderFull,
-      child: SizedBox(
-        height: 4,
-        child: LinearProgressIndicator(
-          value: progress,
-          backgroundColor: AppColors.border,
-          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 6,
+              width: double.infinity,
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: const Color(0xFFE5E7EB),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  progress >= 1.0
+                      ? const Color(0xFF10B981) // Green when complete
+                      : const Color(0xFFE67E22), // Orange while typing
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$_filledDigitCount of $otpLength digits entered',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF9CA3AF),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildVerifyButton() {
-    return TanderButton(
-      label: 'Verify Code',
-      onPressed: _filledDigitCount < otpLength || _isVerifying
-          ? null
-          : () => _verifyOtp(
-                _otpBoxesKey.currentState?.otpValue ?? '',
+    final isEnabled = _filledDigitCount >= otpLength && !_isVerifying;
+
+    return GestureDetector(
+      onTapDown: isEnabled ? (_) => HapticFeedback.lightImpact() : null,
+      onTap: isEnabled
+          ? () => _verifyOtp(_otpBoxesKey.currentState?.otpValue ?? '')
+          : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: isEnabled
+              ? const LinearGradient(
+                  colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+                )
+              : null,
+          color: isEnabled ? null : const Color(0xFFE5E7EB),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isEnabled
+              ? const [
+                  BoxShadow(
+                    color: Color(0x59E67E22),
+                    blurRadius: 16,
+                    offset: Offset(0, 6),
+                    spreadRadius: -4,
+                  ),
+                ]
+              : null,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              // Shimmer effect
+              if (isEnabled)
+                Positioned.fill(
+                  child: _ShimmerOverlay(controller: _shimmerController),
+                ),
+              // Button content
+              Center(
+                child: _isVerifying
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Verify Code',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: isEnabled
+                                  ? Colors.white
+                                  : const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.check_rounded,
+                            size: 20,
+                            color: isEnabled
+                                ? Colors.white
+                                : const Color(0xFF9CA3AF),
+                          ),
+                        ],
+                      ),
               ),
-      isLoading: _isVerifying,
-      isDisabled: _filledDigitCount < otpLength,
-      icon: Icons.check_rounded,
-      iconPosition: IconPosition.trailing,
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -661,5 +788,37 @@ class _OtpVerificationScreenState
 
   Widget _buildVerifiedState() {
     return OtpVerifiedState(isRegistration: _isRegistration);
+  }
+}
+
+/// Shimmer sweep overlay for buttons
+class _ShimmerOverlay extends StatelessWidget {
+  const _ShimmerOverlay({required this.controller});
+
+  final AnimationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) {
+        final translateX = (controller.value * 3.0 - 1.0);
+        return Transform.translate(
+          offset: Offset(translateX * 200, 0),
+          child: Container(
+            width: 100,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0x00FFFFFF),
+                  Color(0x30FFFFFF),
+                  Color(0x00FFFFFF),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

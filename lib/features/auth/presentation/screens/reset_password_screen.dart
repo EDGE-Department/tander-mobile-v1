@@ -11,6 +11,7 @@ import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_connection_showcase.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
@@ -262,48 +263,185 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Widget _buildPhoneLayout() {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final headerHeight = resolveHeaderHeight(screenHeight);
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: _navBarColor,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          const Positioned.fill(
+          Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(
-                decoration: BoxDecoration(gradient: _mobileAuthGradient),
+                decoration: const BoxDecoration(gradient: authGradient),
               ),
             ),
           ),
-          SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: screenHeight),
+          Column(
+            children: [
+              _buildMobileHeader(headerHeight),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: bottomPadding + 8),
+                  child: _buildWhiteSheet(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileHeader(double headerHeight) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final ghostFontSize = (screenWidth * 0.24).clamp(72.0, 96.0);
+    final wordmarkSize = (screenWidth * 0.14).clamp(48.0, 60.0);
+
+    return SizedBox(
+      height: headerHeight + headerOverlap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Ghost "Tander" wordmark
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(0, ghostFontSize * 0.15),
+                  child: Text(
+                    'Tander',
+                    style: AppTypography.brandWordmark(
+                      fontSize: ghostFontSize,
+                      color: Colors.white.withValues(alpha: 0.09),
+                      letterSpacing: -0.03 * ghostFontSize,
+                    ).copyWith(height: 1),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
               child: Column(
                 children: [
-                  _ResetPasswordMobileHeader(
-                    headerHeight: headerHeight,
-                    onlineCount: _onlineCount,
+                  _buildNavRow(),
+                  const Spacer(),
+                  // Logo
+                  ClipOval(
+                    child: Image.asset(
+                      'assets/icons/tander_icon.png',
+                      width: 48,
+                      height: 48,
+                      semanticLabel: 'Tander logo',
+                    ),
                   ),
-                  Transform.translate(
-                        offset: const Offset(0, -headerOverlap),
-                        child: _MobileParchmentSheet(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 32),
-                            child: _buildFormCard(isWide: false),
-                          ),
+                  // White "Tander" wordmark with shadow
+                  Text(
+                    'Tander',
+                    style: AppTypography.brandWordmark(
+                      fontSize: wordmarkSize,
+                      color: Colors.white,
+                      letterSpacing: -0.03 * wordmarkSize,
+                    ).copyWith(
+                      height: 0.95,
+                      shadows: const [
+                        Shadow(
+                          offset: Offset(0, 4),
+                          blurRadius: 24,
+                          color: Color(0x38000000),
                         ),
-                      )
-                      .animate()
-                      .fadeIn(
-                        duration: 700.ms,
-                        delay: 100.ms,
-                        curve: AppCurves.premiumEase,
-                      )
-                      .slideY(begin: 0.08, curve: AppCurves.premiumEase),
+                        Shadow(
+                          blurRadius: 50,
+                          color: Color(0x47FFA050),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNavRow() {
+    return Row(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.pop(),
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.18),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+        const Spacer(),
+        // Online count badge
+        ValueListenableBuilder<int>(
+          valueListenable: _onlineCount,
+          builder: (_, count, __) =>
+              OnlineCountBadge(count: count, useSeniorsLabel: true),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWhiteSheet() {
+    final borderRadius = BorderRadius.circular(32);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBF8),
+          borderRadius: borderRadius,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Orange accent bar at top
+            Container(
+              height: 6,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF07040), Color(0xFFE86035)],
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: borderRadius.topLeft,
+                  topRight: borderRadius.topRight,
+                ),
+              ),
+            ),
+            // Scrollable form content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                child: _isSuccess ? _buildSuccessContent() : _buildFormContent(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

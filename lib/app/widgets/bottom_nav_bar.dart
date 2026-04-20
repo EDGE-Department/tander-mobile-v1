@@ -157,10 +157,8 @@ class _TanderBottomNavBarState extends ConsumerState<TanderBottomNavBar>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               decoration: BoxDecoration(
-                // iOS 26 Liquid Glass
-                color: Colors.white.withAlpha(75),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: Colors.white.withAlpha(180), width: 1.5),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,

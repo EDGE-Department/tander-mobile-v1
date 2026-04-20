@@ -152,7 +152,19 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
               Column(
                 children: <Widget>[
                   // Mobile header (web: flex lg:hidden)
-                  if (!isTablet) const TandyMobileHeader(),
+                  if (!isTablet)
+                    TandyMobileHeader(
+                      onClearTap: _handleClear,
+                    ),
+
+                  // Quick actions bar (60+ friendly)
+                  if (!isTablet)
+                    TandyQuickActionsBar(
+                      onChatTap: () => _focusNode.requestFocus(),
+                      onBreatheTap: () => _openPanel(TandyActivePanel.breathe),
+                      onMeditateTap: () => _openPanel(TandyActivePanel.meditate),
+                      onSupportTap: () => _openPanel(TandyActivePanel.support),
+                    ),
 
                   // Message area
                   Expanded(child: _buildBody(tandyState)),
@@ -166,20 +178,6 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
                       tandyState.suggestBreathingPanel)
                     _buildBreathingSuggestion(),
 
-                  // Mobile feature bar (web: lg:hidden)
-                  if (!isTablet && tandyState is TandyLoaded)
-                    TandyMobileFeatureBar(
-                      onChatTap: () {
-                        ref.read(tandyNotifierProvider.notifier).closePanel();
-                        _focusNode.requestFocus();
-                      },
-                      onBreatheTap: () => _openPanel(TandyActivePanel.breathe),
-                      onMeditateTap: () =>
-                          _openPanel(TandyActivePanel.meditate),
-                      onSupportTap: () =>
-                          _openPanel(TandyActivePanel.support),
-                      onClearTap: _handleClear,
-                    ),
 
               // Composer
               if (tandyState is TandyLoaded)

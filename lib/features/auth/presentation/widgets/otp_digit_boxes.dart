@@ -142,6 +142,16 @@ class OtpDigitBoxesState extends State<OtpDigitBoxes> {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate responsive box size based on screen width
+    // Account for outer padding: 16 (card) + 16 (form) = 32 on each side
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final availableWidth = screenWidth - 64; // 32px padding on each side
+    final spacing = AppSpacing.xs;
+    final totalSpacing = spacing * (otpLength - 1);
+    // Calculate box width that fits, max 48px
+    final boxWidth = ((availableWidth - totalSpacing) / otpLength).clamp(36.0, 48.0);
+    final boxHeight = (boxWidth * 1.15).clamp(44.0, 56.0);
+
     return AnimatedBuilder(
       animation: widget.shakeAnimation,
       builder: (context, child) {
@@ -152,19 +162,23 @@ class OtpDigitBoxesState extends State<OtpDigitBoxes> {
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(otpLength, _buildBox),
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(
+          otpLength,
+          (index) => _buildBox(index, boxWidth, boxHeight),
+        ),
       ),
     );
   }
 
-  Widget _buildBox(int index) {
+  Widget _buildBox(int index, double boxWidth, double boxHeight) {
     final isFilled = _controllers[index].text.isNotEmpty;
 
     return Padding(
       padding: EdgeInsets.only(left: index == 0 ? 0 : AppSpacing.xs),
       child: SizedBox(
-        width: 48,
-        height: 56,
+        width: boxWidth,
+        height: boxHeight,
         child: KeyboardListener(
           focusNode: FocusNode(),
           onKeyEvent: (event) => _handleKeyEvent(index, event),
@@ -176,7 +190,8 @@ class OtpDigitBoxesState extends State<OtpDigitBoxes> {
             maxLength: 2,
             enabled: widget.isEnabled,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: AppTypography.h2.copyWith(
+            style: TextStyle(
+              fontSize: boxWidth * 0.5,
               fontWeight: FontWeight.w700,
               color: AppColors.textStrong,
             ),

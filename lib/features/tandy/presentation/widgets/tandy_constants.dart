@@ -141,20 +141,20 @@ class MoodOption {
 
 const List<MoodOption> kMoodOptions = <MoodOption>[
   MoodOption(
+    id: 'happy',
+    emoji: '\u{1F60A}',
+    label: 'Good',
+    accentColor: Color(0xFF22C55E),
+    chatMessage:
+        "I'm feeling good today! I'd love to keep this positive energy going.",
+  ),
+  MoodOption(
     id: 'calm',
     emoji: '\u{1F60C}',
     label: 'Calm',
     accentColor: kTandyTeal,
     chatMessage:
         "I'm feeling calm today. Let's keep this peaceful momentum going.",
-  ),
-  MoodOption(
-    id: 'happy',
-    emoji: '\u{1F60A}',
-    label: 'Happy',
-    accentColor: Color(0xFFF59E0B),
-    chatMessage:
-        "I'm feeling really happy today! I'd love to channel this positive energy.",
   ),
   MoodOption(
     id: 'anxious',
@@ -167,26 +167,10 @@ const List<MoodOption> kMoodOptions = <MoodOption>[
   MoodOption(
     id: 'sad',
     emoji: '\u{1F61E}',
-    label: 'Sad',
+    label: 'Low',
     accentColor: Color(0xFF3B82F6),
     chatMessage:
-        "I'm feeling a bit sad today and could really use some support.",
-  ),
-  MoodOption(
-    id: 'tired',
-    emoji: '\u{1F971}',
-    label: 'Tired',
-    accentColor: Color(0xFF8B5CF6),
-    chatMessage:
-        "I'm feeling quite tired today. Maybe we can do something calming together.",
-  ),
-  MoodOption(
-    id: 'grateful',
-    emoji: '\u{1F64F}',
-    label: 'Grateful',
-    accentColor: Color(0xFF22C55E),
-    chatMessage:
-        "I'm feeling grateful today and want to share what I'm thankful for.",
+        "I'm feeling a bit low today and could really use some support.",
   ),
 ];
 

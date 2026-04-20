@@ -31,80 +31,40 @@ class TandyEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        // Welcome card
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: const TandyWelcomeCard(),
         ),
-        const SizedBox(height: 20),
-
-        // Avatar + greeting
+        const SizedBox(height: 24),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 440),
           child: Column(
             children: <Widget>[
-              // Avatar
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    begin: Alignment(-0.5, -0.5),
-                    end: Alignment(0.5, 0.5),
-                    colors: <Color>[Colors.white, Color(0xFFFFF6E8)],
-                  ),
-                  border: Border.all(
-                    color: kTandyOrange.withAlpha(46),
-                    width: 2,
-                  ),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: kTandyOrange.withAlpha(36),
-                      blurRadius: 28,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/icons/tandy_icon.png',
-                  width: 36,
-                  height: 36,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              const SizedBox(height: 16),
-
               Text(
                 greeting,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
                   color: Color(0xFF1F2937),
-                  letterSpacing: -0.6,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Tell Tandy how you are feeling, or try one of the activities below.',
+                'How are you feeling today?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14.5,
+                  fontSize: 15,
                   color: Color(0xFF7B7068),
-                  height: 1.65,
+                  height: 1.5,
                 ),
               ),
-
-              // Mood check-in
               if (onMoodSelect != null) ...<Widget>[
                 const SizedBox(height: 20),
                 TandyMoodCheckin(onMoodSelect: onMoodSelect!),
               ],
-
-              // Quick actions
               if (onBreathingTap != null && onMeditationTap != null) ...<Widget>[
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 TandyQuickActions(
                   onBreathingTap: onBreathingTap!,
                   onMeditationTap: onMeditationTap!,

@@ -50,17 +50,15 @@ class TandyComposer extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                // Suggestion chips
                 if (showSuggestions && suggestions.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: SizedBox(
-                      height: 36,
+                      height: 42,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: suggestions.length.clamp(0, 4),
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: 8),
+                        itemCount: suggestions.length.clamp(0, 3),
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
                         itemBuilder: (_, index) {
                           final suggestion = suggestions[index];
                           return _PromptChip(
@@ -102,23 +100,21 @@ class _PromptChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withAlpha(217),
-      borderRadius: BorderRadius.circular(999),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: AppColors.borderLight.withAlpha(204),
-            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.borderLight),
           ),
           child: Text(
             label,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Color(0xFF5C5044),
             ),
@@ -153,18 +149,10 @@ class _InputRow extends StatelessWidget {
 
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(245),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.borderLight.withAlpha(204)),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x0A101828),
-                blurRadius: 16,
-                offset: Offset(0, 4),
-              ),
-            ],
+            color: const Color(0xFFF8F7F5),
+            borderRadius: BorderRadius.circular(28),
           ),
-          padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+          padding: const EdgeInsets.fromLTRB(20, 6, 6, 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
@@ -177,23 +165,24 @@ class _InputRow extends StatelessWidget {
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => onSend(),
                   decoration: const InputDecoration(
-                    hintText: "Share what's on your mind\u2026",
+                    hintText: 'Message Tandy...',
                     hintStyle: TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 15.5,
+                      color: Color(0xFFADA9A4),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                     ),
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 6),
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
                   ),
                   style: const TextStyle(
                     color: AppColors.textStrong,
-                    fontSize: 15.5,
-                    height: 1.55,
+                    fontSize: 16,
+                    height: 1.4,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               _SendButton(
                 canSend: canSend,
                 isSending: isSending,
@@ -206,8 +195,6 @@ class _InputRow extends StatelessWidget {
     );
   }
 }
-
-// ── Send Button ─────────────────────────────────────────────────────
 
 class _SendButton extends StatelessWidget {
   const _SendButton({
@@ -223,49 +210,33 @@ class _SendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 150),
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: canSend
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[kTandyOrange, Color(0xFFC96D18)],
-              )
-            : null,
-        color: canSend ? null : const Color(0xB3F0ECE6),
-        boxShadow: canSend
-            ? const <BoxShadow>[
-                BoxShadow(
-                  color: Color(0x47E67E22),
-                  blurRadius: 14,
-                  offset: Offset(0, 4),
-                ),
-              ]
-            : null,
+        shape: BoxShape.circle,
+        color: canSend ? kTandyOrange : const Color(0xFFE8E5E1),
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        shape: const CircleBorder(),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          customBorder: const CircleBorder(),
           onTap: canSend ? onSend : null,
           child: Center(
             child: isSending
                 ? const SizedBox(
-                    width: 18,
-                    height: 18,
+                    width: 20,
+                    height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: Colors.white,
                     ),
                   )
                 : Icon(
-                    Icons.send_rounded,
-                    size: 18,
-                    color: canSend ? Colors.white : const Color(0xFFC0B8B2),
+                    Icons.arrow_upward_rounded,
+                    size: 22,
+                    color: canSend ? Colors.white : const Color(0xFFB8B4AF),
                   ),
           ),
         ),

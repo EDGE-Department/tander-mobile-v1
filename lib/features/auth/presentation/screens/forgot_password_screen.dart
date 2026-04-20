@@ -231,9 +231,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   Widget _buildPhoneLayout() {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final headerHeight = resolveHeaderHeight(screenHeight);
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           const Positioned.fill(
@@ -243,40 +245,134 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
             ),
           ),
-          SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: screenHeight),
-              child: Column(
-                children: [
-                  ForgotPasswordMobileHeader(
-                    headerHeight: headerHeight,
-                    onlineCount: _onlineCount,
-                  ),
-                  Transform.translate(
-                        offset: const Offset(0, -headerOverlap),
-                        child: _ForgotMobileParchmentSheet(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 32),
-                            child: ForgotPasswordFormCard(
-                              isWide: false,
-                              isCodeSent: _isCodeSent,
-                              formContent: _buildFormContent(),
-                              successContent: _buildSuccessContent(),
-                            ),
-                          ),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(
-                        duration: 700.ms,
-                        delay: 100.ms,
-                        curve: AppCurves.premiumEase,
-                      )
-                      .slideY(begin: 0.08, curve: AppCurves.premiumEase),
-                ],
+          Column(
+            children: [
+              ForgotPasswordMobileHeader(
+                headerHeight: headerHeight,
+                onlineCount: _onlineCount,
               ),
-            ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: bottomPadding + 8),
+                  child: Transform.translate(
+                    offset: const Offset(0, -12),
+                    child: _buildScrollableFormCard(),
+                  ),
+                ),
+              ),
+            ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScrollableFormCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFFFFBF8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Orange accent bar at top
+              Container(
+                height: 6,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFF07040), Color(0xFFE86035)],
+                  ),
+                ),
+              ),
+              // Scrollable form content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                  child: _isCodeSent ? _buildSuccessContent() : _buildScrollableFormContent(),
+                ),
+              ),
+              // Sticky button at bottom
+              if (!_isCodeSent)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: _SubmitButton(
+                    isLoading: _isLoading,
+                    onPressed: _submitForm,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScrollableFormContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            BackToSignInPill(onPressed: _navigateToLogin),
+            const ForgotPasswordBrandHeader(),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        const Center(child: StepIconHero()),
+        const SizedBox(height: AppSpacing.md),
+        const Center(child: StepIndicator()),
+        const SizedBox(height: AppSpacing.lg),
+        _buildHeadingBlock(),
+        const SizedBox(height: AppSpacing.lg),
+        _buildIdentifierFormWithoutButton(),
+        const SizedBox(height: AppSpacing.md),
+        RememberPasswordFooter(onSignIn: _navigateToLogin),
+      ],
+    );
+  }
+
+  Widget _buildIdentifierFormWithoutButton() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MethodSelector(
+            selectedMethod: _method,
+            onMethodChanged: (method) => setState(() => _method = method),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (_method == IdentifierMethod.email)
+            TanderTextField(
+              label: 'Email address',
+              hint: 'name@email.com',
+              controller: _emailController,
+              focusNode: _emailFocusNode,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              prefixIcon: Icons.email_outlined,
+              validator: _validateEmail,
+            )
+          else
+            TanderTextField(
+              label: 'Phone number',
+              hint: '09XXXXXXXXX',
+              controller: _phoneController,
+              focusNode: _phoneFocusNode,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.done,
+              prefixIcon: Icons.phone,
+              validator: _validatePhone,
+            ),
+          const SizedBox(height: AppSpacing.sm),
+          const SecurityNote(),
         ],
       ),
     );
@@ -461,7 +557,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         const SizedBox(height: AppSpacing.xxs),
         Text(
-          _emailController.text.trim(),
+          _emailController.text.trim().isNotEmpty
+              ? _emailController.text.trim()
+              : _phoneController.text.trim(),
           style: AppTypography.body.copyWith(
             color: AppColors.textStrong,
             fontWeight: FontWeight.w700,
@@ -469,18 +567,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xl),
-        TanderButton(
-          label: 'Enter Verification Code',
+        _SuccessButton(
+          label: 'ENTER CODE',
           onPressed: _navigateToOtp,
-          icon: Icons.arrow_forward,
-          iconPosition: IconPosition.trailing,
+          isPrimary: true,
         ),
         const SizedBox(height: AppSpacing.md),
-        TanderButton(
-          label: 'Back to Sign In',
+        _SuccessButton(
+          label: 'BACK TO SIGN IN',
           onPressed: _navigateToLogin,
-          variant: TanderButtonVariant.ghost,
-          icon: Icons.arrow_back,
+          isPrimary: false,
         ),
       ],
     );
@@ -879,4 +975,228 @@ class _WaveSeamPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Orange gradient submit button with shimmer animation.
+class _SubmitButton extends StatefulWidget {
+  const _SubmitButton({
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  @override
+  State<_SubmitButton> createState() => _SubmitButtonState();
+}
+
+class _SubmitButtonState extends State<_SubmitButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isInteractive = !widget.isLoading;
+
+    return Opacity(
+      opacity: widget.isLoading ? 0.6 : 1.0,
+      child: GestureDetector(
+        onTap: isInteractive ? widget.onPressed : null,
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x59E67E22),
+                blurRadius: 40,
+                offset: Offset(0, 20),
+                spreadRadius: -12,
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Shimmer sweep
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: AnimatedBuilder(
+                    animation: _shimmerController,
+                    builder: (_, __) {
+                      final translateX =
+                          (_shimmerController.value * 3.0 - 1.0);
+                      return FractionallySizedBox(
+                        widthFactor: 1.0,
+                        child: Transform.translate(
+                          offset: Offset(
+                            translateX * MediaQuery.sizeOf(context).width,
+                            0,
+                          ),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0x00FFFFFF),
+                                  Color(0x38FFFFFF),
+                                  Color(0x00FFFFFF),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              widget.isLoading
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'SENDING...',
+                          style: AppTypography.body.copyWith(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.12 * 16,
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'SEND VERIFICATION CODE',
+                          style: AppTypography.body.copyWith(
+                            fontSize: 14,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.08 * 14,
+                            height: 1.0,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 22,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Simple button for success state actions.
+class _SuccessButton extends StatelessWidget {
+  const _SuccessButton({
+    required this.label,
+    required this.onPressed,
+    required this.isPrimary,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool isPrimary;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: isPrimary
+              ? const LinearGradient(
+                  colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+                )
+              : null,
+          color: isPrimary ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: isPrimary
+              ? null
+              : Border.all(
+                  color: AppColors.textMuted.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+          boxShadow: isPrimary
+              ? const [
+                  BoxShadow(
+                    color: Color(0x40E67E22),
+                    blurRadius: 24,
+                    offset: Offset(0, 12),
+                    spreadRadius: -8,
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!isPrimary)
+              Icon(
+                Icons.arrow_back_rounded,
+                size: 20,
+                color: AppColors.textMuted,
+              ),
+            if (!isPrimary) const SizedBox(width: 8),
+            Text(
+              label,
+              style: AppTypography.body.copyWith(
+                fontSize: 14,
+                color: isPrimary ? Colors.white : AppColors.textMuted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.08 * 14,
+              ),
+            ),
+            if (isPrimary) const SizedBox(width: 8),
+            if (isPrimary)
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
