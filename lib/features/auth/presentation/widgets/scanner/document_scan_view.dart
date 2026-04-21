@@ -186,6 +186,10 @@ class _DocumentScanViewState extends State<DocumentScanView>
       );
 
       await controller.initialize();
+
+      // Lock capture orientation to portrait to prevent warping
+      await controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
+
       try {
         await controller.setFlashMode(FlashMode.off);
       } catch (_) {}
@@ -551,8 +555,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
       return _loadingView();
     }
 
-    final previewSize = camera.value.previewSize;
-    if (previewSize == null) return _loadingView();
+    // Use controller's aspect ratio instead of hardcoded previewSize swap
+    final cameraAspectRatio = camera.value.aspectRatio;
 
     final mediaPadding = MediaQuery.paddingOf(context);
 
@@ -562,11 +566,9 @@ class _DocumentScanViewState extends State<DocumentScanView>
         Container(color: const Color(0xFF1A1A1A)),
         // Camera preview.
         Positioned.fill(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: previewSize.height,
-              height: previewSize.width,
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: 1 / cameraAspectRatio,
               child: CameraPreview(camera),
             ),
           ),

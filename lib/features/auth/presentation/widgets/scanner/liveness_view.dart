@@ -214,6 +214,10 @@ class _LivenessViewState extends State<LivenessView>
       );
 
       await controller.initialize();
+
+      // Lock capture orientation to portrait to prevent warping
+      await controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
+
       _camera = controller;
       if (!mounted || _isDisposed) return;
 
@@ -409,16 +413,17 @@ class _LivenessViewState extends State<LivenessView>
     final previewSize = camera.value.previewSize;
     if (previewSize == null) return _loadingView();
 
+    // Use controller's aspect ratio instead of hardcoded previewSize swap
+    final cameraAspectRatio = camera.value.aspectRatio;
+
     return Stack(
       fit: StackFit.expand,
       children: [
         Container(color: const Color(0xFF1A1B1E)),
         Positioned.fill(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: previewSize.height,
-              height: previewSize.width,
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: 1 / cameraAspectRatio,
               child: CameraPreview(camera),
             ),
           ),
