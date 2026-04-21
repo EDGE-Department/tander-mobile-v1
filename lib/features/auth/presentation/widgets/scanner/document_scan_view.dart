@@ -555,8 +555,12 @@ class _DocumentScanViewState extends State<DocumentScanView>
       return _loadingView();
     }
 
-    // Use controller's aspect ratio instead of hardcoded previewSize swap
-    final cameraAspectRatio = camera.value.aspectRatio;
+    // Detect device orientation and counter-rotate preview to keep it portrait
+    final orientation = MediaQuery.orientationOf(context);
+    final quarterTurns = switch (orientation) {
+      Orientation.landscape => 1, // Rotate 90° to counter landscape
+      Orientation.portrait => 0,
+    };
 
     final mediaPadding = MediaQuery.paddingOf(context);
 
@@ -567,8 +571,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
         // Camera preview.
         Positioned.fill(
           child: Center(
-            child: AspectRatio(
-              aspectRatio: 1 / cameraAspectRatio,
+            child: RotatedBox(
+              quarterTurns: quarterTurns,
               child: CameraPreview(camera),
             ),
           ),
