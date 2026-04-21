@@ -44,10 +44,10 @@ class IdRectangleDetector {
   bool _isProcessing = false;
 
   /// Minimum text blocks to consider it might be an ID.
-  static const _minTextBlocks = 2;
+  static const _minTextBlocks = 1;
 
   /// Minimum characters for confident detection.
-  static const _minCharsForDetection = 15;
+  static const _minCharsForDetection = 5;
 
   /// Keywords that indicate a Philippine government ID.
   static const _idKeywords = [
@@ -123,7 +123,7 @@ class IdRectangleDetector {
     final confidence =
         keywordScore * 0.50 + densityScore * 0.25 + charScore * 0.25;
 
-    final isDetected = confidence >= 0.25 || keywordMatches >= 2;
+    final isDetected = confidence >= 0.15 || keywordMatches >= 1;
 
     return IdDetectionResult(
       detected: isDetected,
