@@ -18,55 +18,6 @@ import UserNotifications
     // to show notifications while app is in foreground.
     UNUserNotificationCenter.current().delegate = self
 
-    // Set up the orientation method channel
-    let controller = window?.rootViewController as! FlutterViewController
-    let orientationChannel = FlutterMethodChannel(
-      name: "com.tander.app/orientation",
-      binaryMessenger: controller.binaryMessenger
-    )
-
-    orientationChannel.setMethodCallHandler { [weak self] (call, result) in
-      switch call.method {
-      case "lockPortrait":
-        AppDelegate.isPortraitLocked = true
-        // Force the device to update its orientation
-        if #available(iOS 16.0, *) {
-          guard let windowScene = self?.window?.windowScene else {
-            result(nil)
-            return
-          }
-          windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { error in
-            // Ignore errors - orientation update is best-effort
-          }
-          self?.setNeedsUpdateOfSupportedInterfaceOrientations()
-        } else {
-          UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
-          UINavigationController.attemptRotationToDeviceOrientation()
-        }
-        result(nil)
-
-      case "unlockOrientation":
-        AppDelegate.isPortraitLocked = false
-        // Allow all orientations again
-        if #available(iOS 16.0, *) {
-          guard let windowScene = self?.window?.windowScene else {
-            result(nil)
-            return
-          }
-          windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .all)) { error in
-            // Ignore errors
-          }
-          self?.setNeedsUpdateOfSupportedInterfaceOrientations()
-        } else {
-          UINavigationController.attemptRotationToDeviceOrientation()
-        }
-        result(nil)
-
-      default:
-        result(FlutterMethodNotImplemented)
-      }
-    }
-
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
