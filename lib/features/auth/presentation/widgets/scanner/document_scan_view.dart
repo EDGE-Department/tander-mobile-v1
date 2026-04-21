@@ -566,19 +566,27 @@ class _DocumentScanViewState extends State<DocumentScanView>
     };
 
     final mediaPadding = MediaQuery.paddingOf(context);
+    final screenSize = MediaQuery.sizeOf(context);
+    final deviceRatio = screenSize.width / screenSize.height;
+    final cameraRatio = camera.value.aspectRatio;
+
+    // Calculate scale factor to fill screen without distortion
+    // Matrix4.diagonal3Values scales X and Y independently
+    final scale = cameraRatio / deviceRatio;
 
     return Stack(
       fit: StackFit.expand,
       children: [
         Container(color: const Color(0xFF1A1A1A)),
         // Camera preview - fills entire screen, maintains aspect ratio
-        Positioned.fill(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: RotatedBox(
-              quarterTurns: quarterTurns,
-              child: AspectRatio(
-                aspectRatio: camera.value.aspectRatio,
+        Center(
+          child: AspectRatio(
+            aspectRatio: deviceRatio,
+            child: Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.diagonal3Values(scale, 1, 1),
+              child: RotatedBox(
+                quarterTurns: quarterTurns,
                 child: CameraPreview(camera),
               ),
             ),
