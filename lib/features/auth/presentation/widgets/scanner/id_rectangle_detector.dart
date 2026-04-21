@@ -65,7 +65,7 @@ class IdRectangleDetector {
   /// Detect whether an ID card is in the camera frame.
   ///
   /// Returns detection confidence based on text content analysis.
-  /// Tries multiple rotations to detect IDs in any orientation.
+  /// ML Kit handles text at various angles within properly-oriented images.
   Future<IdDetectionResult> detectAsync(
     CameraImage image,
     CameraController camera,
@@ -74,41 +74,10 @@ class IdRectangleDetector {
     _isProcessing = true;
 
     try {
-      // Try all rotations to detect ID in any orientation
-      final rotations = [
-        InputImageRotation.rotation0deg,
-        InputImageRotation.rotation90deg,
-        InputImageRotation.rotation180deg,
-        InputImageRotation.rotation270deg,
-      ];
+      // Calculate correct rotation based on camera sensor and device orientation
+      final inputImage = _toInputImage(image, camera);
+      if (inputImage == null) return IdDetectionResult.notFound;
 
-      IdDetectionResult bestResult = IdDetectionResult.notFound;
-
-      for (final rotation in rotations) {
-        final inputImage = _toInputImageWithRotation(image, camera, rotation);
-        if (inputImage == null) continue;
-
-        final result = await _processWithRotation(inputImage);
-        if (result.confidence > bestResult.confidence) {
-          bestResult = result;
-        }
-
-        // If we found a good match, no need to try other rotations
-        if (bestResult.detected && bestResult.confidence >= 0.5) {
-          break;
-        }
-      }
-
-      return bestResult;
-    } catch (_) {
-      return IdDetectionResult.notFound;
-    } finally {
-      _isProcessing = false;
-    }
-  }
-
-  Future<IdDetectionResult> _processWithRotation(InputImage inputImage) async {
-    try {
       final recognized = await _recognizer.processImage(inputImage);
       if (recognized.blocks.isEmpty) return IdDetectionResult.notFound;
 
@@ -145,6 +114,8 @@ class IdRectangleDetector {
       );
     } catch (_) {
       return IdDetectionResult.notFound;
+    } finally {
+      _isProcessing = false;
     }
   }
 
@@ -164,8 +135,46 @@ class IdRectangleDetector {
   }
 
   // ---------------------------------------------------------------------------
-  // CameraImage → InputImage (same as liveness_view.dart)
+  // CameraImage → InputImage
   // ---------------------------------------------------------------------------
+
+  InputImage? _toInputImage(CameraImage image, CameraController camera) {
+    final rotation = _rotationFromCamera(camera);
+    if (rotation == null) return null;
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final bytes = _androidBytes(image);
+      if (bytes == null) return null;
+      final bytesPerRow = image.planes.isNotEmpty
+          ? image.planes.first.bytesPerRow
+          : image.width;
+
+      return InputImage.fromBytes(
+        bytes: bytes,
+        metadata: InputImageMetadata(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: rotation,
+          format: InputImageFormat.nv21,
+          bytesPerRow: bytesPerRow,
+        ),
+      );
+    }
+
+    final rawFormat = image.format.raw;
+    final format =
+        InputImageFormatValue.fromRawValue(rawFormat is int ? rawFormat : 0);
+    if (format == null || image.planes.isEmpty) return null;
+
+    return InputImage.fromBytes(
+      bytes: image.planes.first.bytes,
+      metadata: InputImageMetadata(
+        size: Size(image.width.toDouble(), image.height.toDouble()),
+        rotation: rotation,
+        format: format,
+        bytesPerRow: image.planes.first.bytesPerRow,
+      ),
+    );
+  }
 
   InputImage? _toInputImageWithRotation(
     CameraImage image,
