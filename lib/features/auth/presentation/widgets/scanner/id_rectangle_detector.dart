@@ -65,7 +65,7 @@ class IdRectangleDetector {
   /// Detect whether an ID card is in the camera frame.
   ///
   /// Returns detection confidence based on text content analysis.
-  /// Runs ML Kit text recognition (~50-200ms).
+  /// Tries multiple rotations to detect IDs in any orientation.
   Future<IdDetectionResult> detectAsync(
     CameraImage image,
     CameraController camera,
@@ -74,9 +74,41 @@ class IdRectangleDetector {
     _isProcessing = true;
 
     try {
-      final inputImage = _toInputImage(image, camera);
-      if (inputImage == null) return IdDetectionResult.notFound;
+      // Try all rotations to detect ID in any orientation
+      final rotations = [
+        InputImageRotation.rotation0deg,
+        InputImageRotation.rotation90deg,
+        InputImageRotation.rotation180deg,
+        InputImageRotation.rotation270deg,
+      ];
 
+      IdDetectionResult bestResult = IdDetectionResult.notFound;
+
+      for (final rotation in rotations) {
+        final inputImage = _toInputImageWithRotation(image, camera, rotation);
+        if (inputImage == null) continue;
+
+        final result = await _processWithRotation(inputImage);
+        if (result.confidence > bestResult.confidence) {
+          bestResult = result;
+        }
+
+        // If we found a good match, no need to try other rotations
+        if (bestResult.detected && bestResult.confidence >= 0.5) {
+          break;
+        }
+      }
+
+      return bestResult;
+    } catch (_) {
+      return IdDetectionResult.notFound;
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
+  Future<IdDetectionResult> _processWithRotation(InputImage inputImage) async {
+    try {
       final recognized = await _recognizer.processImage(inputImage);
       if (recognized.blocks.isEmpty) return IdDetectionResult.notFound;
 
@@ -96,20 +128,13 @@ class IdRectangleDetector {
       }
 
       // Compute confidence from multiple signals.
-      // Text density: more text blocks = more likely an ID.
       final densityScore = (blockCount / 6.0).clamp(0.0, 1.0);
-
-      // Character count: IDs have substantial text.
       final charScore = (charCount / 60.0).clamp(0.0, 1.0);
-
-      // Keyword matches: strongest signal for Philippine IDs.
       final keywordScore = (keywordMatches / 4.0).clamp(0.0, 1.0);
 
-      // Combined confidence (keyword-weighted heavily).
       final confidence =
           keywordScore * 0.50 + densityScore * 0.25 + charScore * 0.25;
 
-      // Need at least some keyword match or substantial text.
       final isDetected = confidence >= 0.25 || keywordMatches >= 2;
 
       return IdDetectionResult(
@@ -120,8 +145,6 @@ class IdRectangleDetector {
       );
     } catch (_) {
       return IdDetectionResult.notFound;
-    } finally {
-      _isProcessing = false;
     }
   }
 
@@ -144,10 +167,11 @@ class IdRectangleDetector {
   // CameraImage → InputImage (same as liveness_view.dart)
   // ---------------------------------------------------------------------------
 
-  InputImage? _toInputImage(CameraImage image, CameraController camera) {
-    final rotation = _rotationFromCamera(camera);
-    if (rotation == null) return null;
-
+  InputImage? _toInputImageWithRotation(
+    CameraImage image,
+    CameraController camera,
+    InputImageRotation rotation,
+  ) {
     if (defaultTargetPlatform == TargetPlatform.android) {
       final bytes = _androidBytes(image);
       if (bytes == null) return null;
