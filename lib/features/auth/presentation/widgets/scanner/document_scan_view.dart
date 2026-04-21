@@ -556,10 +556,13 @@ class _DocumentScanViewState extends State<DocumentScanView>
     }
 
     // Detect device orientation and counter-rotate preview to keep it portrait
-    final orientation = MediaQuery.orientationOf(context);
-    final quarterTurns = switch (orientation) {
-      Orientation.landscape => 1, // Rotate 90° to counter landscape
-      Orientation.portrait => 0,
+    // Use camera's deviceOrientation for precise direction (left vs right)
+    final deviceOrientation = camera.value.deviceOrientation;
+    final quarterTurns = switch (deviceOrientation) {
+      DeviceOrientation.landscapeLeft => 1,   // Rotate 90° clockwise
+      DeviceOrientation.landscapeRight => 3,  // Rotate 90° counter-clockwise
+      DeviceOrientation.portraitDown => 2,    // Rotate 180°
+      DeviceOrientation.portraitUp => 0,      // No rotation
     };
 
     final mediaPadding = MediaQuery.paddingOf(context);
