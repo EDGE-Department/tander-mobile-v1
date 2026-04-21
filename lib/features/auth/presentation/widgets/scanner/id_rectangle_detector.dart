@@ -64,8 +64,7 @@ class IdRectangleDetector {
 
   /// Detect whether an ID card is in the camera frame.
   ///
-  /// ML Kit TextRecognizer automatically detects text at any angle/degree.
-  /// We just need to provide the correct image orientation.
+  /// Tries multiple image orientations to detect ID whether laying down or standing up.
   Future<IdDetectionResult> detectAsync(
     CameraImage image,
     CameraController camera,
@@ -74,49 +73,78 @@ class IdRectangleDetector {
     _isProcessing = true;
 
     try {
-      // Use sensor orientation - ML Kit handles text at any angle automatically
-      final inputImage = _toInputImage(image, camera);
-      if (inputImage == null) return IdDetectionResult.notFound;
-
-      final recognized = await _recognizer.processImage(inputImage);
-      if (recognized.blocks.isEmpty) return IdDetectionResult.notFound;
-
-      final blockCount = recognized.blocks.length;
-      final fullText = recognized.blocks.map((b) => b.text).join(' ');
-      final charCount = fullText.length;
-
-      if (blockCount < _minTextBlocks || charCount < _minCharsForDetection) {
-        return IdDetectionResult.notFound;
+      // Try current orientation first
+      final primaryRotation = _rotationFromCamera(camera);
+      if (primaryRotation != null) {
+        final result = await _tryDetectWithRotation(image, camera, primaryRotation);
+        if (result.detected) return result;
       }
 
-      // Count ID keyword matches.
-      final lowerText = fullText.toLowerCase();
-      int keywordMatches = 0;
-      for (final kw in _idKeywords) {
-        if (lowerText.contains(kw)) keywordMatches++;
+      // If not found, try rotated 90 degrees (for standing ID)
+      final rotated90 = _rotate90(primaryRotation);
+      if (rotated90 != null) {
+        final result = await _tryDetectWithRotation(image, camera, rotated90);
+        if (result.detected) return result;
       }
 
-      // Compute confidence from multiple signals.
-      final densityScore = (blockCount / 6.0).clamp(0.0, 1.0);
-      final charScore = (charCount / 60.0).clamp(0.0, 1.0);
-      final keywordScore = (keywordMatches / 4.0).clamp(0.0, 1.0);
-
-      final confidence =
-          keywordScore * 0.50 + densityScore * 0.25 + charScore * 0.25;
-
-      final isDetected = confidence >= 0.25 || keywordMatches >= 2;
-
-      return IdDetectionResult(
-        detected: isDetected,
-        confidence: confidence,
-        textBlockCount: blockCount,
-        charCount: charCount,
-      );
+      return IdDetectionResult.notFound;
     } catch (_) {
       return IdDetectionResult.notFound;
     } finally {
       _isProcessing = false;
     }
+  }
+
+  InputImageRotation? _rotate90(InputImageRotation? rotation) {
+    if (rotation == null) return null;
+    return switch (rotation) {
+      InputImageRotation.rotation0deg => InputImageRotation.rotation90deg,
+      InputImageRotation.rotation90deg => InputImageRotation.rotation180deg,
+      InputImageRotation.rotation180deg => InputImageRotation.rotation270deg,
+      InputImageRotation.rotation270deg => InputImageRotation.rotation0deg,
+    };
+  }
+
+  Future<IdDetectionResult> _tryDetectWithRotation(
+    CameraImage image,
+    CameraController camera,
+    InputImageRotation rotation,
+  ) async {
+    final inputImage = _toInputImageWithRotation(image, camera, rotation);
+    if (inputImage == null) return IdDetectionResult.notFound;
+
+    final recognized = await _recognizer.processImage(inputImage);
+    if (recognized.blocks.isEmpty) return IdDetectionResult.notFound;
+
+    final blockCount = recognized.blocks.length;
+    final fullText = recognized.blocks.map((b) => b.text).join(' ');
+    final charCount = fullText.length;
+
+    if (blockCount < _minTextBlocks || charCount < _minCharsForDetection) {
+      return IdDetectionResult.notFound;
+    }
+
+    final lowerText = fullText.toLowerCase();
+    int keywordMatches = 0;
+    for (final kw in _idKeywords) {
+      if (lowerText.contains(kw)) keywordMatches++;
+    }
+
+    final densityScore = (blockCount / 6.0).clamp(0.0, 1.0);
+    final charScore = (charCount / 60.0).clamp(0.0, 1.0);
+    final keywordScore = (keywordMatches / 4.0).clamp(0.0, 1.0);
+
+    final confidence =
+        keywordScore * 0.50 + densityScore * 0.25 + charScore * 0.25;
+
+    final isDetected = confidence >= 0.25 || keywordMatches >= 2;
+
+    return IdDetectionResult(
+      detected: isDetected,
+      confidence: confidence,
+      textBlockCount: blockCount,
+      charCount: charCount,
+    );
   }
 
   /// Quick brightness check.
@@ -142,6 +170,45 @@ class IdRectangleDetector {
     final rotation = _rotationFromCamera(camera);
     if (rotation == null) return null;
 
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final bytes = _androidBytes(image);
+      if (bytes == null) return null;
+      final bytesPerRow = image.planes.isNotEmpty
+          ? image.planes.first.bytesPerRow
+          : image.width;
+
+      return InputImage.fromBytes(
+        bytes: bytes,
+        metadata: InputImageMetadata(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: rotation,
+          format: InputImageFormat.nv21,
+          bytesPerRow: bytesPerRow,
+        ),
+      );
+    }
+
+    final rawFormat = image.format.raw;
+    final format =
+        InputImageFormatValue.fromRawValue(rawFormat is int ? rawFormat : 0);
+    if (format == null || image.planes.isEmpty) return null;
+
+    return InputImage.fromBytes(
+      bytes: image.planes.first.bytes,
+      metadata: InputImageMetadata(
+        size: Size(image.width.toDouble(), image.height.toDouble()),
+        rotation: rotation,
+        format: format,
+        bytesPerRow: image.planes.first.bytesPerRow,
+      ),
+    );
+  }
+
+  InputImage? _toInputImageWithRotation(
+    CameraImage image,
+    CameraController camera,
+    InputImageRotation rotation,
+  ) {
     if (defaultTargetPlatform == TargetPlatform.android) {
       final bytes = _androidBytes(image);
       if (bytes == null) return null;
