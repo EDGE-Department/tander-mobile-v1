@@ -131,19 +131,18 @@ class _IdPreviewViewState extends State<IdPreviewView>
   Widget _buildLandscapeLayout(EdgeInsets safePadding) {
     return Container(
       color: const Color(0xFF1A1A1A),
-      child: Row(
+      child: Stack(
         children: [
-          // ID photo on the left
-          Expanded(
-            flex: 3,
+          // ID photo - full width
+          Positioned.fill(
             child: FadeTransition(
               opacity: _fadeAnim,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   safePadding.left + 16,
                   safePadding.top + 16,
-                  8,
-                  safePadding.bottom + 16,
+                  safePadding.right + 16,
+                  safePadding.bottom + 100,
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
@@ -155,45 +154,38 @@ class _IdPreviewViewState extends State<IdPreviewView>
               ),
             ),
           ),
-          // Action buttons on the right
-          SlideTransition(
-            position: _slideAnim,
-            child: Container(
-              width: 200,
-              margin: EdgeInsets.only(right: safePadding.right),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.horizontal(left: Radius.circular(32)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x20000000),
-                    blurRadius: 40,
-                    offset: Offset(-12, 0),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.fromLTRB(
-                24,
-                safePadding.top + 24,
-                24,
-                safePadding.bottom + 24,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 4,
-                    height: 40,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2E6EE),
-                      borderRadius: BorderRadius.circular(999),
+          // Bottom action bar
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SlideTransition(
+              position: _slideAnim,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x20000000),
+                      blurRadius: 20,
+                      offset: Offset(0, -8),
                     ),
-                  ),
-                  _continueButton(),
-                  const SizedBox(height: 16),
-                  _retakeButton(),
-                ],
+                  ],
+                ),
+                padding: EdgeInsets.fromLTRB(
+                  safePadding.left + 24,
+                  16,
+                  safePadding.right + 24,
+                  safePadding.bottom + 16,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: _retakeButton()),
+                    const SizedBox(width: 16),
+                    Expanded(flex: 2, child: _continueButton()),
+                  ],
+                ),
               ),
             ),
           ),
