@@ -8,7 +8,8 @@
       "Bash(adb -s emulator-5554 logcat -c)",
       "Bash(adb -s emulator-5554 shell am start -n com.tander.app/.MainActivity)",
       "Bash(adb -s emulator-5554 shell pm list packages)",
-      "Bash(adb:*)"
+      "Bash(adb:*)",
+      "Bash(flutter screenshot *)"
     ]
   }
 }

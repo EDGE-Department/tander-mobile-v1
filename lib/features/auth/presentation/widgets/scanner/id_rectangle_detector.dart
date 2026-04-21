@@ -64,8 +64,8 @@ class IdRectangleDetector {
 
   /// Detect whether an ID card is in the camera frame.
   ///
-  /// Returns detection confidence based on text content analysis.
-  /// ML Kit handles text at various angles within properly-oriented images.
+  /// ML Kit TextRecognizer automatically detects text at any angle/degree.
+  /// We just need to provide the correct image orientation.
   Future<IdDetectionResult> detectAsync(
     CameraImage image,
     CameraController camera,
@@ -74,7 +74,7 @@ class IdRectangleDetector {
     _isProcessing = true;
 
     try {
-      // Calculate correct rotation based on camera sensor and device orientation
+      // Use sensor orientation - ML Kit handles text at any angle automatically
       final inputImage = _toInputImage(image, camera);
       if (inputImage == null) return IdDetectionResult.notFound;
 
@@ -176,45 +176,6 @@ class IdRectangleDetector {
     );
   }
 
-  InputImage? _toInputImageWithRotation(
-    CameraImage image,
-    CameraController camera,
-    InputImageRotation rotation,
-  ) {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      final bytes = _androidBytes(image);
-      if (bytes == null) return null;
-      final bytesPerRow = image.planes.isNotEmpty
-          ? image.planes.first.bytesPerRow
-          : image.width;
-
-      return InputImage.fromBytes(
-        bytes: bytes,
-        metadata: InputImageMetadata(
-          size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: rotation,
-          format: InputImageFormat.nv21,
-          bytesPerRow: bytesPerRow,
-        ),
-      );
-    }
-
-    final rawFormat = image.format.raw;
-    final format =
-        InputImageFormatValue.fromRawValue(rawFormat is int ? rawFormat : 0);
-    if (format == null || image.planes.isEmpty) return null;
-
-    return InputImage.fromBytes(
-      bytes: image.planes.first.bytes,
-      metadata: InputImageMetadata(
-        size: Size(image.width.toDouble(), image.height.toDouble()),
-        rotation: rotation,
-        format: format,
-        bytesPerRow: image.planes.first.bytesPerRow,
-      ),
-    );
-  }
-
   Uint8List? _androidBytes(CameraImage image) {
     final rawFormat = image.format.raw;
     final format =
@@ -254,30 +215,9 @@ class IdRectangleDetector {
   }
 
   InputImageRotation? _rotationFromCamera(CameraController camera) {
+    // Camera capture is locked to portrait - use sensor orientation directly
+    // ML Kit automatically detects text at any angle within the image
     final sensorOrientation = camera.description.sensorOrientation;
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return InputImageRotationValue.fromRawValue(sensorOrientation);
-    }
-
-    final deviceOrientation = camera.value.deviceOrientation;
-    final orientationMap = <DeviceOrientation, int>{
-      DeviceOrientation.portraitUp: 0,
-      DeviceOrientation.landscapeLeft: 90,
-      DeviceOrientation.portraitDown: 180,
-      DeviceOrientation.landscapeRight: 270,
-    };
-
-    int? rotationCompensation = orientationMap[deviceOrientation];
-    if (rotationCompensation == null) return null;
-
-    if (camera.description.lensDirection == CameraLensDirection.front) {
-      rotationCompensation =
-          (sensorOrientation + rotationCompensation) % 360;
-    } else {
-      rotationCompensation =
-          (sensorOrientation - rotationCompensation + 360) % 360;
-    }
-
-    return InputImageRotationValue.fromRawValue(rotationCompensation);
+    return InputImageRotationValue.fromRawValue(sensorOrientation);
   }
 }
