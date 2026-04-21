@@ -572,9 +572,12 @@ class _DocumentScanViewState extends State<DocumentScanView>
       fit: StackFit.expand,
       children: [
         Container(color: const Color(0xFF1A1A1A)),
-        // Camera preview - fills screen, no distortion
+        // Camera preview - fills screen, rotates for landscape
         Positioned.fill(
-          child: CameraPreview(camera),
+          child: RotatedBox(
+            quarterTurns: quarterTurns,
+            child: CameraPreview(camera),
+          ),
         ),
         // Overlay with guide frame.
         Positioned.fill(
