@@ -64,7 +64,7 @@ class IdRectangleDetector {
 
   /// Detect whether an ID card is in the camera frame.
   ///
-  /// Tries multiple image orientations to detect ID whether laying down or standing up.
+  /// Tries all image orientations to detect ID at any angle.
   Future<IdDetectionResult> detectAsync(
     CameraImage image,
     CameraController camera,
@@ -73,17 +73,9 @@ class IdRectangleDetector {
     _isProcessing = true;
 
     try {
-      // Try current orientation first
-      final primaryRotation = _rotationFromCamera(camera);
-      if (primaryRotation != null) {
-        final result = await _tryDetectWithRotation(image, camera, primaryRotation);
-        if (result.detected) return result;
-      }
-
-      // If not found, try rotated 90 degrees (for standing ID)
-      final rotated90 = _rotate90(primaryRotation);
-      if (rotated90 != null) {
-        final result = await _tryDetectWithRotation(image, camera, rotated90);
+      // Try all orientations to detect ID at any angle
+      for (final rotation in InputImageRotation.values) {
+        final result = await _tryDetectWithRotation(image, camera, rotation);
         if (result.detected) return result;
       }
 
@@ -93,16 +85,6 @@ class IdRectangleDetector {
     } finally {
       _isProcessing = false;
     }
-  }
-
-  InputImageRotation? _rotate90(InputImageRotation? rotation) {
-    if (rotation == null) return null;
-    return switch (rotation) {
-      InputImageRotation.rotation0deg => InputImageRotation.rotation90deg,
-      InputImageRotation.rotation90deg => InputImageRotation.rotation180deg,
-      InputImageRotation.rotation180deg => InputImageRotation.rotation270deg,
-      InputImageRotation.rotation270deg => InputImageRotation.rotation0deg,
-    };
   }
 
   Future<IdDetectionResult> _tryDetectWithRotation(
