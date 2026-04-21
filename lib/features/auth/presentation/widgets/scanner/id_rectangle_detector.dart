@@ -215,9 +215,28 @@ class IdRectangleDetector {
   }
 
   InputImageRotation? _rotationFromCamera(CameraController camera) {
-    // Camera capture is locked to portrait - use sensor orientation directly
-    // ML Kit automatically detects text at any angle within the image
     final sensorOrientation = camera.description.sensorOrientation;
-    return InputImageRotationValue.fromRawValue(sensorOrientation);
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return InputImageRotationValue.fromRawValue(sensorOrientation);
+    }
+
+    final deviceOrientation = camera.value.deviceOrientation;
+    final orientationMap = <DeviceOrientation, int>{
+      DeviceOrientation.portraitUp: 0,
+      DeviceOrientation.landscapeLeft: 90,
+      DeviceOrientation.portraitDown: 180,
+      DeviceOrientation.landscapeRight: 270,
+    };
+
+    int? rotationCompensation = orientationMap[deviceOrientation];
+    if (rotationCompensation == null) return null;
+
+    if (camera.description.lensDirection == CameraLensDirection.front) {
+      rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
+    } else {
+      rotationCompensation = (sensorOrientation - rotationCompensation + 360) % 360;
+    }
+
+    return InputImageRotationValue.fromRawValue(rotationCompensation);
   }
 }
