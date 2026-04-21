@@ -566,17 +566,40 @@ class _DocumentScanViewState extends State<DocumentScanView>
     };
 
     final mediaPadding = MediaQuery.paddingOf(context);
+    final screenSize = MediaQuery.sizeOf(context);
+    final cameraAspectRatio = camera.value.aspectRatio;
+
+    // Calculate size to fill screen while maintaining aspect ratio
+    final isLandscape = quarterTurns == 1 || quarterTurns == 3;
+    final previewAspectRatio = isLandscape ? 1 / cameraAspectRatio : cameraAspectRatio;
+
+    double previewWidth, previewHeight;
+    if (screenSize.width / screenSize.height > previewAspectRatio) {
+      previewWidth = screenSize.width;
+      previewHeight = screenSize.width / previewAspectRatio;
+    } else {
+      previewHeight = screenSize.height;
+      previewWidth = screenSize.height * previewAspectRatio;
+    }
 
     return Stack(
       fit: StackFit.expand,
       children: [
         Container(color: const Color(0xFF1A1A1A)),
-        // Camera preview.
+        // Camera preview - fills entire screen
         Positioned.fill(
-          child: Center(
-            child: RotatedBox(
-              quarterTurns: quarterTurns,
-              child: CameraPreview(camera),
+          child: ClipRect(
+            child: OverflowBox(
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              child: SizedBox(
+                width: previewWidth,
+                height: previewHeight,
+                child: RotatedBox(
+                  quarterTurns: quarterTurns,
+                  child: CameraPreview(camera),
+                ),
+              ),
             ),
           ),
         ),
