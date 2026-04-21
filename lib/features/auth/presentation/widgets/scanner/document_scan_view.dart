@@ -559,10 +559,10 @@ class _DocumentScanViewState extends State<DocumentScanView>
     // Use camera's deviceOrientation for precise direction (left vs right)
     final deviceOrientation = camera.value.deviceOrientation;
     final quarterTurns = switch (deviceOrientation) {
-      DeviceOrientation.landscapeLeft => 1,   // Rotate 90° clockwise
-      DeviceOrientation.landscapeRight => 3,  // Rotate 90° counter-clockwise
-      DeviceOrientation.portraitDown => 2,    // Rotate 180°
-      DeviceOrientation.portraitUp => 0,      // No rotation
+      DeviceOrientation.landscapeLeft => 3,
+      DeviceOrientation.landscapeRight => 1,
+      DeviceOrientation.portraitDown => 2,
+      DeviceOrientation.portraitUp => 0,
     };
 
     final mediaPadding = MediaQuery.paddingOf(context);
