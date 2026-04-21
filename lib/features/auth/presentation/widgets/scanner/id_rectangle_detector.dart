@@ -64,7 +64,7 @@ class IdRectangleDetector {
 
   /// Detect whether an ID card is in the camera frame.
   ///
-  /// Tries all image orientations to detect ID at any angle.
+  /// Tries all image orientations and returns the best result.
   Future<IdDetectionResult> detectAsync(
     CameraImage image,
     CameraController camera,
@@ -73,13 +73,17 @@ class IdRectangleDetector {
     _isProcessing = true;
 
     try {
-      // Try all orientations to detect ID at any angle
+      IdDetectionResult bestResult = IdDetectionResult.notFound;
+
+      // Try all orientations and keep best result
       for (final rotation in InputImageRotation.values) {
         final result = await _tryDetectWithRotation(image, camera, rotation);
-        if (result.detected) return result;
+        if (result.confidence > bestResult.confidence) {
+          bestResult = result;
+        }
       }
 
-      return IdDetectionResult.notFound;
+      return bestResult;
     } catch (_) {
       return IdDetectionResult.notFound;
     } finally {
