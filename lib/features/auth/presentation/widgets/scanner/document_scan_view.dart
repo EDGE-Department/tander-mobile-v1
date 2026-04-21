@@ -187,8 +187,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
 
       await controller.initialize();
 
-      // NOTE: Don't lock capture orientation for ID scanner - IDs are landscape
-      // and ML Kit needs to read text in natural orientation
+      // Lock capture orientation to portrait to prevent warping
+      await controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
 
       try {
         await controller.setFlashMode(FlashMode.off);
