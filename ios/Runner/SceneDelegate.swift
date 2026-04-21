@@ -3,6 +3,8 @@ import UIKit
 
 class SceneDelegate: FlutterSceneDelegate {
 
+  private var orientationChannel: FlutterMethodChannel?
+
   override func scene(
     _ scene: UIScene,
     willConnectTo session: UISceneSession,
@@ -16,37 +18,50 @@ class SceneDelegate: FlutterSceneDelegate {
       return
     }
 
-    let orientationChannel = FlutterMethodChannel(
+    orientationChannel = FlutterMethodChannel(
       name: "com.tander.app/orientation",
       binaryMessenger: controller.binaryMessenger
     )
 
-    orientationChannel.setMethodCallHandler { (call, result) in
+    orientationChannel?.setMethodCallHandler { [weak self] (call, result) in
       switch call.method {
       case "lockPortrait":
-        AppDelegate.isPortraitLocked = true
-        if #available(iOS 16.0, *) {
-          windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { _ in }
-          window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
-        } else {
-          UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
-          UINavigationController.attemptRotationToDeviceOrientation()
-        }
+        self?.setOrientationLock(true, windowScene: windowScene, window: window)
         result(nil)
 
       case "unlockOrientation":
-        AppDelegate.isPortraitLocked = false
-        if #available(iOS 16.0, *) {
-          windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .all)) { _ in }
-          window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
-        } else {
-          UINavigationController.attemptRotationToDeviceOrientation()
-        }
+        self?.setOrientationLock(false, windowScene: windowScene, window: window)
         result(nil)
 
       default:
         result(FlutterMethodNotImplemented)
       }
+    }
+  }
+
+  private func setOrientationLock(_ locked: Bool, windowScene: UIWindowScene, window: UIWindow) {
+    AppDelegate.isPortraitLocked = locked
+    let orientations: UIInterfaceOrientationMask = locked ? .portrait : .all
+
+    if #available(iOS 16.0, *) {
+      windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientations)) { error in
+        // Geometry update completed (or failed) — refresh the view hierarchy
+        DispatchQueue.main.async {
+          window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+          // For iPad: also ask all presented view controllers to update
+          var vc = window.rootViewController
+          while let presented = vc?.presentedViewController {
+            presented.setNeedsUpdateOfSupportedInterfaceOrientations()
+            vc = presented
+          }
+        }
+      }
+    } else {
+      // iOS 15 and earlier
+      if locked {
+        UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+      }
+      UINavigationController.attemptRotationToDeviceOrientation()
     }
   }
 }

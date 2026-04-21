@@ -47,13 +47,16 @@ class _DocumentScanViewState extends State<DocumentScanView>
   static const _maxAttempts = 10;
 
   /// Consecutive detections needed to confirm ID is present.
-  static const _detectionsToConfirm = 1;
+  static const _detectionsToConfirm = 3;
 
-  /// Consecutive confirmations needed to trigger capture.
-  static const _confirmationsToCapture = 1;
+  /// Consecutive confirmations needed to start countdown.
+  static const _confirmationsToStartCountdown = 2;
 
   /// Frames to tolerate without detection before resetting.
-  static const _missesToReset = 5;
+  static const _missesToReset = 4;
+
+  /// Countdown duration in seconds before capture.
+  static const _countdownDuration = 3;
 
   /// CamScanner blue.
   static const _scannerBlue = Color(0xFF2979FF);
@@ -68,6 +71,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
 
   CameraController? _camera;
   Timer? _timeoutTimer;
+  Timer? _countdownTimer;
 
   ScanPhase _phase = ScanPhase.initializing;
   DetectionState _detection = DetectionState.searching;
@@ -87,6 +91,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
   int _consecutiveDetections = 0;
   int _consecutiveConfirmations = 0;
   int _consecutiveMisses = 0;
+  int _countdownSeconds = 0;
+  bool _isCountingDown = false;
 
   @override
   void initState() {
@@ -104,6 +110,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
     _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _timeoutTimer?.cancel();
+    _countdownTimer?.cancel();
     _disposeCamera();
     _pulseCtrl.dispose();
     _ocrService.dispose();
@@ -117,6 +124,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       _timeoutTimer?.cancel();
+      _cancelCountdown();
       _disposeCamera();
       return;
     }
@@ -251,19 +259,58 @@ class _DocumentScanViewState extends State<DocumentScanView>
     _confidence = result.confidence;
     _consecutiveDetections++;
 
+    // If already counting down, just keep going (ID still detected)
+    if (_isCountingDown) {
+      return;
+    }
+
     if (_consecutiveDetections >= _detectionsToConfirm) {
       _consecutiveConfirmations++;
 
-      if (_consecutiveConfirmations >= _confirmationsToCapture) {
-        // ID confirmed stable — capture now.
-        _setDetection(DetectionState.stable, 'Capturing...');
-        _doCapture();
+      if (_consecutiveConfirmations >= _confirmationsToStartCountdown) {
+        // ID confirmed stable — start countdown
+        _startCountdown();
       } else {
         _setDetection(DetectionState.confirming, 'Hold steady...');
       }
     } else {
-      _setDetection(DetectionState.detected, 'Found your ID...');
+      _setDetection(DetectionState.detected, 'ID detected...');
     }
+  }
+
+  void _startCountdown() {
+    if (_isCountingDown || _isCapturing) return;
+
+    _isCountingDown = true;
+    _countdownSeconds = _countdownDuration;
+    HapticFeedback.lightImpact();
+    _setDetection(DetectionState.countingDown, 'Hold still... $_countdownSeconds');
+
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isDisposed || !mounted || !_isCountingDown) {
+        timer.cancel();
+        return;
+      }
+
+      _countdownSeconds--;
+      HapticFeedback.selectionClick();
+
+      if (_countdownSeconds <= 0) {
+        timer.cancel();
+        _isCountingDown = false;
+        _setDetection(DetectionState.stable, 'Capturing...');
+        _doCapture();
+      } else {
+        _setDetection(DetectionState.countingDown, 'Hold still... $_countdownSeconds');
+      }
+    });
+  }
+
+  void _cancelCountdown() {
+    _countdownTimer?.cancel();
+    _isCountingDown = false;
+    _countdownSeconds = 0;
   }
 
   void _onMiss() {
@@ -271,6 +318,12 @@ class _DocumentScanViewState extends State<DocumentScanView>
 
     // Don't reset immediately — tolerate a few missed frames.
     if (_consecutiveMisses >= _missesToReset) {
+      // Cancel any active countdown
+      if (_isCountingDown) {
+        _cancelCountdown();
+        HapticFeedback.lightImpact();
+      }
+
       if (_detection != DetectionState.searching) {
         _consecutiveDetections = 0;
         _consecutiveConfirmations = 0;
@@ -281,8 +334,6 @@ class _DocumentScanViewState extends State<DocumentScanView>
         );
       }
     }
-    // If we were confirming and missed a frame, just pause the counter
-    // but don't reset (allows for brief frame drops).
   }
 
   void _setDetection(DetectionState state, String status) {
@@ -412,6 +463,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
     _streamFrameIndex = 0;
     _attempt = 0;
     _error = null;
+    _cancelCountdown();
   }
 
   Future<void> _safeDelete(String path) async {
@@ -534,6 +586,7 @@ class _DocumentScanViewState extends State<DocumentScanView>
                     confidenceLevel: _confidence,
                     reservedTopInset: widget.reservedTopInset,
                     reservedBottomInset: mediaPadding.bottom + 96,
+                    countdownSeconds: _countdownSeconds,
                   ),
                 );
               },
@@ -592,6 +645,8 @@ class _DocumentScanViewState extends State<DocumentScanView>
             badgeColor = _scannerBlue.withValues(alpha: 0.8);
           case DetectionState.confirming:
             badgeColor = _scannerBlue;
+          case DetectionState.countingDown:
+            badgeColor = const Color(0xFF4CAF50);
           case DetectionState.stable:
             badgeColor = _stableGreen;
         }

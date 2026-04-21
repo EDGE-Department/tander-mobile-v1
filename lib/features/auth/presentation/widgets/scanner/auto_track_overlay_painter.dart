@@ -5,6 +5,7 @@ enum DetectionState {
   searching,
   detected,
   confirming,
+  countingDown,
   stable,
 }
 
@@ -38,6 +39,7 @@ class AutoTrackOverlayPainter extends CustomPainter {
   final double confidenceLevel;
   final double reservedTopInset;
   final double reservedBottomInset;
+  final int countdownSeconds;
 
   AutoTrackOverlayPainter({
     required this.detectionState,
@@ -47,10 +49,12 @@ class AutoTrackOverlayPainter extends CustomPainter {
     this.confidenceLevel = 0.0,
     this.reservedTopInset = 0,
     this.reservedBottomInset = 0,
+    this.countdownSeconds = 0,
   });
 
   static const _scannerBlue = Color(0xFF2979FF);
   static const _stableGreen = Color(0xFF00C853);
+  static const _countdownGreen = Color(0xFF4CAF50);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -77,6 +81,9 @@ class AutoTrackOverlayPainter extends CustomPainter {
     // Inner glow when detected/stable.
     if (detectionState == DetectionState.stable) {
       _drawInnerGlow(canvas, frameRect, _stableGreen);
+    } else if (detectionState == DetectionState.countingDown) {
+      _drawInnerGlow(canvas, frameRect, _countdownGreen);
+      _drawCountdown(canvas, frameRect);
     } else if (detectionState == DetectionState.detected ||
         detectionState == DetectionState.confirming) {
       _drawInnerGlow(canvas, frameRect, _scannerBlue);
@@ -122,6 +129,11 @@ class AutoTrackOverlayPainter extends CustomPainter {
         borderColor = _scannerBlue.withValues(alpha: 0.85);
         cornerColor = _scannerBlue;
         borderStroke = 2.5;
+      case DetectionState.countingDown:
+        final pulse = 0.7 + pulseValue * 0.3;
+        borderColor = _countdownGreen.withValues(alpha: pulse);
+        cornerColor = _countdownGreen;
+        borderStroke = 3.0;
       case DetectionState.stable:
         borderColor = _stableGreen;
         cornerColor = _stableGreen;
@@ -206,11 +218,61 @@ class AutoTrackOverlayPainter extends CustomPainter {
   void _drawInnerGlow(Canvas canvas, Rect rect, Color color) {
     final alpha = detectionState == DetectionState.stable
         ? 0.06 + pulseValue * 0.04
-        : 0.04;
+        : (detectionState == DetectionState.countingDown ? 0.08 : 0.04);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(20)),
       Paint()..color = color.withValues(alpha: alpha),
+    );
+  }
+
+  void _drawCountdown(Canvas canvas, Rect rect) {
+    if (countdownSeconds <= 0) return;
+
+    final center = rect.center;
+    final circleRadius = 44.0;
+
+    // Pulsing circle background
+    final bgAlpha = 0.85 + pulseValue * 0.15;
+    canvas.drawCircle(
+      center,
+      circleRadius,
+      Paint()
+        ..color = _countdownGreen.withValues(alpha: bgAlpha)
+        ..style = PaintingStyle.fill,
+    );
+
+    // Outer glow
+    canvas.drawCircle(
+      center,
+      circleRadius + 4,
+      Paint()
+        ..color = _countdownGreen.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+
+    // Countdown number
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: '$countdownSeconds',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 42,
+          fontWeight: FontWeight.w900,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        center.dx - textPainter.width / 2,
+        center.dy - textPainter.height / 2,
+      ),
     );
   }
 
@@ -219,6 +281,7 @@ class AutoTrackOverlayPainter extends CustomPainter {
     return old.detectionState != detectionState ||
         old.scanPhase != scanPhase ||
         old.pulseValue != pulseValue ||
-        old.confidenceLevel != confidenceLevel;
+        old.confidenceLevel != confidenceLevel ||
+        old.countdownSeconds != countdownSeconds;
   }
 }
