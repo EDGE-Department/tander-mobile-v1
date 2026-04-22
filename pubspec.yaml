@@ -71,7 +71,6 @@ dependencies:
   wakelock_plus: ^1.2.8
   url_launcher: ^6.3.1
   uuid: ^4.5.1
-  opencv_dart: ^2.2.1+4
 
 dev_dependencies:
   flutter_test:
