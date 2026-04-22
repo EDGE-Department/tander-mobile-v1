@@ -14,6 +14,7 @@ abstract final class AppRoutes {
   static const String resetPassword = '/reset-password';
   static const String emailVerification = '/email-verification';
   static const String signUp = '/sign-up';
+  static const String readyToVerify = '/ready-to-verify';
   static const String idScanner = '/id-scanner';
   static const String rateLimit = '/rate-limit';
   static const String duplicateId = '/duplicate-id';

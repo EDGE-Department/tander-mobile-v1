@@ -14,6 +14,7 @@ import 'package:tander_flutter_v3/features/auth/presentation/screens/email_verif
 import 'package:tander_flutter_v3/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/login_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/id_scanner_screen.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/screens/ready_to_verify_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/sign_up_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/notification_permission_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/otp_verification_screen.dart';
@@ -46,6 +47,7 @@ import 'package:tander_flutter_v3/shared/constants/routes.dart';
 const _publicRoutes = <String>{
   AppRoutes.login,
   AppRoutes.signUp,
+  AppRoutes.readyToVerify,
   AppRoutes.idScanner,
   AppRoutes.rateLimit,
   AppRoutes.duplicateId,
@@ -164,13 +166,12 @@ final _routes = <RouteBase>[
     builder: (_, _) => const SignUpScreen(),
   ),
   GoRoute(
+    path: AppRoutes.readyToVerify,
+    builder: (_, _) => const ReadyToVerifyScreen(),
+  ),
+  GoRoute(
     path: AppRoutes.idScanner,
-    builder: (_, state) {
-      final minimumAgeParam = state.uri.queryParameters['minimumAge'];
-      final minimumAge =
-          minimumAgeParam != null ? int.tryParse(minimumAgeParam) : null;
-      return IdScannerScreen(minimumAge: minimumAge);
-    },
+    builder: (_, _) => const IdScannerScreen(),
   ),
   GoRoute(
     path: AppRoutes.forgotPassword,

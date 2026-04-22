@@ -117,7 +117,8 @@ final class AuthNotifier extends Notifier<AuthState> {
 
   /// Verifies ID pre-registration with selfie + ID photo.
   ///
-  /// Returns the auditId on success, null on failure.
+  /// Returns the auditId on success.
+  /// Throws an exception on failure with error details.
   Future<String?> verifyIdPreRegister({
     required String idPhotoFrontPath,
     String? selfiePath,
@@ -130,6 +131,13 @@ final class AuthNotifier extends Notifier<AuthState> {
       livenessMetadata: livenessMetadata,
       frontendOcrData: frontendOcrData,
     );
+
+    // Check for failure and throw with error details
+    if (verifyResult.isFailure) {
+      final exception = verifyResult.exceptionOrNull;
+      final message = exception?.message ?? 'Verification failed';
+      throw Exception(message);
+    }
 
     return verifyResult.valueOrNull;
   }

@@ -104,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _navigateToRegister() {
-    context.push(AppRoutes.idScanner);
+    context.push(AppRoutes.readyToVerify);
   }
 
   void _listenToAuthState() {

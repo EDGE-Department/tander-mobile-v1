@@ -432,19 +432,62 @@ final class AuthRepositoryImpl implements AuthRepository {
     String? deviceFingerprint,
   }) {
     return _runSafe('verifyIdPreRegister', () async {
-      final response = await _remoteDatasource.verifyIdPreRegister(
-        idPhotoFrontPath: idPhotoFrontPath,
-        selfiePath: selfiePath,
-        livenessMetadata: livenessMetadata,
-        frontendOcrData: frontendOcrData,
-        deviceFingerprint: deviceFingerprint,
-      );
+      Response<Map<String, Object?>> response;
+      try {
+        response = await _remoteDatasource.verifyIdPreRegister(
+          idPhotoFrontPath: idPhotoFrontPath,
+          selfiePath: selfiePath,
+          livenessMetadata: livenessMetadata,
+          frontendOcrData: frontendOcrData,
+          deviceFingerprint: deviceFingerprint,
+        );
+      } on DioException catch (e) {
+        // Handle HTTP error responses (4xx, 5xx)
+        final responseData = e.response?.data;
+        if (responseData is Map<String, dynamic>) {
+          final code = responseData['code'] as String? ?? '';
+          final message = responseData['message'] as String? ?? 'Verification failed';
+          final emailHint = responseData['emailHint'] as String?;
+
+          // Check for duplicate ID errors
+          if (code == 'DUPLICATE_ID_DETECTED' ||
+              code == 'IDENTIFIER_IN_USE' ||
+              code == 'ID_BLOCKED' ||
+              message.toLowerCase().contains('already been used') ||
+              message.toLowerCase().contains('already registered')) {
+            // Include email hint in the exception message if available
+            final hintPart = emailHint != null ? '|HINT:$emailHint' : '';
+            throw FormatException('IDENTIFIER_IN_USE$hintPart: $message');
+          }
+
+          throw FormatException(message);
+        }
+        rethrow;
+      }
 
       final body = response.data;
       if (body == null) {
         throw const FormatException(
           'Empty response body from verify-id-pre-register',
         );
+      }
+
+      // Check for error response from backend
+      final success = body['success'];
+      if (success == false) {
+        final code = body['code'] as String? ?? '';
+        final message = body['message'] as String? ?? 'Verification failed';
+
+        // Check for duplicate ID / identifier already in use
+        if (code == 'IDENTIFIER_IN_USE' ||
+            code == 'DUPLICATE_ID' ||
+            message.toLowerCase().contains('already') ||
+            message.toLowerCase().contains('duplicate')) {
+          throw FormatException('IDENTIFIER_IN_USE: $message');
+        }
+
+        // Throw with the error message
+        throw FormatException(message);
       }
 
       // Extract auditId from response
@@ -455,6 +498,11 @@ final class AuthRepositoryImpl implements AuthRepository {
       }
 
       if (auditId == null || auditId.isEmpty) {
+        // Also check for error code at top level (backend inconsistency)
+        final code = body['code'] as String? ?? '';
+        if (code == 'IDENTIFIER_IN_USE') {
+          throw const FormatException('IDENTIFIER_IN_USE: This ID has already been registered');
+        }
         throw const FormatException(
           'Missing auditId in verify-id-pre-register response',
         );

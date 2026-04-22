@@ -61,11 +61,11 @@ Map<String, dynamic> _$LoginResponseDtoToJson(LoginResponseDto instance) =>
 
 RegisterRequestDto _$RegisterRequestDtoFromJson(Map<String, dynamic> json) =>
     RegisterRequestDto(
-      email: json['email'] as String?,
       password: json['password'] as String,
+      email: json['email'] as String?,
+      phone: json['phone'] as String?,
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
-      phone: json['phone'] as String?,
       username: json['username'] as String?,
       dateOfBirth: json['dateOfBirth'] as String?,
       gender: json['gender'] as String?,
@@ -75,25 +75,21 @@ RegisterRequestDto _$RegisterRequestDtoFromJson(Map<String, dynamic> json) =>
       consentVersion: json['consentVersion'] as String?,
     );
 
-Map<String, dynamic> _$RegisterRequestDtoToJson(RegisterRequestDto instance) {
-  final map = <String, dynamic>{
-    'password': instance.password,
-    if (instance.firstName != null) 'firstName': instance.firstName,
-    if (instance.lastName != null) 'lastName': instance.lastName,
-    if (instance.email != null) 'email': instance.email,
-    if (instance.phone != null) 'phoneNumber': instance.phone,
-    if (instance.username != null) 'username': instance.username,
-    if (instance.dateOfBirth != null) 'dateOfBirth': instance.dateOfBirth,
-    if (instance.gender != null) 'gender': instance.gender,
-    if (instance.auditId != null) 'auditId': instance.auditId,
-    if (instance.consentTerms != null) 'consentTerms': instance.consentTerms,
-    if (instance.consentDataPrivacy != null)
+Map<String, dynamic> _$RegisterRequestDtoToJson(RegisterRequestDto instance) =>
+    <String, dynamic>{
+      'firstName': instance.firstName,
+      'lastName': instance.lastName,
+      'email': instance.email,
+      'phone': instance.phone,
+      'username': instance.username,
+      'password': instance.password,
+      'dateOfBirth': instance.dateOfBirth,
+      'gender': instance.gender,
+      'auditId': instance.auditId,
+      'consentTerms': instance.consentTerms,
       'consentDataPrivacy': instance.consentDataPrivacy,
-    if (instance.consentVersion != null)
       'consentVersion': instance.consentVersion,
-  };
-  return map;
-}
+    };
 
 RegisterResponseDataDto _$RegisterResponseDataDtoFromJson(
   Map<String, dynamic> json,
