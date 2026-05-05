@@ -21,13 +21,13 @@ final class MessagingRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Fetches the authenticated user's conversation list.
-  Future<Response<List<Object?>>> fetchConversations() {
+  Future<Response<Map<String, Object?>>> fetchConversations() {
     AppLogger.debug(
       'Fetching conversations',
       operation: '$_tag.fetchConversations',
     );
 
-    return _dioClient.get<List<Object?>>(ApiEndpoints.conversations);
+    return _dioClient.get<Map<String, Object?>>(ApiEndpoints.conversations);
   }
 
   // -----------------------------------------------------------------------
@@ -35,8 +35,8 @@ final class MessagingRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Fetches the message thread for a given [conversationId].
-  Future<Response<List<Object?>>> fetchMessages({
-    required int conversationId,
+  Future<Response<Map<String, Object?>>> fetchMessages({
+    required String conversationId,
   }) {
     AppLogger.debug(
       'Fetching messages',
@@ -44,25 +44,25 @@ final class MessagingRemoteDatasource {
       context: {'conversationId': conversationId},
     );
 
-    return _dioClient.get<List<Object?>>(
-      ApiEndpoints.conversationMessages(conversationId),
+    return _dioClient.get<Map<String, Object?>>(
+      '/chat/conversations/$conversationId/messages',
     );
   }
 
   /// Sends a plain text message.
   Future<Response<Map<String, Object?>>> sendTextMessage({
-    required int receiverId,
-    required String content,
+    required String conversationId,
+    required String body,
   }) {
     AppLogger.debug(
       'Sending text message',
       operation: '$_tag.sendTextMessage',
-      context: {'receiverId': receiverId},
+      context: {'conversationId': conversationId},
     );
 
     return _dioClient.post<Map<String, Object?>>(
-      ApiEndpoints.sendMessage,
-      data: {'receiverId': receiverId, 'content': content},
+      '/chat/conversations/$conversationId/messages',
+      data: {'kind': 'TEXT', 'body': body},
     );
   }
 
@@ -119,7 +119,7 @@ final class MessagingRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Unsend a message (delete for everyone). Sender-only, 1-hour limit.
-  Future<void> unsendMessage({required int messageId}) async {
+  Future<void> unsendMessage({required String messageId}) async {
     AppLogger.debug('Unsending message', operation: '$_tag.unsendMessage',
         context: {'messageId': messageId});
     await _dioClient.post<Map<String, Object?>>(
@@ -128,7 +128,7 @@ final class MessagingRemoteDatasource {
   }
 
   /// Hide a message for the current user only (delete for me).
-  Future<void> hideMessageForUser({required int messageId}) async {
+  Future<void> hideMessageForUser({required String messageId}) async {
     AppLogger.debug('Hiding message for user', operation: '$_tag.hideMessageForUser',
         context: {'messageId': messageId});
     await _dioClient.post<Map<String, Object?>>(
@@ -141,7 +141,7 @@ final class MessagingRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Marks all messages in a conversation as read (server-side).
-  Future<void> markConversationRead({required int conversationId}) async {
+  Future<void> markConversationRead({required String conversationId}) async {
     AppLogger.debug(
       'Marking conversation read',
       operation: '$_tag.markConversationRead',
@@ -149,22 +149,22 @@ final class MessagingRemoteDatasource {
     );
 
     await _dioClient.post<Map<String, Object?>>(
-      ApiEndpoints.markRead(conversationId),
+      '/chat/conversations/$conversationId/read',
     );
   }
 
   /// Starts a new conversation with [userId] if none exists.
   Future<Response<Map<String, Object?>>> startConversation({
-    required int userId,
+    required String otherUserId,
   }) {
     AppLogger.debug(
       'Starting conversation',
       operation: '$_tag.startConversation',
-      context: {'userId': userId},
+      context: {'otherUserId': otherUserId},
     );
 
-    return _dioClient.post<Map<String, Object?>>(
-      ApiEndpoints.startConversation(userId),
+    return _dioClient.get<Map<String, Object?>>(
+      '/chat/users/$otherUserId/start-conversation',
     );
   }
 }

@@ -14,12 +14,10 @@ import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.d
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
-import 'package:tander_flutter_v3/features/auth/presentation/widgets/registration_step_dots.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/otp_digit_boxes.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/otp_verified_state.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/resend_timer.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 /// OTP verification type passed via route extras.

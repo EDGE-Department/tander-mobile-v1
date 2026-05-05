@@ -43,51 +43,13 @@ abstract interface class ProfileRepository {
   Future<Result<void>> reorderPhotos({required List<String> photoUrls});
 
   // ---------------------------------------------------------------------------
-  // Notification settings
+  // Settings (Unified)
   // ---------------------------------------------------------------------------
 
-  /// Fetches the user's notification preferences.
-  Future<Result<NotificationSettings>> fetchNotificationSettings();
+  Future<Result<UserSettings>> fetchUserSettings();
 
-  /// Updates the user's notification preferences.
-  Future<Result<void>> updateNotificationSettings({
-    required NotificationSettingsDto settings,
-  });
-
-  // ---------------------------------------------------------------------------
-  // Privacy settings
-  // ---------------------------------------------------------------------------
-
-  /// Fetches the user's privacy settings.
-  Future<Result<PrivacySettings>> fetchPrivacySettings();
-
-  /// Updates the user's privacy settings.
-  Future<Result<void>> updatePrivacySettings({
-    required PrivacySettingsDto settings,
-  });
-
-  // ---------------------------------------------------------------------------
-  // Security settings
-  // ---------------------------------------------------------------------------
-
-  /// Fetches the user's security settings (2FA, active sessions).
-  Future<Result<SecuritySettings>> fetchSecuritySettings();
-
-  /// Updates the user's security settings.
-  Future<Result<void>> updateSecuritySettings({
-    required SecuritySettingsDto settings,
-  });
-
-  // ---------------------------------------------------------------------------
-  // Discovery settings
-  // ---------------------------------------------------------------------------
-
-  /// Fetches the user's discovery preferences.
-  Future<Result<DiscoverySettings>> fetchDiscoverySettings();
-
-  /// Updates the user's discovery preferences.
-  Future<Result<void>> updateDiscoverySettings({
-    required DiscoverySettingsDto settings,
+  Future<Result<void>> updateUserSettings({
+    required UpdateSettingsRequestDto request,
   });
 
   // ---------------------------------------------------------------------------

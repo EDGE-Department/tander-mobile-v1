@@ -14,6 +14,12 @@ class OcrResult {
   final int rawTextLength;
   final double qualityScore;
   final DateTime? expirationDate;
+  final String? firstName;
+  final String? lastName;
+  final String? middleName;
+  final String? sex;
+  final String? documentNumber;
+  final String? rawTextSnippet;
 
   const OcrResult({
     required this.success,
@@ -25,11 +31,33 @@ class OcrResult {
     this.rawTextLength = 0,
     this.qualityScore = 0.0,
     this.expirationDate,
+    this.firstName,
+    this.lastName,
+    this.middleName,
+    this.sex,
+    this.documentNumber,
+    this.rawTextSnippet,
   });
 
+  /// Maps the on-device OCR result to the multipart field shape the backend's
+  /// {@code IdVerificationService.parseOcrJson} expects. Keys must stay in
+  /// sync with the server-side parser — backend reads {@code firstName},
+  /// {@code lastName}, {@code middleName}, {@code dob}, {@code documentNumber},
+  /// {@code sex}. Anything else is metadata for diagnostics.
   Map<String, dynamic> toFrontendOcrData() => {
+        // Fields the backend parses for prefill.
+        if (firstName != null) 'firstName': firstName,
+        if (lastName != null) 'lastName': lastName,
+        if (middleName != null) 'middleName': middleName,
+        if (dateOfBirth != null)
+          'dob': '${dateOfBirth!.year.toString().padLeft(4, '0')}-'
+              '${dateOfBirth!.month.toString().padLeft(2, '0')}-'
+              '${dateOfBirth!.day.toString().padLeft(2, '0')}',
+        if (documentNumber != null) 'documentNumber': documentNumber,
+        if (sex != null) 'sex': sex,
+        // Metadata for backend diagnostics + audit (currently unused but kept
+        // so a future server-side consumer can lean on quality scoring).
         'extractedAge': age,
-        'dateOfBirth': dateOfBirth?.toIso8601String(),
         'idType': idType ?? 'unknown',
         'meetsAgeRequirement': meetsAgeRequirement,
         'rawTextLength': rawTextLength,
@@ -37,6 +65,10 @@ class OcrResult {
         'expirationDate': expirationDate?.toIso8601String(),
         'ocrEngine': 'google_mlkit_text_recognition',
         'extractionTimestamp': DateTime.now().toIso8601String(),
+        // Raw text snippet — diagnostic only. Sent so backend logs can show
+        // what ML Kit actually saw when prefill misses fields. Drop this
+        // once OCR coverage is solid.
+        if (rawTextSnippet != null) 'debugRawText': rawTextSnippet,
       };
 }
 
@@ -63,6 +95,10 @@ class IdOcrService {
       );
       final rawText = recognized.text;
       final quality = _calculateQuality(rawText);
+      debugPrint('[OCR] raw text length=${rawText.length}, quality=${quality.toStringAsFixed(2)}');
+      // Truncated dump for diagnosing label-mismatch on senior IDs.
+      // Strip newlines so logcat keeps it on a single line.
+      debugPrint('[OCR] raw="${rawText.replaceAll('\n', ' | ').substring(0, rawText.length.clamp(0, 800))}"');
 
       if (quality < 0.15 || rawText.length < 15) {
         return OcrResult(
@@ -75,8 +111,11 @@ class IdOcrService {
 
       final idType = _detectIdType(rawText);
 
+      final rawSnippet = _truncateForLog(rawText);
+
       // Senior Citizen ID / OSCA auto-passes (Philippine law requires 60+)
       if (idType == 'senior_citizen') {
+        final names = _extractNames(rawText);
         return OcrResult(
           success: true,
           age: 60,
@@ -85,6 +124,12 @@ class IdOcrService {
           rawTextLength: rawText.length,
           qualityScore: quality,
           expirationDate: _parseExpiration(rawText),
+          firstName: names['firstName'],
+          lastName: names['lastName'],
+          middleName: names['middleName'],
+          sex: _extractSex(rawText),
+          documentNumber: _extractDocumentNumber(rawText),
+          rawTextSnippet: rawSnippet,
         );
       }
 
@@ -110,6 +155,7 @@ class IdOcrService {
       }
 
       final age = _calculateAge(dob);
+      final names = _extractNames(rawText);
       return OcrResult(
         success: true,
         dateOfBirth: dob,
@@ -119,6 +165,12 @@ class IdOcrService {
         rawTextLength: rawText.length,
         qualityScore: quality,
         expirationDate: _parseExpiration(rawText),
+        firstName: names['firstName'],
+        lastName: names['lastName'],
+        middleName: names['middleName'],
+        sex: _extractSex(rawText),
+        documentNumber: _extractDocumentNumber(rawText),
+        rawTextSnippet: rawSnippet,
       );
     } on TimeoutException {
       return const OcrResult(
@@ -136,6 +188,14 @@ class IdOcrService {
   }
 
   void dispose() => _recognizer.close();
+
+  /// Newline-flattened, length-capped raw OCR text suitable for log lines.
+  /// Used as the diagnostic {@code debugRawText} field in the upload payload
+  /// so backend logs can show what ML Kit actually saw.
+  String _truncateForLog(String text) {
+    final flattened = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return flattened.length <= 600 ? flattened : flattened.substring(0, 600);
+  }
 
   // --- Image Quality Scoring (5-factor) ---
 
@@ -358,6 +418,135 @@ class IdOcrService {
     final now = DateTime.now();
     final age = _calculateAge(date);
     return age >= 10 && age <= 120 && date.isBefore(now);
+  }
+
+  // --- Name / Sex / Document-number Extraction ---
+  //
+  // Filipino IDs vary widely in layout. We use label-proximity scanning
+  // (find the label, take the next ALL-CAPS phrase) which works for most
+  // PhilSys, UMID, driver's license, voter's, senior-citizen layouts.
+  // What we don't extract here, the senior fills manually — that's the
+  // documented v1 fallback.
+
+  Map<String, String?> _extractNames(String rawText) {
+    return {
+      'firstName': _extractLabeledName(rawText, _firstNameLabels),
+      'lastName': _extractLabeledName(rawText, _lastNameLabels),
+      'middleName': _extractLabeledName(rawText, _middleNameLabels),
+    };
+  }
+
+  static const _firstNameLabels = [
+    'given names',
+    'given name',
+    'first name',
+    'pangalan',
+    'mga pangalan',
+  ];
+  static const _lastNameLabels = [
+    'last name',
+    'surname',
+    'family name',
+    'apelyido',
+  ];
+  static const _middleNameLabels = [
+    'middle name',
+    'gitnang pangalan',
+    'middle',
+  ];
+
+  String? _extractLabeledName(String text, List<String> labels) {
+    final lower = text.toLowerCase();
+    for (final label in labels) {
+      final idx = lower.indexOf(label);
+      if (idx < 0) continue;
+      final start = idx + label.length;
+      final end = (start + 80).clamp(0, text.length);
+      final nearby = text.substring(start, end);
+      // Take the first uppercase line of length 2..40 after the label;
+      // skips through colons, slashes, commas typical on ID layouts.
+      for (final line in nearby.split(RegExp(r'[\r\n]'))) {
+        final cleaned = line.replaceAll(RegExp(r'^[\s:,/]+|[\s:,/]+$'), '');
+        if (cleaned.length < 2 || cleaned.length > 40) continue;
+        // Heuristic: at least 50% letters, contains an uppercase letter, and
+        // doesn't itself look like another label.
+        final letters = RegExp(r'[A-Za-zÑñ\s.\-]').allMatches(cleaned).length;
+        if (letters / cleaned.length < 0.5) continue;
+        if (!RegExp(r'[A-ZÑ]').hasMatch(cleaned)) continue;
+        if (_looksLikeLabel(cleaned)) continue;
+        return _toTitleCase(cleaned);
+      }
+    }
+    return null;
+  }
+
+  bool _looksLikeLabel(String s) {
+    final low = s.toLowerCase();
+    const noisyTokens = [
+      'name', 'pangalan', 'birth', 'kapanganakan', 'sex', 'kasarian',
+      'address', 'tirahan', 'nationality', 'date', 'expiry', 'valid',
+      'signature', 'id', 'no.', 'number',
+    ];
+    return noisyTokens.any(low.contains);
+  }
+
+  String _toTitleCase(String s) {
+    return s
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .map((w) => w.isEmpty
+            ? w
+            : w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : ''))
+        .join(' ')
+        .trim();
+  }
+
+  String? _extractSex(String text) {
+    final lower = text.toLowerCase();
+    for (final label in const ['sex', 'kasarian', 'gender']) {
+      final idx = lower.indexOf(label);
+      if (idx < 0) continue;
+      final after = text.substring(idx + label.length,
+          (idx + label.length + 30).clamp(0, text.length));
+      final m = RegExp(r'\b([MF]|MALE|FEMALE|LALAKI|BABAE)\b',
+              caseSensitive: false)
+          .firstMatch(after);
+      if (m != null) {
+        final v = m.group(1)!.toUpperCase();
+        if (v == 'M' || v == 'MALE' || v == 'LALAKI') return 'M';
+        if (v == 'F' || v == 'FEMALE' || v == 'BABAE') return 'F';
+      }
+    }
+    return null;
+  }
+
+  String? _extractDocumentNumber(String text) {
+    // PhilSys CRN (current physical card layout) is 16 digits in 4-4-4-4
+    // groups, e.g. "3849-7095-8312-7985". The older PSN format is 12 digits
+    // in 4-7-1 groups. Try the longer pattern FIRST so a card showing both
+    // doesn't get matched on the shorter one as a substring.
+    final philsysCrn = RegExp(r'\b(\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4})\b')
+        .firstMatch(text);
+    if (philsysCrn != null) {
+      return philsysCrn.group(1)!.replaceAll(RegExp(r'\s+'), '-');
+    }
+    final philsysPsn = RegExp(r'\b(\d{4}[\s\-]\d{7}[\s\-]\d{1})\b').firstMatch(text);
+    if (philsysPsn != null) {
+      return philsysPsn.group(1)!.replaceAll(RegExp(r'\s+'), '-');
+    }
+
+    for (final label in const ['id no', 'id number', 'no.', 'card no',
+        'crn', 'philsys']) {
+      final idx = text.toLowerCase().indexOf(label);
+      if (idx < 0) continue;
+      final after = text.substring(idx + label.length,
+          (idx + label.length + 40).clamp(0, text.length));
+      final m = RegExp(r'([A-Z0-9][A-Z0-9\-\s]{6,30})').firstMatch(after);
+      if (m != null) {
+        return m.group(1)!.trim().replaceAll(RegExp(r'\s+'), '-');
+      }
+    }
+    return null;
   }
 
   int _calculateAge(DateTime birthDate) {

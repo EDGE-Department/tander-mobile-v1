@@ -8,7 +8,7 @@ part of 'discover_contracts.dart';
 
 DiscoveryProfileDto _$DiscoveryProfileDtoFromJson(Map<String, dynamic> json) =>
     DiscoveryProfileDto(
-      userId: (json['userId'] as num).toInt(),
+      userId: json['userId'] as String,
       username: json['username'] as String,
       verified: json['verified'] as bool,
       online: json['online'] as bool,

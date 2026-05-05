@@ -9,7 +9,7 @@ part of 'profile_contracts.dart';
 UserProfileDto _$UserProfileDtoFromJson(Map<String, dynamic> json) =>
     UserProfileDto(
       id: (json['id'] as num).toInt(),
-      username: json['username'] as String,
+      userId: json['userId'] as String,
       firstName: json['firstName'] as String?,
       middleName: json['middleName'] as String?,
       lastName: json['lastName'] as String?,
@@ -17,24 +17,30 @@ UserProfileDto _$UserProfileDtoFromJson(Map<String, dynamic> json) =>
       displayName: json['displayName'] as String?,
       email: json['email'] as String?,
       age: (json['age'] as num?)?.toInt(),
-      birthDate: json['birthDate'] as String?,
+      dateOfBirth: json['dateOfBirth'] as String?,
       gender: json['gender'] as String?,
       bio: json['bio'] as String?,
       city: json['city'] as String?,
       country: json['country'] as String?,
       civilStatus: json['civilStatus'] as String?,
+      maritalStatus: json['maritalStatus'] as String?,
+      religion: json['religion'] as String?,
+      numberOfChildren: (json['numberOfChildren'] as num?)?.toInt(),
       hobby: json['hobby'] as String?,
+      interestedIn: json['interestedIn'] as String?,
+      interests: (json['interests'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      lookingFor: (json['lookingFor'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      languages: (json['languages'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       profilePhotoUrl: json['profilePhotoUrl'] as String?,
       additionalPhotos: (json['additionalPhotos'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      interests: json['interests'] as String?,
-      lookingFor: json['lookingFor'] as String?,
-      interestedIn: json['interestedIn'] as String?,
-      religion: json['religion'] as String?,
-      numberOfChildren: (json['numberOfChildren'] as num?)?.toInt(),
-      languages: json['languages'] as String?,
-      maritalStatus: json['maritalStatus'] as String?,
       verified: json['verified'] as bool?,
       profileCompleted: json['profileCompleted'] as bool?,
     );
@@ -42,7 +48,7 @@ UserProfileDto _$UserProfileDtoFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$UserProfileDtoToJson(UserProfileDto instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'username': instance.username,
+      'userId': instance.userId,
       'firstName': instance.firstName,
       'middleName': instance.middleName,
       'lastName': instance.lastName,
@@ -50,25 +56,144 @@ Map<String, dynamic> _$UserProfileDtoToJson(UserProfileDto instance) =>
       'displayName': instance.displayName,
       'email': instance.email,
       'age': instance.age,
-      'birthDate': instance.birthDate,
+      'dateOfBirth': instance.dateOfBirth,
       'gender': instance.gender,
       'bio': instance.bio,
       'city': instance.city,
       'country': instance.country,
       'civilStatus': instance.civilStatus,
-      'hobby': instance.hobby,
-      'profilePhotoUrl': instance.profilePhotoUrl,
-      'additionalPhotos': instance.additionalPhotos,
-      'interests': instance.interests,
-      'lookingFor': instance.lookingFor,
-      'interestedIn': instance.interestedIn,
+      'maritalStatus': instance.maritalStatus,
       'religion': instance.religion,
       'numberOfChildren': instance.numberOfChildren,
+      'hobby': instance.hobby,
+      'interestedIn': instance.interestedIn,
+      'interests': instance.interests,
+      'lookingFor': instance.lookingFor,
       'languages': instance.languages,
-      'maritalStatus': instance.maritalStatus,
+      'profilePhotoUrl': instance.profilePhotoUrl,
+      'additionalPhotos': instance.additionalPhotos,
       'verified': instance.verified,
       'profileCompleted': instance.profileCompleted,
     };
+
+UserSettingsDto _$UserSettingsDtoFromJson(Map<String, dynamic> json) =>
+    UserSettingsDto(
+      showOnline: json['showOnline'] as bool,
+      showLastSeen: json['showLastSeen'] as bool,
+      showProfileViews: json['showProfileViews'] as bool,
+      showAge: json['showAge'] as bool,
+      readReceipts: json['readReceipts'] as bool,
+      profileVisibility: json['profileVisibility'] as String,
+      discoveryVisible: json['discoveryVisible'] as bool,
+      discoveryMinAge: (json['discoveryMinAge'] as num).toInt(),
+      discoveryMaxAge: (json['discoveryMaxAge'] as num).toInt(),
+      discoveryMaxDistanceKm: (json['discoveryMaxDistanceKm'] as num).toInt(),
+      notifyMessages: json['notifyMessages'] as bool,
+      notifyMatches: json['notifyMatches'] as bool,
+      notifyProfileViews: json['notifyProfileViews'] as bool,
+      notifyCommunity: json['notifyCommunity'] as bool,
+      notifyTandy: json['notifyTandy'] as bool,
+      notifyCalls: json['notifyCalls'] as bool,
+      quietHoursStart: json['quietHoursStart'] as String?,
+      quietHoursEnd: json['quietHoursEnd'] as String?,
+      twoFactorEnabled: json['twoFactorEnabled'] as bool,
+      consentMarketing: json['consentMarketing'] as bool,
+      consentAdPersonalization: json['consentAdPersonalization'] as bool,
+      consentTandyMemory: json['consentTandyMemory'] as bool,
+      familyAlertContactPhone: json['familyAlertContactPhone'] as String?,
+      familyAlertContactLabel: json['familyAlertContactLabel'] as String?,
+    );
+
+Map<String, dynamic> _$UserSettingsDtoToJson(UserSettingsDto instance) =>
+    <String, dynamic>{
+      'showOnline': instance.showOnline,
+      'showLastSeen': instance.showLastSeen,
+      'showProfileViews': instance.showProfileViews,
+      'showAge': instance.showAge,
+      'readReceipts': instance.readReceipts,
+      'profileVisibility': instance.profileVisibility,
+      'discoveryVisible': instance.discoveryVisible,
+      'discoveryMinAge': instance.discoveryMinAge,
+      'discoveryMaxAge': instance.discoveryMaxAge,
+      'discoveryMaxDistanceKm': instance.discoveryMaxDistanceKm,
+      'notifyMessages': instance.notifyMessages,
+      'notifyMatches': instance.notifyMatches,
+      'notifyProfileViews': instance.notifyProfileViews,
+      'notifyCommunity': instance.notifyCommunity,
+      'notifyTandy': instance.notifyTandy,
+      'notifyCalls': instance.notifyCalls,
+      'quietHoursStart': instance.quietHoursStart,
+      'quietHoursEnd': instance.quietHoursEnd,
+      'twoFactorEnabled': instance.twoFactorEnabled,
+      'consentMarketing': instance.consentMarketing,
+      'consentAdPersonalization': instance.consentAdPersonalization,
+      'consentTandyMemory': instance.consentTandyMemory,
+      'familyAlertContactPhone': instance.familyAlertContactPhone,
+      'familyAlertContactLabel': instance.familyAlertContactLabel,
+    };
+
+UpdateSettingsRequestDto _$UpdateSettingsRequestDtoFromJson(
+  Map<String, dynamic> json,
+) => UpdateSettingsRequestDto(
+  showOnline: json['showOnline'] as bool?,
+  showLastSeen: json['showLastSeen'] as bool?,
+  showProfileViews: json['showProfileViews'] as bool?,
+  showAge: json['showAge'] as bool?,
+  readReceipts: json['readReceipts'] as bool?,
+  profileVisibility: json['profileVisibility'] as String?,
+  discoveryVisible: json['discoveryVisible'] as bool?,
+  discoveryMinAge: (json['discoveryMinAge'] as num?)?.toInt(),
+  discoveryMaxAge: (json['discoveryMaxAge'] as num?)?.toInt(),
+  discoveryMaxDistanceKm: (json['discoveryMaxDistanceKm'] as num?)?.toInt(),
+  notifyMessages: json['notifyMessages'] as bool?,
+  notifyMatches: json['notifyMatches'] as bool?,
+  notifyProfileViews: json['notifyProfileViews'] as bool?,
+  notifyCommunity: json['notifyCommunity'] as bool?,
+  notifyTandy: json['notifyTandy'] as bool?,
+  notifyCalls: json['notifyCalls'] as bool?,
+  quietHoursStart: json['quietHoursStart'] as String?,
+  quietHoursEnd: json['quietHoursEnd'] as String?,
+  quietHoursStartSet: json['quietHoursStartSet'] as bool?,
+  quietHoursEndSet: json['quietHoursEndSet'] as bool?,
+  twoFactorEnabled: json['twoFactorEnabled'] as bool?,
+  consentMarketing: json['consentMarketing'] as bool?,
+  consentAdPersonalization: json['consentAdPersonalization'] as bool?,
+  consentTandyMemory: json['consentTandyMemory'] as bool?,
+);
+
+Map<String, dynamic> _$UpdateSettingsRequestDtoToJson(
+  UpdateSettingsRequestDto instance,
+) => <String, dynamic>{
+  if (instance.showOnline case final value?) 'showOnline': value,
+  if (instance.showLastSeen case final value?) 'showLastSeen': value,
+  if (instance.showProfileViews case final value?) 'showProfileViews': value,
+  if (instance.showAge case final value?) 'showAge': value,
+  if (instance.readReceipts case final value?) 'readReceipts': value,
+  if (instance.profileVisibility case final value?) 'profileVisibility': value,
+  if (instance.discoveryVisible case final value?) 'discoveryVisible': value,
+  if (instance.discoveryMinAge case final value?) 'discoveryMinAge': value,
+  if (instance.discoveryMaxAge case final value?) 'discoveryMaxAge': value,
+  if (instance.discoveryMaxDistanceKm case final value?)
+    'discoveryMaxDistanceKm': value,
+  if (instance.notifyMessages case final value?) 'notifyMessages': value,
+  if (instance.notifyMatches case final value?) 'notifyMatches': value,
+  if (instance.notifyProfileViews case final value?)
+    'notifyProfileViews': value,
+  if (instance.notifyCommunity case final value?) 'notifyCommunity': value,
+  if (instance.notifyTandy case final value?) 'notifyTandy': value,
+  if (instance.notifyCalls case final value?) 'notifyCalls': value,
+  if (instance.quietHoursStart case final value?) 'quietHoursStart': value,
+  if (instance.quietHoursEnd case final value?) 'quietHoursEnd': value,
+  if (instance.quietHoursStartSet case final value?)
+    'quietHoursStartSet': value,
+  if (instance.quietHoursEndSet case final value?) 'quietHoursEndSet': value,
+  if (instance.twoFactorEnabled case final value?) 'twoFactorEnabled': value,
+  if (instance.consentMarketing case final value?) 'consentMarketing': value,
+  if (instance.consentAdPersonalization case final value?)
+    'consentAdPersonalization': value,
+  if (instance.consentTandyMemory case final value?)
+    'consentTandyMemory': value,
+};
 
 UpdateProfileRequestDto _$UpdateProfileRequestDtoFromJson(
   Map<String, dynamic> json,
@@ -116,95 +241,6 @@ Map<String, dynamic> _$UpdateProfileRequestDtoToJson(
   if (instance.numberOfChildren case final value?) 'numberOfChildren': value,
   if (instance.languages case final value?) 'languages': value,
   if (instance.maritalStatus case final value?) 'maritalStatus': value,
-};
-
-NotificationSettingsDto _$NotificationSettingsDtoFromJson(
-  Map<String, dynamic> json,
-) => NotificationSettingsDto(
-  newMessages: json['newMessages'] as bool,
-  newConnections: json['newConnections'] as bool,
-  communityActivity: json['communityActivity'] as bool,
-  tandyReminders: json['tandyReminders'] as bool,
-  callNotifications: json['callNotifications'] as bool,
-  emailNotifications: json['emailNotifications'] as bool,
-);
-
-Map<String, dynamic> _$NotificationSettingsDtoToJson(
-  NotificationSettingsDto instance,
-) => <String, dynamic>{
-  'newMessages': instance.newMessages,
-  'newConnections': instance.newConnections,
-  'communityActivity': instance.communityActivity,
-  'tandyReminders': instance.tandyReminders,
-  'callNotifications': instance.callNotifications,
-  'emailNotifications': instance.emailNotifications,
-};
-
-PrivacySettingsDto _$PrivacySettingsDtoFromJson(Map<String, dynamic> json) =>
-    PrivacySettingsDto(
-      profileVisibility: json['profileVisibility'] as String,
-      showOnlineStatus: json['showOnlineStatus'] as bool,
-      showLastSeen: json['showLastSeen'] as bool,
-      allowConnectionRequests: json['allowConnectionRequests'] as bool,
-    );
-
-Map<String, dynamic> _$PrivacySettingsDtoToJson(PrivacySettingsDto instance) =>
-    <String, dynamic>{
-      'profileVisibility': instance.profileVisibility,
-      'showOnlineStatus': instance.showOnlineStatus,
-      'showLastSeen': instance.showLastSeen,
-      'allowConnectionRequests': instance.allowConnectionRequests,
-    };
-
-ActiveSessionDto _$ActiveSessionDtoFromJson(Map<String, dynamic> json) =>
-    ActiveSessionDto(
-      sessionId: json['sessionId'] as String,
-      device: json['device'] as String,
-      lastActiveAt: json['lastActiveAt'] as String,
-      isCurrent: json['isCurrent'] as bool,
-    );
-
-Map<String, dynamic> _$ActiveSessionDtoToJson(ActiveSessionDto instance) =>
-    <String, dynamic>{
-      'sessionId': instance.sessionId,
-      'device': instance.device,
-      'lastActiveAt': instance.lastActiveAt,
-      'isCurrent': instance.isCurrent,
-    };
-
-SecuritySettingsDto _$SecuritySettingsDtoFromJson(Map<String, dynamic> json) =>
-    SecuritySettingsDto(
-      twoFactorEnabled: json['twoFactorEnabled'] as bool,
-      activeSessions: (json['activeSessions'] as List<dynamic>)
-          .map((e) => ActiveSessionDto.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
-
-Map<String, dynamic> _$SecuritySettingsDtoToJson(
-  SecuritySettingsDto instance,
-) => <String, dynamic>{
-  'twoFactorEnabled': instance.twoFactorEnabled,
-  'activeSessions': instance.activeSessions,
-};
-
-DiscoverySettingsDto _$DiscoverySettingsDtoFromJson(
-  Map<String, dynamic> json,
-) => DiscoverySettingsDto(
-  isDiscoverable: json['isDiscoverable'] as bool,
-  minAge: (json['minAge'] as num).toInt(),
-  maxAge: (json['maxAge'] as num).toInt(),
-  maxDistanceKm: (json['maxDistanceKm'] as num).toInt(),
-  genderPreference: json['genderPreference'] as String?,
-);
-
-Map<String, dynamic> _$DiscoverySettingsDtoToJson(
-  DiscoverySettingsDto instance,
-) => <String, dynamic>{
-  'isDiscoverable': instance.isDiscoverable,
-  'minAge': instance.minAge,
-  'maxAge': instance.maxAge,
-  'maxDistanceKm': instance.maxDistanceKm,
-  'genderPreference': instance.genderPreference,
 };
 
 ChangePasswordRequestDto _$ChangePasswordRequestDtoFromJson(

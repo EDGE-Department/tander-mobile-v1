@@ -130,10 +130,7 @@ final class CommunityFeedNotifier extends Notifier<CommunityFeedState> {
     state = currentState.copyWith(posts: updatedPosts);
 
     // Fire-and-forget server call; revert on failure.
-    final parsedId = int.tryParse(postId);
-    if (parsedId == null) return;
-
-    final toggleResult = await _repository.toggleReaction(postId: parsedId);
+    final toggleResult = await _repository.toggleReaction(postId: postId);
 
     if (toggleResult.isFailure) {
       // Revert optimistic update.
@@ -151,11 +148,8 @@ final class CommunityFeedNotifier extends Notifier<CommunityFeedState> {
     required String postId,
     required String content,
   }) async {
-    final parsedId = int.tryParse(postId);
-    if (parsedId == null) return false;
-
     final result = await _repository.updatePost(
-      postId: parsedId,
+      postId: postId,
       content: content,
     );
 
@@ -189,10 +183,7 @@ final class CommunityFeedNotifier extends Notifier<CommunityFeedState> {
         currentState.posts.where((post) => post.postId != postId).toList();
     state = currentState.copyWith(posts: updatedPosts);
 
-    final parsedId = int.tryParse(postId);
-    if (parsedId == null) return false;
-
-    final result = await _repository.deletePost(postId: parsedId);
+    final result = await _repository.deletePost(postId: postId);
 
     if (result.isFailure) {
       // Revert optimistic removal.

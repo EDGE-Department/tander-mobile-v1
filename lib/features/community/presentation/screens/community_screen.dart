@@ -20,6 +20,7 @@ import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
+import 'package:tander_flutter_v3/shared/widgets/web_error_state.dart';
 
 class CommunityScreen extends ConsumerStatefulWidget {
   const CommunityScreen({super.key});
@@ -79,9 +80,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         child: Column(
           children: [
             _CommunityHeader(onCreatePost: _openCreatePost),
-            Expanded(
-              child: _buildBody(feedState),
-            ),
+            Expanded(child: _buildBody(feedState)),
           ],
         ),
       ),
@@ -91,24 +90,17 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
   Widget _buildBody(CommunityFeedState feedState) {
     return switch (feedState) {
       CommunityFeedLoading() => const _LoadingSkeleton(),
-      CommunityFeedError(:final exception) => Center(
-          child: EmptyState(
-            title: 'Failed to load posts',
-            description: exception.userMessage,
-            icon: Icons.warning_amber_rounded,
-            actionLabel: 'Retry',
-            onAction: () {
-              ref.read(communityFeedNotifierProvider.notifier).loadFeed();
-            },
-          ),
-        ),
+      CommunityFeedError() => CommunityFeedErrorState(
+        onRetry: () {
+          ref.read(communityFeedNotifierProvider.notifier).loadFeed();
+        },
+      ),
       CommunityFeedLoaded(:final posts, :final isLoadingMore) =>
         posts.isEmpty
             ? Center(
                 child: EmptyState(
                   title: 'Start the conversation',
-                  description:
-                      'Your neighbors are waiting to hear from you.',
+                  description: 'Your neighbors are waiting to hear from you.',
                   icon: Icons.forum_outlined,
                   actionLabel: 'Write the first post',
                   onAction: _openCreatePost,
@@ -131,12 +123,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppSpacing.md,
-                        ),
-                        child: DailyPromptCard(
-                          onWriteStory: _openCreatePost,
-                        ),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: DailyPromptCard(onWriteStory: _openCreatePost),
                       );
                     }
 
@@ -164,22 +152,16 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                         .toString();
                     final isOwnPost = currentUserId == post.author.userId;
                     return Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: AppSpacing.lg,
-                      ),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                       child: PostCard(
                         post: post,
                         isOwnPost: isOwnPost,
                         onViewPost: () {
-                          context.push(
-                            AppRoutes.communityPost(post.postId),
-                          );
+                          context.push(AppRoutes.communityPost(post.postId));
                         },
                         onToggleReaction: () {
                           ref
-                              .read(
-                                communityFeedNotifierProvider.notifier,
-                              )
+                              .read(communityFeedNotifierProvider.notifier)
                               .toggleReaction(postId: post.postId);
                         },
                         onViewProfile: () => showProfileViewModal(
@@ -187,18 +169,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                           userId: post.author.userId,
                         ),
                         onEditPost: isOwnPost
-                            ? () => _showEditPostDialog(
-                                  context,
-                                  ref,
-                                  post,
-                                )
+                            ? () => _showEditPostDialog(context, ref, post)
                             : null,
                         onDeletePost: isOwnPost
                             ? () => _showDeleteConfirmation(
-                                  context,
-                                  ref,
-                                  post.postId,
-                                )
+                                context,
+                                ref,
+                                post.postId,
+                              )
                             : null,
                       ),
                     );
@@ -274,10 +252,7 @@ void _showEditPostAsSheet(
                       Navigator.of(sheetContext).pop();
                       await ref
                           .read(communityFeedNotifierProvider.notifier)
-                          .updatePost(
-                            postId: post.postId,
-                            content: newContent,
-                          );
+                          .updatePost(postId: post.postId, content: newContent);
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -375,7 +350,11 @@ void _showEditPostAsSheet(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
               child: Row(
                 children: [
-                  Icon(Icons.photo_outlined, size: 20, color: AppColors.primary),
+                  Icon(
+                    Icons.photo_outlined,
+                    size: 20,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'Photos (${post.mediaUrls.length}/4)',
@@ -472,10 +451,7 @@ void _showDeleteConfirmation(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: AppColors.textMuted),
-          ),
+          child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
         ),
         FilledButton(
           onPressed: () async {
@@ -514,9 +490,7 @@ class _CommunityHeader extends StatelessWidget {
         AppSpacing.md,
       ),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -584,9 +558,9 @@ class _NewPostButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.noScaling,
-            ),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.noScaling),
             child: const Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,

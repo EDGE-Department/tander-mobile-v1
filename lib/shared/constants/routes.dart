@@ -38,7 +38,7 @@ abstract final class AppRoutes {
 
   static const String callHistory = '/messages/call-history';
 
-  static String call(String roomName) => '/calls/$roomName';
+  static String call(String roomName) => '/call?room=$roomName';
 
   static String discoverProfile(String userId) =>
       '/discover/profile/$userId';

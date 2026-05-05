@@ -23,10 +23,10 @@ final class AuthRepositoryImpl implements AuthRepository {
     required AuthLocalDatasource localDatasource,
     required SessionManager sessionManager,
     required SecureStorage secureStorage,
-  })  : _remoteDatasource = remoteDatasource,
-        _localDatasource = localDatasource,
-        _sessionManager = sessionManager,
-        _secureStorage = secureStorage;
+  }) : _remoteDatasource = remoteDatasource,
+       _localDatasource = localDatasource,
+       _sessionManager = sessionManager,
+       _secureStorage = secureStorage;
 
   final AuthRemoteDatasource _remoteDatasource;
   final AuthLocalDatasource _localDatasource;
@@ -135,6 +135,12 @@ final class AuthRepositoryImpl implements AuthRepository {
       // Backend register returns 201 without tokens — user must verify
       // email before logging in. Extract what we can from the response.
       final bodyData = responseBody['data'];
+      final userId = bodyData is Map<String, Object?>
+          ? bodyData['userId']?.toString() ?? ''
+          : '';
+      final resolvedEmail = bodyData is Map<String, Object?>
+          ? bodyData['email'] as String? ?? email
+          : email;
       final username = bodyData is Map<String, Object?>
           ? bodyData['username'] as String? ?? ''
           : '';
@@ -150,8 +156,8 @@ final class AuthRepositoryImpl implements AuthRepository {
         final accessToken = _extractAccessToken(registerResponse.headers);
         final refreshToken = bodyData is Map<String, Object?>
             ? (bodyData['refreshToken'] is String
-                ? bodyData['refreshToken']! as String
-                : '')
+                  ? bodyData['refreshToken']! as String
+                  : '')
             : '';
 
         if (refreshToken.isNotEmpty) {
@@ -167,11 +173,12 @@ final class AuthRepositoryImpl implements AuthRepository {
       }
 
       final session = AuthSession(
-        userId: 0,
-        email: email,
+        userId: userId,
+        email: resolvedEmail,
         username: username,
-        registrationPhase:
-            RegistrationPhase.fromBackendString(registrationPhase),
+        registrationPhase: RegistrationPhase.fromBackendString(
+          registrationPhase,
+        ),
         isEmailVerified: false,
         isIdVerified: true,
       );
@@ -227,10 +234,7 @@ final class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> requestPasswordReset({String? email, String? phone}) {
     return _runSafe('requestPasswordReset', () async {
-      await _remoteDatasource.requestPasswordReset(
-        email: email,
-        phone: phone,
-      );
+      await _remoteDatasource.requestPasswordReset(email: email, phone: phone);
     });
   }
 
@@ -260,7 +264,9 @@ final class AuthRepositoryImpl implements AuthRepository {
         }
       }
 
-      throw const FormatException('Missing resetToken in verify-reset-otp response');
+      throw const FormatException(
+        'Missing resetToken in verify-reset-otp response',
+      );
     });
   }
 
@@ -299,10 +305,7 @@ final class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> sendRegistrationOtp({String? email, String? phone}) {
     return _runSafe('sendRegistrationOtp', () async {
-      await _remoteDatasource.sendRegistrationOtp(
-        email: email,
-        phone: phone,
-      );
+      await _remoteDatasource.sendRegistrationOtp(email: email, phone: phone);
     });
   }
 
@@ -446,18 +449,42 @@ final class AuthRepositoryImpl implements AuthRepository {
         final responseData = e.response?.data;
         if (responseData is Map<String, dynamic>) {
           final code = responseData['code'] as String? ?? '';
-          final message = responseData['message'] as String? ?? 'Verification failed';
+          final message =
+              responseData['message'] as String? ?? 'Verification failed';
           final emailHint = responseData['emailHint'] as String?;
+          // Backend embeds existingAccountState in `data` to tell us whether
+          // the duplicate's owner has finished profile setup or not.
+          final data = responseData['data'];
+          final existingState = (data is Map<String, dynamic>)
+              ? data['existingAccountState'] as String?
+              : null;
 
-          // Check for duplicate ID errors
-          if (code == 'DUPLICATE_ID_DETECTED' ||
+          // Stable codes from v3k+: id-duplicate / id-low-quality / id-age-not-met
+          // / id-missing-dob / id-expired / id-invalid. Legacy upper-snake codes
+          // and prose patterns kept for backward compatibility with older builds.
+          final lowMessage = message.toLowerCase();
+          final isDuplicate =
+              code == 'id-duplicate' ||
+              code == 'DUPLICATE_ID_DETECTED' ||
               code == 'IDENTIFIER_IN_USE' ||
               code == 'ID_BLOCKED' ||
-              message.toLowerCase().contains('already been used') ||
-              message.toLowerCase().contains('already registered')) {
-            // Include email hint in the exception message if available
+              lowMessage.contains('already been used') ||
+              lowMessage.contains('already registered') ||
+              lowMessage.contains('already have an account') ||
+              lowMessage.contains('already exists for this person');
+          if (isDuplicate) {
             final hintPart = emailHint != null ? '|HINT:$emailHint' : '';
-            throw FormatException('IDENTIFIER_IN_USE$hintPart: $message');
+            final statePart =
+                (existingState != null && existingState.isNotEmpty)
+                ? '|STATE:$existingState'
+                : '';
+            throw FormatException(
+              'IDENTIFIER_IN_USE$hintPart$statePart: $message',
+            );
+          }
+          // Pass the stable code through so the screen can decide retryability.
+          if (code.isNotEmpty) {
+            throw FormatException('CODE:$code: $message');
           }
 
           throw FormatException(message);
@@ -490,18 +517,23 @@ final class AuthRepositoryImpl implements AuthRepository {
         throw FormatException(message);
       }
 
-      // Extract auditId from response
-      final data = body['data'];
-      String? auditId;
-      if (data is Map<String, Object?>) {
-        auditId = data['auditId'] as String?;
+      // Extract auditId from response. Backend puts it at top level on
+      // success; we also accept it inside `data` for backwards compatibility
+      // with older response shapes.
+      String? auditId = body['auditId'] as String?;
+      if (auditId == null || auditId.isEmpty) {
+        final data = body['data'];
+        if (data is Map<String, Object?>) {
+          auditId = data['auditId'] as String?;
+        }
       }
 
       if (auditId == null || auditId.isEmpty) {
-        // Also check for error code at top level (backend inconsistency)
         final code = body['code'] as String? ?? '';
         if (code == 'IDENTIFIER_IN_USE') {
-          throw const FormatException('IDENTIFIER_IN_USE: This ID has already been registered');
+          throw const FormatException(
+            'IDENTIFIER_IN_USE: This ID has already been registered',
+          );
         }
         throw const FormatException(
           'Missing auditId in verify-id-pre-register response',
@@ -530,9 +562,7 @@ final class AuthRepositoryImpl implements AuthRepository {
     final userMeJson = userMeResponse.data;
 
     if (userMeJson == null) {
-      throw const FormatException(
-        'Empty response body from /user/me endpoint',
-      );
+      throw const FormatException('Empty response body from /user/me endpoint');
     }
 
     return AuthMapper.mapToAuthSession(userMeJson);

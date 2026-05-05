@@ -27,7 +27,17 @@ abstract interface class TandyRepository {
 
   /// Toggles the expand/collapse state of a structured card.
   Future<Result<void>> expandCard({
-    required int messageId,
+    required String messageId,
     required bool isExpanded,
   });
+
+  /// Rates a Tandy reply: 1 = thumbs up, -1 = thumbs down, 0 = clear.
+  /// Backend rejects ratings on user messages or someone else's thread.
+  Future<Result<void>> rateMessage({
+    required String messageId,
+    required int rating,
+  });
+
+  /// Records a tap on a sponsor card CTA. Fire-and-forget; failures swallowed.
+  Future<Result<void>> recordSponsorClick({required String impressionId});
 }

@@ -45,9 +45,7 @@ class ConversationsEmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'No messages yet',
-              style: AppTypography.h3.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: AppTypography.h3.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 6),
             Text(
@@ -100,41 +98,108 @@ class ConversationsAllCaughtUp extends StatelessWidget {
 
 /// Shown when the conversation list fetch fails.
 class ConversationsErrorView extends StatelessWidget {
-  const ConversationsErrorView({
-    super.key,
-    required this.errorMessage,
-    required this.onRetry,
-  });
+  const ConversationsErrorView({super.key, required this.onRetry});
 
-  final String errorMessage;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    _orange.withValues(alpha: 0.12),
+                    AppColors.danger.withValues(alpha: 0.08),
+                  ],
+                ),
+                border: Border.all(
+                  color: _orange.withValues(alpha: 0.18),
+                  width: 1.5,
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 28,
+                    color: _orange,
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _orange.withValues(alpha: 0.16),
+                      ),
+                      child: const Icon(
+                        Icons.refresh_rounded,
+                        size: 10,
+                        color: _orange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               'Could not load conversations.',
               style: AppTypography.label.copyWith(
                 color: AppColors.danger,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 6),
-            Text(
-              errorMessage,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodySm.copyWith(
-                color: AppColors.textMuted,
+            SizedBox(
+              width: 220,
+              child: Text(
+                'Check your connection and try again.',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.textMuted,
+                  height: 1.55,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 40,
+              child: FilledButton(
+                onPressed: onRetry,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  shape: const StadiumBorder(),
+                  textStyle: AppTypography.label.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.9,
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.refresh_rounded, size: 14),
+                    SizedBox(width: 8),
+                    Text('TRY AGAIN'),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -156,8 +221,7 @@ class ConversationsListSkeleton extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 2),
         child: Container(
           height: 72,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
               Container(
@@ -232,8 +296,7 @@ class MessagesWelcomePlaceholder extends StatelessWidget {
       color: const Color(0xFFF6EFE4),
       child: Center(
         child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -299,8 +362,7 @@ class MessagesWelcomePlaceholder extends StatelessWidget {
                   children: [
                     for (final tip in _tips) ...[
                       _WelcomeTipCard(tip: tip),
-                      if (tip != _tips.last)
-                        const SizedBox(height: 8),
+                      if (tip != _tips.last) const SizedBox(height: 8),
                     ],
                   ],
                 ),

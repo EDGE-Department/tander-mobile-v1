@@ -106,14 +106,14 @@ abstract final class ProfileHelpers {
     return gallery;
   }
 
-  /// Builds a display name from profile name parts, falling back to username.
+  /// Builds a display name from profile name parts, falling back to email.
   static String buildDisplayName(UserProfile profile) {
     final parts = [profile.firstName, profile.middleName, profile.lastName]
         .where((part) => part != null && part.trim().isNotEmpty)
         .map((part) => toTitleCase(part!))
         .toList();
 
-    return parts.isNotEmpty ? parts.join(' ') : profile.username;
+    return parts.isNotEmpty ? parts.join(' ') : (profile.email ?? '');
   }
 
   /// Builds a location string from city and country, or empty string.

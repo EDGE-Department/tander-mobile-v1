@@ -216,4 +216,63 @@ final class TandyNotifier extends Notifier<TandyState> {
     if (currentState is! TandyLoaded) return;
     state = currentState.copyWith(sendError: () => null);
   }
+
+  // -----------------------------------------------------------------------
+  // Rate a Tandy reply (thumbs up/down)
+  // -----------------------------------------------------------------------
+
+  /// Records a sponsor card CTA tap. Fire-and-forget — never blocks the
+  /// outbound link the user just tapped, and a network blip just means we
+  /// silently miss a click on the analytics side.
+  Future<void> recordSponsorClick({required String impressionId}) async {
+    await _repository.recordSponsorClick(impressionId: impressionId);
+  }
+
+  /// Sends a thumbs up (1) / down (-1) / clear (0). Optimistic — the local
+  /// thread updates first, then we revert on failure.
+  Future<void> rateMessage({
+    required String messageId,
+    required int rating,
+  }) async {
+    final currentState = state;
+    if (currentState is! TandyLoaded) return;
+
+    final previousMessages = currentState.messages;
+    final updatedMessages = previousMessages
+        .map((m) => m.messageId == messageId
+            ? m.copyWithRating(rating == 0 ? null : rating)
+            : m)
+        .toList();
+    final updatedThread = TandyThread(
+      conversationId: currentState.thread.conversationId,
+      createdAt: currentState.thread.createdAt,
+      language: currentState.thread.language,
+      messages: updatedMessages,
+    );
+    state = currentState.copyWith(thread: updatedThread);
+
+    final result =
+        await _repository.rateMessage(messageId: messageId, rating: rating);
+
+    result.when(
+      success: (_) { /* server confirmed; nothing more to do */ },
+      failure: (exception) {
+        AppLogger.error(
+          'Failed to rate Tandy message',
+          operation: _tag,
+          error: exception,
+        );
+        // Revert
+        final loadedState = state;
+        if (loadedState is! TandyLoaded) return;
+        final reverted = TandyThread(
+          conversationId: loadedState.thread.conversationId,
+          createdAt: loadedState.thread.createdAt,
+          language: loadedState.thread.language,
+          messages: previousMessages,
+        );
+        state = loadedState.copyWith(thread: reverted);
+      },
+    );
+  }
 }

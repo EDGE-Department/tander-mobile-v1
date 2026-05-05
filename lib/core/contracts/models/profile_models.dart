@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 
 /// Controls who can see a user's profile.
 const profileVisibilityPublic = 'PUBLIC';
-const profileVisibilityConnectionsOnly = 'CONNECTIONS_ONLY';
+const profileVisibilityMatchesOnly = 'MATCHES_ONLY';
 const profileVisibilityPrivate = 'PRIVATE';
 
 typedef ProfileVisibility = String;
@@ -21,7 +21,6 @@ typedef ProfileVisibility = String;
 class UserProfile {
   const UserProfile({
     required this.userId,
-    required this.username,
     required this.firstName,
     required this.isOnline,
     required this.isVerified,
@@ -51,7 +50,6 @@ class UserProfile {
   });
 
   final String userId;
-  final String username;
   final String firstName;
   final String? middleName;
   final String? lastName;
@@ -90,10 +88,65 @@ class UserProfile {
   int get hashCode => userId.hashCode;
 
   @override
-  String toString() => 'UserProfile(userId: $userId, username: $username)';
+  String toString() => 'UserProfile(userId: $userId, firstName: $firstName)';
 }
 
 // ── Settings Models ──────────────────────────────────────────
+
+@immutable
+class UserSettings {
+  const UserSettings({
+    required this.showOnline,
+    required this.showLastSeen,
+    required this.showProfileViews,
+    required this.showAge,
+    required this.readReceipts,
+    required this.profileVisibility,
+    required this.discoveryVisible,
+    required this.discoveryMinAge,
+    required this.discoveryMaxAge,
+    required this.discoveryMaxDistanceKm,
+    required this.notifyMessages,
+    required this.notifyMatches,
+    required this.notifyProfileViews,
+    required this.notifyCommunity,
+    required this.notifyTandy,
+    required this.notifyCalls,
+    this.quietHoursStart,
+    this.quietHoursEnd,
+    required this.twoFactorEnabled,
+    required this.consentMarketing,
+    required this.consentAdPersonalization,
+    required this.consentTandyMemory,
+    this.familyAlertContactPhone,
+    this.familyAlertContactLabel,
+  });
+
+  final bool showOnline;
+  final bool showLastSeen;
+  final bool showProfileViews;
+  final bool showAge;
+  final bool readReceipts;
+  final ProfileVisibility profileVisibility;
+  final bool discoveryVisible;
+  final int discoveryMinAge;
+  final int discoveryMaxAge;
+  final int discoveryMaxDistanceKm;
+  final bool notifyMessages;
+  final bool notifyMatches;
+  final bool notifyProfileViews;
+  final bool notifyCommunity;
+  final bool notifyTandy;
+  final bool notifyCalls;
+  final String? quietHoursStart;
+  final String? quietHoursEnd;
+  final bool twoFactorEnabled;
+  final bool consentMarketing;
+  final bool consentAdPersonalization;
+  final bool consentTandyMemory;
+  final String? familyAlertContactPhone;
+  final String? familyAlertContactLabel;
+}
 
 @immutable
 class NotificationSettings {
@@ -112,33 +165,6 @@ class NotificationSettings {
   final bool hasTandyReminders;
   final bool hasCallNotifications;
   final bool hasEmailNotifications;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is NotificationSettings &&
-          runtimeType == other.runtimeType &&
-          hasNewMessageNotifs == other.hasNewMessageNotifs &&
-          hasNewConnectionNotifs == other.hasNewConnectionNotifs &&
-          hasCommunityActivityNotifs == other.hasCommunityActivityNotifs &&
-          hasTandyReminders == other.hasTandyReminders &&
-          hasCallNotifications == other.hasCallNotifications &&
-          hasEmailNotifications == other.hasEmailNotifications;
-
-  @override
-  int get hashCode => Object.hash(
-        hasNewMessageNotifs,
-        hasNewConnectionNotifs,
-        hasCommunityActivityNotifs,
-        hasTandyReminders,
-        hasCallNotifications,
-        hasEmailNotifications,
-      );
-
-  @override
-  String toString() => 'NotificationSettings('
-      'messages: $hasNewMessageNotifs, '
-      'connections: $hasNewConnectionNotifs)';
 }
 
 @immutable
@@ -154,28 +180,6 @@ class PrivacySettings {
   final bool showsOnlineStatus;
   final bool showsLastSeen;
   final bool allowsConnectionRequests;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is PrivacySettings &&
-          runtimeType == other.runtimeType &&
-          profileVisibility == other.profileVisibility &&
-          showsOnlineStatus == other.showsOnlineStatus &&
-          showsLastSeen == other.showsLastSeen &&
-          allowsConnectionRequests == other.allowsConnectionRequests;
-
-  @override
-  int get hashCode => Object.hash(
-        profileVisibility,
-        showsOnlineStatus,
-        showsLastSeen,
-        allowsConnectionRequests,
-      );
-
-  @override
-  String toString() =>
-      'PrivacySettings(visibility: $profileVisibility)';
 }
 
 @immutable
@@ -187,21 +191,6 @@ class SecuritySettings {
 
   final bool isTwoFactorEnabled;
   final List<ActiveSession> activeSessions;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SecuritySettings &&
-          runtimeType == other.runtimeType &&
-          isTwoFactorEnabled == other.isTwoFactorEnabled;
-
-  @override
-  int get hashCode => isTwoFactorEnabled.hashCode;
-
-  @override
-  String toString() => 'SecuritySettings('
-      'twoFactor: $isTwoFactorEnabled, '
-      'sessions: ${activeSessions.length})';
 }
 
 @immutable
@@ -217,20 +206,6 @@ class ActiveSession {
   final String device;
   final DateTime lastActiveAt;
   final bool isCurrent;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ActiveSession &&
-          runtimeType == other.runtimeType &&
-          sessionId == other.sessionId;
-
-  @override
-  int get hashCode => sessionId.hashCode;
-
-  @override
-  String toString() =>
-      'ActiveSession(id: $sessionId, device: $device)';
 }
 
 @immutable
@@ -248,30 +223,4 @@ class DiscoverySettings {
   final int maxAge;
   final int maxDistanceKm;
   final String? genderPreference;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DiscoverySettings &&
-          runtimeType == other.runtimeType &&
-          isDiscoverable == other.isDiscoverable &&
-          minAge == other.minAge &&
-          maxAge == other.maxAge &&
-          maxDistanceKm == other.maxDistanceKm &&
-          genderPreference == other.genderPreference;
-
-  @override
-  int get hashCode => Object.hash(
-        isDiscoverable,
-        minAge,
-        maxAge,
-        maxDistanceKm,
-        genderPreference,
-      );
-
-  @override
-  String toString() => 'DiscoverySettings('
-      'discoverable: $isDiscoverable, '
-      'age: $minAge-$maxAge, '
-      'distance: ${maxDistanceKm}km)';
 }

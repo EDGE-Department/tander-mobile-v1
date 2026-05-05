@@ -94,9 +94,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
           ),
           // White card content
           Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFFBF8),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFFFFFBF8)),
             child: Padding(
               padding: padding,
               child: Column(
@@ -169,32 +167,19 @@ class _LoginFormCardState extends State<LoginFormCard> {
             textInputAction: TextInputAction.done,
           ),
           const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              // Web: bg-gray-50/80 = rgba(249,250,251,0.80)
-              color: const Color(0xCCF9FAFB),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                // Web: border-gray-100/50
-                color: const Color(0x80F3F4F6),
-                width: 2,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: AgreementCheckboxes(
-              agreedToTerms: _agreedToTerms,
-              agreedToPrivacy: _agreedToPrivacy,
-              onTermsChanged: (value) => setState(() {
-                _agreedToTerms = value;
-                _agreementError = false;
-              }),
-              onPrivacyChanged: (value) => setState(() {
-                _agreedToPrivacy = value;
-                _agreementError = false;
-              }),
-              onTermsTapped: () => TermsConditionsSheet.show(context),
-              onPrivacyTapped: () => DataPrivacySheet.show(context),
-            ),
+          AgreementCheckboxes(
+            agreedToTerms: _agreedToTerms,
+            agreedToPrivacy: _agreedToPrivacy,
+            onTermsChanged: (value) => setState(() {
+              _agreedToTerms = value;
+              _agreementError = false;
+            }),
+            onPrivacyChanged: (value) => setState(() {
+              _agreedToPrivacy = value;
+              _agreementError = false;
+            }),
+            onTermsTapped: () => TermsConditionsSheet.show(context),
+            onPrivacyTapped: () => DataPrivacySheet.show(context),
           ),
           AnimatedSize(
             duration: const Duration(milliseconds: 200),
@@ -338,9 +323,7 @@ class _PrivacyNotice extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Colors.grey.shade200),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

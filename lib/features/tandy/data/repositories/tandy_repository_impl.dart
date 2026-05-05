@@ -101,7 +101,7 @@ final class TandyRepositoryImpl implements TandyRepository {
 
   @override
   Future<Result<void>> expandCard({
-    required int messageId,
+    required String messageId,
     required bool isExpanded,
   }) {
     return _runSafe('expandCard', () async {
@@ -109,6 +109,26 @@ final class TandyRepositoryImpl implements TandyRepository {
         messageId: messageId,
         isExpanded: isExpanded,
       );
+    });
+  }
+
+  @override
+  Future<Result<void>> rateMessage({
+    required String messageId,
+    required int rating,
+  }) {
+    return _runSafe('rateMessage', () async {
+      await _remoteDatasource.rateMessage(
+        messageId: messageId,
+        rating: rating,
+      );
+    });
+  }
+
+  @override
+  Future<Result<void>> recordSponsorClick({required String impressionId}) {
+    return _runSafe('recordSponsorClick', () async {
+      await _remoteDatasource.recordSponsorClick(impressionId: impressionId);
     });
   }
 

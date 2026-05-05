@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:tander_flutter_v3/core/contracts/messaging_contracts.dart';
 import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 
@@ -8,43 +6,26 @@ import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 /// All conversions are null-safe with documented fallback behaviour.
 /// The mapper never performs I/O or mutates external state.
 abstract final class MessagingMapper {
-  /// Computes the deterministic room ID for a DM between two users.
-  ///
-  /// Format: `dm_{min(id1,id2)}_{max(id1,id2)}`.
-  static String computeRoomId(int id1, int id2) {
-    return 'dm_${math.min(id1, id2)}_${math.max(id1, id2)}';
-  }
-
   /// Maps a [ConversationDto] to a [ConversationItem] domain model.
-  ///
-  /// [currentUserId] identifies the logged-in user so we can resolve
-  /// which side of the conversation is the "other" participant.
   static ConversationItem mapConversationDto(
     ConversationDto dto, {
     required String currentUserId,
   }) {
-    final currentUserNumericId = int.parse(currentUserId);
-    final isCurrentUserOne = dto.user1Id == currentUserNumericId;
+    final otherUser = dto.otherUser;
+    final primaryPhoto = otherUser?.photos?.firstWhere(
+      (p) => p.primary,
+      orElse: () => otherUser?.photos?.firstOrNull ?? const ConversationPhotoDto(url: ''),
+    );
 
-    final otherUserId = isCurrentUserOne ? dto.user2Id : dto.user1Id;
-    final otherDisplayName = isCurrentUserOne
-        ? (dto.user2DisplayName ?? dto.user2Username)
-        : (dto.user1DisplayName ?? dto.user1Username);
-    final otherPhotoUrl = isCurrentUserOne
-        ? dto.user2ProfilePhotoUrl
-        : dto.user1ProfilePhotoUrl;
-
-    final roomId = computeRoomId(dto.user1Id, dto.user2Id);
-    final updatedAt = DateTime.tryParse(dto.lastMessageAt ?? dto.createdAt) ??
-        DateTime.now();
+    final updatedAt = DateTime.tryParse(dto.lastMessageAt ?? '') ?? DateTime.now();
 
     return ConversationItem(
-      conversationId: dto.id.toString(),
-      roomId: roomId,
+      conversationId: dto.id,
+      roomId: dto.connectionId ?? dto.id,
       participant: ParticipantSummary(
-        userId: otherUserId.toString(),
-        username: otherDisplayName,
-        profilePhotoUrl: otherPhotoUrl,
+        userId: dto.otherUserId,
+        username: otherUser?.firstName ?? 'User',
+        profilePhotoUrl: primaryPhoto?.url,
         isOnline: false,
       ),
       lastMessage: _mapLastMessage(dto),
@@ -56,32 +37,31 @@ abstract final class MessagingMapper {
 
   /// Maps a [MessageDto] to a [MessageItem] domain model.
   static MessageItem mapMessageDto(MessageDto dto) {
-    final roomId = computeRoomId(dto.senderId, dto.receiverId);
-    final mediaType = _parseMediaType(dto.messageType);
+    final mediaType = _parseMediaType(dto.kind);
 
     return MessageItem(
-      messageId: dto.id.toString(),
-      conversationId: dto.conversationId.toString(),
-      roomId: roomId,
-      senderUserId: dto.senderId.toString(),
-      senderUsername: dto.senderUsername,
-      body: dto.content,
+      messageId: dto.id,
+      conversationId: dto.conversationId,
+      roomId: dto.conversationId,
+      senderUserId: dto.senderUserId,
+      senderUsername: null,
+      body: dto.body,
       media: dto.mediaUrl != null && mediaType != null
           ? MessageMedia(
               url: dto.mediaUrl!,
               type: mediaType,
-              durationSeconds: dto.mediaDurationSeconds,
+              durationSeconds: null,
             )
           : null,
       sentAt: DateTime.tryParse(dto.sentAt) ?? DateTime.now(),
-      readAt: dto.status == 'READ'
-          ? (DateTime.tryParse(dto.sentAt) ?? DateTime.now())
-          : null,
-      deliveryState: _parseDeliveryState(dto.status),
-      isDeleted: dto.unsent,
-      isUnsent: dto.unsent,
-      unsentAt: dto.unsentAt != null ? DateTime.tryParse(dto.unsentAt!) : null,
-      unsentByUserId: dto.unsentByUserId?.toString(),
+      readAt: dto.readAt != null ? DateTime.tryParse(dto.readAt!) : null,
+      deliveryState: dto.readAt != null
+          ? MessageDeliveryState.read
+          : (dto.deliveredAt != null ? MessageDeliveryState.delivered : MessageDeliveryState.sent),
+      isDeleted: false,
+      isUnsent: false,
+      unsentAt: null,
+      unsentByUserId: null,
     );
   }
 
@@ -140,28 +120,19 @@ abstract final class MessagingMapper {
   // ---------------------------------------------------------------------------
 
   static LastMessagePreview? _mapLastMessage(ConversationDto dto) {
-    if (dto.lastMessage == null || dto.lastMessageAt == null) return null;
+    if (dto.lastMessageBody == null || dto.lastMessageAt == null) return null;
 
     return LastMessagePreview(
       messageId: '0',
-      body: dto.lastMessage,
+      body: dto.lastMessageBody,
       sentAt: DateTime.tryParse(dto.lastMessageAt!) ?? DateTime.now(),
       senderId: '',
     );
   }
 
-  static MessageDeliveryState _parseDeliveryState(String status) {
-    return switch (status) {
-      'READ' => MessageDeliveryState.read,
-      'DELIVERED' => MessageDeliveryState.delivered,
-      _ => MessageDeliveryState.sent,
-    };
-  }
-
-  static MessageMediaType? _parseMediaType(String? messageType) {
-    final lower = messageType?.toLowerCase();
-    if (lower == 'image') return MessageMediaType.image;
-    if (lower == 'voice') return MessageMediaType.voice;
+  static MessageMediaType? _parseMediaType(String? kind) {
+    if (kind == 'IMAGE') return MessageMediaType.image;
+    if (kind == 'VOICE') return MessageMediaType.voice;
     return null;
   }
 

@@ -13,6 +13,7 @@ import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/account_suspended_dialog.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_connection_showcase.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
@@ -114,8 +115,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context.go(AppRoutes.home);
         case AuthOnboarding(:final phase):
           _navigateToOnboardingPhase(phase);
-        case AuthError():
-          _scrollToTop();
+        case AuthError(:final exception):
+          if (exception.code == 'account-suspended') {
+            AccountSuspendedDialog.show(context, message: exception.message);
+          } else {
+            _scrollToTop();
+          }
         case AuthInitial():
         case AuthLoading():
         case AuthUnauthenticated():
@@ -153,8 +158,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState is AuthLoading;
+    // Suppress the inline error banner when the suspended modal is taking
+    // over — otherwise the user sees both at once.
     final errorMessage = authState is AuthError
-        ? authState.exception.userMessage
+        ? (authState.exception.code == 'account-suspended'
+            ? null
+            : authState.exception.userMessage)
         : null;
 
     final screenSize = MediaQuery.sizeOf(context);

@@ -8,7 +8,7 @@ part of 'tandy_contracts.dart';
 
 TandyMessageDto _$TandyMessageDtoFromJson(Map<String, dynamic> json) =>
     TandyMessageDto(
-      id: (json['id'] as num).toInt(),
+      id: json['id'] as String,
       role: json['role'] as String,
       content: json['content'] as String,
       timestamp: json['timestamp'] as String,
@@ -23,6 +23,7 @@ TandyMessageDto _$TandyMessageDtoFromJson(Map<String, dynamic> json) =>
       detectedLanguage: json['detectedLanguage'] as String?,
       domain: json['domain'] as String?,
       cardExpanded: json['cardExpanded'] as bool?,
+      rating: (json['rating'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$TandyMessageDtoToJson(TandyMessageDto instance) =>
@@ -38,6 +39,7 @@ Map<String, dynamic> _$TandyMessageDtoToJson(TandyMessageDto instance) =>
       'detectedLanguage': instance.detectedLanguage,
       'domain': instance.domain,
       'cardExpanded': instance.cardExpanded,
+      'rating': instance.rating,
     };
 
 QuickActionDto _$QuickActionDtoFromJson(Map<String, dynamic> json) =>
@@ -52,8 +54,8 @@ Map<String, dynamic> _$QuickActionDtoToJson(QuickActionDto instance) =>
 TandyConversationDto _$TandyConversationDtoFromJson(
   Map<String, dynamic> json,
 ) => TandyConversationDto(
-  id: (json['id'] as num).toInt(),
-  language: json['language'] as String,
+  id: json['id'] as String,
+  language: json['language'] as String?,
   messages: (json['messages'] as List<dynamic>)
       .map((e) => TandyMessageDto.fromJson(e as Map<String, dynamic>))
       .toList(),

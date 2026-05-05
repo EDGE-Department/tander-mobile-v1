@@ -8,77 +8,95 @@ part of 'messaging_contracts.dart';
 
 ConversationDto _$ConversationDtoFromJson(Map<String, dynamic> json) =>
     ConversationDto(
-      id: (json['id'] as num).toInt(),
-      user1Id: (json['user1Id'] as num).toInt(),
-      user1Username: json['user1Username'] as String,
-      user2Id: (json['user2Id'] as num).toInt(),
-      user2Username: json['user2Username'] as String,
-      createdAt: json['createdAt'] as String,
-      unreadCount: (json['unreadCount'] as num).toInt(),
-      active: json['active'] as bool,
-      muted: json['muted'] as bool,
-      user1DisplayName: json['user1DisplayName'] as String?,
-      user1ProfilePhotoUrl: json['user1ProfilePhotoUrl'] as String?,
-      user2DisplayName: json['user2DisplayName'] as String?,
-      user2ProfilePhotoUrl: json['user2ProfilePhotoUrl'] as String?,
+      id: json['id'] as String,
+      otherUserId: json['otherUserId'] as String,
+      connectionId: json['connectionId'] as String?,
+      otherUser: json['otherUser'] == null
+          ? null
+          : ConversationOtherUserDto.fromJson(
+              json['otherUser'] as Map<String, dynamic>,
+            ),
       lastMessageAt: json['lastMessageAt'] as String?,
-      lastMessage: json['lastMessage'] as String?,
+      lastMessageBody: json['lastMessageBody'] as String?,
+      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
+      muted: json['muted'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ConversationDtoToJson(ConversationDto instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'user1Id': instance.user1Id,
-      'user1Username': instance.user1Username,
-      'user1DisplayName': instance.user1DisplayName,
-      'user1ProfilePhotoUrl': instance.user1ProfilePhotoUrl,
-      'user2Id': instance.user2Id,
-      'user2Username': instance.user2Username,
-      'user2DisplayName': instance.user2DisplayName,
-      'user2ProfilePhotoUrl': instance.user2ProfilePhotoUrl,
-      'createdAt': instance.createdAt,
+      'connectionId': instance.connectionId,
+      'otherUserId': instance.otherUserId,
+      'otherUser': instance.otherUser,
       'lastMessageAt': instance.lastMessageAt,
-      'lastMessage': instance.lastMessage,
+      'lastMessageBody': instance.lastMessageBody,
       'unreadCount': instance.unreadCount,
-      'active': instance.active,
       'muted': instance.muted,
     };
 
+ConversationOtherUserDto _$ConversationOtherUserDtoFromJson(
+  Map<String, dynamic> json,
+) => ConversationOtherUserDto(
+  id: json['id'] as String,
+  firstName: json['firstName'] as String?,
+  age: (json['age'] as num?)?.toInt(),
+  bio: json['bio'] as String?,
+  photos: (json['photos'] as List<dynamic>?)
+      ?.map((e) => ConversationPhotoDto.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$ConversationOtherUserDtoToJson(
+  ConversationOtherUserDto instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'firstName': instance.firstName,
+  'age': instance.age,
+  'bio': instance.bio,
+  'photos': instance.photos,
+};
+
+ConversationPhotoDto _$ConversationPhotoDtoFromJson(
+  Map<String, dynamic> json,
+) => ConversationPhotoDto(
+  url: json['url'] as String,
+  primary: json['primary'] as bool? ?? false,
+  sortOrder: (json['sortOrder'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$ConversationPhotoDtoToJson(
+  ConversationPhotoDto instance,
+) => <String, dynamic>{
+  'url': instance.url,
+  'primary': instance.primary,
+  'sortOrder': instance.sortOrder,
+};
+
 MessageDto _$MessageDtoFromJson(Map<String, dynamic> json) => MessageDto(
-  id: (json['id'] as num).toInt(),
-  conversationId: (json['conversationId'] as num).toInt(),
-  senderId: (json['senderId'] as num).toInt(),
-  senderUsername: json['senderUsername'] as String,
-  receiverId: (json['receiverId'] as num).toInt(),
-  receiverUsername: json['receiverUsername'] as String,
+  id: json['id'] as String,
+  conversationId: json['conversationId'] as String,
+  senderUserId: json['senderUserId'] as String,
+  kind: json['kind'] as String,
   sentAt: json['sentAt'] as String,
-  status: json['status'] as String,
-  content: json['content'] as String?,
-  messageType: json['messageType'] as String?,
+  body: json['body'] as String?,
   mediaUrl: json['mediaUrl'] as String?,
-  mediaDurationSeconds: (json['mediaDurationSeconds'] as num?)?.toInt(),
-  unsent: json['unsent'] as bool? ?? false,
-  unsentAt: json['unsentAt'] as String?,
-  unsentByUserId: (json['unsentByUserId'] as num?)?.toInt(),
+  mediaContentType: json['mediaContentType'] as String?,
+  deliveredAt: json['deliveredAt'] as String?,
+  readAt: json['readAt'] as String?,
 );
 
 Map<String, dynamic> _$MessageDtoToJson(MessageDto instance) =>
     <String, dynamic>{
       'id': instance.id,
       'conversationId': instance.conversationId,
-      'senderId': instance.senderId,
-      'senderUsername': instance.senderUsername,
-      'receiverId': instance.receiverId,
-      'receiverUsername': instance.receiverUsername,
-      'content': instance.content,
-      'sentAt': instance.sentAt,
-      'status': instance.status,
-      'messageType': instance.messageType,
+      'senderUserId': instance.senderUserId,
+      'kind': instance.kind,
+      'body': instance.body,
       'mediaUrl': instance.mediaUrl,
-      'mediaDurationSeconds': instance.mediaDurationSeconds,
-      'unsent': instance.unsent,
-      'unsentAt': instance.unsentAt,
-      'unsentByUserId': instance.unsentByUserId,
+      'mediaContentType': instance.mediaContentType,
+      'sentAt': instance.sentAt,
+      'deliveredAt': instance.deliveredAt,
+      'readAt': instance.readAt,
     };
 
 SendMessageRequestDto _$SendMessageRequestDtoFromJson(

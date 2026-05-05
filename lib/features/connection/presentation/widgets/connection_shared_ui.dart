@@ -1,7 +1,7 @@
 /// Shared UI components for the Connection screen.
 ///
 /// Extracted to keep connection_screen.dart under 400 lines.
-/// Contains: StaggeredEntrance, SectionLabel, TabEmptyState.
+/// Contains: StaggeredEntrance, SectionLabel, TabEmptyState, ConnectionErrorState.
 library;
 
 import 'package:flutter/material.dart';
@@ -48,12 +48,10 @@ class _StaggeredEntranceState extends State<StaggeredEntrance>
     _opacity = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: AppCurves.premiumEase),
     );
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: AppCurves.premiumEase),
-    );
+    _slide = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _controller, curve: AppCurves.premiumEase),
+        );
 
     Future<void>.delayed(
       Duration(milliseconds: widget.index * widget.delayMilliseconds),
@@ -73,10 +71,7 @@ class _StaggeredEntranceState extends State<StaggeredEntrance>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacity,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
@@ -99,8 +94,7 @@ class SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label =
-        count == 1 ? '1 $noun' : '$count ${plural ?? '${noun}s'}';
+    final label = count == 1 ? '1 $noun' : '$count ${plural ?? '${noun}s'}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -289,6 +283,222 @@ class TabEmptyState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class RefreshableTabEmptyState extends StatelessWidget {
+  const RefreshableTabEmptyState({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onRefresh,
+    this.actionLabel,
+    this.onAction,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final Future<void> Function() onRefresh;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppColors.primary,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: TabEmptyState(
+                  icon: icon,
+                  title: title,
+                  description: description,
+                  actionLabel: actionLabel,
+                  onAction: onAction,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ConnectionErrorState extends StatelessWidget {
+  const ConnectionErrorState({
+    required this.title,
+    required this.description,
+    required this.onRetry,
+    super.key,
+  });
+
+  final String title;
+  final String description;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.xxxl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildLayeredErrorIcon(),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              title,
+              style: AppTypography.h2.copyWith(fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Text(
+                description,
+                style: AppTypography.body.copyWith(
+                  color: AppColors.textMuted,
+                  height: 1.6,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            GestureDetector(
+              onTap: onRetry,
+              child: Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: const LinearGradient(
+                    begin: Alignment(-0.7, -1),
+                    end: Alignment(0.7, 1),
+                    colors: [Color(0xFFF07020), Color(0xFFE67E22)],
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x40E67E22),
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.refresh_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Try again',
+                      style: AppTypography.body.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLayeredErrorIcon() {
+    return SizedBox(
+      width: 112,
+      height: 112,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Transform.rotate(
+            angle: 0.10,
+            child: Container(
+              width: 112,
+              height: 112,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                color: AppColors.danger.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Transform.rotate(
+            angle: -0.08,
+            child: Container(
+              width: 112,
+              height: 112,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                color: AppColors.primary.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: AppColors.danger.withValues(alpha: 0.10),
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14C0392B),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  size: 38,
+                  color: AppColors.danger,
+                ),
+                Positioned(
+                  top: 14,
+                  right: 14,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.refresh_rounded,
+                      size: 12,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

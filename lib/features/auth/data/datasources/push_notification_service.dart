@@ -111,9 +111,9 @@ final class PushNotificationService {
         return;
       }
 
-      await _dioClient.post<Map<String, Object?>>(
-        ApiEndpoints.unregisterToken,
-        data: {'deviceToken': fcmToken},
+      final encodedToken = Uri.encodeComponent(fcmToken);
+      await _dioClient.delete<void>(
+        '${ApiEndpoints.unregisterToken}?token=$encodedToken',
       );
 
       AppLogger.info(

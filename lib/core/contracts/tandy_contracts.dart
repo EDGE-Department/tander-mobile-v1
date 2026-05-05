@@ -30,12 +30,14 @@ class TandyMessageDto {
     this.detectedLanguage,
     this.domain,
     this.cardExpanded,
+    this.rating,
   });
 
   factory TandyMessageDto.fromJson(Map<String, Object?> json) =>
       _$TandyMessageDtoFromJson(json);
 
-  final int id;
+  /// UUID — backend serialises as string.
+  final String id;
 
   /// 'user' or 'assistant'
   final String role;
@@ -50,6 +52,9 @@ class TandyMessageDto {
   final String? detectedLanguage;
   final String? domain;
   final bool? cardExpanded;
+
+  /// User's rating on a Tandy reply: 1 (up), -1 (down), or null.
+  final int? rating;
 
   Map<String, Object?> toJson() => _$TandyMessageDtoToJson(this);
 }
@@ -94,8 +99,9 @@ class TandyConversationDto {
   factory TandyConversationDto.fromJson(Map<String, Object?> json) =>
       _$TandyConversationDtoFromJson(json);
 
-  final int id;
-  final String language;
+  /// UUID — backend serialises as string.
+  final String id;
+  final String? language;
   final List<TandyMessageDto> messages;
   final String createdAt;
   final String updatedAt;

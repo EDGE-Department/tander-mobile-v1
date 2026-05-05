@@ -259,18 +259,16 @@ class _InitialsFallback extends StatelessWidget {
 
 // ── Identity text ──────────────────────────────────────────────────────
 
-/// Display name and username with online status indicator.
+/// Display name with online status indicator.
 class HeroIdentityText extends StatelessWidget {
   const HeroIdentityText({
     required this.displayName,
-    required this.username,
     required this.isOnline,
     required this.isTablet,
     super.key,
   });
 
   final String displayName;
-  final String username;
   final bool isOnline;
   final bool isTablet;
 
@@ -299,16 +297,6 @@ class HeroIdentityText extends StatelessWidget {
           mainAxisAlignment: rowAlignment,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(
-              child: Text(
-                '@$username',
-                style: AppTypography.bodySm.copyWith(
-                  color: AppColors.textMuted,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
             Text(
               isOnline ? 'Online' : 'Offline',
               style: AppTypography.caption.copyWith(

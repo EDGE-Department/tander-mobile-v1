@@ -178,7 +178,7 @@ class MessageItem {
   final String conversationId;
   final String roomId;
   final String senderUserId;
-  final String senderUsername;
+  final String? senderUsername;
   final String? senderPhotoUrl;
   final String? body;
   final MessageMedia? media;

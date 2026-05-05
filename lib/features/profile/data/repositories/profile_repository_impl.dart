@@ -100,98 +100,27 @@ final class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   // ---------------------------------------------------------------------------
-  // Notification settings
+  // Settings (Unified)
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Result<NotificationSettings>> fetchNotificationSettings() {
-    return _runSafe('fetchNotificationSettings', () async {
-      final response = await _remoteDatasource.fetchNotificationSettings();
-      final body = _requireResponseBody(response.data, 'notification settings');
-      return ProfileMapper.mapNotificationSettingsDto(
-        NotificationSettingsDto.fromJson(body),
+  Future<Result<UserSettings>> fetchUserSettings() {
+    return _runSafe('fetchUserSettings', () async {
+      final response = await _remoteDatasource.fetchUserSettings();
+      final body = _requireResponseBody(response.data, 'user settings');
+      final unwrapped = _unwrapResponse(body);
+      return ProfileMapper.mapUserSettingsDto(
+        UserSettingsDto.fromJson(unwrapped),
       );
     });
   }
 
   @override
-  Future<Result<void>> updateNotificationSettings({
-    required NotificationSettingsDto settings,
+  Future<Result<void>> updateUserSettings({
+    required UpdateSettingsRequestDto request,
   }) {
-    return _runSafe('updateNotificationSettings', () async {
-      await _remoteDatasource.updateNotificationSettings(settings: settings);
-    });
-  }
-
-  // ---------------------------------------------------------------------------
-  // Privacy settings
-  // ---------------------------------------------------------------------------
-
-  @override
-  Future<Result<PrivacySettings>> fetchPrivacySettings() {
-    return _runSafe('fetchPrivacySettings', () async {
-      final response = await _remoteDatasource.fetchPrivacySettings();
-      final body = _requireResponseBody(response.data, 'privacy settings');
-      return ProfileMapper.mapPrivacySettingsDto(
-        PrivacySettingsDto.fromJson(body),
-      );
-    });
-  }
-
-  @override
-  Future<Result<void>> updatePrivacySettings({
-    required PrivacySettingsDto settings,
-  }) {
-    return _runSafe('updatePrivacySettings', () async {
-      await _remoteDatasource.updatePrivacySettings(settings: settings);
-    });
-  }
-
-  // ---------------------------------------------------------------------------
-  // Security settings
-  // ---------------------------------------------------------------------------
-
-  @override
-  Future<Result<SecuritySettings>> fetchSecuritySettings() {
-    return _runSafe('fetchSecuritySettings', () async {
-      final response = await _remoteDatasource.fetchSecuritySettings();
-      final body = _requireResponseBody(response.data, 'security settings');
-      return ProfileMapper.mapSecuritySettingsDto(
-        SecuritySettingsDto.fromJson(body),
-      );
-    });
-  }
-
-  @override
-  Future<Result<void>> updateSecuritySettings({
-    required SecuritySettingsDto settings,
-  }) {
-    return _runSafe('updateSecuritySettings', () async {
-      await _remoteDatasource.updateSecuritySettings(settings: settings);
-    });
-  }
-
-  // ---------------------------------------------------------------------------
-  // Discovery settings
-  // ---------------------------------------------------------------------------
-
-  @override
-  Future<Result<DiscoverySettings>> fetchDiscoverySettings() {
-    return _runSafe('fetchDiscoverySettings', () async {
-      final response = await _remoteDatasource.fetchDiscoverySettings();
-      final body = _requireResponseBody(response.data, 'discovery settings');
-      return ProfileMapper.mapDiscoverySettingsDto(
-        DiscoverySettingsDto.fromJson(body),
-      );
-    });
-  }
-
-  @override
-  Future<Result<void>> updateDiscoverySettings({
-    required DiscoverySettingsDto settings,
-  }) {
-    return _runSafe('updateDiscoverySettings', () async {
-      await _remoteDatasource.updateDiscoverySettings(settings: settings);
+    return _runSafe('updateUserSettings', () async {
+      await _remoteDatasource.updateUserSettings(request: request);
     });
   }
 
@@ -256,7 +185,8 @@ final class ProfileRepositoryImpl implements ProfileRepository {
   /// Throws [FormatException] when the body is null.
   UserProfile _mapProfileResponse(Map<String, Object?>? responseBody) {
     final body = _requireResponseBody(responseBody, 'profile');
-    final dto = UserProfileDto.fromJson(body);
+    final unwrapped = _unwrapResponse(body);
+    final dto = UserProfileDto.fromJson(unwrapped);
     return ProfileMapper.mapUserProfileDto(dto);
   }
 
@@ -268,6 +198,15 @@ final class ProfileRepositoryImpl implements ProfileRepository {
   ) {
     if (body == null) {
       throw FormatException('Empty response body from $endpointLabel endpoint');
+    }
+    return body;
+  }
+
+  /// Unwraps the backend's standard `{success, data}` wrapper.
+  /// If the response is already unwrapped (no `data` key), returns as-is.
+  Map<String, Object?> _unwrapResponse(Map<String, Object?> body) {
+    if (body.containsKey('data') && body['data'] is Map<String, Object?>) {
+      return body['data'] as Map<String, Object?>;
     }
     return body;
   }

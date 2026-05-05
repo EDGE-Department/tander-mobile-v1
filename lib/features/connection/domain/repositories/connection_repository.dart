@@ -28,4 +28,13 @@ abstract interface class ConnectionRepository {
 
   /// Removes an existing connection (unfriend).
   Future<Result<void>> removeConnection({required String matchId});
+
+  /// Fetches the list of blocked users.
+  Future<Result<PaginatedResult<ConnectionSummary>>> fetchBlockedUsers();
+
+  /// Blocks a user (hides them from discovery, chat, etc.).
+  Future<Result<void>> blockUser({required String connectionId});
+
+  /// Unmatches (unfriends) a user.
+  Future<Result<void>> unmatchUser({required String connectionId});
 }

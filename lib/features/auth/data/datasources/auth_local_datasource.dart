@@ -136,8 +136,8 @@ final class AuthLocalDatasource {
   static AuthSession _authSessionFromMap(Map<String, Object?> map) {
     final rawId = map['userId'];
     final userId = switch (rawId) {
-      final int intId => intId,
-      final String stringId => int.parse(stringId),
+      final String stringId when stringId.isNotEmpty => stringId,
+      final int intId => intId.toString(),
       _ => throw FormatException('Invalid cached userId: $rawId'),
     };
 

@@ -142,13 +142,17 @@ class _AuthorHeader extends StatelessWidget {
                   Row(
                     children: [
                       // Web: text-[12px] text-text-muted font-bold uppercase tracking-[0.12em]
-                      Text(
-                        _formatPostTime(createdAt).toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.12 * 12,
-                          color: AppColors.textMuted,
+                      Flexible(
+                        child: Text(
+                          _formatPostTime(createdAt).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.12 * 12,
+                            color: AppColors.textMuted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -166,9 +170,9 @@ class _AuthorHeader extends StatelessWidget {
                       Text(
                         'NEIGHBOR',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 0.12 * 12,
+                          letterSpacing: 0.08 * 11,
                           color: AppColors.primary,
                           fontStyle: FontStyle.italic,
                         ),

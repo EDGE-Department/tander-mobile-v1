@@ -103,7 +103,7 @@ final class TandyRemoteDatasource {
 
   /// Updates the card-expanded state for a specific message.
   Future<void> expandCard({
-    required int messageId,
+    required String messageId,
     required bool isExpanded,
   }) async {
     AppLogger.debug(
@@ -115,6 +115,37 @@ final class TandyRemoteDatasource {
     await _dioClient.patch<Object?>(
       ApiEndpoints.tandyCardExpanded(messageId),
       data: {'expanded': isExpanded},
+    );
+  }
+
+  /// Rates a Tandy reply: 1 = thumbs up, -1 = thumbs down, 0 = clear.
+  Future<void> rateMessage({
+    required String messageId,
+    required int rating,
+  }) async {
+    AppLogger.debug(
+      'Rating Tandy message',
+      operation: '$_tag.rateMessage',
+      context: {'messageId': messageId, 'rating': rating},
+    );
+
+    await _dioClient.post<Object?>(
+      ApiEndpoints.tandyMessageRating(messageId),
+      data: {'rating': rating},
+    );
+  }
+
+  /// Records a tap on a sponsor card CTA. Fire-and-forget — failures swallowed
+  /// so a flaky network never blocks the outbound link the user just tapped.
+  Future<void> recordSponsorClick({required String impressionId}) async {
+    AppLogger.debug(
+      'Recording sponsor click',
+      operation: '$_tag.recordSponsorClick',
+      context: {'impressionId': impressionId},
+    );
+
+    await _dioClient.post<Object?>(
+      ApiEndpoints.tandySponsorImpressionClick(impressionId),
     );
   }
 }

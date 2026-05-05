@@ -14,46 +14,68 @@ part 'messaging_contracts.g.dart';
 class ConversationDto {
   const ConversationDto({
     required this.id,
-    required this.user1Id,
-    required this.user1Username,
-    required this.user2Id,
-    required this.user2Username,
-    required this.createdAt,
-    required this.unreadCount,
-    required this.active,
-    required this.muted,
-    this.user1DisplayName,
-    this.user1ProfilePhotoUrl,
-    this.user2DisplayName,
-    this.user2ProfilePhotoUrl,
+    required this.otherUserId,
+    this.connectionId,
+    this.otherUser,
     this.lastMessageAt,
-    this.lastMessage,
+    this.lastMessageBody,
+    this.unreadCount = 0,
+    this.muted = false,
   });
 
   factory ConversationDto.fromJson(Map<String, Object?> json) =>
       _$ConversationDtoFromJson(json);
 
-  final int id;
-  final int user1Id;
-  final String user1Username;
-  final String? user1DisplayName;
-  final String? user1ProfilePhotoUrl;
-  final int user2Id;
-  final String user2Username;
-  final String? user2DisplayName;
-  final String? user2ProfilePhotoUrl;
-  final String createdAt;
+  final String id;
+  final String? connectionId;
+  final String otherUserId;
+  final ConversationOtherUserDto? otherUser;
   final String? lastMessageAt;
-  final String? lastMessage;
+  final String? lastMessageBody;
   final int unreadCount;
-
-  /// Serialized from Java boolean isActive -> JSON key "active".
-  final bool active;
-
-  /// Serialized from Java boolean isMuted -> JSON key "muted".
   final bool muted;
 
   Map<String, Object?> toJson() => _$ConversationDtoToJson(this);
+}
+
+@JsonSerializable()
+class ConversationOtherUserDto {
+  const ConversationOtherUserDto({
+    required this.id,
+    this.firstName,
+    this.age,
+    this.bio,
+    this.photos,
+  });
+
+  factory ConversationOtherUserDto.fromJson(Map<String, Object?> json) =>
+      _$ConversationOtherUserDtoFromJson(json);
+
+  final String id;
+  final String? firstName;
+  final int? age;
+  final String? bio;
+  final List<ConversationPhotoDto>? photos;
+
+  Map<String, Object?> toJson() => _$ConversationOtherUserDtoToJson(this);
+}
+
+@JsonSerializable()
+class ConversationPhotoDto {
+  const ConversationPhotoDto({
+    required this.url,
+    this.primary = false,
+    this.sortOrder,
+  });
+
+  factory ConversationPhotoDto.fromJson(Map<String, Object?> json) =>
+      _$ConversationPhotoDtoFromJson(json);
+
+  final String url;
+  final bool primary;
+  final int? sortOrder;
+
+  Map<String, Object?> toJson() => _$ConversationPhotoDtoToJson(this);
 }
 
 // ---------------------------------------------------------------------------
@@ -65,41 +87,29 @@ class MessageDto {
   const MessageDto({
     required this.id,
     required this.conversationId,
-    required this.senderId,
-    required this.senderUsername,
-    required this.receiverId,
-    required this.receiverUsername,
+    required this.senderUserId,
+    required this.kind,
     required this.sentAt,
-    required this.status,
-    this.content,
-    this.messageType,
+    this.body,
     this.mediaUrl,
-    this.mediaDurationSeconds,
-    this.unsent = false,
-    this.unsentAt,
-    this.unsentByUserId,
+    this.mediaContentType,
+    this.deliveredAt,
+    this.readAt,
   });
 
   factory MessageDto.fromJson(Map<String, Object?> json) =>
       _$MessageDtoFromJson(json);
 
-  final int id;
-  final int conversationId;
-  final int senderId;
-  final String senderUsername;
-  final int receiverId;
-  final String receiverUsername;
-  final String? content;
-  final String sentAt;
-
-  /// 'SENT', 'DELIVERED', or 'READ'
-  final String status;
-  final String? messageType;
+  final String id;
+  final String conversationId;
+  final String senderUserId;
+  final String kind; // TEXT, IMAGE, VOICE, SYSTEM
+  final String? body;
   final String? mediaUrl;
-  final int? mediaDurationSeconds;
-  final bool unsent;
-  final String? unsentAt;
-  final int? unsentByUserId;
+  final String? mediaContentType;
+  final String sentAt;
+  final String? deliveredAt;
+  final String? readAt;
 
   Map<String, Object?> toJson() => _$MessageDtoToJson(this);
 }

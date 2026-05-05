@@ -178,12 +178,14 @@ class SponsorAdDto {
     this.phoneNumber,
     this.nearestLocation,
     this.disclaimer,
+    this.impressionId,
   });
 
   factory SponsorAdDto.fromJson(Map<String, Object?> json) =>
       _$SponsorAdDtoFromJson(json);
 
-  final int sponsorId;
+  /// UUID — backend serialises as string.
+  final String sponsorId;
   final String sponsorName;
   final String sponsorType;
   final String? sponsorLogoUrl;
@@ -193,6 +195,9 @@ class SponsorAdDto {
   final List<SponsorProductDto> recommendedProducts;
   final SponsorLocationDto? nearestLocation;
   final String? disclaimer;
+
+  /// Echo of the impression row id — client posts back on CTA tap so CTR can be measured.
+  final String? impressionId;
 
   Map<String, Object?> toJson() => _$SponsorAdDtoToJson(this);
 }

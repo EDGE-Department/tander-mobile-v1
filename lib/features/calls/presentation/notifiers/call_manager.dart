@@ -80,7 +80,7 @@ final class CallManager {
     try {
       final datasource = _ref.read(callsRemoteDatasourceProvider);
       final room = await datasource.createRoom(
-        receiverId: parseTargetUserId(targetUserId),
+        receiverId: targetUserId,
         callType: callType,
       );
 

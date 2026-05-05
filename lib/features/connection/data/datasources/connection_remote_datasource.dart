@@ -23,33 +23,33 @@ final class ConnectionRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Fetches incoming connection requests (others who liked the current user).
-  Future<Response<List<Object?>>> fetchIncomingRequests() {
+  Future<Response<dynamic>> fetchIncomingRequests() {
     AppLogger.debug(
       'Fetching incoming requests',
       operation: '$_tag.fetchIncomingRequests',
     );
 
-    return _dioClient.get<List<Object?>>(ApiEndpoints.matchesReceived);
+    return _dioClient.get<dynamic>(ApiEndpoints.matchesReceived);
   }
 
   /// Fetches outgoing connection requests sent by the current user.
-  Future<Response<List<Object?>>> fetchSentRequests() {
+  Future<Response<dynamic>> fetchSentRequests() {
     AppLogger.debug(
       'Fetching sent requests',
       operation: '$_tag.fetchSentRequests',
     );
 
-    return _dioClient.get<List<Object?>>(ApiEndpoints.matchesSent);
+    return _dioClient.get<dynamic>(ApiEndpoints.matchesSent);
   }
 
   /// Fetches all accepted connections (friends).
-  Future<Response<List<Object?>>> fetchConnections() {
+  Future<Response<dynamic>> fetchConnections() {
     AppLogger.debug(
       'Fetching connections',
       operation: '$_tag.fetchConnections',
     );
 
-    return _dioClient.get<List<Object?>>(ApiEndpoints.matchesConnected);
+    return _dioClient.get<dynamic>(ApiEndpoints.matchesConnected);
   }
 
   // -----------------------------------------------------------------------
@@ -58,7 +58,7 @@ final class ConnectionRemoteDatasource {
 
   /// Accepts an incoming connection request identified by [matchId].
   Future<Response<Map<String, Object?>>> acceptRequest({
-    required int matchId,
+    required String matchId,
   }) {
     AppLogger.debug(
       'Accepting connection request',
@@ -73,7 +73,7 @@ final class ConnectionRemoteDatasource {
 
   /// Declines an incoming connection request identified by [matchId].
   Future<Response<Map<String, Object?>>> declineRequest({
-    required int matchId,
+    required String matchId,
   }) {
     AppLogger.debug(
       'Declining connection request',
@@ -87,7 +87,7 @@ final class ConnectionRemoteDatasource {
   }
 
   /// Cancels a sent connection request identified by [matchId].
-  Future<void> cancelRequest({required int matchId}) async {
+  Future<void> cancelRequest({required String matchId}) async {
     AppLogger.debug(
       'Cancelling sent request',
       operation: '$_tag.cancelRequest',
@@ -98,7 +98,7 @@ final class ConnectionRemoteDatasource {
   }
 
   /// Removes an existing connection identified by [matchId].
-  Future<void> removeConnection({required int matchId}) async {
+  Future<void> removeConnection({required String matchId}) async {
     AppLogger.debug(
       'Removing connection',
       operation: '$_tag.removeConnection',
@@ -106,5 +106,47 @@ final class ConnectionRemoteDatasource {
     );
 
     await _dioClient.delete<void>(ApiEndpoints.matchRemove(matchId));
+  }
+
+  // -----------------------------------------------------------------------
+  // Block / Unmatch
+  // -----------------------------------------------------------------------
+
+  /// Fetches the list of blocked users.
+  Future<Response<dynamic>> fetchBlockedUsers() {
+    AppLogger.debug(
+      'Fetching blocked users',
+      operation: '$_tag.fetchBlockedUsers',
+    );
+
+    return _dioClient.get<dynamic>(ApiEndpoints.connectionsBlocked);
+  }
+
+  /// Blocks a user by their connection ID.
+  Future<Response<Map<String, Object?>>> blockUser({
+    required String connectionId,
+  }) {
+    AppLogger.debug(
+      'Blocking user',
+      operation: '$_tag.blockUser',
+      context: {'connectionId': connectionId},
+    );
+
+    return _dioClient.post<Map<String, Object?>>(
+      ApiEndpoints.connectionBlock(connectionId),
+    );
+  }
+
+  /// Unmatches (unfriends) a user by their connection ID.
+  Future<void> unmatchUser({required String connectionId}) async {
+    AppLogger.debug(
+      'Unmatching user',
+      operation: '$_tag.unmatchUser',
+      context: {'connectionId': connectionId},
+    );
+
+    await _dioClient.delete<void>(
+      ApiEndpoints.connectionUnmatch(connectionId),
+    );
   }
 }

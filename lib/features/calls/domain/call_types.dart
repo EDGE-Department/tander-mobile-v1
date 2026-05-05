@@ -336,14 +336,8 @@ int? _parseOptionalInt(Object? raw) {
   return null;
 }
 
-/// Parses a userId string to int for STOMP payloads.
+/// Returns the userId for STOMP payloads.
 ///
-/// The backend expects targetUserId as an integer. Throws if conversion
-/// fails so callers never silently omit the field.
-int parseTargetUserId(String userId) {
-  final parsed = int.tryParse(userId);
-  if (parsed == null) {
-    throw ArgumentError('Invalid targetUserId: "$userId" is not a valid int');
-  }
-  return parsed;
-}
+/// The backend accepts targetUserId as either String or int (via toString).
+/// UUID strings are passed through directly.
+String parseTargetUserId(String userId) => userId;

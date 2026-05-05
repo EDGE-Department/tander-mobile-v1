@@ -23,7 +23,9 @@ final discoverNotifierProvider =
 /// Manages the discover card stack, like/pass actions, pagination,
 /// and auto-refetch when the remaining stack runs low.
 final class DiscoverNotifier extends Notifier<DiscoverState> {
-  late final DiscoverRepository _repository;
+  // Not `late final` — Notifier.build() runs again on every ref.invalidate,
+  // and re-assigning a `late final` throws LateInitializationError.
+  late DiscoverRepository _repository;
 
   static const String _tag = 'DiscoverNotifier';
 
@@ -97,7 +99,7 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
 
     // Fire-and-forget: send the request in the background.
     final sendResult = await _repository.sendConnectionRequest(
-      targetUserId: int.parse(candidate.userId),
+      targetUserId: candidate.userId,
     );
 
     sendResult.when(
@@ -128,7 +130,7 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
     _advanceStack(currentState);
 
     final passResult = await _repository.passOnProfile(
-      targetUserId: int.parse(candidate.userId),
+      targetUserId: candidate.userId,
     );
 
     passResult.when(
@@ -248,7 +250,7 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
 ///
 /// Used by the discover profile screen to load detailed data.
 final discoverProfileProvider = FutureProvider.family
-    .autoDispose<DiscoveryCandidate, int>((ref, userId) async {
+    .autoDispose<DiscoveryCandidate, String>((ref, userId) async {
   final repository = ref.read(discoverRepositoryProvider);
   final fetchResult = await repository.fetchProfile(userId: userId);
 

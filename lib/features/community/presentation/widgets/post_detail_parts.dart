@@ -509,7 +509,7 @@ class PostCommentInput extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final int postId;
+  final String postId;
   final bool isSending;
   final CommunityCommentItem? replyTarget;
   final VoidCallback? onClearReply;

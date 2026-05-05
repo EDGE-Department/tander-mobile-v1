@@ -7,8 +7,8 @@ import 'package:tander_flutter_v3/features/messaging/domain/repositories/messagi
 import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/states/conversations_state.dart';
 
-/// Refresh interval for the conversation list (mirrors web's 15 s).
-const Duration _refreshInterval = Duration(seconds: 15);
+/// Refresh interval for the conversation list.
+const Duration _refreshInterval = Duration(seconds: 3);
 
 // ─── Provider ──────────────────────────────────────────────────────────
 

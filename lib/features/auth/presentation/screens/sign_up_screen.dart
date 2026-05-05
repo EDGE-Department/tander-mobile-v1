@@ -50,24 +50,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
     super.dispose();
   }
 
-  Future<void> _onBack() async {
+  void _onBack() {
     if (_isNavigating) return;
     _isNavigating = true;
     HapticFeedback.lightImpact();
-
-    int minimumAge = 60;
-    try {
-      minimumAge =
-          await ref.read(authNotifierProvider.notifier).getMinimumAge();
-    } catch (_) {
-      // Fallback default.
-    }
-
-    if (!mounted) {
-      _isNavigating = false;
-      return;
-    }
-    context.go('${AppRoutes.idScanner}?minimumAge=$minimumAge');
+    // From the Create Account screen, the back button takes the user
+    // straight to the login screen — they came here intending to sign up
+    // and changing their mind almost always means "actually I have an
+    // account, log me in" rather than re-running ID verification.
+    context.go(AppRoutes.login);
   }
 
   void _onSignIn() {

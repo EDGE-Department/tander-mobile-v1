@@ -212,15 +212,26 @@ class InterestChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Web: `px-5 py-3 text-[15px] font-bold border-2 rounded-2xl`
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: toneBackground(tone),
-        borderRadius: AppRadius.borderFull,
-        border: Border.all(color: toneForeground(tone).withValues(alpha: 0.15)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: toneForeground(tone).withValues(alpha: 0.20),
+          width: 2,
+        ),
         boxShadow: AppShadows.warmXs,
       ),
-      child: Text(label, style: AppTypography.label.copyWith(color: toneForeground(tone))),
+      child: Text(
+        label,
+        style: AppTypography.label.copyWith(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: toneForeground(tone),
+        ),
+      ),
     );
   }
 }

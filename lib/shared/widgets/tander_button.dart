@@ -178,11 +178,18 @@ class _TanderButtonState extends State<TanderButton>
       return [_buildLoader(specs.foregroundColor)];
     }
 
-    final label = Text(
-      widget.label.toUpperCase(),
-      style: _resolveLabelStyle(specs.foregroundColor),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    // Wrap in Flexible so the row's `mainAxisSize: min` doesn't let the
+    // label paint past the button's right edge — without Flexible the
+    // built-in ellipsis never fires (the Text widget renders at intrinsic
+    // width + the row's min-sizing has nowhere to clip).
+    final label = Flexible(
+      child: Text(
+        widget.label.toUpperCase(),
+        style: _resolveLabelStyle(specs.foregroundColor),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
     );
 
     if (widget.icon == null) return [label];

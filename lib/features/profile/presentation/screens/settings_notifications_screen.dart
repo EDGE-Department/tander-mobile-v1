@@ -9,10 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
+import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 import 'package:tander_flutter_v3/shared/widgets/warm_switch.dart';
 
@@ -24,81 +27,73 @@ class _NotificationToggleItem {
     required this.icon,
     required this.label,
     required this.description,
-    required this.defaultValue,
   });
 
   final String id;
   final IconData icon;
   final String label;
   final String description;
-  final bool defaultValue;
 }
 
 const List<_NotificationToggleItem> _toggleItems = [
   _NotificationToggleItem(
-    id: 'messages',
+    id: 'notifyMessages',
     icon: Icons.chat_bubble_outline,
     label: 'New messages',
     description: 'Notify me when I receive a message',
-    defaultValue: true,
   ),
   _NotificationToggleItem(
-    id: 'connections',
+    id: 'notifyMatches',
     icon: Icons.favorite,
     label: 'Connection requests',
     description: 'Notify me when someone wants to connect',
-    defaultValue: true,
   ),
   _NotificationToggleItem(
-    id: 'profileViews',
+    id: 'notifyProfileViews',
     icon: Icons.account_circle,
     label: 'Profile views',
     description: 'Notify me when someone visits my profile',
-    defaultValue: false,
   ),
   _NotificationToggleItem(
-    id: 'community',
+    id: 'notifyCommunity',
     icon: Icons.campaign,
     label: 'Community activity',
     description: 'Replies and reactions to my posts',
-    defaultValue: true,
   ),
   _NotificationToggleItem(
-    id: 'tandy',
+    id: 'notifyTandy',
     icon: Icons.notifications_outlined,
     label: 'Tandy reminders',
     description: 'Daily wellness check-in prompts',
-    defaultValue: true,
   ),
 ];
 
 // ── Screen ──────────────────────────────────────────────────────────────
 
 /// Notification preferences with immediate-save toggles.
-class SettingsNotificationsScreen extends ConsumerStatefulWidget {
+class SettingsNotificationsScreen extends ConsumerWidget {
   const SettingsNotificationsScreen({super.key});
 
-  @override
-  ConsumerState<SettingsNotificationsScreen> createState() =>
-      _SettingsNotificationsScreenState();
-}
+  void _handleToggle(BuildContext context, WidgetRef ref, String toggleId, bool currentValue) {
+    final nextValue = !currentValue;
 
-class _SettingsNotificationsScreenState
-    extends ConsumerState<SettingsNotificationsScreen> {
-  late final Map<String, bool> _toggleState;
-
-  @override
-  void initState() {
-    super.initState();
-    _toggleState = {
-      for (final item in _toggleItems) item.id: item.defaultValue,
-    };
-  }
-
-  void _handleToggle(String toggleId) {
-    setState(() {
-      _toggleState[toggleId] = !(_toggleState[toggleId] ?? false);
-    });
+    switch (toggleId) {
+      case 'notifyMessages':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyMessages: nextValue));
+        break;
+      case 'notifyMatches':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyMatches: nextValue));
+        break;
+      case 'notifyProfileViews':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyProfileViews: nextValue));
+        break;
+      case 'notifyCommunity':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyCommunity: nextValue));
+        break;
+      case 'notifyTandy':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyTandy: nextValue));
+        break;
+    }
 
     TanderToastOverlay.show(
       context,
@@ -111,7 +106,45 @@ class _SettingsNotificationsScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(userSettingsProvider);
+
+    if (settingsAsync.isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          backgroundColor: AppColors.card,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, size: 22),
+            onPressed: () => context.pop(),
+            tooltip: 'Back to settings',
+          ),
+          title: Text('Notifications', style: AppTypography.h3),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          backgroundColor: AppColors.card,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, size: 22),
+            onPressed: () => context.pop(),
+            tooltip: 'Back to settings',
+          ),
+          title: Text('Notifications', style: AppTypography.h3),
+        ),
+        body: const Center(child: Text('Failed to load settings.')),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -149,9 +182,8 @@ class _SettingsNotificationsScreenState
                       icon: _toggleItems[index].icon,
                       label: _toggleItems[index].label,
                       description: _toggleItems[index].description,
-                      isEnabled:
-                          _toggleState[_toggleItems[index].id] ?? false,
-                      onToggle: () => _handleToggle(_toggleItems[index].id),
+                      isEnabled: _getSettingValue(settings, _toggleItems[index].id),
+                      onToggle: () => _handleToggle(context, ref, _toggleItems[index].id, _getSettingValue(settings, _toggleItems[index].id)),
                     ),
                   ],
                 ],
@@ -167,6 +199,23 @@ class _SettingsNotificationsScreenState
         ),
       ),
     );
+  }
+
+  bool _getSettingValue(UserSettings settings, String id) {
+    switch (id) {
+      case 'notifyMessages':
+        return settings.notifyMessages;
+      case 'notifyMatches':
+        return settings.notifyMatches;
+      case 'notifyProfileViews':
+        return settings.notifyProfileViews;
+      case 'notifyCommunity':
+        return settings.notifyCommunity;
+      case 'notifyTandy':
+        return settings.notifyTandy;
+      default:
+        return false;
+    }
   }
 }
 
@@ -234,4 +283,3 @@ class _ToggleRow extends StatelessWidget {
     );
   }
 }
-

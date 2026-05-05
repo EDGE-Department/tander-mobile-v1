@@ -20,7 +20,7 @@ class PostAuthorDto {
   factory PostAuthorDto.fromJson(Map<String, Object?> json) =>
       _$PostAuthorDtoFromJson(json);
 
-  final int userId;
+  final String userId;
   final String? displayName;
   final String? photoUrl;
 
@@ -45,7 +45,7 @@ class CommunityPostDto {
   factory CommunityPostDto.fromJson(Map<String, Object?> json) =>
       _$CommunityPostDtoFromJson(json);
 
-  final int id;
+  final String id;
   final PostAuthorDto author;
   final String? content;
   final List<String> photos;
@@ -74,11 +74,11 @@ class CommunityCommentDto {
   factory CommunityCommentDto.fromJson(Map<String, Object?> json) =>
       _$CommunityCommentDtoFromJson(json);
 
-  final int id;
-  final int postId;
+  final String id;
+  final String postId;
   final PostAuthorDto author;
   final String content;
-  final int? parentCommentId;
+  final String? parentCommentId;
   final int replyCount;
   final String createdAt;
 

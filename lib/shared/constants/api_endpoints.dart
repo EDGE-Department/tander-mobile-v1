@@ -47,11 +47,12 @@ abstract final class ApiEndpoints {
   static const String privacySettings = '/settings/privacy';
   static const String securitySettings = '/settings/security';
   static const String discoverySettings = '/settings/discovery';
+  static const String userSettings = '/user/settings';
 
   // ── Discovery ────────────────────────────────────────────────────────
   static const String discoveryProfiles = '/api/discovery/profiles';
 
-  static String discoveryProfile(int userId) =>
+  static String discoveryProfile(String userId) =>
       '/api/discovery/profile/$userId';
 
   // ── Connections (backend calls them "matches") ───────────────────────
@@ -59,48 +60,62 @@ abstract final class ApiEndpoints {
   static const String matchesSent = '/api/matches/sent';
   static const String matchesConnected = '/api/matches/connected';
 
-  static String matchAccept(int matchId) => '/api/matches/$matchId/accept';
+  static String matchAccept(String matchId) => '/api/matches/$matchId/accept';
 
-  static String matchDecline(int matchId) =>
+  static String matchDecline(String matchId) =>
       '/api/matches/$matchId/decline';
 
-  static String matchCancel(int matchId) => '/api/matches/$matchId/cancel';
+  static String matchCancel(String matchId) => '/api/matches/$matchId/cancel';
 
-  static String matchRemove(int matchId) => '/api/matches/$matchId';
+  static String matchRemove(String matchId) => '/api/matches/$matchId';
 
   static const String swipe = '/api/matches/swipe';
+
+  static const String connectionsBlocked = '/api/matches/blocked';
+
+  static String connectionBlock(String connectionId) =>
+      '/api/matches/$connectionId/block';
+
+  static String connectionUnmatch(String connectionId) =>
+      '/api/matches/$connectionId/unmatch';
 
   // ── Messages ─────────────────────────────────────────────────────────
   static const String conversations = '/chat/conversations';
 
-  static String conversationMessages(int conversationId) =>
+  static String conversationMessages(String conversationId) =>
       '/chat/conversations/$conversationId/messages';
 
   static const String sendMessage = '/chat/messages';
 
-  static String markRead(int conversationId) =>
-      '/chat/conversations/$conversationId/mark-read';
+  static String markRead(String conversationId) =>
+      '/chat/conversations/$conversationId/read';
 
-  static String muteConversation(int conversationId) =>
+  static String muteConversation(String conversationId) =>
       '/chat/conversations/$conversationId/mute';
 
-  static String unmuteConversation(int conversationId) =>
+  static String unmuteConversation(String conversationId) =>
       '/chat/conversations/$conversationId/unmute';
 
-  static String startConversation(int userId) =>
-      '/chat/users/$userId/start-conversation';
+  static String startConversation(String odherUserId) =>
+      '/chat/users/$odherUserId/start-conversation';
 
   static const String sendImageMessage = '/chat/messages/image';
   static const String sendVoiceMessage = '/chat/messages/voice';
 
   // ── Tandy (AI) ──────────────────────────────────────────────────────
-  static const String tandyConversation = '/api/tandy/conversation';
-  static const String tandyGreeting = '/api/tandy/greeting';
-  static const String tandySend = '/api/tandy/send';
-  static const String tandyLanguage = '/api/tandy/language';
+  static const String tandyConversation = '/tandy/conversation';
+  static const String tandyGreeting = '/tandy/greeting';
+  static const String tandySend = '/tandy/send';
+  static const String tandyLanguage = '/tandy/language';
 
-  static String tandyCardExpanded(int messageId) =>
-      '/api/tandy/messages/$messageId/card-expanded';
+  static String tandyCardExpanded(String messageId) =>
+      '/tandy/messages/$messageId/card-expanded';
+
+  static String tandyMessageRating(String messageId) =>
+      '/tandy/messages/$messageId/rating';
+
+  static String tandySponsorImpressionClick(String impressionId) =>
+      '/tandy/sponsor-impressions/$impressionId/click';
 
   // ── Calls ────────────────────────────────────────────────────────────
   static const String createCallRoom = '/api/twilio/video/room';
@@ -113,27 +128,28 @@ abstract final class ApiEndpoints {
   static const String callConfig = '/api/twilio/video/config';
 
   // ── Push notifications ──────────────────────────────────────────────
-  static const String registerToken = '/api/notifications/register-token';
-  static const String registerVoipToken =
-      '/api/notifications/register-voip-token';
-  static const String unregisterToken =
-      '/api/notifications/unregister-token';
-  static const String notificationStatus = '/api/notifications/status';
+  static const String registerToken = '/notifications/devices';
+  static const String registerVoipToken = '/notifications/devices';
+  static const String unregisterToken = '/notifications/devices';
+  static const String notificationStatus = '/notifications/status';
 
   // ── Community ───────────────────────────────────────────────────────
   static const String communityFeed = '/api/community/feed';
 
-  static String communityPost(int postId) =>
+  static String communityPost(String postId) =>
       '/api/community/posts/$postId';
 
   static const String createPost = '/api/community/posts';
 
-  static String postComments(int postId) =>
+  static String postComments(String postId) =>
       '/api/community/posts/$postId/comments';
 
-  static String postReactions(int postId) =>
+  static String postReactions(String postId) =>
       '/api/community/posts/$postId/reactions';
 
-  static String commentReplies(int commentId) =>
+  static String commentReplies(String commentId) =>
       '/api/community/comments/$commentId/replies';
+
+  static String deleteComment(String commentId) =>
+      '/api/community/comments/$commentId';
 }

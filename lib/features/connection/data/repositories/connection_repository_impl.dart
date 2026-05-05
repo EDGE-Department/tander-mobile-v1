@@ -37,7 +37,11 @@ final class ConnectionRepositoryImpl implements ConnectionRepository {
       final dtos = _parseMatchDtoList(response.data);
       return mapListToResult(
         dtos,
-        (dto) => mapMatchDtoToConnectionSummary(dto, _currentUserId),
+        (dto) => mapMatchDtoToConnectionSummary(
+          dto,
+          _currentUserId,
+          expectedState: ConnectionRelationshipState.pendingIncoming,
+        ),
       );
     });
   }
@@ -49,7 +53,11 @@ final class ConnectionRepositoryImpl implements ConnectionRepository {
       final dtos = _parseMatchDtoList(response.data);
       return mapListToResult(
         dtos,
-        (dto) => mapMatchDtoToConnectionSummary(dto, _currentUserId),
+        (dto) => mapMatchDtoToConnectionSummary(
+          dto,
+          _currentUserId,
+          expectedState: ConnectionRelationshipState.pendingOutgoing,
+        ),
       );
     });
   }
@@ -61,7 +69,11 @@ final class ConnectionRepositoryImpl implements ConnectionRepository {
       final dtos = _parseMatchDtoList(response.data);
       return mapListToResult(
         dtos,
-        (dto) => mapMatchDtoToConnectionSummary(dto, _currentUserId),
+        (dto) => mapMatchDtoToConnectionSummary(
+          dto,
+          _currentUserId,
+          expectedState: ConnectionRelationshipState.connected,
+        ),
       );
     });
   }
@@ -73,28 +85,58 @@ final class ConnectionRepositoryImpl implements ConnectionRepository {
   @override
   Future<Result<void>> acceptRequest({required String matchId}) {
     return _runSafe('acceptRequest', () async {
-      await _remoteDatasource.acceptRequest(matchId: int.parse(matchId));
+      await _remoteDatasource.acceptRequest(matchId: matchId);
     });
   }
 
   @override
   Future<Result<void>> declineRequest({required String matchId}) {
     return _runSafe('declineRequest', () async {
-      await _remoteDatasource.declineRequest(matchId: int.parse(matchId));
+      await _remoteDatasource.declineRequest(matchId: matchId);
     });
   }
 
   @override
   Future<Result<void>> cancelRequest({required String matchId}) {
     return _runSafe('cancelRequest', () async {
-      await _remoteDatasource.cancelRequest(matchId: int.parse(matchId));
+      await _remoteDatasource.cancelRequest(matchId: matchId);
     });
   }
 
   @override
   Future<Result<void>> removeConnection({required String matchId}) {
     return _runSafe('removeConnection', () async {
-      await _remoteDatasource.removeConnection(matchId: int.parse(matchId));
+      await _remoteDatasource.removeConnection(matchId: matchId);
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Block / Unmatch
+  // -----------------------------------------------------------------------
+
+  @override
+  Future<Result<PaginatedResult<ConnectionSummary>>> fetchBlockedUsers() {
+    return _runSafe('fetchBlockedUsers', () async {
+      final response = await _remoteDatasource.fetchBlockedUsers();
+      final dtos = _parseMatchDtoList(response.data);
+      return mapListToResult(
+        dtos,
+        (dto) => mapMatchDtoToConnectionSummary(dto, _currentUserId),
+      );
+    });
+  }
+
+  @override
+  Future<Result<void>> blockUser({required String connectionId}) {
+    return _runSafe('blockUser', () async {
+      await _remoteDatasource.blockUser(connectionId: connectionId);
+    });
+  }
+
+  @override
+  Future<Result<void>> unmatchUser({required String connectionId}) {
+    return _runSafe('unmatchUser', () async {
+      await _remoteDatasource.unmatchUser(connectionId: connectionId);
     });
   }
 
@@ -102,13 +144,39 @@ final class ConnectionRepositoryImpl implements ConnectionRepository {
   // Parsing
   // -----------------------------------------------------------------------
 
-  List<MatchDto> _parseMatchDtoList(List<Object?>? rawList) {
-    if (rawList == null || rawList.isEmpty) return const [];
+  List<MatchDto> _parseMatchDtoList(dynamic rawData) {
+    if (rawData == null) return const [];
 
-    return rawList
-        .whereType<Map<String, Object?>>()
-        .map(MatchDto.fromJson)
-        .toList();
+    // Handle direct list response
+    if (rawData is List) {
+      return rawData
+          .whereType<Map<String, dynamic>>()
+          .map((json) => MatchDto.fromJson(Map<String, Object?>.from(json)))
+          .toList();
+    }
+
+    // Handle wrapped responses from backend
+    if (rawData is Map<String, dynamic>) {
+      // Backend wraps in { success: true, data: [...] }
+      final data = rawData['data'];
+      if (data is List) {
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map((json) => MatchDto.fromJson(Map<String, Object?>.from(json)))
+            .toList();
+      }
+
+      // Spring-paginated response: { "content": [...], ... }
+      final content = rawData['content'];
+      if (content is List) {
+        return content
+            .whereType<Map<String, dynamic>>()
+            .map((json) => MatchDto.fromJson(Map<String, Object?>.from(json)))
+            .toList();
+      }
+    }
+
+    return const [];
   }
 
   // -----------------------------------------------------------------------

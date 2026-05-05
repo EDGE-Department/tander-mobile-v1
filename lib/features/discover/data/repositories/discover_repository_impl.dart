@@ -5,6 +5,7 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/core/utils/result.dart';
 import 'package:tander_flutter_v3/features/discover/data/datasources/discover_remote_datasource.dart';
 import 'package:tander_flutter_v3/features/discover/domain/repositories/discover_repository.dart';
+import 'package:tander_flutter_v3/shared/utils/photo_url.dart';
 
 /// Coordinates [DiscoverRemoteDatasource] to fulfil the
 /// [DiscoverRepository] contract.
@@ -37,16 +38,18 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
         filters: filters,
       );
       final body = _requireResponseBody(response.data, 'discovery profiles');
-      return _mapPaginatedResponse(body);
+      final unwrapped = _unwrapResponse(body);
+      return _mapPaginatedResponse(unwrapped);
     });
   }
 
   @override
-  Future<Result<DiscoveryCandidate>> fetchProfile({required int userId}) {
+  Future<Result<DiscoveryCandidate>> fetchProfile({required String userId}) {
     return _runSafe('fetchProfile', () async {
       final response = await _remoteDatasource.fetchProfile(userId: userId);
       final body = _requireResponseBody(response.data, 'discovery profile');
-      final dto = DiscoveryProfileDto.fromJson(body);
+      final unwrapped = _unwrapResponse(body);
+      final dto = DiscoveryProfileDto.fromJson(unwrapped);
       return _mapCandidate(dto);
     });
   }
@@ -56,7 +59,7 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
   // -----------------------------------------------------------------------
 
   @override
-  Future<Result<void>> sendConnectionRequest({required int targetUserId}) {
+  Future<Result<void>> sendConnectionRequest({required String targetUserId}) {
     return _runSafe('sendConnectionRequest', () async {
       await _remoteDatasource.sendConnectionRequest(
         targetUserId: targetUserId,
@@ -65,7 +68,7 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
   }
 
   @override
-  Future<Result<void>> passOnProfile({required int targetUserId}) {
+  Future<Result<void>> passOnProfile({required String targetUserId}) {
     return _runSafe('passOnProfile', () async {
       await _remoteDatasource.passOnProfile(targetUserId: targetUserId);
     });
@@ -105,15 +108,17 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
     final firstName = displayName.split(' ').first;
 
     return DiscoveryCandidate(
-      userId: dto.userId.toString(),
+      userId: dto.userId,
       username: dto.username,
       firstName: firstName,
       age: dto.age,
       city: dto.city,
       country: dto.country,
       bio: dto.bio,
-      profilePhotoUrl: dto.profilePhotoUrl,
-      additionalPhotos: dto.additionalPhotos ?? const [],
+      profilePhotoUrl: resolvePhotoUrl(dto.profilePhotoUrl),
+      additionalPhotos: (dto.additionalPhotos ?? const [])
+          .map((url) => resolvePhotoUrl(url) ?? url)
+          .toList(),
       interests: dto.interests ?? const [],
       isOnline: dto.online,
       hasExistingConnection: dto.matched,
@@ -163,6 +168,15 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
       throw FormatException(
         'Empty response body from $endpointLabel endpoint',
       );
+    }
+    return body;
+  }
+
+  /// Unwraps the backend's standard `{success, data}` wrapper.
+  /// If the response is already unwrapped (no `data` key), returns as-is.
+  Map<String, Object?> _unwrapResponse(Map<String, Object?> body) {
+    if (body.containsKey('data') && body['data'] is Map<String, Object?>) {
+      return body['data'] as Map<String, Object?>;
     }
     return body;
   }

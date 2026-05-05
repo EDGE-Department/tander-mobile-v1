@@ -4,6 +4,7 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/shared/utils/photo_url.dart';
 
 /// Full-screen photo viewer with swipe navigation and pinch-to-zoom.
 ///
@@ -129,7 +130,7 @@ class _PhotoLightboxState extends State<PhotoLightbox> {
       maxScale: 4,
       child: Center(
         child: Image.network(
-          widget.photoUrls[index],
+          resolvePhotoUrl(widget.photoUrls[index]) ?? widget.photoUrls[index],
           fit: BoxFit.contain,
           loadingBuilder: (_, child, progress) {
             if (progress == null) return child;

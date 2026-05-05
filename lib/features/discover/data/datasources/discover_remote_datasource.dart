@@ -59,7 +59,7 @@ final class DiscoverRemoteDatasource {
 
   /// Fetches a single discovery profile by [userId].
   Future<Response<Map<String, Object?>>> fetchProfile({
-    required int userId,
+    required String userId,
   }) {
     AppLogger.debug(
       'Fetching discovery profile',
@@ -73,7 +73,7 @@ final class DiscoverRemoteDatasource {
   }
 
   /// Sends a RIGHT swipe (like / connection request) for [targetUserId].
-  Future<void> sendConnectionRequest({required int targetUserId}) async {
+  Future<void> sendConnectionRequest({required String targetUserId}) async {
     AppLogger.debug(
       'Sending connection request',
       operation: '$_tag.sendConnectionRequest',
@@ -90,7 +90,7 @@ final class DiscoverRemoteDatasource {
   }
 
   /// Sends a LEFT swipe (pass) for [targetUserId].
-  Future<void> passOnProfile({required int targetUserId}) async {
+  Future<void> passOnProfile({required String targetUserId}) async {
     AppLogger.debug(
       'Passing on profile',
       operation: '$_tag.passOnProfile',

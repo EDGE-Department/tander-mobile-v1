@@ -133,133 +133,34 @@ final class ProfileRemoteDatasource {
       context: {'count': photoUrls.length},
     );
 
-    await _dioClient.put<Map<String, Object?>>(
+    await _dioClient.patch<Map<String, Object?>>(
       ApiEndpoints.reorderPhotos,
       data: <String, Object>{'photoUrls': photoUrls},
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Notification settings
+  // Settings (Unified)
   // ---------------------------------------------------------------------------
 
-  /// Fetches notification settings via GET /settings/notifications.
-  Future<Response<Map<String, Object?>>> fetchNotificationSettings() {
+  Future<Response<Map<String, Object?>>> fetchUserSettings() {
     AppLogger.debug(
-      'Fetching notification settings',
-      operation: '$_tag.fetchNotificationSettings',
+      'Fetching user settings',
+      operation: '$_tag.fetchUserSettings',
     );
-
-    return _dioClient.get<Map<String, Object?>>(
-      ApiEndpoints.notificationSettings,
-    );
+    return _dioClient.get<Map<String, Object?>>(ApiEndpoints.userSettings);
   }
 
-  /// Updates notification settings via PUT /settings/notifications.
-  Future<void> updateNotificationSettings({
-    required NotificationSettingsDto settings,
+  Future<void> updateUserSettings({
+    required UpdateSettingsRequestDto request,
   }) async {
     AppLogger.debug(
-      'Updating notification settings',
-      operation: '$_tag.updateNotificationSettings',
+      'Updating user settings',
+      operation: '$_tag.updateUserSettings',
     );
-
-    await _dioClient.put<Map<String, Object?>>(
-      ApiEndpoints.notificationSettings,
-      data: settings.toJson(),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Privacy settings
-  // ---------------------------------------------------------------------------
-
-  /// Fetches privacy settings via GET /settings/privacy.
-  Future<Response<Map<String, Object?>>> fetchPrivacySettings() {
-    AppLogger.debug(
-      'Fetching privacy settings',
-      operation: '$_tag.fetchPrivacySettings',
-    );
-
-    return _dioClient.get<Map<String, Object?>>(
-      ApiEndpoints.privacySettings,
-    );
-  }
-
-  /// Updates privacy settings via PUT /settings/privacy.
-  Future<void> updatePrivacySettings({
-    required PrivacySettingsDto settings,
-  }) async {
-    AppLogger.debug(
-      'Updating privacy settings',
-      operation: '$_tag.updatePrivacySettings',
-    );
-
-    await _dioClient.put<Map<String, Object?>>(
-      ApiEndpoints.privacySettings,
-      data: settings.toJson(),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Security settings
-  // ---------------------------------------------------------------------------
-
-  /// Fetches security settings via GET /settings/security.
-  Future<Response<Map<String, Object?>>> fetchSecuritySettings() {
-    AppLogger.debug(
-      'Fetching security settings',
-      operation: '$_tag.fetchSecuritySettings',
-    );
-
-    return _dioClient.get<Map<String, Object?>>(
-      ApiEndpoints.securitySettings,
-    );
-  }
-
-  /// Updates security settings via PUT /settings/security.
-  Future<void> updateSecuritySettings({
-    required SecuritySettingsDto settings,
-  }) async {
-    AppLogger.debug(
-      'Updating security settings',
-      operation: '$_tag.updateSecuritySettings',
-    );
-
-    await _dioClient.put<Map<String, Object?>>(
-      ApiEndpoints.securitySettings,
-      data: settings.toJson(),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Discovery settings
-  // ---------------------------------------------------------------------------
-
-  /// Fetches discovery settings via GET /settings/discovery.
-  Future<Response<Map<String, Object?>>> fetchDiscoverySettings() {
-    AppLogger.debug(
-      'Fetching discovery settings',
-      operation: '$_tag.fetchDiscoverySettings',
-    );
-
-    return _dioClient.get<Map<String, Object?>>(
-      ApiEndpoints.discoverySettings,
-    );
-  }
-
-  /// Updates discovery settings via PUT /settings/discovery.
-  Future<void> updateDiscoverySettings({
-    required DiscoverySettingsDto settings,
-  }) async {
-    AppLogger.debug(
-      'Updating discovery settings',
-      operation: '$_tag.updateDiscoverySettings',
-    );
-
-    await _dioClient.put<Map<String, Object?>>(
-      ApiEndpoints.discoverySettings,
-      data: settings.toJson(),
+    await _dioClient.patch<Map<String, Object?>>(
+      ApiEndpoints.userSettings,
+      data: request.toJson(),
     );
   }
 
@@ -277,7 +178,7 @@ final class ProfileRemoteDatasource {
       operation: '$_tag.changePassword',
     );
 
-    await _dioClient.put<Map<String, Object?>>(
+    await _dioClient.patch<Map<String, Object?>>(
       ApiEndpoints.changePassword,
       data: ChangePasswordRequestDto(
         currentPassword: oldPassword,

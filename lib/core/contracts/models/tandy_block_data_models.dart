@@ -206,6 +206,8 @@ class SponsorBlockData {
     this.message,
     this.websiteUrl,
     this.phoneNumber,
+    this.impressionId,
+    this.disclaimer,
   });
 
   final String sponsorId;
@@ -216,6 +218,14 @@ class SponsorBlockData {
   final String? websiteUrl;
   final String? phoneNumber;
   final List<SponsorProduct> products;
+
+  /// Echo of the impression row id — set by the recommender so the chat UI can
+  /// post back when the user taps the CTA. Null on legacy/admin-pushed cards.
+  final String? impressionId;
+
+  /// Server-built disclaimer line (localised for the conversation language).
+  /// When null, callers should fall back to a sensible static string.
+  final String? disclaimer;
 
   @override
   bool operator ==(Object other) =>

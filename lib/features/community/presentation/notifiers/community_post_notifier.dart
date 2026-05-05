@@ -13,20 +13,20 @@ import 'package:tander_flutter_v3/features/community/presentation/states/communi
 // ─── Provider family (keyed by postId) ──────────────────────────────
 
 final communityPostNotifierProvider = NotifierProvider.family<
-    CommunityPostNotifier, CommunityPostState, int>(
+    CommunityPostNotifier, CommunityPostState, String>(
   CommunityPostNotifier.new,
 );
 
 // ─── Notifier ──────────────────────────────────────────────────────────
 
 final class CommunityPostNotifier
-    extends FamilyNotifier<CommunityPostState, int> {
+    extends FamilyNotifier<CommunityPostState, String> {
   late final CommunityRepository _repository;
 
   static const String _tag = 'CommunityPostNotifier';
 
   @override
-  CommunityPostState build(int arg) {
+  CommunityPostState build(String arg) {
     _repository = ref.read(communityRepositoryProvider);
 
     Future.microtask(loadPost);
@@ -34,7 +34,7 @@ final class CommunityPostNotifier
     return const CommunityPostLoading();
   }
 
-  int get _postId => arg;
+  String get _postId => arg;
 
   // -----------------------------------------------------------------------
   // Initial load
@@ -114,7 +114,7 @@ final class CommunityPostNotifier
     final createResult = await _repository.createComment(
       postId: _postId,
       content: content,
-      parentCommentId: parentId != null ? int.parse(parentId) : null,
+      parentCommentId: parentId,
     );
 
     createResult.when(
@@ -182,7 +182,7 @@ final class CommunityPostNotifier
     if (currentState is! CommunityPostLoaded) return;
 
     final repliesResult = await _repository.fetchReplies(
-      commentId: int.parse(commentId),
+      commentId: commentId,
     );
 
     repliesResult.when(
@@ -212,7 +212,7 @@ final class CommunityPostNotifier
     if (currentState is! CommunityPostLoaded) return;
 
     final deleteResult = await _repository.deleteComment(
-      commentId: int.parse(commentId),
+      commentId: commentId,
     );
 
     deleteResult.when(

@@ -212,7 +212,14 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
     if (mounted) context.go(AppRoutes.discover);
   }
 
-  void _onSkip() => context.go(AppRoutes.discover);
+  Future<void> _onSkip() async {
+    // Refresh session before navigating so the router sees the updated
+    // registrationPhase from the backend (profile-setup PUT advances it
+    // to COMPLETE). Without this the cached PENDING_PROFILE_SETUP phase
+    // makes the router bounce the user back to onboarding.
+    await ref.read(authNotifierProvider.notifier).refreshSession();
+    if (mounted) context.go(AppRoutes.discover);
+  }
 
   void _setError(String? message) {
     if (mounted) setState(() => _errorMessage = message);
@@ -479,7 +486,7 @@ class _PhotoSetupScreenState extends ConsumerState<PhotoSetupScreen> {
   Widget _buildContinueButton() {
     if (!_hasAtLeastOnePhoto) {
       return const TanderButton(
-        label: 'Add at least 1 photo to continue',
+        label: 'Add a photo to continue',
         onPressed: null,
         variant: TanderButtonVariant.outline,
         isDisabled: true,

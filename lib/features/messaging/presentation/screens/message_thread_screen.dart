@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
+import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/conversations_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/message_thread_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
-import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/states/conversations_state.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/states/message_thread_state.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/message_composer.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/thread_sub_widgets.dart';
-import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
-import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
-import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
 const Color _teal = AppColors.secondary;
@@ -23,7 +22,10 @@ const Color _teal = AppColors.secondary;
 String _computeInitials(String name) {
   final trimmed = name.trim();
   if (trimmed.isEmpty) return '?';
-  final parts = trimmed.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+  final parts = trimmed
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList();
   if (parts.isEmpty) return '?';
   if (parts.length == 1) return parts[0][0].toUpperCase();
   return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
@@ -87,12 +89,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       targetPhotoUrl: participant.profilePhotoUrl,
       callType: callType,
     );
-    if (!context.mounted) return;
-    final callState = ref.read(callNotifierProvider);
-    final roomName = callState.callInfo?.roomName;
-    if (roomName != null) {
-      context.push(AppRoutes.call(roomName));
-    }
+    // Navigation handled by AppShell's call state listener
   }
 
   @override
@@ -106,8 +103,8 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     final conversationsState = ref.watch(conversationsNotifierProvider);
     final conversation = conversationsState is ConversationsLoaded
         ? conversationsState.conversations
-            .where((conv) => conv.conversationId == widget.conversationId)
-            .firstOrNull
+              .where((conv) => conv.conversationId == widget.conversationId)
+              .firstOrNull
         : null;
 
     final participantName = conversation?.participant.username ?? 'Chat';
@@ -126,15 +123,12 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     final headerStatus = isPartnerTyping
         ? 'Typing...'
         : isOnline
-            ? 'Active now'
-            : 'Offline';
+        ? 'Active now'
+        : 'Offline';
 
-    ref.listen(
-      messageThreadNotifierProvider(widget.conversationId),
-      (_, next) {
-        if (next is MessageThreadLoaded) _scrollToBottom();
-      },
-    );
+    ref.listen(messageThreadNotifierProvider(widget.conversationId), (_, next) {
+      if (next is MessageThreadLoaded) _scrollToBottom();
+    });
 
     return Container(
       color: const Color(0xFFF8F1E6),
@@ -149,8 +143,10 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               isTyping: isPartnerTyping,
               isOnline: isOnline,
               onBack: widget.onBack ?? () => context.pop(),
-              onVoiceCall: () => _initiateCall(ref, context, conversation, CallType.audio),
-              onVideoCall: () => _initiateCall(ref, context, conversation, CallType.video),
+              onVoiceCall: () =>
+                  _initiateCall(ref, context, conversation, CallType.audio),
+              onVideoCall: () =>
+                  _initiateCall(ref, context, conversation, CallType.video),
             ),
             Expanded(
               child: _ThreadBody(
@@ -160,11 +156,21 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                 participantPhotoUrl: participantPhotoUrl,
                 scrollController: _scrollController,
                 onUnsend: (messageId) {
-                  ref.read(messageThreadNotifierProvider(widget.conversationId).notifier)
+                  ref
+                      .read(
+                        messageThreadNotifierProvider(
+                          widget.conversationId,
+                        ).notifier,
+                      )
                       .unsendMessage(messageId);
                 },
                 onHide: (messageId) {
-                  ref.read(messageThreadNotifierProvider(widget.conversationId).notifier)
+                  ref
+                      .read(
+                        messageThreadNotifierProvider(
+                          widget.conversationId,
+                        ).notifier,
+                      )
                       .hideMessageForUser(messageId);
                 },
               ),
@@ -214,13 +220,18 @@ class _ThreadHeader extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back, size: 20, color: AppColors.primary),
+            icon: const Icon(
+              Icons.arrow_back,
+              size: 20,
+              color: AppColors.primary,
+            ),
             tooltip: 'Back to conversations',
           ),
           Expanded(
             child: GestureDetector(
               onTap: participantUserId != null
-                  ? () => context.push(AppRoutes.userProfile(participantUserId!))
+                  ? () =>
+                        context.push(AppRoutes.userProfile(participantUserId!))
                   : null,
               child: Row(
                 children: [
@@ -239,7 +250,8 @@ class _ThreadHeader extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.label.copyWith(
-                            fontSize: 15, fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
                             color: const Color(0xFF18110A),
                           ),
                         ),
@@ -248,8 +260,14 @@ class _ThreadHeader extends StatelessWidget {
                           headerStatus,
                           style: AppTypography.caption.copyWith(
                             fontSize: 11.5,
-                            fontWeight: isTyping ? FontWeight.w600 : FontWeight.w500,
-                            color: isTyping ? _teal : isOnline ? const Color(0xFF16803C) : const Color(0xFF8D8072),
+                            fontWeight: isTyping
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: isTyping
+                                ? _teal
+                                : isOnline
+                                ? const Color(0xFF16803C)
+                                : const Color(0xFF8D8072),
                           ),
                         ),
                       ],
@@ -299,15 +317,19 @@ class _HeaderAvatar extends StatelessWidget {
           backgroundColor: const Color(0xFFFFF8EE),
           backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
           child: photoUrl == null
-              ? Text(_computeInitials(name),
-                  style: AppTypography.label.copyWith(color: AppColors.primary))
+              ? Text(
+                  _computeInitials(name),
+                  style: AppTypography.label.copyWith(color: AppColors.primary),
+                )
               : null,
         ),
         if (isOnline)
           Positioned(
-            bottom: 0, right: 0,
+            bottom: 0,
+            right: 0,
             child: Container(
-              width: 10, height: 10,
+              width: 10,
+              height: 10,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.success,
@@ -346,9 +368,11 @@ class _ThreadBody extends StatelessWidget {
     return switch (threadState) {
       MessageThreadLoading() => const ThreadSkeleton(),
       MessageThreadError(:final exception) => Center(
-          child: Text(exception.userMessage,
-              style: AppTypography.bodySm.copyWith(color: AppColors.danger)),
+        child: Text(
+          exception.userMessage,
+          style: AppTypography.bodySm.copyWith(color: AppColors.danger),
         ),
+      ),
       MessageThreadLoaded(:final messages, :final isPartnerTyping) =>
         messages.isEmpty
             ? EmptyThreadWidget(
@@ -368,17 +392,21 @@ class _ThreadBody extends StatelessWidget {
                   }
 
                   final message = messages[index];
-                  final previousMessage =
-                      index > 0 ? messages[index - 1] : null;
+                  final previousMessage = index > 0
+                      ? messages[index - 1]
+                      : null;
                   final nextMessage = index < messages.length - 1
                       ? messages[index + 1]
                       : null;
 
-                  final isGroupStart = previousMessage == null ||
+                  final isGroupStart =
+                      previousMessage == null ||
                       previousMessage.senderUserId != message.senderUserId;
-                  final isGroupEnd = nextMessage == null ||
+                  final isGroupEnd =
+                      nextMessage == null ||
                       nextMessage.senderUserId != message.senderUserId;
-                  final showDate = previousMessage == null ||
+                  final showDate =
+                      previousMessage == null ||
                       isDifferentDay(previousMessage.sentAt, message.sentAt);
 
                   return Column(

@@ -21,10 +21,10 @@ final class CallsRemoteDatasource {
 
   /// Creates a call room on the backend and returns room metadata.
   ///
-  /// [receiverId] must be a valid user ID (int). [callType] is sent as
+  /// [receiverId] is the UUID of the user to call. [callType] is sent as
   /// the backend-expected string (e.g. "AUDIO" or "VIDEO").
   Future<CallRoomResponse> createRoom({
-    required int receiverId,
+    required String receiverId,
     required CallType callType,
   }) async {
     AppLogger.debug(
@@ -148,7 +148,7 @@ final class CallsRemoteDatasource {
   Future<Map<String, dynamic>?> getActiveIncomingCall() async {
     try {
       final response = await _dioClient.get<Map<String, Object?>>(
-        '/api/twilio/video/active-incoming',
+        '/api/twilio/video/active-call',
       );
 
       final body = response.data;

@@ -9,17 +9,11 @@ part 'profile_contracts.g.dart';
 // User profile
 // ---------------------------------------------------------------------------
 
-/// Mirrors the JSON Map built by UserController#getCurrentUser (/user/me)
-/// and UserController#getUserById (/user/{userId}).
-///
-/// Backend stores interests, lookingFor, and languages as JSON-encoded strings
-/// in the DB. The /me endpoint puts them into the response as raw strings
-/// (NOT parsed arrays). additionalPhotos IS parsed into a List<String>.
 @JsonSerializable()
 class UserProfileDto {
   const UserProfileDto({
     required this.id,
-    required this.username,
+    required this.userId,
     this.firstName,
     this.middleName,
     this.lastName,
@@ -27,22 +21,22 @@ class UserProfileDto {
     this.displayName,
     this.email,
     this.age,
-    this.birthDate,
+    this.dateOfBirth,
     this.gender,
     this.bio,
     this.city,
     this.country,
     this.civilStatus,
-    this.hobby,
-    this.profilePhotoUrl,
-    this.additionalPhotos,
-    this.interests,
-    this.lookingFor,
-    this.interestedIn,
+    this.maritalStatus,
     this.religion,
     this.numberOfChildren,
+    this.hobby,
+    this.interestedIn,
+    this.interests,
+    this.lookingFor,
     this.languages,
-    this.maritalStatus,
+    this.profilePhotoUrl,
+    this.additionalPhotos,
     this.verified,
     this.profileCompleted,
   });
@@ -51,7 +45,7 @@ class UserProfileDto {
       _$UserProfileDtoFromJson(json);
 
   final int id;
-  final String username;
+  final String userId;
   final String? firstName;
   final String? middleName;
   final String? lastName;
@@ -59,34 +53,22 @@ class UserProfileDto {
   final String? displayName;
   final String? email;
   final int? age;
-  final String? birthDate;
+  final String? dateOfBirth;
   final String? gender;
   final String? bio;
   final String? city;
   final String? country;
   final String? civilStatus;
-  final String? hobby;
-  final String? profilePhotoUrl;
-
-  /// Already parsed from JSON string by backend.
-  final List<String>? additionalPhotos;
-
-  /// Raw JSON string from DB -- e.g. '["Reading","Cooking"]'
-  final String? interests;
-
-  /// Raw JSON string from DB -- e.g. '["Friendship"]'
-  final String? lookingFor;
-
-  final String? interestedIn;
+  final String? maritalStatus;
   final String? religion;
   final int? numberOfChildren;
-
-  /// Raw JSON string from DB -- e.g. '["Tagalog","English"]'
-  final String? languages;
-
-  final String? maritalStatus;
-
-  /// ID-verification status (from UserIdentityVerification).
+  final String? hobby;
+  final String? interestedIn;
+  final List<String>? interests;
+  final List<String>? lookingFor;
+  final List<String>? languages;
+  final String? profilePhotoUrl;
+  final List<String>? additionalPhotos;
   final bool? verified;
   final bool? profileCompleted;
 
@@ -94,7 +76,131 @@ class UserProfileDto {
 }
 
 // ---------------------------------------------------------------------------
-// Update profile
+// Settings DTOs
+// ---------------------------------------------------------------------------
+
+@JsonSerializable()
+class UserSettingsDto {
+  const UserSettingsDto({
+    required this.showOnline,
+    required this.showLastSeen,
+    required this.showProfileViews,
+    required this.showAge,
+    required this.readReceipts,
+    required this.profileVisibility,
+    required this.discoveryVisible,
+    required this.discoveryMinAge,
+    required this.discoveryMaxAge,
+    required this.discoveryMaxDistanceKm,
+    required this.notifyMessages,
+    required this.notifyMatches,
+    required this.notifyProfileViews,
+    required this.notifyCommunity,
+    required this.notifyTandy,
+    required this.notifyCalls,
+    this.quietHoursStart,
+    this.quietHoursEnd,
+    required this.twoFactorEnabled,
+    required this.consentMarketing,
+    required this.consentAdPersonalization,
+    required this.consentTandyMemory,
+    this.familyAlertContactPhone,
+    this.familyAlertContactLabel,
+  });
+
+  factory UserSettingsDto.fromJson(Map<String, Object?> json) =>
+      _$UserSettingsDtoFromJson(json);
+
+  final bool showOnline;
+  final bool showLastSeen;
+  final bool showProfileViews;
+  final bool showAge;
+  final bool readReceipts;
+  final String profileVisibility;
+  final bool discoveryVisible;
+  final int discoveryMinAge;
+  final int discoveryMaxAge;
+  final int discoveryMaxDistanceKm;
+  final bool notifyMessages;
+  final bool notifyMatches;
+  final bool notifyProfileViews;
+  final bool notifyCommunity;
+  final bool notifyTandy;
+  final bool notifyCalls;
+  final String? quietHoursStart;
+  final String? quietHoursEnd;
+  final bool twoFactorEnabled;
+  final bool consentMarketing;
+  final bool consentAdPersonalization;
+  final bool consentTandyMemory;
+  final String? familyAlertContactPhone;
+  final String? familyAlertContactLabel;
+
+  Map<String, Object?> toJson() => _$UserSettingsDtoToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false)
+class UpdateSettingsRequestDto {
+  const UpdateSettingsRequestDto({
+    this.showOnline,
+    this.showLastSeen,
+    this.showProfileViews,
+    this.showAge,
+    this.readReceipts,
+    this.profileVisibility,
+    this.discoveryVisible,
+    this.discoveryMinAge,
+    this.discoveryMaxAge,
+    this.discoveryMaxDistanceKm,
+    this.notifyMessages,
+    this.notifyMatches,
+    this.notifyProfileViews,
+    this.notifyCommunity,
+    this.notifyTandy,
+    this.notifyCalls,
+    this.quietHoursStart,
+    this.quietHoursEnd,
+    this.quietHoursStartSet,
+    this.quietHoursEndSet,
+    this.twoFactorEnabled,
+    this.consentMarketing,
+    this.consentAdPersonalization,
+    this.consentTandyMemory,
+  });
+
+  factory UpdateSettingsRequestDto.fromJson(Map<String, Object?> json) =>
+      _$UpdateSettingsRequestDtoFromJson(json);
+
+  final bool? showOnline;
+  final bool? showLastSeen;
+  final bool? showProfileViews;
+  final bool? showAge;
+  final bool? readReceipts;
+  final String? profileVisibility;
+  final bool? discoveryVisible;
+  final int? discoveryMinAge;
+  final int? discoveryMaxAge;
+  final int? discoveryMaxDistanceKm;
+  final bool? notifyMessages;
+  final bool? notifyMatches;
+  final bool? notifyProfileViews;
+  final bool? notifyCommunity;
+  final bool? notifyTandy;
+  final bool? notifyCalls;
+  final String? quietHoursStart;
+  final String? quietHoursEnd;
+  final bool? quietHoursStartSet;
+  final bool? quietHoursEndSet;
+  final bool? twoFactorEnabled;
+  final bool? consentMarketing;
+  final bool? consentAdPersonalization;
+  final bool? consentTandyMemory;
+
+  Map<String, Object?> toJson() => _$UpdateSettingsRequestDtoToJson(this);
+}
+
+// ---------------------------------------------------------------------------
+// Other
 // ---------------------------------------------------------------------------
 
 @JsonSerializable(includeIfNull: false)
@@ -145,113 +251,6 @@ class UpdateProfileRequestDto {
   final String? maritalStatus;
 
   Map<String, Object?> toJson() => _$UpdateProfileRequestDtoToJson(this);
-}
-
-// ---------------------------------------------------------------------------
-// Settings DTOs
-// ---------------------------------------------------------------------------
-
-@JsonSerializable()
-class NotificationSettingsDto {
-  const NotificationSettingsDto({
-    required this.newMessages,
-    required this.newConnections,
-    required this.communityActivity,
-    required this.tandyReminders,
-    required this.callNotifications,
-    required this.emailNotifications,
-  });
-
-  factory NotificationSettingsDto.fromJson(Map<String, Object?> json) =>
-      _$NotificationSettingsDtoFromJson(json);
-
-  final bool newMessages;
-  final bool newConnections;
-  final bool communityActivity;
-  final bool tandyReminders;
-  final bool callNotifications;
-  final bool emailNotifications;
-
-  Map<String, Object?> toJson() => _$NotificationSettingsDtoToJson(this);
-}
-
-@JsonSerializable()
-class PrivacySettingsDto {
-  const PrivacySettingsDto({
-    required this.profileVisibility,
-    required this.showOnlineStatus,
-    required this.showLastSeen,
-    required this.allowConnectionRequests,
-  });
-
-  factory PrivacySettingsDto.fromJson(Map<String, Object?> json) =>
-      _$PrivacySettingsDtoFromJson(json);
-
-  /// 'PUBLIC', 'CONNECTIONS_ONLY', or 'PRIVATE'
-  final String profileVisibility;
-  final bool showOnlineStatus;
-  final bool showLastSeen;
-  final bool allowConnectionRequests;
-
-  Map<String, Object?> toJson() => _$PrivacySettingsDtoToJson(this);
-}
-
-@JsonSerializable()
-class ActiveSessionDto {
-  const ActiveSessionDto({
-    required this.sessionId,
-    required this.device,
-    required this.lastActiveAt,
-    required this.isCurrent,
-  });
-
-  factory ActiveSessionDto.fromJson(Map<String, Object?> json) =>
-      _$ActiveSessionDtoFromJson(json);
-
-  final String sessionId;
-  final String device;
-  final String lastActiveAt;
-  final bool isCurrent;
-
-  Map<String, Object?> toJson() => _$ActiveSessionDtoToJson(this);
-}
-
-@JsonSerializable()
-class SecuritySettingsDto {
-  const SecuritySettingsDto({
-    required this.twoFactorEnabled,
-    required this.activeSessions,
-  });
-
-  factory SecuritySettingsDto.fromJson(Map<String, Object?> json) =>
-      _$SecuritySettingsDtoFromJson(json);
-
-  final bool twoFactorEnabled;
-  final List<ActiveSessionDto> activeSessions;
-
-  Map<String, Object?> toJson() => _$SecuritySettingsDtoToJson(this);
-}
-
-@JsonSerializable()
-class DiscoverySettingsDto {
-  const DiscoverySettingsDto({
-    required this.isDiscoverable,
-    required this.minAge,
-    required this.maxAge,
-    required this.maxDistanceKm,
-    this.genderPreference,
-  });
-
-  factory DiscoverySettingsDto.fromJson(Map<String, Object?> json) =>
-      _$DiscoverySettingsDtoFromJson(json);
-
-  final bool isDiscoverable;
-  final int minAge;
-  final int maxAge;
-  final int maxDistanceKm;
-  final String? genderPreference;
-
-  Map<String, Object?> toJson() => _$DiscoverySettingsDtoToJson(this);
 }
 
 @JsonSerializable()

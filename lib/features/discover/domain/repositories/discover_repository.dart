@@ -18,13 +18,13 @@ abstract interface class DiscoverRepository {
   });
 
   /// Fetches a single discovery candidate by [userId].
-  Future<Result<DiscoveryCandidate>> fetchProfile({required int userId});
+  Future<Result<DiscoveryCandidate>> fetchProfile({required String userId});
 
   /// Sends a like / connection request for the given [targetUserId].
-  Future<Result<void>> sendConnectionRequest({required int targetUserId});
+  Future<Result<void>> sendConnectionRequest({required String targetUserId});
 
   /// Passes on (skips) the given [targetUserId].
-  Future<Result<void>> passOnProfile({required int targetUserId});
+  Future<Result<void>> passOnProfile({required String targetUserId});
 }
 
 /// Wrapper for a paginated list of [DiscoveryCandidate] results.

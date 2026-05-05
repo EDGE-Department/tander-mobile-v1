@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/notifiers/tandy_notifier.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/chat/emotion_indicator.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/chat/structured_block_renderer.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
@@ -309,13 +313,19 @@ class TandyBubble extends StatelessWidget {
 
           if (isGroupEnd)
             Padding(
-              padding: const EdgeInsets.only(left: 50, top: 4),
-              child: Text(
-                time,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFC0B8B0),
-                ),
+              padding: const EdgeInsets.only(left: 50, top: 6),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFFC0B8B0),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _RatingButtons(message: message),
+                ],
               ),
             ),
         ],
@@ -323,3 +333,95 @@ class TandyBubble extends StatelessWidget {
     );
   }
 }
+
+// ── Rating buttons (👍 / 👎) ────────────────────────────────────────
+
+/// Thumbs up / down on a Tandy reply. Optimistic — see TandyNotifier.rateMessage.
+class _RatingButtons extends ConsumerWidget {
+  const _RatingButtons({required this.message});
+
+  final TandyMessage message;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rating = message.rating;
+    final isUp = rating == 1;
+    final isDown = rating == -1;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        _RatingButton(
+          icon: '👍',
+          isActive: isUp,
+          activeBg: const Color(0x2810B981),
+          activeBorder: const Color(0x7310B981),
+          onTap: () => _send(ref, isUp ? 0 : 1),
+          tooltip: isUp ? 'Remove thumbs up' : 'Mark Tandy reply as helpful',
+        ),
+        const SizedBox(width: 4),
+        _RatingButton(
+          icon: '👎',
+          isActive: isDown,
+          activeBg: const Color(0x24EF4444),
+          activeBorder: const Color(0x73EF4444),
+          onTap: () => _send(ref, isDown ? 0 : -1),
+          tooltip: isDown ? 'Remove thumbs down' : 'Mark Tandy reply as unhelpful',
+        ),
+      ],
+    );
+  }
+
+  void _send(WidgetRef ref, int rating) {
+    unawaited(
+      ref.read(tandyNotifierProvider.notifier).rateMessage(
+            messageId: message.messageId,
+            rating: rating,
+          ),
+    );
+  }
+}
+
+class _RatingButton extends StatelessWidget {
+  const _RatingButton({
+    required this.icon,
+    required this.isActive,
+    required this.activeBg,
+    required this.activeBorder,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  final String icon;
+  final bool isActive;
+  final Color activeBg;
+  final Color activeBorder;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isActive ? activeBg : const Color(0x99FFFFFF),
+            border: Border.all(
+              color: isActive ? activeBorder : kTandyTeal.withAlpha(46),
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(icon, style: const TextStyle(fontSize: 14)),
+        ),
+      ),
+    );
+  }
+}
+

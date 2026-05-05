@@ -1,8 +1,8 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../notifiers/liveness_notifier.dart';
-import '../states/liveness_state.dart';
 import '../widgets/liveness/camera_preview_widget.dart';
 import '../widgets/liveness/face_overlay_widget.dart';
 import '../widgets/liveness/liveness_instructions.dart';
@@ -84,12 +84,19 @@ class _LivenessScreenState extends ConsumerState<LivenessScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      body: livenessState.map(
-        initial: (_) => _buildLoadingState(),
-        initializing: (_) => _buildLoadingState(),
-        ready: (state) => _buildReadyState(state),
-        success: (state) => _buildSuccessState(state),
-        error: (state) => _buildErrorState(state),
+      body: livenessState.when(
+        initial: () => _buildLoadingState(),
+        initializing: () => _buildLoadingState(),
+        ready: (cameraController, isFaceDetected, isFaceCentered, stabilityScore, isCapturing, instruction) =>
+          _buildReadyState(
+            cameraController: cameraController,
+            isFaceCentered: isFaceCentered,
+            stabilityScore: stabilityScore,
+            isCapturing: isCapturing,
+            instruction: instruction,
+          ),
+        success: (imagePath) => _buildSuccessState(imagePath),
+        error: (message) => _buildErrorState(message),
       ),
     );
   }
@@ -140,17 +147,23 @@ class _LivenessScreenState extends ConsumerState<LivenessScreen>
     );
   }
 
-  Widget _buildReadyState(dynamic state) {
+  Widget _buildReadyState({
+    required CameraController cameraController,
+    required bool isFaceCentered,
+    required double stabilityScore,
+    required bool isCapturing,
+    String? instruction,
+  }) {
     return Stack(
       fit: StackFit.expand,
       children: [
         // Camera preview
-        CameraPreviewWidget(controller: state.cameraController),
+        CameraPreviewWidget(controller: cameraController),
 
         // Face overlay with animations
         FaceOverlayWidget(
-          isFaceCentered: state.isFaceCentered,
-          stabilityScore: state.stabilityScore,
+          isFaceCentered: isFaceCentered,
+          stabilityScore: stabilityScore,
         ),
 
         // Header with back button and title
@@ -158,12 +171,12 @@ class _LivenessScreenState extends ConsumerState<LivenessScreen>
 
         // Instructions at bottom
         LivenessInstructions(
-          instruction: state.instruction ?? 'Position your face in the oval',
-          isFaceCentered: state.isFaceCentered,
+          instruction: instruction ?? 'Position your face in the oval',
+          isFaceCentered: isFaceCentered,
         ),
 
         // Capturing overlay
-        if (state.isCapturing)
+        if (isCapturing)
           Container(
             color: Colors.black.withOpacity(0.7),
             child: Center(
@@ -302,7 +315,7 @@ class _LivenessScreenState extends ConsumerState<LivenessScreen>
     );
   }
 
-  Widget _buildSuccessState(dynamic state) {
+  Widget _buildSuccessState(String imagePath) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -386,7 +399,7 @@ class _LivenessScreenState extends ConsumerState<LivenessScreen>
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
                         builder: (_) => IdScannerScreen(
-                          selfiePath: state.imagePath,
+                          selfiePath: imagePath,
                         ),
                       ),
                     );
@@ -414,7 +427,7 @@ class _LivenessScreenState extends ConsumerState<LivenessScreen>
     );
   }
 
-  Widget _buildErrorState(dynamic state) {
+  Widget _buildErrorState(String message) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -453,7 +466,7 @@ class _LivenessScreenState extends ConsumerState<LivenessScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                state.message,
+                message,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.7),
                   fontSize: 15,

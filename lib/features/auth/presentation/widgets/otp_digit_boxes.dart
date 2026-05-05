@@ -1,10 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
-import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
 /// Number of OTP digits expected.
 const int otpLength = 6;
@@ -12,11 +12,15 @@ const int otpLength = 6;
 /// Callback signature when the full OTP is ready for submission.
 typedef OtpSubmitCallback = void Function(String otp);
 
-/// A row of [otpLength] individual digit input boxes that auto-advance
-/// on input and auto-submit when all digits are filled.
+/// A row of [otpLength] digit cells driven by a single hidden [TextField].
 ///
-/// Supports paste, backspace navigation, and a shake animation driven
-/// by the parent via [shakeAnimation].
+/// Why one input instead of six:
+/// On iOS Safari/WebKit and on iOS Flutter, six per-digit fields cause the
+/// software keyboard to flicker (dismiss/re-present) every time focus jumps
+/// to the next box. With a single underlying field the keyboard stays put
+/// across the whole entry, eliminating the jitter on every iPhone version.
+/// We also opt into [AutofillHints.oneTimeCode] so iOS can paste a code
+/// straight from the SMS notification.
 class OtpDigitBoxes extends StatefulWidget {
   const OtpDigitBoxes({
     required this.onComplete,
@@ -33,10 +37,10 @@ class OtpDigitBoxes extends StatefulWidget {
   /// Shake offset animation driven by the parent controller.
   final Animation<double> shakeAnimation;
 
-  /// Whether the boxes should display in error state.
+  /// Whether the cells should display in error state.
   final bool hasError;
 
-  /// Whether the text fields accept input.
+  /// Whether the input accepts characters.
   final bool isEnabled;
 
   /// Notifies the parent whenever the filled-digit count changes.
@@ -47,187 +51,197 @@ class OtpDigitBoxes extends StatefulWidget {
 }
 
 class OtpDigitBoxesState extends State<OtpDigitBoxes> {
-  final List<TextEditingController> _controllers =
-      List.generate(otpLength, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-      List.generate(otpLength, (_) => FocusNode());
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  int _lastReportedCount = 0;
 
-  int get filledCount =>
-      _controllers.where((controller) => controller.text.isNotEmpty).length;
+  /// External API — the screen reads this when the user taps "Verify".
+  String get otpValue => _controller.text;
 
-  String get otpValue => _controllers.map((c) => c.text).join();
-
-  /// Clears all digit boxes and focuses the first one.
+  /// External API — used by the OTP screen on resend / error.
   void clearAll() {
-    for (final controller in _controllers) {
-      controller.clear();
+    _controller.clear();
+    _focusNode.requestFocus();
+    if (_lastReportedCount != 0) {
+      _lastReportedCount = 0;
+      widget.onDigitCountChanged?.call(0);
     }
-    _focusNodes.first.requestFocus();
-    widget.onDigitCountChanged?.call(0);
   }
 
-  /// Requests focus on the first digit box.
-  void focusFirst() {
-    _focusNodes.first.requestFocus();
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final length = _controller.text.length;
+    if (length != _lastReportedCount) {
+      _lastReportedCount = length;
+      widget.onDigitCountChanged?.call(length);
+    }
+    if (length == otpLength) {
+      // Defer so the visual cell paint completes before the parent runs
+      // verification (which may show a spinner / disable the field).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onComplete(_controller.text);
+      });
+    }
   }
 
   @override
   void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    for (final focusNode in _focusNodes) {
-      focusNode.dispose();
-    }
+    _controller.removeListener(_onTextChanged);
+    _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  // -- Handlers -------------------------------------------------------------
-
-  void _handleChanged(int index, String value) {
-    final cleaned = value.replaceAll(RegExp(r'\D'), '');
-    if (cleaned.isEmpty) {
-      _controllers[index].clear();
-      widget.onDigitCountChanged?.call(filledCount);
-      return;
-    }
-
-    // Multiple digits means a paste event.
-    if (cleaned.length > 1) {
-      _pasteDigits(cleaned);
-      return;
-    }
-
-    _controllers[index].text = cleaned;
-    _controllers[index].selection =
-        TextSelection.collapsed(offset: cleaned.length);
-    widget.onDigitCountChanged?.call(filledCount);
-
-    if (index < otpLength - 1) {
-      _focusNodes[index + 1].requestFocus();
-    }
-
-    if (filledCount == otpLength) {
-      widget.onComplete(otpValue);
-    }
-  }
-
-  void _handleKeyEvent(int index, KeyEvent event) {
-    if (event is! KeyDownEvent) return;
-
-    if (event.logicalKey == LogicalKeyboardKey.backspace &&
-        _controllers[index].text.isEmpty &&
-        index > 0) {
-      _focusNodes[index - 1].requestFocus();
-      _controllers[index - 1].clear();
-      widget.onDigitCountChanged?.call(filledCount);
-    }
-  }
-
-  void _pasteDigits(String pasted) {
-    final cleaned = pasted.replaceAll(RegExp(r'\D'), '');
-    for (var i = 0; i < otpLength; i++) {
-      _controllers[i].text = i < cleaned.length ? cleaned[i] : '';
-    }
-    final focusIndex = cleaned.length.clamp(0, otpLength - 1);
-    _focusNodes[focusIndex].requestFocus();
-    widget.onDigitCountChanged?.call(filledCount);
-
-    if (cleaned.length >= otpLength) {
-      widget.onComplete(otpValue);
-    }
-  }
-
-  // -- Build ----------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
-    // Calculate responsive box size based on screen width
-    // Account for outer padding: 16 (card) + 16 (form) = 32 on each side
+    // Cell sizing: 32px outer padding × 2 = 64px subtracted from screen width.
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final availableWidth = screenWidth - 64; // 32px padding on each side
-    final spacing = AppSpacing.xs;
-    final totalSpacing = spacing * (otpLength - 1);
-    // Calculate box width that fits, max 48px
+    final availableWidth = screenWidth - 64;
+    const spacing = AppSpacing.xs;
+    const totalSpacing = spacing * (otpLength - 1);
     final boxWidth = ((availableWidth - totalSpacing) / otpLength).clamp(36.0, 48.0);
     final boxHeight = (boxWidth * 1.15).clamp(44.0, 56.0);
 
     return AnimatedBuilder(
       animation: widget.shakeAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(widget.shakeAnimation.value, 0),
-          child: child,
-        );
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(
-          otpLength,
-          (index) => _buildBox(index, boxWidth, boxHeight),
+      builder: (context, child) => Transform.translate(
+        offset: Offset(widget.shakeAnimation.value, 0),
+        child: child,
+      ),
+      child: SizedBox(
+        height: boxHeight,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Visual cells. Repaint on text and focus changes so the active
+            // cell ring can move with the caret.
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: Listenable.merge([_controller, _focusNode]),
+                builder: (context, _) => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(
+                    otpLength,
+                    (i) => _buildCell(i, boxWidth, boxHeight),
+                  ),
+                ),
+              ),
+            ),
+            // The single TextField sits on top, transparent, capturing every
+            // tap on the row. One focusable element ⇒ keyboard stays put.
+            Positioned.fill(
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                enabled: widget.isEnabled,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                autofillHints: const [AutofillHints.oneTimeCode],
+                maxLength: otpLength,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(otpLength),
+                ],
+                showCursor: false,
+                cursorWidth: 0,
+                cursorColor: Colors.transparent,
+                // Transparent text + transparent selection so the user only
+                // sees the visual cells underneath.
+                style: const TextStyle(color: Colors.transparent, fontSize: 1),
+                selectionControls: _NoToolbarSelectionControls(),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  counterText: '',
+                  contentPadding: EdgeInsets.zero,
+                  isCollapsed: true,
+                  filled: false,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBox(int index, double boxWidth, double boxHeight) {
-    final isFilled = _controllers[index].text.isNotEmpty;
+  Widget _buildCell(int index, double boxWidth, double boxHeight) {
+    final value = _controller.text;
+    final filled = index < value.length;
+    final digit = filled ? value[index] : '';
+    final isActive = _focusNode.hasFocus && index == value.length;
+
+    Color borderColor;
+    if (widget.hasError) {
+      borderColor = AppColors.danger;
+    } else if (isActive) {
+      borderColor = AppColors.primary;
+    } else if (filled) {
+      borderColor = AppColors.primary;
+    } else {
+      borderColor = AppColors.border;
+    }
+
+    Color fillColor;
+    if (widget.hasError) {
+      fillColor = AppColors.dangerLight;
+    } else if (filled) {
+      fillColor = AppColors.primaryLight;
+    } else {
+      fillColor = AppColors.card;
+    }
 
     return Padding(
       padding: EdgeInsets.only(left: index == 0 ? 0 : AppSpacing.xs),
-      child: SizedBox(
+      child: Container(
         width: boxWidth,
         height: boxHeight,
-        child: KeyboardListener(
-          focusNode: FocusNode(),
-          onKeyEvent: (event) => _handleKeyEvent(index, event),
-          child: TextField(
-            controller: _controllers[index],
-            focusNode: _focusNodes[index],
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            maxLength: 2,
-            enabled: widget.isEnabled,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: TextStyle(
-              fontSize: boxWidth * 0.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textStrong,
-            ),
-            decoration: InputDecoration(
-              counterText: '',
-              filled: true,
-              fillColor: widget.hasError
-                  ? AppColors.dangerLight
-                  : isFilled
-                      ? AppColors.primaryLight
-                      : AppColors.card,
-              contentPadding: EdgeInsets.zero,
-              border: _borderStyle(
-                widget.hasError ? AppColors.danger : AppColors.border,
-              ),
-              enabledBorder: _borderStyle(
-                widget.hasError
-                    ? AppColors.danger
-                    : isFilled
-                        ? AppColors.primary
-                        : AppColors.border,
-              ),
-              focusedBorder: _borderStyle(AppColors.primary, width: 2),
-              disabledBorder: _borderStyle(AppColors.borderLight),
-            ),
-            onChanged: (value) => _handleChanged(index, value),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: fillColor,
+          borderRadius: AppRadius.borderMd,
+          border: Border.all(color: borderColor, width: isActive ? 2 : 1.5),
+        ),
+        child: Text(
+          digit,
+          style: TextStyle(
+            fontSize: boxWidth * 0.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textStrong,
           ),
         ),
       ),
     );
   }
+}
 
-  OutlineInputBorder _borderStyle(Color color, {double width = 1.5}) {
-    return OutlineInputBorder(
-      borderRadius: AppRadius.borderMd,
-      borderSide: BorderSide(color: color, width: width),
-    );
+/// Suppresses the Cut/Copy/Paste toolbar on the hidden field — the field has
+/// no visible text, so the toolbar would just be confusing. Paste still works
+/// via the keyboard suggestion bar (iOS) and via long-press on the cells (the
+/// hidden field absorbs the gesture).
+class _NoToolbarSelectionControls extends MaterialTextSelectionControls {
+  @override
+  Widget buildToolbar(
+    BuildContext context,
+    Rect globalEditableRegion,
+    double textLineHeight,
+    Offset selectionMidpoint,
+    List<TextSelectionPoint> endpoints,
+    TextSelectionDelegate delegate,
+    ValueListenable<ClipboardStatus>? clipboardStatus,
+    Offset? lastSecondaryTapDownPosition,
+  ) {
+    return const SizedBox.shrink();
   }
 }

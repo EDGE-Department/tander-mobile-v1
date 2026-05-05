@@ -22,9 +22,10 @@ import 'package:tander_flutter_v3/features/discover/presentation/widgets/discove
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_mobile_header.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/discover_panel_header.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/widgets/swipe_card.dart';
-import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
+import 'package:tander_flutter_v3/shared/widgets/web_error_state.dart';
 
 /// Breakpoint matching the web `lg:` prefix (1024px).
 const double _desktopBreakpoint = 1024;
@@ -44,19 +45,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   void _openFiltersSheet() {
     final notifier = ref.read(discoverNotifierProvider.notifier);
+    final settings = ref.read(userSettingsProvider).valueOrNull;
+    final minAge = settings?.discoveryMinAge ?? 60;
+    final maxAge = settings?.discoveryMaxAge ?? 120;
     DiscoverFiltersSheet.show(
       context: context,
       activeFilters: notifier.activeFilters,
       onApply: notifier.applyFilters,
+      configMinAge: minAge,
+      configMaxAge: maxAge,
     );
   }
 
   void _openCreatePostSheet() {
-    CreatePostSheet.show(
-      context: context,
-      ref: ref,
-      onPostCreated: () {},
-    );
+    CreatePostSheet.show(context: context, ref: ref, onPostCreated: () {});
   }
 
   void _openProfileModal(String userId) {
@@ -171,8 +173,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildDiscoverContent(DiscoverState discoverState) {
     return switch (discoverState) {
       DiscoverLoading() => _buildSkeletonLoader(),
-      DiscoverError(:final exception) =>
-        _buildErrorState(exception.userMessage),
+      DiscoverError() => _buildErrorState(),
       DiscoverEmpty() => DiscoverEmptyState(onOpenFilters: _openFiltersSheet),
       DiscoverLoaded() => _buildCardStack(discoverState),
     };
@@ -215,18 +216,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildErrorState(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: EmptyState(
-          icon: Icons.error_outline,
-          title: "Couldn't load profiles",
-          description: message,
-          actionLabel: 'Try again',
-          onAction: () =>
-              ref.read(discoverNotifierProvider.notifier).loadProfiles(),
-        ),
+  Widget _buildErrorState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: DiscoverProfilesErrorState(
+        onRetry: () =>
+            ref.read(discoverNotifierProvider.notifier).loadProfiles(),
       ),
     );
   }
@@ -282,8 +277,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             candidate: visibleStack.first,
             onPass: notifier.passCurrentProfile,
             onLike: notifier.likeCurrentProfile,
-            onViewProfile: () =>
-                _openProfileModal(visibleStack.first.userId),
+            onViewProfile: () => _openProfileModal(visibleStack.first.userId),
           ),
           DiscoverProgressDots(
             totalCount: loadedState.profiles.length,
@@ -297,8 +291,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   // ── Helpers ─────────────────────────────────────────────────────────
 
   int _remainingCount(DiscoverState discoverState) {
-    return discoverState is DiscoverLoaded
-        ? discoverState.remainingCount
-        : 0;
+    return discoverState is DiscoverLoaded ? discoverState.remainingCount : 0;
   }
 }

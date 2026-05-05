@@ -10,8 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
-import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
-import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -19,6 +17,8 @@ import 'package:tander_flutter_v3/features/connection/presentation/notifiers/con
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_card_variants.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_shared_ui.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_confirm_dialog.dart';
 
 /// Friends tab content with search input and pull-to-refresh.
@@ -51,27 +51,26 @@ class _ConnectionFriendsPanelState
     if (_searchQuery.isEmpty) return widget.connections;
     final query = _searchQuery.toLowerCase();
     return widget.connections
-        .where((connection) =>
-            connection.otherUsername.toLowerCase().contains(query) ||
-            (connection.otherCity?.toLowerCase().contains(query) ?? false))
+        .where(
+          (connection) =>
+              connection.otherUsername.toLowerCase().contains(query) ||
+              (connection.otherCity?.toLowerCase().contains(query) ?? false),
+        )
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     if (widget.connections.isEmpty) {
-      return SingleChildScrollView(
-        child: Center(
-          child: TabEmptyState(
-            icon: Icons.people,
-            title: 'No friends yet',
-            description:
-                'Accept requests or explore Discover to start building '
-                'your circle.',
-            actionLabel: 'Explore Discover',
-            onAction: () => context.go(AppRoutes.discover),
-          ),
-        ),
+      return RefreshableTabEmptyState(
+        icon: Icons.people,
+        title: 'No friends yet',
+        description:
+            'Accept requests or explore Discover to start building '
+            'your circle.',
+        actionLabel: 'Explore Discover',
+        onAction: () => context.go(AppRoutes.discover),
+        onRefresh: widget.onRefresh,
       );
     }
 
@@ -83,6 +82,7 @@ class _ConnectionFriendsPanelState
       onRefresh: widget.onRefresh,
       color: AppColors.primary,
       child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.lg),
         itemCount: filteredItems.length + 2, // search bar + label + items
         separatorBuilder: (_, index) =>
@@ -102,10 +102,7 @@ class _ConnectionFriendsPanelState
                 ),
               );
             }
-            return SectionLabel(
-              count: filteredItems.length,
-              noun: 'friend',
-            );
+            return SectionLabel(count: filteredItems.length, noun: 'friend');
           }
           final friendIndex = index - 2;
           final connection = filteredItems[friendIndex];
@@ -118,9 +115,7 @@ class _ConnectionFriendsPanelState
               onMessage: () {
                 if (connection.conversationId != null) {
                   context.push(
-                    AppRoutes.messageThread(
-                      connection.conversationId!,
-                    ),
+                    AppRoutes.messageThread(connection.conversationId!),
                   );
                 }
               },
@@ -136,7 +131,7 @@ class _ConnectionFriendsPanelState
                   isDanger: true,
                 );
                 if (confirmed == true && context.mounted) {
-                  ref
+                  await ref
                       .read(connectionNotifierProvider.notifier)
                       .removeConnection(connection.connectionId);
                 }
@@ -160,9 +155,7 @@ class _ConnectionFriendsPanelState
       onChanged: (value) => setState(() => _searchQuery = value),
       decoration: InputDecoration(
         hintText: 'Search friends\u2026',
-        hintStyle: AppTypography.bodySm.copyWith(
-          color: AppColors.textMuted,
-        ),
+        hintStyle: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
         prefixIcon: const Icon(
           Icons.search,
           size: 15,
@@ -178,10 +171,7 @@ class _ConnectionFriendsPanelState
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AppColors.secondary,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppColors.secondary, width: 2),
         ),
         filled: true,
         fillColor: AppColors.card,
@@ -197,7 +187,6 @@ class _ConnectionFriendsPanelState
 }
 
 bool _isMutating(WidgetRef ref, String connectionId) {
-  return ref.watch(connectionNotifierProvider.notifier)
-          .mutatingConnectionId ==
+  return ref.watch(connectionNotifierProvider.notifier).mutatingConnectionId ==
       connectionId;
 }

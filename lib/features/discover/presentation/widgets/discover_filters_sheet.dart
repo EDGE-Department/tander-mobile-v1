@@ -5,19 +5,18 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/contracts/discover_contracts.dart';
+import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 
-const int _minAge = 18;
-const int _maxAge = 100;
 const int _minDistanceKm = 1;
 const int _maxDistanceKm = 500;
-const int _defaultMaxAge = 80;
 
 const List<({String? value, String label})> _genderOptions = [
   (value: null, label: 'Everyone'),
@@ -26,36 +25,48 @@ const List<({String? value, String label})> _genderOptions = [
   (value: 'NON_BINARY', label: 'Non-binary'),
 ];
 
-class DiscoverFiltersSheet extends StatefulWidget {
+class DiscoverFiltersSheet extends ConsumerStatefulWidget {
   const DiscoverFiltersSheet({
     required this.activeFilters,
     required this.onApply,
+    required this.configMinAge,
+    required this.configMaxAge,
     super.key,
   });
 
   final DiscoveryFiltersDto? activeFilters;
   final void Function(DiscoveryFiltersDto?) onApply;
+  final int configMinAge;
+  final int configMaxAge;
 
   static Future<void> show({
     required BuildContext context,
     required DiscoveryFiltersDto? activeFilters,
     required void Function(DiscoveryFiltersDto?) onApply,
+    required int configMinAge,
+    required int configMaxAge,
   }) {
-    return TanderBottomSheet.show(
+    return showModalBottomSheet<void>(
       context: context,
-      title: 'Filters',
-      child: DiscoverFiltersSheet(
+      isScrollControlled: true,
+      useRootNavigator: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.overlay,
+      builder: (_) => DiscoverFiltersSheet(
         activeFilters: activeFilters,
         onApply: onApply,
+        configMinAge: configMinAge,
+        configMaxAge: configMaxAge,
       ),
     );
   }
 
   @override
-  State<DiscoverFiltersSheet> createState() => _DiscoverFiltersSheetState();
+  ConsumerState<DiscoverFiltersSheet> createState() => _DiscoverFiltersSheetState();
 }
 
-class _DiscoverFiltersSheetState extends State<DiscoverFiltersSheet> {
+class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
   late int _filterMinAge;
   late int _filterMaxAge;
   late int _filterMaxDistanceKm;
@@ -65,26 +76,39 @@ class _DiscoverFiltersSheetState extends State<DiscoverFiltersSheet> {
   void initState() {
     super.initState();
     final dto = widget.activeFilters;
-    _filterMinAge = dto?.minAge ?? _minAge;
-    _filterMaxAge = dto?.maxAge ?? _defaultMaxAge;
+    _filterMinAge = dto?.minAge ?? widget.configMinAge;
+    _filterMaxAge = dto?.maxAge ?? widget.configMaxAge;
     _filterMaxDistanceKm = dto?.maxDistanceKm ?? _maxDistanceKm;
     _filterGenderPreference = dto?.genderPreference;
   }
 
-  void _handleApply() {
+  Future<void> _handleApply() async {
+    // Save to user settings
+    try {
+      await ref.read(userSettingsProvider.notifier).updateSettings(
+        UpdateSettingsRequestDto(
+          discoveryMinAge: _filterMinAge,
+          discoveryMaxAge: _filterMaxAge,
+          discoveryMaxDistanceKm: _filterMaxDistanceKm,
+        ),
+      );
+    } catch (_) {
+      // Continue even if save fails — local filters still apply
+    }
+
     widget.onApply(DiscoveryFiltersDto(
       minAge: _filterMinAge,
       maxAge: _filterMaxAge,
       maxDistanceKm: _filterMaxDistanceKm,
       genderPreference: _filterGenderPreference,
     ));
-    Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
   }
 
   void _handleReset() {
     setState(() {
-      _filterMinAge = _minAge;
-      _filterMaxAge = _defaultMaxAge;
+      _filterMinAge = widget.configMinAge;
+      _filterMaxAge = widget.configMaxAge;
       _filterMaxDistanceKm = _maxDistanceKm;
       _filterGenderPreference = null;
     });
@@ -92,19 +116,99 @@ class _DiscoverFiltersSheetState extends State<DiscoverFiltersSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildResetHeader(),
-        const Divider(height: 1, color: AppColors.border),
-        _buildAgeRangeSection(),
-        const Divider(height: 1, color: AppColors.border),
-        _buildDistanceSection(),
-        const Divider(height: 1, color: AppColors.border),
-        _buildGenderSection(),
-        const Divider(height: 1, color: AppColors.border),
-        _buildApplyButton(),
-      ],
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: screenHeight * 0.92),
+      decoration: const BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                ),
+              ),
+            ),
+          ),
+          // Header
+          _buildHeader(),
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildResetHeader(),
+                  const Divider(height: 1, color: AppColors.border),
+                  _buildAgeRangeSection(),
+                  const Divider(height: 1, color: AppColors.border),
+                  _buildDistanceSection(),
+                  const Divider(height: 1, color: AppColors.border),
+                  _buildGenderSection(),
+                ],
+              ),
+            ),
+          ),
+          // Sticky Apply button
+          const Divider(height: 1, color: AppColors.border),
+          Padding(
+            padding: EdgeInsets.only(bottom: bottomPadding),
+            child: _buildApplyButton(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Center(
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text('Filters', style: AppTypography.label),
+        ],
+      ),
     );
   }
 
@@ -142,7 +246,7 @@ class _DiscoverFiltersSheetState extends State<DiscoverFiltersSheet> {
             label: 'Minimum',
             value: _filterMinAge.toDouble(),
             displayValue: '$_filterMinAge',
-            min: _minAge.toDouble(),
+            min: widget.configMinAge.toDouble(),
             max: (_filterMaxAge - 1).toDouble(),
             onChanged: (v) => setState(() => _filterMinAge = v.round()),
           ),
@@ -152,7 +256,7 @@ class _DiscoverFiltersSheetState extends State<DiscoverFiltersSheet> {
             value: _filterMaxAge.toDouble(),
             displayValue: '$_filterMaxAge',
             min: (_filterMinAge + 1).toDouble(),
-            max: _maxAge.toDouble(),
+            max: widget.configMaxAge.toDouble(),
             onChanged: (v) => setState(() => _filterMaxAge = v.round()),
           ),
         ],

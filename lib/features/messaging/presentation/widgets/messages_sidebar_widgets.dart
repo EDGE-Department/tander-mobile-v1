@@ -27,9 +27,10 @@ class MessagesSidebarContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conversationsState = ref.watch(conversationsNotifierProvider);
     final unreadCount = switch (conversationsState) {
-      ConversationsLoaded(:final conversations) => conversations
-          .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
-          .length,
+      ConversationsLoaded(:final conversations) =>
+        conversations
+            .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
+            .length,
       _ => 0,
     };
 
@@ -47,17 +48,15 @@ class MessagesSidebarContent extends ConsumerWidget {
             ),
             child: switch (conversationsState) {
               ConversationsLoading() => const ConversationsListSkeleton(),
-              ConversationsError(:final exception) =>
-                ConversationsErrorView(
-                  errorMessage: exception.userMessage,
-                  onRetry: () => ref
-                      .read(conversationsNotifierProvider.notifier)
-                      .loadConversations(),
-                ),
+              ConversationsError() => ConversationsErrorView(
+                onRetry: () => ref
+                    .read(conversationsNotifierProvider.notifier)
+                    .loadConversations(),
+              ),
               ConversationsLoaded() => _ConversationListView(
-                  activeConversationId: activeConversationId,
-                  onSelectConversation: onSelectConversation,
-                ),
+                activeConversationId: activeConversationId,
+                onSelectConversation: onSelectConversation,
+              ),
             },
           ),
         ),
@@ -234,8 +233,7 @@ class _SearchBar extends StatelessWidget {
         ),
         decoration: InputDecoration(
           hintText: 'Search by name\u2026',
-          hintStyle:
-              AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+          hintStyle: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
           prefixIcon: const Icon(
             Icons.search,
             size: 15,
@@ -254,8 +252,7 @@ class _SearchBar extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide:
-                BorderSide(color: _orange.withValues(alpha: 0.50)),
+            borderSide: BorderSide(color: _orange.withValues(alpha: 0.50)),
           ),
         ),
       ),
@@ -318,17 +315,13 @@ class _TabChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive
-              ? _orange
-              : Colors.white.withValues(alpha: 0.60),
+          color: isActive ? _orange : Colors.white.withValues(alpha: 0.60),
           borderRadius: AppRadius.borderFull,
           border: isActive
               ? null
-              : Border.all(
-                  color: const Color(0xE0DCD2C4), width: 1.5),
+              : Border.all(color: const Color(0xE0DCD2C4), width: 1.5),
           boxShadow: isActive
               ? [
                   BoxShadow(
@@ -347,9 +340,7 @@ class _TabChip extends StatelessWidget {
               style: AppTypography.label.copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isActive
-                    ? Colors.white
-                    : const Color(0xFF7C6E60),
+                color: isActive ? Colors.white : const Color(0xFF7C6E60),
               ),
             ),
             if (badgeCount > 0) ...[
@@ -357,8 +348,7 @@ class _TabChip extends StatelessWidget {
               Container(
                 constraints: const BoxConstraints(minWidth: 18),
                 height: 18,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   borderRadius: AppRadius.borderFull,
                   color: isActive
@@ -417,8 +407,7 @@ class _ConversationListView extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Text(
             'No conversations match your search.',
-            style:
-                AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+            style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
           ),
         ),
       );
@@ -429,10 +418,8 @@ class _ConversationListView extends ConsumerWidget {
       itemCount: filtered.length,
       itemBuilder: (context, index) => ConversationRow(
         conversation: filtered[index],
-        isActive:
-            activeConversationId == filtered[index].conversationId,
-        onTap: () =>
-            onSelectConversation(filtered[index].conversationId),
+        isActive: activeConversationId == filtered[index].conversationId,
+        onTap: () => onSelectConversation(filtered[index].conversationId),
         entranceDelay: Duration(milliseconds: index * 40),
       ),
     );

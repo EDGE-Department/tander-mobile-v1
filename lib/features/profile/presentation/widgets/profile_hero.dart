@@ -9,13 +9,13 @@ import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/shared/utils/photo_url.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_badge.dart';
 
 class ProfileHero extends StatelessWidget {
   const ProfileHero({
     required this.gallery,
     required this.displayName,
-    required this.username,
     required this.isOnline,
     required this.completionPercent,
     required this.isProfileComplete,
@@ -33,7 +33,6 @@ class ProfileHero extends StatelessWidget {
 
   final List<String> gallery;
   final String displayName;
-  final String username;
   final bool isOnline;
   final int completionPercent;
   final bool isProfileComplete;
@@ -161,7 +160,7 @@ class ProfileHero extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             child: hasPhoto
                 ? Image.network(
-                    gallery[0],
+                    resolvePhotoUrl(gallery[0]) ?? gallery[0],
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,
@@ -228,7 +227,7 @@ class ProfileHero extends StatelessWidget {
     );
   }
 
-  // ── Identity: name, badges, stats, username, bio, meta ──────────────
+  // ── Identity: name, badges, stats, bio, meta ──────────────
 
   Widget _buildIdentity({required bool centered}) {
     final alignment = centered ? CrossAxisAlignment.center : CrossAxisAlignment.start;
@@ -300,17 +299,8 @@ class ProfileHero extends StatelessWidget {
         ),
         const SizedBox(height: 32),
 
-        // @username + bio
-        Text(
-          '@$username',
-          textAlign: textAlign,
-          style: AppTypography.body.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.textStrong,
-          ),
-        ),
+        // Bio (no @handle — social app, not a dating/Twitter handle model)
         if (bio.isNotEmpty) ...[
-          const SizedBox(height: 4),
           Text(
             bio,
             textAlign: textAlign,

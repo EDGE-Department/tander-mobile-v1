@@ -7,43 +7,29 @@ part of 'connection_contracts.dart';
 // **************************************************************************
 
 MatchDto _$MatchDtoFromJson(Map<String, dynamic> json) => MatchDto(
-  id: (json['id'] as num).toInt(),
-  matchedUserId: (json['matchedUserId'] as num).toInt(),
-  matchedUsername: json['matchedUsername'] as String,
-  matchedUserDisplayName: json['matchedUserDisplayName'] as String,
+  id: json['id'] as String,
+  otherUserId: json['otherUserId'] as String,
   status: json['status'] as String,
-  matchedAt: json['matchedAt'] as String,
-  presenceStatus: json['presenceStatus'] as String,
-  online: json['online'] as bool,
-  initiator: json['initiator'] as bool,
-  matchedUserProfilePhotoUrl: json['matchedUserProfilePhotoUrl'] as String?,
-  matchedUserAge: (json['matchedUserAge'] as num?)?.toInt(),
-  matchedUserLocation: json['matchedUserLocation'] as String?,
-  matchedUserBio: json['matchedUserBio'] as String?,
-  respondedAt: json['respondedAt'] as String?,
-  conversationId: (json['conversationId'] as num?)?.toInt(),
-  lastSeenTimestamp: (json['lastSeenTimestamp'] as num?)?.toInt(),
-  lastActiveTimestamp: (json['lastActiveTimestamp'] as num?)?.toInt(),
+  otherUsername: json['otherUsername'] as String?,
+  otherDisplayName: json['otherDisplayName'] as String?,
+  otherProfilePhotoUrl: json['otherProfilePhotoUrl'] as String?,
+  otherAge: (json['otherAge'] as num?)?.toInt(),
+  otherOnline: json['otherOnline'] as bool? ?? false,
+  matchedAt: json['matchedAt'] as String?,
+  lastMessageAt: json['lastMessageAt'] as String?,
 );
 
 Map<String, dynamic> _$MatchDtoToJson(MatchDto instance) => <String, dynamic>{
   'id': instance.id,
-  'matchedUserId': instance.matchedUserId,
-  'matchedUsername': instance.matchedUsername,
-  'matchedUserDisplayName': instance.matchedUserDisplayName,
-  'matchedUserProfilePhotoUrl': instance.matchedUserProfilePhotoUrl,
-  'matchedUserAge': instance.matchedUserAge,
-  'matchedUserLocation': instance.matchedUserLocation,
-  'matchedUserBio': instance.matchedUserBio,
+  'otherUserId': instance.otherUserId,
+  'otherUsername': instance.otherUsername,
+  'otherDisplayName': instance.otherDisplayName,
+  'otherProfilePhotoUrl': instance.otherProfilePhotoUrl,
+  'otherAge': instance.otherAge,
+  'otherOnline': instance.otherOnline,
   'status': instance.status,
   'matchedAt': instance.matchedAt,
-  'respondedAt': instance.respondedAt,
-  'conversationId': instance.conversationId,
-  'presenceStatus': instance.presenceStatus,
-  'lastSeenTimestamp': instance.lastSeenTimestamp,
-  'lastActiveTimestamp': instance.lastActiveTimestamp,
-  'online': instance.online,
-  'initiator': instance.initiator,
+  'lastMessageAt': instance.lastMessageAt,
 };
 
 SpringPageDto<TItem> _$SpringPageDtoFromJson<TItem>(
@@ -74,7 +60,7 @@ Map<String, dynamic> _$SpringPageDtoToJson<TItem>(
 
 SwipeRequestDto _$SwipeRequestDtoFromJson(Map<String, dynamic> json) =>
     SwipeRequestDto(
-      targetUserId: (json['targetUserId'] as num).toInt(),
+      targetUserId: json['targetUserId'] as String,
       direction: json['direction'] as String,
     );
 
@@ -86,32 +72,16 @@ Map<String, dynamic> _$SwipeRequestDtoToJson(SwipeRequestDto instance) =>
 
 SwipeResponseDto _$SwipeResponseDtoFromJson(Map<String, dynamic> json) =>
     SwipeResponseDto(
-      success: json['success'] as bool,
-      message: json['message'] as String,
-      match: json['match'] as bool,
-      requestSent: json['requestSent'] as bool,
+      matched: json['matched'] as bool,
       swipesRemaining: (json['swipesRemaining'] as num).toInt(),
-      matchId: (json['matchId'] as num?)?.toInt(),
-      matchedUserId: (json['matchedUserId'] as num?)?.toInt(),
-      matchedUsername: json['matchedUsername'] as String?,
-      matchedUserDisplayName: json['matchedUserDisplayName'] as String?,
-      matchedUserProfilePhotoUrl: json['matchedUserProfilePhotoUrl'] as String?,
-      matchedAt: json['matchedAt'] as String?,
-      expiresAt: json['expiresAt'] as String?,
+      match: json['match'] == null
+          ? null
+          : MatchDto.fromJson(json['match'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$SwipeResponseDtoToJson(SwipeResponseDto instance) =>
     <String, dynamic>{
-      'success': instance.success,
-      'message': instance.message,
+      'matched': instance.matched,
       'match': instance.match,
-      'requestSent': instance.requestSent,
-      'matchId': instance.matchId,
-      'matchedUserId': instance.matchedUserId,
-      'matchedUsername': instance.matchedUsername,
-      'matchedUserDisplayName': instance.matchedUserDisplayName,
-      'matchedUserProfilePhotoUrl': instance.matchedUserProfilePhotoUrl,
-      'matchedAt': instance.matchedAt,
-      'expiresAt': instance.expiresAt,
       'swipesRemaining': instance.swipesRemaining,
     };

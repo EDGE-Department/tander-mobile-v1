@@ -45,7 +45,7 @@ final class CommunityRemoteDatasource {
 
   /// Fetches a single community post by [postId].
   Future<Response<Map<String, Object?>>> fetchPost({
-    required int postId,
+    required String postId,
   }) {
     AppLogger.debug(
       'Fetching community post',
@@ -94,7 +94,7 @@ final class CommunityRemoteDatasource {
 
   /// Updates an existing community post's content.
   Future<Response<Map<String, Object?>>> updatePost({
-    required int postId,
+    required String postId,
     required String content,
   }) {
     AppLogger.debug(
@@ -115,7 +115,7 @@ final class CommunityRemoteDatasource {
 
   /// Deletes a community post by [postId].
   Future<Response<Map<String, Object?>>> deletePost({
-    required int postId,
+    required String postId,
   }) {
     AppLogger.debug(
       'Deleting community post',
@@ -134,7 +134,7 @@ final class CommunityRemoteDatasource {
 
   /// Fetches comments for a post, optionally paging with [cursor].
   Future<Response<Map<String, Object?>>> fetchComments({
-    required int postId,
+    required String postId,
     String? cursor,
   }) {
     AppLogger.debug(
@@ -154,9 +154,9 @@ final class CommunityRemoteDatasource {
 
   /// Creates a comment on a post. Pass [parentCommentId] for threaded replies.
   Future<Response<Map<String, Object?>>> createComment({
-    required int postId,
+    required String postId,
     required String content,
-    int? parentCommentId,
+    String? parentCommentId,
   }) {
     AppLogger.debug(
       'Creating comment',
@@ -175,7 +175,7 @@ final class CommunityRemoteDatasource {
 
   /// Fetches replies to a specific comment.
   Future<Response<Map<String, Object?>>> fetchReplies({
-    required int commentId,
+    required String commentId,
     String? cursor,
   }) {
     AppLogger.debug(
@@ -195,7 +195,7 @@ final class CommunityRemoteDatasource {
 
   /// Deletes a comment via DELETE /api/community/comments/{commentId}.
   Future<Response<Map<String, Object?>>> deleteComment({
-    required int commentId,
+    required String commentId,
   }) {
     AppLogger.debug(
       'Deleting comment',
@@ -213,7 +213,7 @@ final class CommunityRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Toggles a reaction (like/unlike) on a post.
-  Future<void> toggleReaction({required int postId}) async {
+  Future<void> toggleReaction({required String postId}) async {
     AppLogger.debug(
       'Toggling reaction',
       operation: '$_tag.toggleReaction',

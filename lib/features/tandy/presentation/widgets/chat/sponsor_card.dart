@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/notifiers/tandy_notifier.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
 
 /// Sponsor type -> accent color lookup.
@@ -18,7 +20,7 @@ Color _typeColor(String sponsorType) {
 
 /// Expandable sponsor card for Tandy chat — verified badge, products,
 /// phone and website CTAs.
-class SponsorCardWidget extends StatefulWidget {
+class SponsorCardWidget extends ConsumerStatefulWidget {
   const SponsorCardWidget({
     required this.sponsorData,
     required this.title,
@@ -31,10 +33,10 @@ class SponsorCardWidget extends StatefulWidget {
   final bool isExpanded;
 
   @override
-  State<SponsorCardWidget> createState() => _SponsorCardWidgetState();
+  ConsumerState<SponsorCardWidget> createState() => _SponsorCardWidgetState();
 }
 
-class _SponsorCardWidgetState extends State<SponsorCardWidget> {
+class _SponsorCardWidgetState extends ConsumerState<SponsorCardWidget> {
   late bool _isExpanded;
 
   @override
@@ -117,13 +119,13 @@ class _SponsorCardWidgetState extends State<SponsorCardWidget> {
   }
 }
 
-class _ExpandedContent extends StatelessWidget {
+class _ExpandedContent extends ConsumerWidget {
   const _ExpandedContent({required this.sponsorData, required this.color});
   final SponsorBlockData sponsorData;
   final Color color;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
@@ -145,7 +147,10 @@ class _ExpandedContent extends StatelessWidget {
                 if (sponsorData.websiteUrl != null)
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () => _launchUrl(sponsorData.websiteUrl!),
+                      onPressed: () {
+                        _pingClick(ref);
+                        _launchUrl(sponsorData.websiteUrl!);
+                      },
                       icon: const Icon(Icons.open_in_new, size: 16),
                       label: const Text('Visit Website'),
                       style: FilledButton.styleFrom(
@@ -160,7 +165,10 @@ class _ExpandedContent extends StatelessWidget {
                   SizedBox(
                     width: 56, height: 56,
                     child: OutlinedButton(
-                      onPressed: () => _launchUrl('tel:${sponsorData.phoneNumber}'),
+                      onPressed: () {
+                        _pingClick(ref);
+                        _launchUrl('tel:${sponsorData.phoneNumber}');
+                      },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: color.withAlpha(77)),
                         foregroundColor: color,
@@ -174,10 +182,11 @@ class _ExpandedContent extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          const Text(
-            'Ad \u00B7 This is a paid partnership. Tander does not endorse these products.',
+          Text(
+            sponsorData.disclaimer
+                ?? 'Ad \u00B7 This is a paid partnership. Tander does not endorse these products.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 10, color: Color(0xFFC4BBB0)),
+            style: const TextStyle(fontSize: 10, color: Color(0xFFC4BBB0)),
           ),
         ],
       ),
@@ -187,6 +196,16 @@ class _ExpandedContent extends StatelessWidget {
   Future<void> _launchUrl(String urlString) async {
     final uri = Uri.tryParse(urlString);
     if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  /// Fire-and-forget click ping. Skipped on legacy/admin-pushed cards that
+  /// don't carry an impression id. Takes [ref] so it works from a
+  /// ConsumerWidget (StatelessWidget has no implicit ref).
+  void _pingClick(WidgetRef ref) {
+    final impressionId = sponsorData.impressionId;
+    if (impressionId == null) return;
+    ref.read(tandyNotifierProvider.notifier)
+        .recordSponsorClick(impressionId: impressionId);
   }
 }
 

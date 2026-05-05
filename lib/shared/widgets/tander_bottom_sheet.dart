@@ -19,6 +19,7 @@ class TanderBottomSheet extends StatelessWidget {
     this.headerAction,
     this.showDragHandle = true,
     this.maxHeightFraction = 0.92,
+    this.stickyFooter,
     super.key,
   });
 
@@ -37,6 +38,9 @@ class TanderBottomSheet extends StatelessWidget {
   /// Maximum fraction of screen height the sheet may occupy (0.0 - 1.0).
   final double maxHeightFraction;
 
+  /// Optional widget pinned at the bottom (outside the scrollable area).
+  final Widget? stickyFooter;
+
   /// Present this sheet as a modal bottom sheet with a blurred backdrop.
   static Future<TOutput?> show<TOutput>({
     required BuildContext context,
@@ -45,6 +49,7 @@ class TanderBottomSheet extends StatelessWidget {
     Widget? headerAction,
     bool showDragHandle = true,
     double maxHeightFraction = 0.92,
+    Widget? stickyFooter,
   }) {
     return showModalBottomSheet<TOutput>(
       context: context,
@@ -59,6 +64,7 @@ class TanderBottomSheet extends StatelessWidget {
           headerAction: headerAction,
           showDragHandle: showDragHandle,
           maxHeightFraction: maxHeightFraction,
+          stickyFooter: stickyFooter,
           child: child,
         ),
       ),
@@ -69,6 +75,7 @@ class TanderBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final maxHeight = screenHeight * maxHeightFraction;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
@@ -90,12 +97,17 @@ class TanderBottomSheet extends StatelessWidget {
           Flexible(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.paddingOf(context).bottom,
-              ),
+              padding: stickyFooter == null
+                  ? EdgeInsets.only(bottom: bottomPadding)
+                  : EdgeInsets.zero,
               child: child,
             ),
           ),
+          if (stickyFooter != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: bottomPadding),
+              child: stickyFooter,
+            ),
         ],
       ),
     );

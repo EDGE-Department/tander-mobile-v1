@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tander_flutter_v3/features/connection/data/datasources/connection_remote_datasource.dart';
+import 'package:tander_flutter_v3/features/connection/data/datasources/connection_stomp_datasource.dart';
 import 'package:tander_flutter_v3/features/connection/data/repositories/connection_repository_impl.dart';
 import 'package:tander_flutter_v3/features/connection/domain/repositories/connection_repository.dart';
 
@@ -17,6 +18,11 @@ import 'package:tander_flutter_v3/features/connection/domain/repositories/connec
 final connectionRemoteDatasourceProvider =
     Provider<ConnectionRemoteDatasource>((ref) {
   return ConnectionRemoteDatasource(dioClient: ref.watch(dioClientProvider));
+});
+
+final connectionStompDatasourceProvider =
+    Provider<ConnectionStompDatasource>((ref) {
+  return const ConnectionStompDatasource();
 });
 
 // ── Repository ──────────────────────────────────────────────────────

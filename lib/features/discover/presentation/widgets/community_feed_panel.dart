@@ -22,13 +22,13 @@ import 'package:tander_flutter_v3/features/community/presentation/screens/commun
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
+import 'package:tander_flutter_v3/shared/widgets/web_error_state.dart';
 
 class CommunityFeedPanel extends ConsumerStatefulWidget {
   const CommunityFeedPanel({super.key});
 
   @override
-  ConsumerState<CommunityFeedPanel> createState() =>
-      _CommunityFeedPanelState();
+  ConsumerState<CommunityFeedPanel> createState() => _CommunityFeedPanelState();
 }
 
 class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
@@ -75,24 +75,17 @@ class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
 
     return switch (feedState) {
       CommunityFeedLoading() => const _PanelLoadingSkeleton(),
-      CommunityFeedError(:final exception) => Center(
-          child: EmptyState(
-            title: 'Failed to load posts',
-            description: exception.userMessage,
-            icon: Icons.warning_amber_rounded,
-            actionLabel: 'Retry',
-            onAction: () {
-              ref.read(communityFeedNotifierProvider.notifier).loadFeed();
-            },
-          ),
-        ),
+      CommunityFeedError() => CommunityFeedErrorState(
+        onRetry: () {
+          ref.read(communityFeedNotifierProvider.notifier).loadFeed();
+        },
+      ),
       CommunityFeedLoaded(:final posts, :final isLoadingMore) =>
         posts.isEmpty
             ? Center(
                 child: EmptyState(
                   title: 'Start the conversation',
-                  description:
-                      'Your neighbors are waiting to hear from you.',
+                  description: 'Your neighbors are waiting to hear from you.',
                   icon: Icons.forum_outlined,
                   actionLabel: 'Write the first post',
                   onAction: _openCreatePost,
@@ -115,12 +108,8 @@ class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppSpacing.md,
-                        ),
-                        child: DailyPromptCard(
-                          onWriteStory: _openCreatePost,
-                        ),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: DailyPromptCard(onWriteStory: _openCreatePost),
                       );
                     }
                     final postIndex = index - 1;
@@ -146,9 +135,7 @@ class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
                         .toString();
                     final isOwnPost = currentUserId == post.author.userId;
                     return Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: AppSpacing.lg,
-                      ),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                       child: PostCard(
                         post: post,
                         isOwnPost: isOwnPost,
@@ -172,8 +159,11 @@ class _CommunityFeedPanelState extends ConsumerState<CommunityFeedPanel> {
                             ? () => _showEditPostDialog(context, ref, post)
                             : null,
                         onDeletePost: isOwnPost
-                            ? () =>
-                                _showDeleteConfirmation(context, ref, post.postId)
+                            ? () => _showDeleteConfirmation(
+                                context,
+                                ref,
+                                post.postId,
+                              )
                             : null,
                       ),
                     );
@@ -192,7 +182,6 @@ void _showPostDetailModal(
   WidgetRef ref, {
   required String postId,
 }) {
-  final numericId = int.tryParse(postId) ?? 0;
   final screenWidth = MediaQuery.sizeOf(context).width;
 
   if (screenWidth >= 768) {
@@ -209,7 +198,7 @@ void _showPostDetailModal(
             clipBehavior: Clip.antiAlias,
             elevation: 8,
             surfaceTintColor: Colors.transparent,
-            child: CommunityPostScreen(postId: numericId),
+            child: CommunityPostScreen(postId: postId),
           ),
         ),
       ),
@@ -229,7 +218,7 @@ void _showPostDetailModal(
         height: MediaQuery.sizeOf(context).height * 0.92,
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: CommunityPostScreen(postId: numericId),
+          child: CommunityPostScreen(postId: postId),
         ),
       ),
     ).whenComplete(() {
@@ -319,10 +308,7 @@ void _showEditPostAsSheet(
                       Navigator.of(sheetContext).pop();
                       await ref
                           .read(communityFeedNotifierProvider.notifier)
-                          .updatePost(
-                            postId: post.postId,
-                            content: newContent,
-                          );
+                          .updatePost(postId: post.postId, content: newContent);
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,

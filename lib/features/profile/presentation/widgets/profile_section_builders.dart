@@ -1,7 +1,7 @@
 /// Data holders and pure builder functions for profile sections.
 ///
 /// Contains: [CompletionTipData], [FactRowData], [buildSnapshotItems],
-/// [buildDetailItems], [buildCompletionTips].
+/// [buildCompletionTips].
 library;
 
 import 'package:flutter/material.dart';
@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/screens/profile_edit_screen.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/screens/profile_photos_screen.dart';
-
-import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
 
 // ── Data holders ───────────────────────────────────────────────────────
@@ -80,53 +78,6 @@ List<FactRowData> buildSnapshotItems({
   ];
 }
 
-/// Builds detail items (hobby, civil status, religion, etc.).
-List<FactRowData> buildDetailItems(UserProfile profile) {
-  return [
-    if (profile.hobby != null && profile.hobby!.trim().isNotEmpty)
-      FactRowData(
-        icon: Icons.favorite,
-        label: 'Hobby',
-        value: profile.hobby!.trim(),
-      ),
-    if (profile.civilStatus != null &&
-        profile.civilStatus!.trim().isNotEmpty)
-      FactRowData(
-        icon: Icons.people,
-        label: 'Civil status',
-        value: ProfileHelpers.toTitleCase(
-          profile.civilStatus!.replaceAll('_', ' '),
-        ),
-      ),
-    if (profile.religion != null && profile.religion!.trim().isNotEmpty)
-      FactRowData(
-        icon: Icons.favorite,
-        label: 'Religion',
-        value: profile.religion!.trim(),
-      ),
-    if (profile.maritalStatus != null &&
-        profile.maritalStatus!.trim().isNotEmpty)
-      FactRowData(
-        icon: Icons.people,
-        label: 'Marital status',
-        value: ProfileHelpers.toTitleCase(
-          profile.maritalStatus!.replaceAll('_', ' '),
-        ),
-      ),
-    if (profile.languages.isNotEmpty)
-      FactRowData(
-        icon: Icons.translate,
-        label: 'Languages',
-        value: profile.languages.join(', '),
-      ),
-    if (profile.numberOfChildren != null)
-      FactRowData(
-        icon: Icons.people,
-        label: 'Children',
-        value: '${profile.numberOfChildren}',
-      ),
-  ];
-}
 
 /// Builds completion tip list.
 List<CompletionTipData> buildCompletionTips({

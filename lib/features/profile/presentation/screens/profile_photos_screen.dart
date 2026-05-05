@@ -17,6 +17,7 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/notifiers/my_profile_notifier.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/states/profile_state.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_helpers.dart';
+import 'package:tander_flutter_v3/shared/utils/photo_url.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
@@ -371,7 +372,7 @@ class _DraggablePhotoTile extends StatelessWidget {
               height: cellSize,
               child: Opacity(
                 opacity: 0.85,
-                child: Image.network(photoUrl, fit: BoxFit.cover),
+                child: Image.network(resolvePhotoUrl(photoUrl) ?? photoUrl, fit: BoxFit.cover),
               ),
             ),
           ),
@@ -424,7 +425,7 @@ class _FilledSlot extends StatelessWidget {
           child: ClipRRect(
             borderRadius: AppRadius.borderLg,
             child: Image.network(
-              photoUrl,
+              resolvePhotoUrl(photoUrl) ?? photoUrl,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => Container(
                 color: AppColors.subtle,

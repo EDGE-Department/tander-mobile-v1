@@ -66,7 +66,7 @@ class _DiscoverProfileScreenState
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(
-      discoverProfileProvider(int.parse(widget.userId)),
+      discoverProfileProvider(widget.userId),
     );
 
     return Scaffold(

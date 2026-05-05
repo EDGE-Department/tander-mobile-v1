@@ -43,7 +43,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
   // -----------------------------------------------------------------------
 
   @override
-  Future<Result<CommunityPostItem>> fetchPost({required int postId}) {
+  Future<Result<CommunityPostItem>> fetchPost({required String postId}) {
     return _runSafe('fetchPost', () async {
       final response = await _remoteDatasource.fetchPost(postId: postId);
       final body = _requireResponseBody(response.data, 'fetch post');
@@ -80,7 +80,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
 
   @override
   Future<Result<CommunityPostItem>> updatePost({
-    required int postId,
+    required String postId,
     required String content,
   }) {
     return _runSafe('updatePost', () async {
@@ -100,7 +100,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
   // -----------------------------------------------------------------------
 
   @override
-  Future<Result<void>> deletePost({required int postId}) {
+  Future<Result<void>> deletePost({required String postId}) {
     return _runSafe('deletePost', () async {
       await _remoteDatasource.deletePost(postId: postId);
     });
@@ -112,7 +112,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
 
   @override
   Future<Result<CommentsPage>> fetchComments({
-    required int postId,
+    required String postId,
     String? cursor,
   }) {
     return _runSafe('fetchComments', () async {
@@ -129,9 +129,9 @@ final class CommunityRepositoryImpl implements CommunityRepository {
 
   @override
   Future<Result<CommunityCommentItem>> createComment({
-    required int postId,
+    required String postId,
     required String content,
-    int? parentCommentId,
+    String? parentCommentId,
   }) {
     return _runSafe('createComment', () async {
       final response = await _remoteDatasource.createComment(
@@ -148,7 +148,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
 
   @override
   Future<Result<CommentsPage>> fetchReplies({
-    required int commentId,
+    required String commentId,
     String? cursor,
   }) {
     return _runSafe('fetchReplies', () async {
@@ -164,7 +164,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
   }
 
   @override
-  Future<Result<void>> deleteComment({required int commentId}) {
+  Future<Result<void>> deleteComment({required String commentId}) {
     return _runSafe('deleteComment', () async {
       await _remoteDatasource.deleteComment(commentId: commentId);
     });
@@ -175,7 +175,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
   // -----------------------------------------------------------------------
 
   @override
-  Future<Result<void>> toggleReaction({required int postId}) {
+  Future<Result<void>> toggleReaction({required String postId}) {
     return _runSafe('toggleReaction', () async {
       await _remoteDatasource.toggleReaction(postId: postId);
     });

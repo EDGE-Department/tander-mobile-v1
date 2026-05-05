@@ -18,7 +18,7 @@ import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 class CommunityPostScreen extends ConsumerStatefulWidget {
   const CommunityPostScreen({required this.postId, super.key});
 
-  final int postId;
+  final String postId;
 
   @override
   ConsumerState<CommunityPostScreen> createState() =>

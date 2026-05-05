@@ -5,6 +5,7 @@ library;
 
 import 'package:tander_flutter_v3/core/contracts/community_contracts.dart';
 import 'package:tander_flutter_v3/core/contracts/models/community_models.dart';
+import 'package:tander_flutter_v3/shared/utils/photo_url.dart';
 
 abstract final class CommunityMapper {
   /// Maps [PostAuthorDto] to [PostAuthor].
@@ -14,7 +15,7 @@ abstract final class CommunityMapper {
       displayName: (dto.displayName?.isNotEmpty ?? false)
           ? dto.displayName!
           : 'Tander User',
-      photoUrl: dto.photoUrl,
+      photoUrl: resolvePhotoUrl(dto.photoUrl),
     );
   }
 
@@ -24,7 +25,9 @@ abstract final class CommunityMapper {
       postId: dto.id.toString(),
       author: mapAuthorDto(dto.author),
       content: dto.content ?? '',
-      mediaUrls: List<String>.unmodifiable(dto.photos),
+      mediaUrls: List<String>.unmodifiable(
+        dto.photos.map((url) => resolvePhotoUrl(url) ?? url).toList(),
+      ),
       reactionCount: dto.reactionCount,
       commentCount: dto.commentCount,
       hasReacted: dto.hasReacted,

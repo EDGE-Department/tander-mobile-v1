@@ -14,12 +14,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
-import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
-import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
-import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/notifiers/connection_notifier.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/states/connection_state.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_card.dart';
@@ -28,6 +25,8 @@ import 'package:tander_flutter_v3/features/connection/presentation/widgets/conne
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_header.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/widgets/connection_shared_ui.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
 
 // ── Screen ──────────────────────────────────────────────────────────
@@ -72,8 +71,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
         key: ValueKey(_activeTab),
         child: switch (connectionState) {
           ConnectionLoading() => const _LoadingSkeleton(),
-          ConnectionError(:final exception) =>
-            _ErrorPanel(message: exception.userMessage),
+          ConnectionError() => _ErrorPanel(
+            activeTab: _activeTab,
+            onRetry: _refreshAll,
+          ),
           ConnectionLoaded() => _buildLoadedPanel(connectionState),
         },
       ),
@@ -83,20 +84,20 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   Widget _buildLoadedPanel(ConnectionLoaded loadedState) {
     return switch (_activeTab) {
       ConnectionTab.incoming => _IncomingPanel(
-          connections: loadedState.incomingRequests.items,
-          totalCount: loadedState.incomingRequests.totalCount,
-          onRefresh: _refreshAll,
-        ),
+        connections: loadedState.incomingRequests.items,
+        totalCount: loadedState.incomingRequests.totalCount,
+        onRefresh: _refreshAll,
+      ),
       ConnectionTab.sent => _SentPanel(
-          connections: loadedState.sentRequests.items,
-          totalCount: loadedState.sentRequests.totalCount,
-          onRefresh: _refreshAll,
-        ),
+        connections: loadedState.sentRequests.items,
+        totalCount: loadedState.sentRequests.totalCount,
+        onRefresh: _refreshAll,
+      ),
       ConnectionTab.connected => ConnectionFriendsPanel(
-          connections: loadedState.connectedFriends.items,
-          totalCount: loadedState.connectedFriends.totalCount,
-          onRefresh: _refreshAll,
-        ),
+        connections: loadedState.connectedFriends.items,
+        totalCount: loadedState.connectedFriends.totalCount,
+        onRefresh: _refreshAll,
+      ),
     };
   }
 
@@ -121,16 +122,13 @@ class _IncomingPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (connections.isEmpty) {
-      return const SingleChildScrollView(
-        child: Center(
-          child: TabEmptyState(
-            icon: Icons.favorite,
-            title: 'No requests yet',
-            description:
-                'When someone wants to connect with you, their invitation '
-                'will appear here. Love finds its own timing.',
-          ),
-        ),
+      return RefreshableTabEmptyState(
+        icon: Icons.favorite,
+        title: 'No requests yet',
+        description:
+            'When someone wants to connect with you, their invitation '
+            'will appear here. Love finds its own timing.',
+        onRefresh: onRefresh,
       );
     }
 
@@ -138,6 +136,7 @@ class _IncomingPanel extends ConsumerWidget {
       onRefresh: onRefresh,
       color: AppColors.primary,
       child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.lg),
         itemCount: connections.length + 1,
         separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
@@ -186,18 +185,15 @@ class _SentPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (connections.isEmpty) {
-      return SingleChildScrollView(
-        child: Center(
-          child: TabEmptyState(
-            icon: Icons.send,
-            title: 'No sent requests',
-            description:
-                "You haven't reached out to anyone yet. "
-                'Explore Discover to find someone to connect with.',
-            actionLabel: 'Go to Discover',
-            onAction: () => context.go(AppRoutes.discover),
-          ),
-        ),
+      return RefreshableTabEmptyState(
+        icon: Icons.send,
+        title: 'No sent requests',
+        description:
+            "You haven't reached out to anyone yet. "
+            'Explore Discover to find someone to connect with.',
+        actionLabel: 'Go to Discover',
+        onAction: () => context.go(AppRoutes.discover),
+        onRefresh: onRefresh,
       );
     }
 
@@ -205,6 +201,7 @@ class _SentPanel extends ConsumerWidget {
       onRefresh: onRefresh,
       color: AppColors.primary,
       child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
@@ -214,10 +211,7 @@ class _SentPanel extends ConsumerWidget {
               AppSpacing.sm,
             ),
             sliver: SliverToBoxAdapter(
-              child: SectionLabel(
-                count: totalCount,
-                noun: 'pending request',
-              ),
+              child: SectionLabel(count: totalCount, noun: 'pending request'),
             ),
           ),
           SliverPadding(
@@ -228,28 +222,25 @@ class _SentPanel extends ConsumerWidget {
               AppSpacing.lg,
             ),
             sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final connection = connections[index];
-                  return StaggeredEntrance(
-                    index: index,
-                    delayMilliseconds: 60,
-                    child: SentCard(
-                      connection: connection,
-                      isLoading: _isMutating(ref, connection.connectionId),
-                      onCancel: () => ref
-                          .read(connectionNotifierProvider.notifier)
-                          .cancelRequest(connection.connectionId),
-                      onViewProfile: () => showProfileViewModal(
-                        context,
-                        userId: connection.otherUserId,
-                        relationship: ProfileRelationship.pendingOutgoing,
-                      ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final connection = connections[index];
+                return StaggeredEntrance(
+                  index: index,
+                  delayMilliseconds: 60,
+                  child: SentCard(
+                    connection: connection,
+                    isLoading: _isMutating(ref, connection.connectionId),
+                    onCancel: () => ref
+                        .read(connectionNotifierProvider.notifier)
+                        .cancelRequest(connection.connectionId),
+                    onViewProfile: () => showProfileViewModal(
+                      context,
+                      userId: connection.otherUserId,
+                      relationship: ProfileRelationship.pendingOutgoing,
                     ),
-                  );
-                },
-                childCount: connections.length,
-              ),
+                  ),
+                );
+              }, childCount: connections.length),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 mainAxisSpacing: AppSpacing.sm,
@@ -267,8 +258,7 @@ class _SentPanel extends ConsumerWidget {
 // ── Helpers ─────────────────────────────────────────────────────────
 
 bool _isMutating(WidgetRef ref, String connectionId) {
-  return ref.watch(connectionNotifierProvider.notifier)
-          .mutatingConnectionId ==
+  return ref.watch(connectionNotifierProvider.notifier).mutatingConnectionId ==
       connectionId;
 }
 
@@ -295,24 +285,48 @@ class _LoadingSkeleton extends StatelessWidget {
 }
 
 class _ErrorPanel extends StatelessWidget {
-  const _ErrorPanel({required this.message});
+  const _ErrorPanel({required this.activeTab, required this.onRetry});
 
-  final String message;
+  final ConnectionTab activeTab;
+  final Future<void> Function() onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Text(
-          message,
-          style: AppTypography.bodySm.copyWith(
-            color: AppColors.danger,
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
+    final config = _ErrorCopy.fromTab(activeTab);
+    return ConnectionErrorState(
+      title: config.title,
+      description: config.description,
+      onRetry: () {
+        onRetry();
+      },
     );
+  }
+}
+
+class _ErrorCopy {
+  const _ErrorCopy({required this.title, required this.description});
+
+  final String title;
+  final String description;
+
+  static _ErrorCopy fromTab(ConnectionTab tab) {
+    return switch (tab) {
+      ConnectionTab.incoming => const _ErrorCopy(
+        title: "Couldn't load requests",
+        description:
+            'Something went wrong while loading your connection requests. '
+            'Please try again.',
+      ),
+      ConnectionTab.sent => const _ErrorCopy(
+        title: "Couldn't load sent requests",
+        description:
+            "We couldn't load the requests you've sent. Please try again.",
+      ),
+      ConnectionTab.connected => const _ErrorCopy(
+        title: "Couldn't load friends",
+        description:
+            "We couldn't load your connections right now. Please try again.",
+      ),
+    };
   }
 }

@@ -8,10 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
+import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 import 'package:tander_flutter_v3/shared/widgets/section_label.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 import 'package:tander_flutter_v3/shared/widgets/warm_switch.dart';
@@ -20,36 +23,22 @@ import 'package:tander_flutter_v3/shared/widgets/warm_switch.dart';
 
 const List<({String value, String label})> _visibilityOptions = [
   (value: 'PUBLIC', label: 'Everyone'),
-  (value: 'CONNECTIONS_ONLY', label: 'Connections only'),
+  (value: 'MATCHES_ONLY', label: 'Connections only'),
   (value: 'PRIVATE', label: 'Nobody'),
 ];
 
-const List<({String id, IconData icon, String label, String description, bool defaultValue})> _privacyToggles = [
-  (id: 'showOnlineStatus', icon: Icons.visibility_outlined, label: 'Show online status', description: "Let others see when you're active", defaultValue: true),
-  (id: 'showLastActive', icon: Icons.visibility_off_outlined, label: 'Show last active', description: 'Display when you were last active', defaultValue: true),
-  (id: 'allowConnectionRequests', icon: Icons.people_outline, label: 'Allow connection requests', description: 'Let everyone send you connection requests', defaultValue: true),
+const List<({String id, IconData icon, String label, String description})> _privacyToggles = [
+  (id: 'showOnline', icon: Icons.visibility_outlined, label: 'Show online status', description: "Let others see when you're active"),
+  (id: 'showProfileViews', icon: Icons.people_outline, label: 'Show profile views', description: "Share when you've visited someone's profile"),
+  (id: 'showLastSeen', icon: Icons.visibility_off_outlined, label: 'Show last seen', description: 'Display when you were last active'),
 ];
 
 // ── Screen ──────────────────────────────────────────────────────────────
 
-class SettingsPrivacyScreen extends ConsumerStatefulWidget {
+class SettingsPrivacyScreen extends ConsumerWidget {
   const SettingsPrivacyScreen({super.key});
 
-  @override
-  ConsumerState<SettingsPrivacyScreen> createState() => _State();
-}
-
-class _State extends ConsumerState<SettingsPrivacyScreen> {
-  String _visibility = 'PUBLIC';
-  late final Map<String, bool> _toggles;
-
-  @override
-  void initState() {
-    super.initState();
-    _toggles = {for (final toggle in _privacyToggles) toggle.id: toggle.defaultValue};
-  }
-
-  void _showSavedToast() {
+  void _showSavedToast(BuildContext context) {
     TanderToastOverlay.show(context, const TanderToastData(
       message: 'Privacy setting updated.',
       variant: TanderToastVariant.success,
@@ -57,8 +46,82 @@ class _State extends ConsumerState<SettingsPrivacyScreen> {
     ));
   }
 
+  void _handleVisibilityChange(BuildContext context, WidgetRef ref, String value) {
+    ref.read(userSettingsProvider.notifier).updateSettings(
+      UpdateSettingsRequestDto(profileVisibility: value),
+    );
+    _showSavedToast(context);
+  }
+
+  void _handleToggle(BuildContext context, WidgetRef ref, String id, bool currentValue) {
+    final nextValue = !currentValue;
+    switch (id) {
+      case 'showOnline':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(showOnline: nextValue));
+        break;
+      case 'showProfileViews':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(showProfileViews: nextValue));
+        break;
+      case 'showLastSeen':
+        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(showLastSeen: nextValue));
+        break;
+    }
+    _showSavedToast(context);
+  }
+
+  bool _getToggleValue(UserSettings settings, String id) {
+    switch (id) {
+      case 'showOnline':
+        return settings.showOnline;
+      case 'showProfileViews':
+        return settings.showProfileViews;
+      case 'showLastSeen':
+        return settings.showLastSeen;
+      default:
+        return false;
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(userSettingsProvider);
+
+    if (settingsAsync.isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          backgroundColor: AppColors.card,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, size: 22),
+            onPressed: () => context.pop(),
+            tooltip: 'Back to settings',
+          ),
+          title: Text('Privacy', style: AppTypography.h3),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          backgroundColor: AppColors.card,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, size: 22),
+            onPressed: () => context.pop(),
+            tooltip: 'Back to settings',
+          ),
+          title: Text('Privacy', style: AppTypography.h3),
+        ),
+        body: const Center(child: Text('Failed to load settings.')),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -77,15 +140,29 @@ class _State extends ConsumerState<SettingsPrivacyScreen> {
           const SectionLabel(label: 'Who can see my profile'),
           const SizedBox(height: AppSpacing.sm),
           _VisibilityRadioGroup(
-            selected: _visibility,
-            onChanged: (value) { setState(() => _visibility = value); _showSavedToast(); },
+            selected: settings.profileVisibility,
+            onChanged: (value) => _handleVisibilityChange(context, ref, value),
           ),
           const SizedBox(height: AppSpacing.lg),
           const SectionLabel(label: 'Activity'),
           const SizedBox(height: AppSpacing.sm),
-          _ToggleList(
-            toggles: _toggles,
-            onToggle: (toggleId) { setState(() { _toggles[toggleId] = !(_toggles[toggleId] ?? false); }); _showSavedToast(); },
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.card, borderRadius: AppRadius.borderLg,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(children: [
+              for (int index = 0; index < _privacyToggles.length; index++) ...[
+                if (index > 0) const Divider(height: 1, color: AppColors.border),
+                _ToggleRow(
+                  icon: _privacyToggles[index].icon,
+                  label: _privacyToggles[index].label,
+                  description: _privacyToggles[index].description,
+                  isEnabled: _getToggleValue(settings, _privacyToggles[index].id),
+                  onToggle: () => _handleToggle(context, ref, _privacyToggles[index].id, _getToggleValue(settings, _privacyToggles[index].id)),
+                ),
+              ],
+            ]),
           ),
           const SizedBox(height: AppSpacing.md),
           Center(child: Text(
@@ -156,36 +233,6 @@ class _RadioRow extends StatelessWidget {
             ),
         ]),
       ),
-    );
-  }
-}
-
-// ── Toggle list ─────────────────────────────────────────────────────────
-
-class _ToggleList extends StatelessWidget {
-  const _ToggleList({required this.toggles, required this.onToggle});
-  final Map<String, bool> toggles;
-  final ValueChanged<String> onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.card, borderRadius: AppRadius.borderLg,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(children: [
-        for (int index = 0; index < _privacyToggles.length; index++) ...[
-          if (index > 0) const Divider(height: 1, color: AppColors.border),
-          _ToggleRow(
-            icon: _privacyToggles[index].icon,
-            label: _privacyToggles[index].label,
-            description: _privacyToggles[index].description,
-            isEnabled: toggles[_privacyToggles[index].id] ?? false,
-            onToggle: () => onToggle(_privacyToggles[index].id),
-          ),
-        ],
-      ]),
     );
   }
 }

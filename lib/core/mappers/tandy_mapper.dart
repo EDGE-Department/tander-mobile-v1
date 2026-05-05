@@ -91,13 +91,15 @@ TandyStructuredBlock sponsorAdToBlock(SponsorAdDto sponsor) {
     blockId: 'sponsor-${sponsor.sponsorId}',
     title: sponsor.sponsorName,
     sponsorData: SponsorBlockData(
-      sponsorId: sponsor.sponsorId.toString(),
+      sponsorId: sponsor.sponsorId,
       sponsorName: sponsor.sponsorName,
       sponsorType: sponsor.sponsorType,
       logoUrl: sponsor.sponsorLogoUrl,
       message: sponsor.adContent,
       websiteUrl: sponsor.sponsorWebsiteUrl,
       phoneNumber: sponsor.phoneNumber,
+      impressionId: sponsor.impressionId,
+      disclaimer: sponsor.disclaimer,
       products: (sponsor.recommendedProducts)
           .map(
             (product) => SponsorProduct(
@@ -129,6 +131,7 @@ TandyMessage mapTandyMessageDto(TandyMessageDto dto) {
     detectedEmotion: dto.detectedEmotion,
     domain: dto.domain,
     safetyNotices: const <String>[],
+    rating: dto.rating,
   );
 }
 
@@ -175,6 +178,7 @@ TandySendResult mapSendMessageResponse(TandySendMessageResponseDto dto) {
           dto.detectedEmotion ?? assistantMessage.detectedEmotion,
       domain: assistantMessage.domain,
       safetyNotices: dto.safetyNotices,
+      rating: assistantMessage.rating,
     );
   }
 
@@ -193,7 +197,7 @@ TandyThread mapTandyConversationDto(TandyConversationDto dto) {
   return TandyThread(
     conversationId: dto.id.toString(),
     createdAt: DateTime.tryParse(dto.createdAt) ?? DateTime.now(),
-    language: dto.language,
+    language: dto.language ?? 'en',
     messages: dto.messages.map(mapTandyMessageDto).toList(),
   );
 }

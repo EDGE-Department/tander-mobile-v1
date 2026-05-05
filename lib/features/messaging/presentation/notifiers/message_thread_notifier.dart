@@ -21,8 +21,8 @@ const Duration _typingAutoClear = Duration(seconds: 5);
 
 final messageThreadNotifierProvider = NotifierProvider.family
     .autoDispose<MessageThreadNotifier, MessageThreadState, String>(
-  MessageThreadNotifier.new,
-);
+      MessageThreadNotifier.new,
+    );
 
 // ─── Notifier ──────────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ final class MessageThreadNotifier
 
   Future<void> _loadMessages(String conversationId) async {
     final fetchResult = await _repository.fetchMessages(
-      conversationId: int.parse(conversationId),
+      conversationId: conversationId,
     );
 
     fetchResult.when(
@@ -96,35 +96,32 @@ final class MessageThreadNotifier
   // -----------------------------------------------------------------------
 
   void _subscribeToStompTopics() {
-    if (_roomId.isEmpty) return;
-
     _stompTeardowns.add(
-      _stompDatasource.subscribeToRoom(
-        _roomId,
-        conversationId: _conversationId,
+      _stompDatasource.subscribeToConversation(
+        _conversationId,
+        roomId: _roomId,
         onMessage: _onStompMessage,
       ),
     );
 
     _stompTeardowns.add(
       _stompDatasource.subscribeToTyping(
-        _roomId,
-        onTyping: _onStompTyping,
+        _conversationId,
+        onTyping: ({required bool isTyping, required String usrId}) {
+          _onStompTyping(isTyping: isTyping, userId: usrId);
+        },
       ),
     );
 
     _stompTeardowns.add(
       _stompDatasource.subscribeToDelivered(
-        _roomId,
+        _conversationId,
         onDelivered: _onStompDelivered,
       ),
     );
 
     _stompTeardowns.add(
-      _stompDatasource.subscribeToRead(
-        _roomId,
-        onRead: _onStompRead,
-      ),
+      _stompDatasource.subscribeToRead(_conversationId, onRead: _onStompRead),
     );
   }
 
@@ -133,8 +130,9 @@ final class MessageThreadNotifier
     if (currentState is! MessageThreadLoaded) return;
 
     // Deduplicate.
-    final alreadyExists = currentState.messages
-        .any((existing) => existing.messageId == message.messageId);
+    final alreadyExists = currentState.messages.any(
+      (existing) => existing.messageId == message.messageId,
+    );
     if (alreadyExists) return;
 
     final updatedMessages = [...currentState.messages, message];
@@ -146,8 +144,8 @@ final class MessageThreadNotifier
     final isOwnMessage = message.senderUserId == _currentUserId;
     if (!isOwnMessage) {
       _stompDatasource.sendDeliveryReceipt(
-        messageId: int.parse(message.messageId),
-        roomId: _roomId,
+        messageId: message.messageId,
+        conversationId: _conversationId,
       );
       _markRead();
     }
@@ -156,8 +154,8 @@ final class MessageThreadNotifier
     ref.read(conversationsNotifierProvider.notifier).refreshSilently();
   }
 
-  void _onStompTyping({required bool isTyping, required int userId}) {
-    if (userId.toString() == _currentUserId) return;
+  void _onStompTyping({required bool isTyping, required String userId}) {
+    if (userId == _currentUserId) return;
 
     final currentState = state;
     if (currentState is! MessageThreadLoaded) return;
@@ -175,13 +173,12 @@ final class MessageThreadNotifier
     }
   }
 
-  void _onStompDelivered(int messageId) {
+  void _onStompDelivered(String messageId) {
     final currentState = state;
     if (currentState is! MessageThreadLoaded) return;
 
-    final messageIdStr = messageId.toString();
     final updatedMessages = currentState.messages.map((message) {
-      if (message.messageId == messageIdStr &&
+      if (message.messageId == messageId &&
           message.deliveryState == MessageDeliveryState.sent) {
         return MessageItem(
           messageId: message.messageId,
@@ -252,10 +249,9 @@ final class MessageThreadNotifier
 
     state = currentState.copyWith(isSending: true);
 
-    final receiverId = _extractReceiverId();
     final sendResult = await _repository.sendTextMessage(
-      receiverId: receiverId,
-      content: trimmedBody,
+      conversationId: _conversationId,
+      body: trimmedBody,
     );
 
     final latestState = state;
@@ -289,7 +285,7 @@ final class MessageThreadNotifier
     state = currentState.copyWith(isSendingMedia: true);
 
     final sendResult = await _repository.sendImageMessage(
-      roomId: _roomId,
+      conversationId: _conversationId,
       filePath: filePath,
       fileName: fileName,
     );
@@ -326,7 +322,7 @@ final class MessageThreadNotifier
     state = currentState.copyWith(isSendingMedia: true);
 
     final sendResult = await _repository.sendVoiceMessage(
-      roomId: _roomId,
+      conversationId: _conversationId,
       filePath: filePath,
       fileName: fileName,
       durationSeconds: durationSeconds,
@@ -387,7 +383,7 @@ final class MessageThreadNotifier
     state = currentState.copyWith(messages: updated);
 
     // Fire API call in background
-    final result = await _repository.unsendMessage(messageId: int.parse(messageId));
+    final result = await _repository.unsendMessage(messageId: messageId);
     result.when(
       success: (_) {
         ref.read(conversationsNotifierProvider.notifier).refreshSilently();
@@ -395,7 +391,11 @@ final class MessageThreadNotifier
       failure: (exception) {
         // Roll back on failure
         state = currentState;
-        AppLogger.error('Failed to unsend message', operation: _tag, error: exception);
+        AppLogger.error(
+          'Failed to unsend message',
+          operation: _tag,
+          error: exception,
+        );
       },
     );
   }
@@ -413,7 +413,7 @@ final class MessageThreadNotifier
     state = currentState.copyWith(messages: updated);
 
     // Fire API call in background
-    final result = await _repository.hideMessageForUser(messageId: int.parse(messageId));
+    final result = await _repository.hideMessageForUser(messageId: messageId);
     result.when(
       success: (_) {
         ref.read(conversationsNotifierProvider.notifier).refreshSilently();
@@ -421,7 +421,11 @@ final class MessageThreadNotifier
       failure: (exception) {
         // Roll back on failure
         state = currentState;
-        AppLogger.error('Failed to hide message', operation: _tag, error: exception);
+        AppLogger.error(
+          'Failed to hide message',
+          operation: _tag,
+          error: exception,
+        );
       },
     );
   }
@@ -433,13 +437,12 @@ final class MessageThreadNotifier
   /// Notify the server that the user is typing, rate-limited to one send
   /// per [_typingCooldown].
   void notifyTyping() {
-    if (_roomId.isEmpty) return;
     if (_typingCooldownTimer?.isActive ?? false) return;
 
-    _stompDatasource.sendTypingIndicator(_roomId, isTyping: true);
+    _stompDatasource.sendTypingIndicator(_conversationId, isTyping: true);
 
     _typingCooldownTimer = Timer(_typingCooldown, () {
-      _stompDatasource.sendTypingIndicator(_roomId, isTyping: false);
+      _stompDatasource.sendTypingIndicator(_conversationId, isTyping: false);
     });
   }
 
@@ -462,27 +465,14 @@ final class MessageThreadNotifier
   // -----------------------------------------------------------------------
 
   void _markRead() {
-    final conversationIdInt = int.tryParse(_conversationId);
-    if (conversationIdInt == null) return;
-
-    _repository.markConversationRead(conversationId: conversationIdInt);
-    _stompDatasource.sendReadReceipt(conversationId: conversationIdInt);
-  }
-
-  int _extractReceiverId() {
-    final parts = _roomId.split('_');
-    if (parts.length < 3) return 0;
-
-    final id1 = int.tryParse(parts[1]) ?? 0;
-    final id2 = int.tryParse(parts[2]) ?? 0;
-    final currentNumericId = int.tryParse(_currentUserId) ?? 0;
-
-    return id1 == currentNumericId ? id2 : id1;
+    _repository.markConversationRead(conversationId: _conversationId);
+    _stompDatasource.sendReadReceipt(conversationId: _conversationId);
   }
 
   void _appendMessage(MessageThreadLoaded currentState, MessageItem message) {
-    final alreadyExists = currentState.messages
-        .any((existing) => existing.messageId == message.messageId);
+    final alreadyExists = currentState.messages.any(
+      (existing) => existing.messageId == message.messageId,
+    );
     if (alreadyExists) return;
 
     final updatedMessages = [...currentState.messages, message];

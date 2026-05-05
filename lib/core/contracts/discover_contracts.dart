@@ -39,7 +39,7 @@ class DiscoveryProfileDto {
   factory DiscoveryProfileDto.fromJson(Map<String, Object?> json) =>
       _$DiscoveryProfileDtoFromJson(json);
 
-  final int userId;
+  final String userId;
   final String username;
   final String? displayName;
   final int? age;

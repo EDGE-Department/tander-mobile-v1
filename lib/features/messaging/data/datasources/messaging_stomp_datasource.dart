@@ -17,19 +17,18 @@ final class MessagingStompDatasource {
   // Subscriptions
   // -----------------------------------------------------------------------
 
-  /// Subscribe to new messages arriving in [roomId].
+  /// Subscribe to new messages arriving in a conversation.
   ///
-  /// [conversationId] is threaded into the mapped [MessageItem] for
-  /// downstream consumers.
-  StompUnsubscribeCallback subscribeToRoom(
-    String roomId, {
-    required String conversationId,
+  /// [roomId] is threaded into the mapped [MessageItem] for downstream consumers.
+  StompUnsubscribeCallback subscribeToConversation(
+    String conversationId, {
+    required String roomId,
     required void Function(MessageItem message) onMessage,
   }) {
-    final destination = '/topic/chat/$roomId';
+    final destination = '/topic/conversation.$conversationId';
     AppLogger.debug(
-      'Subscribing to room messages',
-      operation: '$_tag.subscribeToRoom',
+      'Subscribing to conversation messages',
+      operation: '$_tag.subscribeToConversation',
       context: {'destination': destination},
     );
 
@@ -48,13 +47,13 @@ final class MessagingStompDatasource {
     );
   }
 
-  /// Subscribe to typing indicators in [roomId].
+  /// Subscribe to typing indicators in [conversationId].
   StompUnsubscribeCallback subscribeToTyping(
-    String roomId, {
-    required void Function({required bool isTyping, required int userId})
+    String conversationId, {
+    required void Function({required bool isTyping, required String usrId})
         onTyping,
   }) {
-    final destination = '/topic/chat/$roomId/typing';
+    final destination = '/topic/conversation.$conversationId/typing';
     AppLogger.debug(
       'Subscribing to typing indicators',
       operation: '$_tag.subscribeToTyping',
@@ -65,24 +64,20 @@ final class MessagingStompDatasource {
       destination,
       (Map<String, Object?> body) {
         final rawUserId = body['userId'];
-        final userId = switch (rawUserId) {
-          final int intId => intId,
-          final String stringId => int.tryParse(stringId) ?? 0,
-          _ => 0,
-        };
+        final usrId = rawUserId?.toString() ?? '';
 
         final isTyping = body['isTyping'] == true;
-        onTyping(isTyping: isTyping, userId: userId);
+        onTyping(isTyping: isTyping, usrId: usrId);
       },
     );
   }
 
-  /// Subscribe to delivery receipts in [roomId].
+  /// Subscribe to delivery receipts in a conversation.
   StompUnsubscribeCallback subscribeToDelivered(
-    String roomId, {
-    required void Function(int messageId) onDelivered,
+    String conversationId, {
+    required void Function(String messageId) onDelivered,
   }) {
-    final destination = '/topic/chat/$roomId/delivered';
+    final destination = '/topic/conversation.$conversationId/delivered';
     AppLogger.debug(
       'Subscribing to delivery receipts',
       operation: '$_tag.subscribeToDelivered',
@@ -93,24 +88,20 @@ final class MessagingStompDatasource {
       destination,
       (Map<String, Object?> body) {
         final rawMessageId = body['messageId'];
-        final messageId = switch (rawMessageId) {
-          final int intId => intId,
-          final String stringId => int.tryParse(stringId),
-          _ => null,
-        };
-        if (messageId != null) {
+        final messageId = rawMessageId?.toString();
+        if (messageId != null && messageId.isNotEmpty) {
           onDelivered(messageId);
         }
       },
     );
   }
 
-  /// Subscribe to read receipts in [roomId].
+  /// Subscribe to read receipts in a conversation.
   StompUnsubscribeCallback subscribeToRead(
-    String roomId, {
+    String conversationId, {
     required void Function({required String readByUserId}) onRead,
   }) {
-    final destination = '/topic/chat/$roomId/read';
+    final destination = '/topic/conversation.$conversationId/read';
     AppLogger.debug(
       'Subscribing to read receipts',
       operation: '$_tag.subscribeToRead',
@@ -120,7 +111,7 @@ final class MessagingStompDatasource {
     return StompClientManager.instance.subscribe(
       destination,
       (Map<String, Object?> body) {
-        final readBy = body['readBy'];
+        final readBy = body['readBy'] ?? body['userId'];
         if (readBy != null) {
           onRead(readByUserId: readBy.toString());
         }
@@ -132,34 +123,30 @@ final class MessagingStompDatasource {
   // Sends
   // -----------------------------------------------------------------------
 
-  /// Sends a typing indicator for [roomId].
-  void sendTypingIndicator(String roomId, {required bool isTyping}) {
+  /// Sends a typing indicator for [conversationId].
+  void sendTypingIndicator(String conversationId, {required bool isTyping}) {
     StompClientManager.instance.send(
-      '/app/chat.typing/$roomId',
-      <String, Object?>{
-        'conversationId': 0,
-        'receiverId': 0,
-        'isTyping': isTyping,
-      },
+      '/app/chat.typing.$conversationId',
+      <String, Object?>{'isTyping': isTyping},
     );
   }
 
   /// Sends a delivery receipt for a specific [messageId].
   void sendDeliveryReceipt({
-    required int messageId,
-    required String roomId,
+    required String messageId,
+    required String conversationId,
   }) {
     StompClientManager.instance.send(
       '/app/chat.delivered',
       <String, Object?>{
         'messageId': messageId,
-        'roomId': roomId,
+        'conversationId': conversationId,
       },
     );
   }
 
   /// Sends a read receipt for a [conversationId].
-  void sendReadReceipt({required int conversationId}) {
+  void sendReadReceipt({required String conversationId}) {
     StompClientManager.instance.send(
       '/app/chat.read',
       <String, Object?>{'conversationId': conversationId},

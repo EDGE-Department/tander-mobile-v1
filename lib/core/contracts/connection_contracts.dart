@@ -7,55 +7,39 @@ import 'package:json_annotation/json_annotation.dart';
 part 'connection_contracts.g.dart';
 
 // ---------------------------------------------------------------------------
-// Match DTO
+// Match DTO - matches backend's MatchDto.java
 // ---------------------------------------------------------------------------
 
 @JsonSerializable()
 class MatchDto {
   const MatchDto({
     required this.id,
-    required this.matchedUserId,
-    required this.matchedUsername,
-    required this.matchedUserDisplayName,
+    required this.otherUserId,
     required this.status,
-    required this.matchedAt,
-    required this.presenceStatus,
-    required this.online,
-    required this.initiator,
-    this.matchedUserProfilePhotoUrl,
-    this.matchedUserAge,
-    this.matchedUserLocation,
-    this.matchedUserBio,
-    this.respondedAt,
-    this.conversationId,
-    this.lastSeenTimestamp,
-    this.lastActiveTimestamp,
+    this.otherUsername,
+    this.otherDisplayName,
+    this.otherProfilePhotoUrl,
+    this.otherAge,
+    this.otherOnline = false,
+    this.matchedAt,
+    this.lastMessageAt,
   });
 
   factory MatchDto.fromJson(Map<String, Object?> json) =>
       _$MatchDtoFromJson(json);
 
-  final int id;
-  final int matchedUserId;
-  final String matchedUsername;
-  final String matchedUserDisplayName;
-  final String? matchedUserProfilePhotoUrl;
-  final int? matchedUserAge;
-  final String? matchedUserLocation;
-  final String? matchedUserBio;
+  final String id;
+  final String otherUserId;
+  final String? otherUsername;
+  final String? otherDisplayName;
+  final String? otherProfilePhotoUrl;
+  final int? otherAge;
+  final bool otherOnline;
 
-  /// 'PENDING', 'ACCEPTED', 'DECLINED', or 'UNMATCHED'
+  /// 'PENDING', 'ACCEPTED', 'DECLINED', 'BLOCKED', or 'UNMATCHED'
   final String status;
-  final String matchedAt;
-  final String? respondedAt;
-  final int? conversationId;
-
-  /// 'online', 'recently_active', or 'offline'
-  final String presenceStatus;
-  final int? lastSeenTimestamp;
-  final int? lastActiveTimestamp;
-  final bool online;
-  final bool initiator;
+  final String? matchedAt;
+  final String? lastMessageAt;
 
   Map<String, Object?> toJson() => _$MatchDtoToJson(this);
 }
@@ -95,7 +79,7 @@ class SpringPageDto<TItem> {
 }
 
 // ---------------------------------------------------------------------------
-// Swipe
+// Swipe - matches backend's SwipeApiRequest.java and SwipeApiResponse.java
 // ---------------------------------------------------------------------------
 
 @JsonSerializable()
@@ -108,7 +92,7 @@ class SwipeRequestDto {
   factory SwipeRequestDto.fromJson(Map<String, Object?> json) =>
       _$SwipeRequestDtoFromJson(json);
 
-  final int targetUserId;
+  final String targetUserId;
 
   /// 'LEFT' or 'RIGHT'
   final String direction;
@@ -119,34 +103,16 @@ class SwipeRequestDto {
 @JsonSerializable()
 class SwipeResponseDto {
   const SwipeResponseDto({
-    required this.success,
-    required this.message,
-    required this.match,
-    required this.requestSent,
+    required this.matched,
     required this.swipesRemaining,
-    this.matchId,
-    this.matchedUserId,
-    this.matchedUsername,
-    this.matchedUserDisplayName,
-    this.matchedUserProfilePhotoUrl,
-    this.matchedAt,
-    this.expiresAt,
+    this.match,
   });
 
   factory SwipeResponseDto.fromJson(Map<String, Object?> json) =>
       _$SwipeResponseDtoFromJson(json);
 
-  final bool success;
-  final String message;
-  final bool match;
-  final bool requestSent;
-  final int? matchId;
-  final int? matchedUserId;
-  final String? matchedUsername;
-  final String? matchedUserDisplayName;
-  final String? matchedUserProfilePhotoUrl;
-  final String? matchedAt;
-  final String? expiresAt;
+  final bool matched;
+  final MatchDto? match;
   final int swipesRemaining;
 
   Map<String, Object?> toJson() => _$SwipeResponseDtoToJson(this);

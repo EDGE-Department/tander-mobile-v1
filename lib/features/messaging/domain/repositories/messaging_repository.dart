@@ -12,40 +12,44 @@ abstract interface class MessagingRepository {
     required String currentUserId,
   });
 
-  /// Fetches the message thread for a given [conversationId].
-  Future<Result<List<MessageItem>>> fetchMessages({
-    required int conversationId,
+  /// Gets or creates the conversation with [otherUserId].
+  Future<Result<ConversationItem>> startConversation({
+    required String otherUserId,
+    required String currentUserId,
   });
 
-  /// Sends a plain text message to [receiverId].
+  /// Fetches the message thread for a given [conversationId].
+  Future<Result<List<MessageItem>>> fetchMessages({
+    required String conversationId,
+  });
+
+  /// Sends a plain text message to a conversation.
   Future<Result<MessageItem>> sendTextMessage({
-    required int receiverId,
-    required String content,
+    required String conversationId,
+    required String body,
   });
 
   /// Sends an image message from a local [filePath].
   Future<Result<MessageItem>> sendImageMessage({
-    required String roomId,
+    required String conversationId,
     required String filePath,
     required String fileName,
   });
 
   /// Sends a voice message from a local [filePath].
   Future<Result<MessageItem>> sendVoiceMessage({
-    required String roomId,
+    required String conversationId,
     required String filePath,
     required String fileName,
     required int durationSeconds,
   });
 
   /// Marks all messages in [conversationId] as read (server-side).
-  Future<Result<void>> markConversationRead({
-    required int conversationId,
-  });
+  Future<Result<void>> markConversationRead({required String conversationId});
 
   /// Unsend a message (delete for everyone). Sender-only, 1-hour limit.
-  Future<Result<void>> unsendMessage({required int messageId});
+  Future<Result<void>> unsendMessage({required String messageId});
 
   /// Hide a message for the current user only (delete for me).
-  Future<Result<void>> hideMessageForUser({required int messageId});
+  Future<Result<void>> hideMessageForUser({required String messageId});
 }

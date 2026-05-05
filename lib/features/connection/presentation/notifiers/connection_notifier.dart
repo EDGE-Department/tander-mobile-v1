@@ -5,10 +5,14 @@
 /// after each mutation so the UI stays in sync.
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
+import 'package:tander_flutter_v3/core/realtime/stomp_client_manager.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tander_flutter_v3/features/connection/domain/repositories/connection_repository.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/providers/connection_providers.dart';
 import 'package:tander_flutter_v3/features/connection/presentation/states/connection_state.dart';
@@ -24,7 +28,9 @@ final connectionNotifierProvider =
 // ── Notifier ────────────────────────────────────────────────────────────
 
 final class ConnectionNotifier extends Notifier<ConnectionState> {
-  late final ConnectionRepository _repository;
+  // Not `late final` — Notifier.build() runs again on every ref.invalidate,
+  // and re-assigning a `late final` throws LateInitializationError.
+  late ConnectionRepository _repository;
 
   static const String _tag = 'ConnectionNotifier';
 
@@ -33,9 +39,20 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
   String? _mutatingConnectionId;
   String? get mutatingConnectionId => _mutatingConnectionId;
 
+  /// Coalesces rapid-fire WS events (e.g. swipe + match) into a single
+  /// refetch.
+  Timer? _refreshDebounce;
+
   @override
   ConnectionState build() {
     _repository = ref.read(connectionRepositoryProvider);
+
+    final unsubscribe = _subscribeToRealtimeEvents();
+
+    ref.onDispose(() {
+      _refreshDebounce?.cancel();
+      unsubscribe?.call();
+    });
 
     Future.microtask(loadAll);
 
@@ -43,11 +60,58 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
   }
 
   // -----------------------------------------------------------------------
+  // Realtime
+  // -----------------------------------------------------------------------
+
+  /// Subscribes to `/topic/connections.{userId}`. Returns null when the user
+  /// is not yet logged in (in which case there is nothing to subscribe to).
+  StompUnsubscribeCallback? _subscribeToRealtimeEvents() {
+    final session = ref.read(sessionManagerProvider).session;
+    final userId = session?.userId.toString();
+    if (userId == null || userId.isEmpty) {
+      AppLogger.debug(
+        'No session — skipping realtime subscription',
+        operation: _tag,
+      );
+      return null;
+    }
+
+    final stomp = ref.read(connectionStompDatasourceProvider);
+    return stomp.subscribeToConnectionEvents(
+      userId,
+      onEvent: _handleRealtimeEvent,
+    );
+  }
+
+  void _handleRealtimeEvent(String kind) {
+    AppLogger.debug(
+      'Connection event received',
+      operation: _tag,
+      context: {'kind': kind},
+    );
+
+    // Debounce: a single user action (e.g. swipe → match) emits two events
+    // in quick succession; coalesce into one refetch.
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 150), loadAll);
+
+    // A new match also adds a row to the discover-removed list — invalidate
+    // discover so the swiped card doesn't reappear.
+    if (kind == 'match' || kind == 'unmatch' || kind == 'remove') {
+      ref.invalidate(discoverNotifierProvider);
+    }
+  }
+
+  // -----------------------------------------------------------------------
   // Load all three lists in parallel
   // -----------------------------------------------------------------------
 
   Future<void> loadAll() async {
-    state = const ConnectionLoading();
+    // Only show the skeleton on first load; for refetches (manual refresh,
+    // WS-triggered) keep the existing rows visible to avoid flicker.
+    if (state is! ConnectionLoaded) {
+      state = const ConnectionLoading();
+    }
 
     final results = await (
       _repository.fetchIncomingRequests(),
@@ -108,7 +172,7 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     acceptResult.when(
       success: (_) {
         AppLogger.debug('Accepted $connectionId', operation: _tag);
-        Future.microtask(loadAll);
+        // WS event will refetch — no manual call needed.
       },
       failure: (exception) {
         AppLogger.error(
@@ -116,6 +180,7 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
           operation: _tag,
           error: exception,
         );
+        // Roll back optimistic removal.
         Future.microtask(loadAll);
       },
     );
@@ -184,6 +249,9 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     removeResult.when(
       success: (_) {
         AppLogger.debug('Removed $connectionId', operation: _tag);
+        // Discover invalidate happens in the WS event handler too, but keep
+        // it here so the local actor sees the swiped card disappear without
+        // round-tripping through the server.
         ref.invalidate(discoverNotifierProvider);
       },
       failure: (exception) {

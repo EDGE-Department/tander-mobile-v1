@@ -11,6 +11,8 @@ import 'package:go_router/go_router.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/security_form_sections.dart';
 import 'package:tander_flutter_v3/shared/widgets/section_label.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_confirm_dialog.dart';
@@ -32,7 +34,6 @@ class _SettingsSecurityScreenState
   late final TextEditingController _newPasswordController;
   late final TextEditingController _confirmPasswordController;
 
-  bool _isTwoFactorEnabled = false;
   bool _isChangingPassword = false;
   bool _showPasswordForm = false;
 
@@ -52,12 +53,14 @@ class _SettingsSecurityScreenState
     super.dispose();
   }
 
-  void _toggleTwoFactor() {
-    setState(() => _isTwoFactorEnabled = !_isTwoFactorEnabled);
+  void _toggleTwoFactor(bool currentValue) {
+    ref.read(userSettingsProvider.notifier).updateSettings(
+      UpdateSettingsRequestDto(twoFactorEnabled: !currentValue),
+    );
     TanderToastOverlay.show(
       context,
       TanderToastData(
-        message: _isTwoFactorEnabled
+        message: !currentValue
             ? 'Two-factor authentication enabled.'
             : 'Two-factor authentication disabled.',
         variant: TanderToastVariant.success,
@@ -114,6 +117,44 @@ class _SettingsSecurityScreenState
 
   @override
   Widget build(BuildContext context) {
+    final settingsAsync = ref.watch(userSettingsProvider);
+
+    if (settingsAsync.isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          backgroundColor: AppColors.card,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, size: 22),
+            onPressed: () => context.pop(),
+            tooltip: 'Back to settings',
+          ),
+          title: Text('Security', style: AppTypography.h3),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          backgroundColor: AppColors.card,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, size: 22),
+            onPressed: () => context.pop(),
+            tooltip: 'Back to settings',
+          ),
+          title: Text('Security', style: AppTypography.h3),
+        ),
+        body: const Center(child: Text('Failed to load settings.')),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -148,8 +189,8 @@ class _SettingsSecurityScreenState
             const SectionLabel(label: 'Two-factor authentication'),
             const SizedBox(height: AppSpacing.sm),
             TwoFactorSection(
-              isEnabled: _isTwoFactorEnabled,
-              onToggle: _toggleTwoFactor,
+              isEnabled: settings.twoFactorEnabled,
+              onToggle: () => _toggleTwoFactor(settings.twoFactorEnabled),
             ),
             const SizedBox(height: AppSpacing.lg),
             const SectionLabel(label: 'Data'),

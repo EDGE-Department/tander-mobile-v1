@@ -10,20 +10,23 @@
 /// ```
 library;
 
-import 'dart:ui';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
-import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
+import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/photo_lightbox.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
@@ -42,7 +45,11 @@ Future<void> showProfileViewModal(
 }) {
   final isDesktop = MediaQuery.sizeOf(context).width >= _desktopBreakpoint;
   if (isDesktop) {
-    return _showDesktopPanel(context, userId: userId, relationship: relationship);
+    return _showDesktopPanel(
+      context,
+      userId: userId,
+      relationship: relationship,
+    );
   }
   return _showMobileSheet(context, userId: userId, relationship: relationship);
 }
@@ -63,10 +70,15 @@ Future<void> _showMobileSheet(
     pageBuilder: (_, _, _) =>
         _MobileSheetWrapper(userId: userId, relationship: relationship),
     transitionBuilder: (_, animation, _, child) {
-      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
       return SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-            .animate(curved),
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(curved),
         child: child,
       );
     },
@@ -80,8 +92,10 @@ class _MobileSheetWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.sizeOf(context).height * _mobileMaxHeightFraction;
-    final topPadding = MediaQuery.sizeOf(context).height * (1 - _mobileMaxHeightFraction);
+    final maxHeight =
+        MediaQuery.sizeOf(context).height * _mobileMaxHeightFraction;
+    final topPadding =
+        MediaQuery.sizeOf(context).height * (1 - _mobileMaxHeightFraction);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -93,7 +107,10 @@ class _MobileSheetWrapper extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: maxHeight),
-            child: _ProfileModalBody(userId: userId, relationship: relationship),
+            child: _ProfileModalBody(
+              userId: userId,
+              relationship: relationship,
+            ),
           ),
         ),
       ),
@@ -117,7 +134,10 @@ Future<void> _showDesktopPanel(
     pageBuilder: (_, _, _) =>
         _DesktopPanelWrapper(userId: userId, relationship: relationship),
     transitionBuilder: (_, animation, _, child) {
-      final curved = CurvedAnimation(parent: animation, curve: AppCurves.premiumEase);
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: AppCurves.premiumEase,
+      );
       return FadeTransition(
         opacity: curved,
         child: ScaleTransition(
@@ -130,7 +150,10 @@ Future<void> _showDesktopPanel(
 }
 
 class _DesktopPanelWrapper extends StatelessWidget {
-  const _DesktopPanelWrapper({required this.userId, required this.relationship});
+  const _DesktopPanelWrapper({
+    required this.userId,
+    required this.relationship,
+  });
   final String userId;
   final ProfileRelationship relationship;
 
@@ -148,7 +171,11 @@ class _DesktopPanelWrapper extends StatelessWidget {
             color: AppColors.card,
             borderRadius: BorderRadius.circular(24),
             boxShadow: const [
-              BoxShadow(color: Color(0x3D000000), blurRadius: 32, offset: Offset(0, 8)),
+              BoxShadow(
+                color: Color(0x3D000000),
+                blurRadius: 32,
+                offset: Offset(0, 8),
+              ),
             ],
           ),
           clipBehavior: Clip.antiAlias,
@@ -173,6 +200,7 @@ class _ProfileModalBody extends ConsumerStatefulWidget {
 class _ProfileModalBodyState extends ConsumerState<_ProfileModalBody> {
   late ProfileRelationship _localRelationship;
   bool _isSendingRequest = false;
+  bool _isOpeningConversation = false;
 
   @override
   void initState() {
@@ -182,7 +210,8 @@ class _ProfileModalBodyState extends ConsumerState<_ProfileModalBody> {
 
   List<String> _buildPhotoList(DiscoveryCandidate candidate) {
     return [
-      if (candidate.profilePhotoUrl != null && candidate.profilePhotoUrl!.isNotEmpty)
+      if (candidate.profilePhotoUrl != null &&
+          candidate.profilePhotoUrl!.isNotEmpty)
         candidate.profilePhotoUrl!,
       ...candidate.additionalPhotos,
     ];
@@ -200,20 +229,51 @@ class _ProfileModalBodyState extends ConsumerState<_ProfileModalBody> {
     try {
       await ref.read(discoverNotifierProvider.notifier).likeCurrentProfile();
       if (mounted) {
-        setState(() => _localRelationship = ProfileRelationship.pendingOutgoing);
+        setState(
+          () => _localRelationship = ProfileRelationship.pendingOutgoing,
+        );
       }
     } finally {
       if (mounted) setState(() => _isSendingRequest = false);
     }
   }
 
-  void _handleMessage() => Navigator.of(context).pop();
+  void _handleMessage() {
+    if (_isOpeningConversation) return;
+    unawaited(_openConversation());
+  }
+
+  Future<void> _openConversation() async {
+    setState(() => _isOpeningConversation = true);
+
+    final router = GoRouter.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final currentUserId = ref.read(currentUserIdProvider);
+    final result = await ref
+        .read(messagingRepositoryProvider)
+        .startConversation(
+          otherUserId: widget.userId,
+          currentUserId: currentUserId,
+        );
+
+    if (!mounted) return;
+
+    setState(() => _isOpeningConversation = false);
+
+    result.when(
+      success: (conversation) {
+        Navigator.of(context).pop();
+        router.go(AppRoutes.messageThread(conversation.conversationId));
+      },
+      failure: (exception) {
+        messenger.showSnackBar(SnackBar(content: Text(exception.userMessage)));
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final profileAsync = ref.watch(
-      discoverProfileProvider(int.parse(widget.userId)),
-    );
+    final profileAsync = ref.watch(discoverProfileProvider(widget.userId));
 
     return profileAsync.when(
       loading: () => const _ProfileModalSkeleton(),
@@ -222,8 +282,8 @@ class _ProfileModalBodyState extends ConsumerState<_ProfileModalBody> {
         final allPhotos = _buildPhotoList(candidate);
         final sessionManager = ref.read(sessionManagerLateProvider);
         final currentUserId = sessionManager?.session?.userId;
-        final isSelf = currentUserId != null &&
-            currentUserId.toString() == widget.userId;
+        final isSelf =
+            currentUserId != null && currentUserId.toString() == widget.userId;
         return ProfileViewContent(
           profile: _candidateToUserProfile(candidate),
           relationship: _localRelationship,
@@ -244,7 +304,6 @@ class _ProfileModalBodyState extends ConsumerState<_ProfileModalBody> {
 UserProfile _candidateToUserProfile(DiscoveryCandidate candidate) {
   return UserProfile(
     userId: candidate.userId,
-    username: candidate.username,
     firstName: candidate.firstName,
     age: candidate.age,
     city: candidate.city,
@@ -268,22 +327,26 @@ class _ProfileModalSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(children: [
-      AspectRatio(
-        aspectRatio: 4 / 5,
-        child: SkeletonCard(variant: SkeletonVariant.fullCard),
-      ),
-      Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Column(children: [
-          SkeletonCard(variant: SkeletonVariant.title),
-          SizedBox(height: AppSpacing.md),
-          SkeletonCard(variant: SkeletonVariant.text),
-          SizedBox(height: AppSpacing.sm),
-          SkeletonCard(variant: SkeletonVariant.text),
-        ]),
-      ),
-    ]);
+    return const Column(
+      children: [
+        AspectRatio(
+          aspectRatio: 4 / 5,
+          child: SkeletonCard(variant: SkeletonVariant.fullCard),
+        ),
+        Padding(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            children: [
+              SkeletonCard(variant: SkeletonVariant.title),
+              SizedBox(height: AppSpacing.md),
+              SkeletonCard(variant: SkeletonVariant.text),
+              SizedBox(height: AppSpacing.sm),
+              SkeletonCard(variant: SkeletonVariant.text),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -300,47 +363,54 @@ class _ProfileModalError extends StatelessWidget {
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.xxxl,
       ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: const BoxDecoration(
-            color: AppColors.dangerLight,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Icon(Icons.people, size: 28, color: AppColors.danger),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'Could not load this profile',
-          style: AppTypography.label.copyWith(color: AppColors.textStrong),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Please check your connection and try again.',
-          style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        GestureDetector(
-          onTap: onClose,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: AppSpacing.touchMinimum),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.subtle,
-              borderRadius: AppRadius.borderLg,
-              border: Border.all(color: AppColors.border),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: AppColors.dangerLight,
+              shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Text(
-              'Close',
-              style: AppTypography.label.copyWith(fontWeight: FontWeight.w600),
+            child: const Icon(Icons.people, size: 28, color: AppColors.danger),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Could not load this profile',
+            style: AppTypography.label.copyWith(color: AppColors.textStrong),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Please check your connection and try again.',
+            style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          GestureDetector(
+            onTap: onClose,
+            child: Container(
+              constraints: const BoxConstraints(
+                minHeight: AppSpacing.touchMinimum,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.subtle,
+                borderRadius: AppRadius.borderLg,
+                border: Border.all(color: AppColors.border),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'Close',
+                style: AppTypography.label.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }

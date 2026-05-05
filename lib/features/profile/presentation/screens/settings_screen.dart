@@ -5,15 +5,20 @@
 /// to a dedicated sub-screen via [GoRouter].
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
+import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_page_components.dart';
 import 'package:tander_flutter_v3/shared/widgets/section_label.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
@@ -350,34 +355,58 @@ class _HelpSheetPlaceholder extends StatelessWidget {
 // Settings sheet content widgets
 // ═══════════════════════════════════════════════════════════════════════
 
-class _NotificationsSheetContent extends StatefulWidget {
+class _NotificationsSheetContent extends ConsumerWidget {
   const _NotificationsSheetContent();
 
-  @override
-  State<_NotificationsSheetContent> createState() =>
-      _NotificationsSheetContentState();
-}
-
-class _NotificationsSheetContentState
-    extends State<_NotificationsSheetContent> {
-  final Map<String, bool> _toggles = {
-    'messages': true,
-    'connections': true,
-    'profileViews': false,
-    'community': true,
-    'tandy': true,
-  };
-
   static const _items = [
-    (id: 'messages', icon: Icons.chat_bubble_outline, label: 'New messages', desc: 'Notify me when I receive a message'),
-    (id: 'connections', icon: Icons.favorite, label: 'Connection requests', desc: 'Notify me when someone wants to connect'),
-    (id: 'profileViews', icon: Icons.account_circle, label: 'Profile views', desc: 'Notify me when someone visits my profile'),
-    (id: 'community', icon: Icons.campaign, label: 'Community activity', desc: 'Replies and reactions to my posts'),
-    (id: 'tandy', icon: Icons.notifications_outlined, label: 'Tandy reminders', desc: 'Daily wellness check-in prompts'),
+    (id: 'notifyMessages', icon: Icons.chat_bubble_outline, label: 'New messages', desc: 'Notify me when I receive a message'),
+    (id: 'notifyMatches', icon: Icons.favorite, label: 'Connection requests', desc: 'Notify me when someone wants to connect'),
+    (id: 'notifyProfileViews', icon: Icons.account_circle, label: 'Profile views', desc: 'Notify me when someone visits my profile'),
+    (id: 'notifyCommunity', icon: Icons.campaign, label: 'Community activity', desc: 'Replies and reactions to my posts'),
+    (id: 'notifyTandy', icon: Icons.notifications_outlined, label: 'Tandy reminders', desc: 'Daily wellness check-in prompts'),
   ];
 
+  bool _getValue(UserSettings s, String id) => switch (id) {
+    'notifyMessages' => s.notifyMessages,
+    'notifyMatches' => s.notifyMatches,
+    'notifyProfileViews' => s.notifyProfileViews,
+    'notifyCommunity' => s.notifyCommunity,
+    'notifyTandy' => s.notifyTandy,
+    _ => false,
+  };
+
+  void _toggle(BuildContext context, WidgetRef ref, String id, bool current) {
+    final next = !current;
+    final req = switch (id) {
+      'notifyMessages' => UpdateSettingsRequestDto(notifyMessages: next),
+      'notifyMatches' => UpdateSettingsRequestDto(notifyMatches: next),
+      'notifyProfileViews' => UpdateSettingsRequestDto(notifyProfileViews: next),
+      'notifyCommunity' => UpdateSettingsRequestDto(notifyCommunity: next),
+      'notifyTandy' => UpdateSettingsRequestDto(notifyTandy: next),
+      _ => null,
+    };
+    if (req != null) {
+      ref.read(userSettingsProvider.notifier).updateSettings(req);
+      TanderToastOverlay.show(context, const TanderToastData(
+        message: 'Preference saved.',
+        variant: TanderToastVariant.success,
+        duration: Duration(seconds: 2),
+      ));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(userSettingsProvider);
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -402,10 +431,8 @@ class _NotificationsSheetContentState
                     icon: _items[i].icon,
                     label: _items[i].label,
                     description: _items[i].desc,
-                    isEnabled: _toggles[_items[i].id] ?? false,
-                    onToggle: () => setState(() {
-                      _toggles[_items[i].id] = !(_toggles[_items[i].id] ?? false);
-                    }),
+                    isEnabled: _getValue(settings, _items[i].id),
+                    onToggle: () => _toggle(context, ref, _items[i].id, _getValue(settings, _items[i].id)),
                   ),
                 ],
               ],
@@ -423,35 +450,69 @@ class _NotificationsSheetContentState
   }
 }
 
-class _PrivacySheetContent extends StatefulWidget {
+class _PrivacySheetContent extends ConsumerWidget {
   const _PrivacySheetContent();
 
-  @override
-  State<_PrivacySheetContent> createState() => _PrivacySheetContentState();
-}
-
-class _PrivacySheetContentState extends State<_PrivacySheetContent> {
-  String _visibility = 'PUBLIC';
-  final Map<String, bool> _toggles = {
-    'showOnlineStatus': true,
-    'showLastActive': true,
-    'allowConnectionRequests': true,
-  };
-
   static const _privacyToggles = [
-    (id: 'showOnlineStatus', icon: Icons.visibility_outlined, label: 'Show online status', desc: "Let others see when you're active"),
-    (id: 'showLastActive', icon: Icons.visibility_off_outlined, label: 'Show last active', desc: 'Display when you were last active'),
-    (id: 'allowConnectionRequests', icon: Icons.people_outline, label: 'Allow connection requests', desc: 'Let everyone send you connection requests'),
+    (id: 'showOnline', icon: Icons.visibility_outlined, label: 'Show online status', desc: "Let others see when you're active"),
+    (id: 'showLastSeen', icon: Icons.visibility_off_outlined, label: 'Show last seen', desc: 'Display when you were last active'),
+    (id: 'showProfileViews', icon: Icons.people_outline, label: 'Show profile views', desc: "Share when you've visited someone's profile"),
   ];
 
   static const _visibilityOptions = [
     (value: 'PUBLIC', label: 'Everyone'),
-    (value: 'CONNECTIONS_ONLY', label: 'Connections only'),
+    (value: 'MATCHES_ONLY', label: 'Connections only'),
     (value: 'PRIVATE', label: 'Nobody'),
   ];
 
+  bool _getToggle(UserSettings s, String id) => switch (id) {
+    'showOnline' => s.showOnline,
+    'showLastSeen' => s.showLastSeen,
+    'showProfileViews' => s.showProfileViews,
+    _ => false,
+  };
+
+  void _handleToggle(BuildContext context, WidgetRef ref, String id, bool current) {
+    final next = !current;
+    final req = switch (id) {
+      'showOnline' => UpdateSettingsRequestDto(showOnline: next),
+      'showLastSeen' => UpdateSettingsRequestDto(showLastSeen: next),
+      'showProfileViews' => UpdateSettingsRequestDto(showProfileViews: next),
+      _ => null,
+    };
+    if (req != null) {
+      ref.read(userSettingsProvider.notifier).updateSettings(req);
+      _showSaved(context);
+    }
+  }
+
+  void _handleVisibility(BuildContext context, WidgetRef ref, String value) {
+    ref.read(userSettingsProvider.notifier).updateSettings(
+      UpdateSettingsRequestDto(profileVisibility: value),
+    );
+    _showSaved(context);
+  }
+
+  void _showSaved(BuildContext context) {
+    TanderToastOverlay.show(context, const TanderToastData(
+      message: 'Privacy setting updated.',
+      variant: TanderToastVariant.success,
+      duration: Duration(seconds: 2),
+    ));
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(userSettingsProvider);
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -471,8 +532,8 @@ class _PrivacySheetContentState extends State<_PrivacySheetContent> {
                   if (i > 0) const Divider(height: 1, color: AppColors.border),
                   _SheetRadioRow(
                     label: _visibilityOptions[i].label,
-                    isSelected: _visibility == _visibilityOptions[i].value,
-                    onTap: () => setState(() => _visibility = _visibilityOptions[i].value),
+                    isSelected: settings.profileVisibility == _visibilityOptions[i].value,
+                    onTap: () => _handleVisibility(context, ref, _visibilityOptions[i].value),
                   ),
                 ],
               ],
@@ -495,10 +556,8 @@ class _PrivacySheetContentState extends State<_PrivacySheetContent> {
                     icon: _privacyToggles[i].icon,
                     label: _privacyToggles[i].label,
                     description: _privacyToggles[i].desc,
-                    isEnabled: _toggles[_privacyToggles[i].id] ?? false,
-                    onToggle: () => setState(() {
-                      _toggles[_privacyToggles[i].id] = !(_toggles[_privacyToggles[i].id] ?? false);
-                    }),
+                    isEnabled: _getToggle(settings, _privacyToggles[i].id),
+                    onToggle: () => _handleToggle(context, ref, _privacyToggles[i].id, _getToggle(settings, _privacyToggles[i].id)),
                   ),
                 ],
               ],
@@ -510,18 +569,33 @@ class _PrivacySheetContentState extends State<_PrivacySheetContent> {
   }
 }
 
-class _SecuritySheetContent extends StatefulWidget {
+class _SecuritySheetContent extends ConsumerWidget {
   const _SecuritySheetContent();
 
-  @override
-  State<_SecuritySheetContent> createState() => _SecuritySheetContentState();
-}
+  void _toggleTwoFactor(BuildContext context, WidgetRef ref, bool current) {
+    final next = !current;
+    ref.read(userSettingsProvider.notifier).updateSettings(
+      UpdateSettingsRequestDto(twoFactorEnabled: next),
+    );
+    TanderToastOverlay.show(context, TanderToastData(
+      message: next ? 'Two-factor authentication enabled.' : 'Two-factor authentication disabled.',
+      variant: TanderToastVariant.success,
+      duration: const Duration(seconds: 2),
+    ));
+  }
 
-class _SecuritySheetContentState extends State<_SecuritySheetContent> {
-  bool _isTwoFactorEnabled = false;
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(userSettingsProvider);
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -539,8 +613,8 @@ class _SecuritySheetContentState extends State<_SecuritySheetContent> {
               icon: Icons.security,
               label: 'Enable 2FA',
               description: 'Add an extra layer of security',
-              isEnabled: _isTwoFactorEnabled,
-              onToggle: () => setState(() => _isTwoFactorEnabled = !_isTwoFactorEnabled),
+              isEnabled: settings.twoFactorEnabled,
+              onToggle: () => _toggleTwoFactor(context, ref, settings.twoFactorEnabled),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -565,29 +639,59 @@ class _SecuritySheetContentState extends State<_SecuritySheetContent> {
   }
 }
 
-class _DiscoverySheetContent extends StatefulWidget {
+class _DiscoverySheetContent extends ConsumerStatefulWidget {
   const _DiscoverySheetContent();
 
   @override
-  State<_DiscoverySheetContent> createState() => _DiscoverySheetContentState();
+  ConsumerState<_DiscoverySheetContent> createState() => _DiscoverySheetContentState();
 }
 
-class _DiscoverySheetContentState extends State<_DiscoverySheetContent> {
-  RangeValues _ageRange = const RangeValues(60, 80);
-  double _distanceKm = 50;
-  String _genderPreference = 'EVERYONE';
-  bool _isHidden = false;
+class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> {
+  RangeValues? _ageRange;
+  double? _distanceKm;
+  Timer? _debounce;
 
-  static const _genderOptions = [
-    (value: 'EVERYONE', label: 'Everyone'),
-    (value: 'MEN', label: 'Men'),
-    (value: 'WOMEN', label: 'Women'),
-    (value: 'NON_BINARY', label: 'Non-binary'),
-  ];
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _debouncedSave(UpdateSettingsRequestDto req) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      ref.read(userSettingsProvider.notifier).updateSettings(req);
+      _showSaved();
+    });
+  }
+
+  void _showSaved() {
+    TanderToastOverlay.show(context, const TanderToastData(
+      message: 'Discovery preference saved.',
+      variant: TanderToastVariant.success,
+      duration: Duration(seconds: 2),
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final distanceLabel = _distanceKm >= 500 ? 'Anywhere' : '${_distanceKm.round()} km';
+    final settingsAsync = ref.watch(userSettingsProvider);
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    _ageRange ??= RangeValues(
+      settings.discoveryMinAge.toDouble().clamp(60, 100),
+      settings.discoveryMaxAge.toDouble().clamp(60, 100),
+    );
+    _distanceKm ??= settings.discoveryMaxDistanceKm.toDouble().clamp(1, 500);
+
+    final distanceLabel = _distanceKm! >= 500 ? 'Anywhere' : '${_distanceKm!.round()} km';
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -611,18 +715,24 @@ class _DiscoverySheetContentState extends State<_DiscoverySheetContent> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                       decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: AppRadius.borderFull),
-                      child: Text('${_ageRange.start.round()}–${_ageRange.end.round()}',
+                      child: Text('${_ageRange!.start.round()}–${_ageRange!.end.round()}',
                           style: AppTypography.label.copyWith(color: AppColors.primary)),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 RangeSlider(
-                  values: _ageRange,
+                  values: _ageRange!,
                   min: 60, max: 100,
                   divisions: 40,
                   activeColor: AppColors.primary,
-                  onChanged: (values) => setState(() => _ageRange = values),
+                  onChanged: (values) {
+                    setState(() => _ageRange = values);
+                    _debouncedSave(UpdateSettingsRequestDto(
+                      discoveryMinAge: values.start.round(),
+                      discoveryMaxAge: values.end.round(),
+                    ));
+                  },
                 ),
               ],
             ),
@@ -653,42 +763,25 @@ class _DiscoverySheetContentState extends State<_DiscoverySheetContent> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Slider(
-                  value: _distanceKm,
+                  value: _distanceKm!,
                   min: 1, max: 500,
                   divisions: 99,
                   activeColor: AppColors.primary,
-                  onChanged: (value) => setState(() => _distanceKm = value),
+                  onChanged: (value) {
+                    setState(() => _distanceKm = value);
+                    _debouncedSave(UpdateSettingsRequestDto(
+                      discoveryMaxDistanceKm: value.round(),
+                    ));
+                  },
                 ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Gender preference
-          const SectionLabel(label: 'Interested in'),
+          // Visibility toggle
+          const SectionLabel(label: 'Visibility'),
           const SizedBox(height: AppSpacing.sm),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: AppRadius.borderLg,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              children: [
-                for (int i = 0; i < _genderOptions.length; i++) ...[
-                  if (i > 0) const Divider(height: 1, color: AppColors.border),
-                  _SheetRadioRow(
-                    label: _genderOptions[i].label,
-                    isSelected: _genderPreference == _genderOptions[i].value,
-                    onTap: () => setState(() => _genderPreference = _genderOptions[i].value),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Hidden toggle
           Container(
             decoration: BoxDecoration(
               color: AppColors.card,
@@ -699,10 +792,28 @@ class _DiscoverySheetContentState extends State<_DiscoverySheetContent> {
               icon: Icons.visibility_off_outlined,
               label: 'Hide from discovery',
               description: "Your profile won't appear to new people",
-              isEnabled: _isHidden,
-              onToggle: () => setState(() => _isHidden = !_isHidden),
+              isEnabled: !settings.discoveryVisible,
+              onToggle: () {
+                ref.read(userSettingsProvider.notifier).updateSettings(
+                  UpdateSettingsRequestDto(discoveryVisible: !settings.discoveryVisible),
+                );
+                _showSaved();
+              },
             ),
           ),
+          if (!settings.discoveryVisible) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.xxs),
+              child: Text(
+                'Your profile is currently hidden from discovery.',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

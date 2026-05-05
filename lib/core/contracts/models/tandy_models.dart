@@ -128,6 +128,7 @@ class TandyMessage {
     required this.safetyNotices,
     this.detectedEmotion,
     this.domain,
+    this.rating,
   });
 
   final String messageId;
@@ -139,6 +140,22 @@ class TandyMessage {
   final String? detectedEmotion;
   final String? domain;
   final List<String> safetyNotices;
+
+  /// User's rating on a Tandy reply: 1 (up), -1 (down), or null.
+  final int? rating;
+
+  TandyMessage copyWithRating(int? newRating) => TandyMessage(
+        messageId: messageId,
+        role: role,
+        body: body,
+        structuredBlocks: structuredBlocks,
+        sentAt: sentAt,
+        isCardExpanded: isCardExpanded,
+        safetyNotices: safetyNotices,
+        detectedEmotion: detectedEmotion,
+        domain: domain,
+        rating: newRating,
+      );
 
   @override
   bool operator ==(Object other) =>

@@ -132,7 +132,7 @@ Map<String, dynamic> _$SponsorLocationDtoToJson(SponsorLocationDto instance) =>
     };
 
 SponsorAdDto _$SponsorAdDtoFromJson(Map<String, dynamic> json) => SponsorAdDto(
-  sponsorId: (json['sponsorId'] as num).toInt(),
+  sponsorId: json['sponsorId'] as String,
   sponsorName: json['sponsorName'] as String,
   sponsorType: json['sponsorType'] as String,
   recommendedProducts: (json['recommendedProducts'] as List<dynamic>)
@@ -148,6 +148,7 @@ SponsorAdDto _$SponsorAdDtoFromJson(Map<String, dynamic> json) => SponsorAdDto(
           json['nearestLocation'] as Map<String, dynamic>,
         ),
   disclaimer: json['disclaimer'] as String?,
+  impressionId: json['impressionId'] as String?,
 );
 
 Map<String, dynamic> _$SponsorAdDtoToJson(SponsorAdDto instance) =>
@@ -162,4 +163,5 @@ Map<String, dynamic> _$SponsorAdDtoToJson(SponsorAdDto instance) =>
       'recommendedProducts': instance.recommendedProducts,
       'nearestLocation': instance.nearestLocation,
       'disclaimer': instance.disclaimer,
+      'impressionId': instance.impressionId,
     };

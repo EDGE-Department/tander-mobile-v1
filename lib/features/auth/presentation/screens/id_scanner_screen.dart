@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import '../../../../shared/constants/routes.dart';
+import '../../data/id_ocr_service.dart';
 import '../notifiers/auth_notifier.dart';
 import 'verification_result_screen.dart';
 
@@ -26,6 +27,10 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   bool _isSubmitting = false;
   String? _error;
   String? _scannedIdPath;
+  // When true, the current error is something a fresh scan or resubmit will
+  // never fix (e.g. duplicate ID, age-not-met, expired ID). We hide the
+  // "Retry" button in that case and only offer Cancel + Go to Login.
+  bool _errorIsTerminal = false;
 
   @override
   void initState() {
@@ -41,6 +46,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     setState(() {
       _isScanning = true;
       _error = null;
+      _errorIsTerminal = false;
     });
 
     try {
@@ -90,6 +96,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     setState(() {
       _isSubmitting = true;
       _error = null;
+      _errorIsTerminal = false;
     });
 
     try {
@@ -109,11 +116,47 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         'verifiedAt': DateTime.now().toIso8601String(),
       };
 
+      // Run on-device OCR over the captured ID before upload so the
+      // backend can persist real PII (firstName, lastName, dob, etc.)
+      // for profile-setup pre-fill instead of falling back to its stub.
+      // We send whatever we extracted even on partial success — partial
+      // names are still better than the backend's hardcoded fallback.
+      // Total failure is non-fatal: uploading without OCR data still
+      // creates the verification record, the user just types more.
+      Map<String, dynamic>? ocrPayload;
+      final ocrService = IdOcrService();
+      try {
+        final ocr = await ocrService.extractDobFromId(_scannedIdPath!, 60);
+        // Always send if we got SOMETHING — DOB or any name. Backend's
+        // parseOcrJson handles missing fields gracefully (returns null
+        // for whatever is absent).
+        final candidate = ocr.toFrontendOcrData();
+        final hasAnything = candidate['firstName'] != null
+                || candidate['lastName'] != null
+                || candidate['middleName'] != null
+                || candidate['dob'] != null
+                || candidate['documentNumber'] != null;
+        if (hasAnything) {
+          ocrPayload = candidate;
+          debugPrint('[OCR] sending prefill data: ${candidate.keys}');
+        } else {
+          debugPrint('[OCR] no extractable data: success=${ocr.success}, '
+                  'qualityScore=${ocr.qualityScore}, '
+                  'rawTextLength=${ocr.rawTextLength}, '
+                  'error=${ocr.errorMessage}');
+        }
+      } catch (e) {
+        debugPrint('[OCR] threw: $e');
+      } finally {
+        ocrService.dispose();
+      }
+
       // Returns auditId on success, null on failure
       final auditId = await authNotifier.verifyIdPreRegister(
         idPhotoFrontPath: _scannedIdPath!,
         selfiePath: widget.selfiePath,
         livenessMetadata: metadata,
+        frontendOcrData: ocrPayload,
       );
 
       if (!mounted) return;
@@ -129,7 +172,8 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           ),
         );
       } else {
-        // Verification returned null - show generic error
+        // Verification returned null without throwing — should not happen
+        // for the current notifier contract, but keep a defensive fallback.
         setState(() {
           _error = 'Verification failed. Please try again or contact support.';
           _isSubmitting = false;
@@ -138,23 +182,35 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     } catch (e) {
       debugPrint('Verification submission error: $e');
       if (mounted) {
-        final errorStr = e.toString().toLowerCase();
+        final raw = e.toString();
+        final errorStr = raw.toLowerCase();
 
-        // Check for duplicate ID / identifier already in use
-        if (errorStr.contains('identifier_in_use') ||
+        // Stable code embedded by repository: CODE:id-low-quality:, etc.
+        String? backendCode;
+        final codeMatch = RegExp(r'CODE:([a-z0-9-]+):').firstMatch(raw);
+        if (codeMatch != null) backendCode = codeMatch.group(1);
+
+        // Check for duplicate ID / identifier already in use. Match on stable
+        // code first (id-duplicate from v3k+), then fall back to legacy text
+        // patterns including the new "already exists for this person" copy.
+        final isDuplicate = backendCode == 'id-duplicate' ||
+            errorStr.contains('identifier_in_use') ||
             errorStr.contains('duplicate') ||
             errorStr.contains('already registered') ||
-            errorStr.contains('already been used')) {
+            errorStr.contains('already been used') ||
+            errorStr.contains('already exists for this person') ||
+            errorStr.contains("haven't finished your profile");
+        if (isDuplicate) {
           setState(() => _isSubmitting = false);
 
-          // Extract email hint if present (format: IDENTIFIER_IN_USE|HINT:email@example.com: message)
           String? emailHint;
-          final hintMatch = RegExp(r'\|HINT:([^:]+):').firstMatch(e.toString());
-          if (hintMatch != null) {
-            emailHint = hintMatch.group(1);
-          }
+          final hintMatch = RegExp(r'\|HINT:([^|:]+)').firstMatch(raw);
+          if (hintMatch != null) emailHint = hintMatch.group(1);
+          String? existingState;
+          final stateMatch = RegExp(r'\|STATE:([A-Z_]+)').firstMatch(raw);
+          if (stateMatch != null) existingState = stateMatch.group(1);
 
-          _showDuplicateIdDialog(emailHint: emailHint);
+          _showDuplicateIdDialog(emailHint: emailHint, existingState: existingState);
           return;
         }
 
@@ -162,7 +218,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         VerificationResultState? resultState;
         if (errorStr.contains('face') && errorStr.contains('mismatch')) {
           resultState = VerificationResultState.faceMismatch;
-        } else if (errorStr.contains('age')) {
+        } else if (backendCode == 'id-age-not-met' || errorStr.contains('age')) {
           resultState = VerificationResultState.ageRequirementNotMet;
         } else if (errorStr.contains('fraud')) {
           resultState = VerificationResultState.fraudDetected;
@@ -179,8 +235,18 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
             ),
           );
         } else {
+          // Inline error path. Mark the error terminal (no Retry Submit) for
+          // categories where retrying the same scan won't help — the user
+          // must take a new photo or contact support.
+          final terminalCodes = {
+            'id-age-not-met',
+            'id-expired',
+            'id-duplicate',
+          };
+          final isTerminal = backendCode != null && terminalCodes.contains(backendCode);
           setState(() {
-            _error = 'Verification failed. Please try again or contact support.';
+            _error = _humanizeError(e ?? 'Verification failed. Please try again or contact support.');
+            _errorIsTerminal = isTerminal;
             _isSubmitting = false;
           });
         }
@@ -188,9 +254,54 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
     }
   }
 
-  void _showDuplicateIdDialog({String? emailHint}) {
+  /// Strips wrapper prefixes ("Exception:", "FormatException:",
+  /// "verifyIdPreRegister failed:") that get layered on as the error
+  /// bubbles up through Result → notifier → screen, so the user sees
+  /// just the server's human message ("Tander is for seniors 60 years
+  /// and older. Your age: 22.") instead of a stack-of-prefixes blob.
+  String _humanizeError(Object e) {
+    String s = e.toString().trim();
+    // Peel off known wrapper prefixes in priority order. Loop until stable.
+    final prefixes = [
+      RegExp(r'^Exception:\s*'),
+      RegExp(r'^verifyIdPreRegister failed:\s*'),
+      RegExp(r'^FormatException:\s*'),
+    ];
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (final p in prefixes) {
+        final next = s.replaceFirst(p, '').trim();
+        if (next != s) {
+          s = next;
+          changed = true;
+        }
+      }
+    }
+    if (s.isEmpty) {
+      return 'Verification failed. Please try again or contact support.';
+    }
+    return s;
+  }
+
+  void _showDuplicateIdDialog({String? emailHint, String? existingState}) {
     // Use email hint from backend if available, otherwise show placeholder
     final maskedEmail = emailHint ?? '***@***.com';
+    // existingState comes from backend "data.existingAccountState":
+    //   PROFILE_INCOMPLETE → user has an account but never finished onboarding,
+    //                       send them to login (which will route to profile setup).
+    //   PROFILE_COMPLETE   → fully onboarded user, just sign in.
+    //   null/UNKNOWN       → fall back to old generic copy.
+    final isIncompleteProfile = existingState == 'PROFILE_INCOMPLETE';
+    final dialogTitle = isIncompleteProfile
+        ? 'Finish Your Registration'
+        : 'ID Already Registered';
+    final dialogBody = isIncompleteProfile
+        ? "You already have an account but haven't finished your profile yet. Log in to continue setting it up."
+        : 'This ID has already been used to create an account. If this is your ID, please log in to your existing account.';
+    final primaryButtonLabel = isIncompleteProfile
+        ? 'Log in to continue'
+        : 'Go to Login';
 
     showDialog(
       context: context,
@@ -219,9 +330,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
               const SizedBox(height: 20),
 
               // Title
-              const Text(
-                'ID Already Registered',
-                style: TextStyle(
+              Text(
+                dialogTitle,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -232,7 +343,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
 
               // Description
               Text(
-                'This ID has already been used to create an account. If this is your ID, please log in to your existing account.',
+                dialogBody,
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey[600],
@@ -285,9 +396,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                     Navigator.of(context).pop(); // Close dialog
                     context.go(AppRoutes.login);
                   },
-                  child: const Text(
-                    'Go to Login',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  child: Text(
+                    primaryButtonLabel,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -402,6 +513,17 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   }
 
   Widget _buildErrorView() {
+    // Terminal errors (duplicate, age-not-met, expired) can't be fixed by
+    // retrying the same scan — offer "Go to Login" / "Take New Photo"
+    // instead. Non-terminal errors (network, transient OCR) keep the
+    // retry-submit / retry-scan path.
+    final primaryLabel = _errorIsTerminal
+        ? 'Go to Login'
+        : (_scannedIdPath != null ? 'Retry Submit' : 'Retry Scan');
+    final VoidCallback primaryOnPressed = _errorIsTerminal
+        ? () => context.go(AppRoutes.login)
+        : (_scannedIdPath != null ? _submitVerification : _startScan);
+
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -434,9 +556,9 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                   minimumSize: const Size(120, 50),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: _scannedIdPath != null ? _submitVerification : _startScan,
+                onPressed: primaryOnPressed,
                 child: Text(
-                  _scannedIdPath != null ? 'Retry Submit' : 'Retry Scan',
+                  primaryLabel,
                   style: const TextStyle(color: Colors.white),
                 ),
               ),

@@ -8,7 +8,7 @@ part of 'community_contracts.dart';
 
 PostAuthorDto _$PostAuthorDtoFromJson(Map<String, dynamic> json) =>
     PostAuthorDto(
-      userId: (json['userId'] as num).toInt(),
+      userId: json['userId'] as String,
       displayName: json['displayName'] as String?,
       photoUrl: json['photoUrl'] as String?,
     );
@@ -22,7 +22,7 @@ Map<String, dynamic> _$PostAuthorDtoToJson(PostAuthorDto instance) =>
 
 CommunityPostDto _$CommunityPostDtoFromJson(Map<String, dynamic> json) =>
     CommunityPostDto(
-      id: (json['id'] as num).toInt(),
+      id: json['id'] as String,
       author: PostAuthorDto.fromJson(json['author'] as Map<String, dynamic>),
       reactionCount: (json['reactionCount'] as num).toInt(),
       commentCount: (json['commentCount'] as num).toInt(),
@@ -50,12 +50,12 @@ Map<String, dynamic> _$CommunityPostDtoToJson(CommunityPostDto instance) =>
 
 CommunityCommentDto _$CommunityCommentDtoFromJson(Map<String, dynamic> json) =>
     CommunityCommentDto(
-      id: (json['id'] as num).toInt(),
-      postId: (json['postId'] as num).toInt(),
+      id: json['id'] as String,
+      postId: json['postId'] as String,
       author: PostAuthorDto.fromJson(json['author'] as Map<String, dynamic>),
       content: json['content'] as String,
       createdAt: json['createdAt'] as String,
-      parentCommentId: (json['parentCommentId'] as num?)?.toInt(),
+      parentCommentId: json['parentCommentId'] as String?,
       replyCount: (json['replyCount'] as num?)?.toInt() ?? 0,
     );
 

@@ -4,6 +4,7 @@ import 'package:tander_flutter_v3/core/auth/session_manager.dart';
 import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/features/auth/domain/repositories/auth_repository.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/providers/push_providers.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
 
 // ---------------------------------------------------------------------------
@@ -157,6 +158,15 @@ final class AuthNotifier extends Notifier<AuthState> {
   /// Even if the server call fails, the local session is cleared so the
   /// user is always returned to the unauthenticated state.
   Future<void> signOut() async {
+    // Best-effort: unregister this device's FCM token before clearing the
+    // session so the backend doesn't keep delivering pushes for the user
+    // who's about to log out (and so a future user logging in on this
+    // device gets the token re-assigned cleanly).
+    try {
+      await ref.read(pushNotificationServiceProvider).unregisterToken();
+    } catch (_) {
+      // Don't block logout on push cleanup
+    }
     await _repository.signOut();
     state = const AuthUnauthenticated();
   }

@@ -27,20 +27,16 @@ enum RegistrationPhase {
   static RegistrationPhase fromBackendString(String backendValue) {
     return switch (backendValue) {
       'PENDING_EMAIL_VERIFICATION' ||
-      'email_pending' =>
-        RegistrationPhase.pendingEmailVerification,
+      'email_pending' => RegistrationPhase.pendingEmailVerification,
       'PENDING_PROFILE_SETUP' ||
       'otp_verified' ||
       'otp_pending' ||
       'registered' ||
-      'email_verified' =>
-        RegistrationPhase.pendingProfileSetup,
+      'email_verified' => RegistrationPhase.pendingProfileSetup,
       'PENDING_PHOTO_SETUP' ||
-      'profile_completed' =>
-        RegistrationPhase.pendingPhotoSetup,
+      'profile_completed' => RegistrationPhase.pendingPhotoSetup,
       'PENDING_ID_VERIFICATION' ||
-      'id_pre_verified' =>
-        RegistrationPhase.pendingIdVerification,
+      'id_pre_verified' => RegistrationPhase.pendingIdVerification,
       'PENDING_NOTIFICATION_PERMISSION' =>
         RegistrationPhase.pendingNotificationPermission,
       'COMPLETE' || 'verified' || 'VERIFIED' => RegistrationPhase.complete,
@@ -68,7 +64,7 @@ final class AuthSession {
     this.profilePhotoUrl,
   });
 
-  final int userId;
+  final String userId;
   final String? email;
   final String? username;
   final RegistrationPhase registrationPhase;
@@ -109,8 +105,8 @@ final class SessionManager {
   SessionManager({
     required SecureStorage secureStorage,
     required DioClient dioClient,
-  })  : _secureStorage = secureStorage,
-        _dioClient = dioClient;
+  }) : _secureStorage = secureStorage,
+       _dioClient = dioClient;
 
   final SecureStorage _secureStorage;
   final DioClient _dioClient;
@@ -255,10 +251,7 @@ final class SessionManager {
     _session = null;
     await _secureStorage.clearAllSecureData();
 
-    AppLogger.info(
-      'Session cleared',
-      operation: 'SessionManager.clearSession',
-    );
+    AppLogger.info('Session cleared', operation: 'SessionManager.clearSession');
   }
 
   // ---------------------------------------------------------------------------
@@ -356,9 +349,7 @@ final class SessionManager {
   /// authenticated user past onboarding — a valid refresh token implies
   /// onboarding was previously completed.
   Future<void> _fetchAndSetUserSession() async {
-    final response = await _dioClient.get<Map<String, Object?>>(
-      '/user/me',
-    );
+    final response = await _dioClient.get<Map<String, Object?>>('/user/me');
 
     final userJson = response.data;
     if (userJson == null) {
@@ -367,17 +358,26 @@ final class SessionManager {
 
     final previousSession = _session;
 
-    final rawId = userJson['id'];
-    final userId = switch (rawId) {
-      final int intId => intId,
-      final String stringId => int.parse(stringId),
+    // /user/me returns BOTH `id` (numeric hashcode of the UUID, kept for
+    // legacy clients) and `userId` (the canonical UUID). Chat/STOMP
+    // broadcasts always carry the UUID as senderId, so we must store the
+    // UUID here — otherwise `senderId == _currentUserId` ownership checks
+    // never match and every own message renders as if sent by the other party.
+    final rawUserId = userJson['userId'] ?? userJson['id'];
+    final userId = switch (rawUserId) {
+      final String stringId when stringId.isNotEmpty => stringId,
+      final int intId => intId.toString(),
       _ => throw StateError(
-          'Invalid or missing "id" in /user/me response: $rawId',
-        ),
+        'Invalid or missing user id in /user/me response: $rawUserId',
+      ),
     };
 
-    final email = userJson['email'] is String ? userJson['email'] as String : null;
-    final username = userJson['username'] is String ? userJson['username'] as String : null;
+    final email = userJson['email'] is String
+        ? userJson['email'] as String
+        : null;
+    final username = userJson['username'] is String
+        ? userJson['username'] as String
+        : null;
 
     final registrationPhase = _parseRegistrationPhase(
       userJson['registrationPhase'],

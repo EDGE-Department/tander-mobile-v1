@@ -6,6 +6,7 @@ library;
 
 import 'package:tander_flutter_v3/core/contracts/connection_contracts.dart';
 import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
+import 'package:tander_flutter_v3/shared/utils/photo_url.dart';
 
 /// Converts a [MatchDto] into a [ConnectionSummary] domain model.
 ///
@@ -13,32 +14,32 @@ import 'package:tander_flutter_v3/core/contracts/models/connection_models.dart';
 /// backend provides richer direction metadata.
 ConnectionSummary mapMatchDtoToConnectionSummary(
   MatchDto dto,
-  String currentUserId,
-) {
+  String currentUserId, {
+  ConnectionRelationshipState? expectedState,
+}) {
   return ConnectionSummary(
-    connectionId: dto.id.toString(),
-    otherUserId: dto.matchedUserId.toString(),
-    otherUsername: dto.matchedUserDisplayName.isNotEmpty
-        ? dto.matchedUserDisplayName
-        : dto.matchedUsername,
-    otherPhotoUrl: dto.matchedUserProfilePhotoUrl,
-    otherAge: dto.matchedUserAge,
-    otherCity: dto.matchedUserLocation,
-    relationshipState: _computeRelationshipState(dto),
-    conversationId: dto.conversationId?.toString(),
-    createdAt: DateTime.tryParse(dto.matchedAt) ?? DateTime.now(),
+    connectionId: dto.id,
+    otherUserId: dto.otherUserId,
+    otherUsername: (dto.otherDisplayName?.isNotEmpty ?? false)
+        ? dto.otherDisplayName!
+        : dto.otherUsername ?? 'User',
+    otherPhotoUrl: resolvePhotoUrl(dto.otherProfilePhotoUrl),
+    otherAge: dto.otherAge,
+    otherCity: null,
+    relationshipState: expectedState ?? _computeRelationshipState(dto),
+    conversationId: null,
+    createdAt: DateTime.tryParse(dto.matchedAt ?? '') ?? DateTime.now(),
   );
 }
 
-/// Derives [ConnectionRelationshipState] from DTO status + direction.
+/// Derives [ConnectionRelationshipState] from DTO status.
 ConnectionRelationshipState _computeRelationshipState(MatchDto dto) {
-  if (dto.status == 'ACCEPTED') return ConnectionRelationshipState.connected;
-  if (dto.status == 'PENDING') {
-    return dto.initiator
-        ? ConnectionRelationshipState.pendingOutgoing
-        : ConnectionRelationshipState.pendingIncoming;
-  }
-  return ConnectionRelationshipState.none;
+  return switch (dto.status) {
+    'ACCEPTED' => ConnectionRelationshipState.connected,
+    'PENDING' => ConnectionRelationshipState.pendingIncoming,
+    'BLOCKED' => ConnectionRelationshipState.none,
+    _ => ConnectionRelationshipState.none,
+  };
 }
 
 /// Converts a [SpringPageDto] of DTOs into a [PaginatedResult] of models.

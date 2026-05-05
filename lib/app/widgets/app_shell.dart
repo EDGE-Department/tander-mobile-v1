@@ -333,13 +333,14 @@ class _AppShellState extends ConsumerState<AppShell> {
   Widget build(BuildContext context) {
     ref.watch(callListenerProvider);
 
-    // Auto-navigate to call screen when incoming call transitions to connecting
+    // Auto-navigate to call screen for both incoming and outgoing calls
     ref.listen<CallState>(callNotifierProvider, (previous, next) {
       if (previous == null) return;
       final wasRinging = previous.isIncomingRinging;
       final isNowConnecting =
           next.status is CallConnecting || next.status is CallConnected;
       final isIncoming = next.callInfo?.direction == CallDirection.incoming;
+      final isOutgoing = next.callInfo?.direction == CallDirection.outgoing;
       final roomName = next.callInfo?.roomName;
 
       // Dismiss native CallKit ringtone when call transitions away from ringing
@@ -352,18 +353,38 @@ class _AppShellState extends ConsumerState<AppShell> {
         }
       }
 
+      // Navigate for incoming calls when they transition to connecting
       if (wasRinging &&
           isNowConnecting &&
           isIncoming &&
           roomName != null &&
           !_hasNavigatedToCall) {
         _hasNavigatedToCall = true;
-        context.push(AppRoutes.call(roomName));
+        ref.read(appRouterProvider).push('/call?room=$roomName');
       }
 
-      // Reset flag when call ends
-      if (next.status is CallIdle || next.status is CallEnded) {
+      // Navigate for outgoing calls when they start ringing
+      final wasIdle = previous.status is CallIdle || previous.status is CallInitiating;
+      final isNowRinging = next.status is CallRinging;
+      if (wasIdle &&
+          isNowRinging &&
+          isOutgoing &&
+          roomName != null &&
+          !_hasNavigatedToCall) {
+        _hasNavigatedToCall = true;
+        ref.read(appRouterProvider).push('/call?room=$roomName');
+      }
+
+      // Navigate back when call ends or resets to idle
+      if (_hasNavigatedToCall &&
+          (next.status is CallIdle || next.status is CallEnded || next.status is CallFailed)) {
         _hasNavigatedToCall = false;
+        // Small delay to show ended state before navigating back
+        Future<void>.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            ref.read(appRouterProvider).go(AppRoutes.messages);
+          }
+        });
       }
     });
 

@@ -8,7 +8,7 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 abstract final class AuthMapper {
   /// Builds an [AuthSession] from the raw `/user/me` JSON response.
   ///
-  /// Required fields: `id` (int or numeric string), `email`, `username`.
+  /// Required fields: `userId` (UUID) or legacy `id`, `email`, `username`.
   ///
   /// Optional fields fall back to safe defaults:
   /// - `registrationPhase` -> [RegistrationPhase.complete]
@@ -16,20 +16,26 @@ abstract final class AuthMapper {
   /// - `isIdVerified` -> `false`
   /// - `profilePhotoUrl` -> `null`
   static AuthSession mapToAuthSession(Map<String, Object?> userMeJson) {
-    final userId = _parseUserId(userMeJson['id']);
+    final userId = _parseUserId(userMeJson['userId'] ?? userMeJson['id']);
     final email = _parseOptionalString(userMeJson['email']) ?? '';
     final username = _parseOptionalString(userMeJson['username']) ?? '';
 
-    final profileCompleted =
-        _parseBool(userMeJson['profileCompleted'], fallback: true);
+    final profileCompleted = _parseBool(
+      userMeJson['profileCompleted'],
+      fallback: true,
+    );
     final registrationPhase = _deriveRegistrationPhase(
       userMeJson['registrationPhase'],
       profileCompleted,
     );
-    final isEmailVerified =
-        _parseBool(userMeJson['isEmailVerified'], fallback: true);
-    final isIdVerified =
-        _parseBool(userMeJson['isIdVerified'], fallback: false);
+    final isEmailVerified = _parseBool(
+      userMeJson['isEmailVerified'],
+      fallback: true,
+    );
+    final isIdVerified = _parseBool(
+      userMeJson['isIdVerified'],
+      fallback: false,
+    );
     final profilePhotoUrl = _parseOptionalString(userMeJson['profilePhotoUrl']);
 
     return AuthSession(
@@ -47,16 +53,15 @@ abstract final class AuthMapper {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  /// Parses `id` from either an [int] or a numeric [String].
-  ///
-  /// Throws [FormatException] if the value is missing or non-numeric.
-  static int _parseUserId(Object? rawId) {
+  /// Parses the canonical `userId` UUID, falling back to legacy `id` only for
+  /// older local backends. Numeric ids are kept as strings for compatibility.
+  static String _parseUserId(Object? rawId) {
     return switch (rawId) {
-      final int intId => intId,
-      final String stringId => int.parse(stringId),
+      final String stringId when stringId.isNotEmpty => stringId,
+      final int intId => intId.toString(),
       _ => throw FormatException(
-          'Invalid or missing "id" in /user/me response: $rawId',
-        ),
+        'Invalid or missing user id in /user/me response: $rawId',
+      ),
     };
   }
 
@@ -89,7 +94,7 @@ abstract final class AuthMapper {
       }
     }
 
-    // No explicit phase — derive from profile completion status
+    // No explicit phase: derive from profile completion status.
     if (!profileCompleted) {
       return RegistrationPhase.pendingProfileSetup;
     }

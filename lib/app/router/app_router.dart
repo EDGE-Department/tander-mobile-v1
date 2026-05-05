@@ -283,14 +283,16 @@ final _routes = <RouteBase>[
           ),
         ],
       ),
-      // -- Full-screen call (inside shell to preserve STOMP connection) ------
-      GoRoute(
-        path: '/calls/:roomName',
-        builder: (_, state) => CallScreen(
-          roomName: state.pathParameters['roomName'] ?? '',
-        ),
-      ),
     ],
+  ),
+
+  // -- Full-screen call (top-level for reliable navigation) -----------------
+  GoRoute(
+    path: '/call',
+    name: 'call',
+    builder: (_, state) => CallScreen(
+      roomName: state.uri.queryParameters['room'] ?? '',
+    ),
   ),
 
   // -- Deep navigation ------------------------------------------------------
@@ -303,8 +305,7 @@ final _routes = <RouteBase>[
   GoRoute(
     path: '/community/:postId',
     builder: (_, state) {
-      final postIdParam = state.pathParameters['postId'] ?? '0';
-      final postId = int.tryParse(postIdParam) ?? 0;
+      final postId = state.pathParameters['postId'] ?? '';
       return CommunityPostScreen(postId: postId);
     },
   ),
