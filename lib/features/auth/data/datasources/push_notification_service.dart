@@ -66,6 +66,13 @@ final class PushNotificationService {
     await _createAndroidNotificationChannels();
     await _requestPermission();
 
+    // iOS-specific: enable foreground notification display and ensure APNs
+    // token is ready before requesting FCM token.
+    if (Platform.isIOS) {
+      await _configureIOSForegroundPresentation();
+      await _ensureApnsToken();
+    }
+
     // Get FCM token with timeout + retry (mirrors legacy app's TokenManager)
     String? fcmToken;
     for (var attempt = 1; attempt <= 3; attempt++) {
@@ -181,6 +188,65 @@ final class PushNotificationService {
     AppLogger.info(
       'Notification permission status: ${settings.authorizationStatus.name}',
       operation: 'PushNotificationService._requestPermission',
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // iOS-specific configuration
+  // ---------------------------------------------------------------------------
+
+  /// Tells iOS to show notification banners, badges, and sounds even when the
+  /// app is in the foreground. Without this, iOS delivers notifications
+  /// silently to the app but does not display them to the user.
+  Future<void> _configureIOSForegroundPresentation() async {
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    AppLogger.debug(
+      'iOS foreground notification presentation configured',
+      operation: 'PushNotificationService._configureIOSForegroundPresentation',
+    );
+  }
+
+  /// Ensures the APNs token is available before requesting an FCM token.
+  ///
+  /// On iOS, FCM generates a device token by wrapping the APNs token. If the
+  /// APNs token is not yet available (e.g. first launch, network delay), FCM
+  /// returns null or an invalid token. This method polls for the APNs token
+  /// with a short backoff to ensure FCM registration succeeds.
+  Future<void> _ensureApnsToken() async {
+    const maxAttempts = 5;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        if (apnsToken != null) {
+          AppLogger.info(
+            'APNs token acquired (attempt $attempt)',
+            operation: 'PushNotificationService._ensureApnsToken',
+          );
+          return;
+        }
+      } catch (error) {
+        AppLogger.warning(
+          'APNs token attempt $attempt/$maxAttempts failed: $error',
+          operation: 'PushNotificationService._ensureApnsToken',
+        );
+      }
+
+      if (attempt < maxAttempts) {
+        await Future<void>.delayed(Duration(seconds: attempt));
+      }
+    }
+
+    AppLogger.warning(
+      'APNs token not available after $maxAttempts attempts. '
+      'FCM token may be invalid. Check: Push Notifications capability in '
+      'Xcode, APNs key uploaded to Firebase Console, device not simulator.',
+      operation: 'PushNotificationService._ensureApnsToken',
     );
   }
 
