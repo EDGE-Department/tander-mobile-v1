@@ -113,7 +113,7 @@ import flutter_callkit_incoming
     // kills the app. Use CXProvider directly with a minimal CXCallUpdate.
     guard let plugin = SwiftFlutterCallkitIncomingPlugin.sharedInstance else {
       NSLog("[AppDelegate] CRITICAL: Plugin nil — minimal CXProvider report to satisfy PushKit contract")
-      let provider = CXProvider(configuration: CXProviderConfiguration())
+      let provider = CXProvider(configuration: CXProviderConfiguration(localizedName: "Tander"))
       let update = CXCallUpdate()
       update.remoteHandle = CXHandle(type: .generic, value: callerName)
       let callUUID = UUID(uuidString: uuid) ?? UUID()
