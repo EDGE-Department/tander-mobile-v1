@@ -68,35 +68,64 @@ final class PushNotificationService {
 
     // iOS-specific: enable foreground notification display and ensure APNs
     // token is ready before requesting FCM token.
+    String? apnsToken;
     if (Platform.isIOS) {
       await _configureIOSForegroundPresentation();
-      await _ensureApnsToken();
+      apnsToken = await _ensureApnsToken();
+
+      if (apnsToken == null) {
+        AppLogger.error(
+          'APNs token unavailable — FCM token will likely fail on iOS. '
+          'Push notifications will not work.',
+          operation: 'PushNotificationService.initialize',
+        );
+      } else {
+        AppLogger.info(
+          'APNs token ready, proceeding to FCM registration',
+          operation: 'PushNotificationService.initialize',
+        );
+        // Short delay to ensure Firebase SDK has processed the APNs token
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
     }
 
     // Get FCM token with timeout + retry (mirrors legacy app's TokenManager)
+    // On iOS, increase retries since APNs→FCM mapping can take time
+    final maxAttempts = Platform.isIOS ? 5 : 3;
     String? fcmToken;
-    for (var attempt = 1; attempt <= 3; attempt++) {
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         fcmToken = await FirebaseMessaging.instance
             .getToken()
             .timeout(const Duration(seconds: 15));
-        if (fcmToken != null) break;
-      } catch (error) {
+        if (fcmToken != null) {
+          AppLogger.info(
+            'FCM token obtained on attempt $attempt: ${fcmToken.substring(0, 20)}...',
+            operation: 'PushNotificationService.initialize',
+          );
+          break;
+        }
         AppLogger.warning(
-          'FCM token attempt $attempt/3 failed: $error',
+          'FCM token null on attempt $attempt/$maxAttempts',
           operation: 'PushNotificationService.initialize',
         );
-        if (attempt < 3) {
-          await Future<void>.delayed(Duration(seconds: 2 * attempt));
-        }
+      } catch (error) {
+        AppLogger.warning(
+          'FCM token attempt $attempt/$maxAttempts failed: $error',
+          operation: 'PushNotificationService.initialize',
+        );
+      }
+      if (attempt < maxAttempts) {
+        await Future<void>.delayed(Duration(seconds: 2 * attempt));
       }
     }
 
     if (fcmToken != null) {
       await _registerToken(fcmToken);
     } else {
-      AppLogger.warning(
-        'FCM token unavailable after 3 attempts — push notifications disabled',
+      AppLogger.error(
+        'FCM token unavailable after $maxAttempts attempts — push notifications disabled. '
+        'Platform: ${Platform.isIOS ? "iOS" : "Android"}, APNs token: ${apnsToken != null ? "present" : "missing"}',
         operation: 'PushNotificationService.initialize',
       );
     }
@@ -218,18 +247,24 @@ final class PushNotificationService {
   /// APNs token is not yet available (e.g. first launch, network delay), FCM
   /// returns null or an invalid token. This method polls for the APNs token
   /// with a short backoff to ensure FCM registration succeeds.
-  Future<void> _ensureApnsToken() async {
-    const maxAttempts = 5;
+  Future<String?> _ensureApnsToken() async {
+    const maxAttempts = 10;
+    const delays = [1, 2, 2, 3, 3, 4, 4, 5, 5, 5];
+
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
         if (apnsToken != null) {
           AppLogger.info(
-            'APNs token acquired (attempt $attempt)',
+            'APNs token acquired (attempt $attempt): ${apnsToken.substring(0, 20)}...',
             operation: 'PushNotificationService._ensureApnsToken',
           );
-          return;
+          return apnsToken;
         }
+        AppLogger.debug(
+          'APNs token null on attempt $attempt/$maxAttempts',
+          operation: 'PushNotificationService._ensureApnsToken',
+        );
       } catch (error) {
         AppLogger.warning(
           'APNs token attempt $attempt/$maxAttempts failed: $error',
@@ -238,16 +273,17 @@ final class PushNotificationService {
       }
 
       if (attempt < maxAttempts) {
-        await Future<void>.delayed(Duration(seconds: attempt));
+        await Future<void>.delayed(Duration(seconds: delays[attempt - 1]));
       }
     }
 
-    AppLogger.warning(
+    AppLogger.error(
       'APNs token not available after $maxAttempts attempts. '
-      'FCM token may be invalid. Check: Push Notifications capability in '
+      'FCM token will likely be invalid. Check: Push Notifications capability in '
       'Xcode, APNs key uploaded to Firebase Console, device not simulator.',
       operation: 'PushNotificationService._ensureApnsToken',
     );
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -258,9 +294,15 @@ final class PushNotificationService {
     final deviceId = _getOrCreateDeviceId();
     final platform = Platform.isAndroid ? 'android' : 'ios';
 
+    AppLogger.info(
+      'Registering FCM token with backend — platform: $platform, '
+      'deviceId: $deviceId, token: ${fcmToken.substring(0, 20)}...',
+      operation: 'PushNotificationService._registerToken',
+    );
+
     for (var attempt = 1; attempt <= 5; attempt++) {
       try {
-        await _dioClient.post<Map<String, Object?>>(
+        final response = await _dioClient.post<Map<String, Object?>>(
           ApiEndpoints.registerToken,
           data: {
             'token': fcmToken,
@@ -271,7 +313,8 @@ final class PushNotificationService {
         );
 
         AppLogger.info(
-          'FCM token registered with backend (attempt $attempt)',
+          'FCM token registered with backend successfully (attempt $attempt). '
+          'Response: ${response.statusCode}',
           operation: 'PushNotificationService._registerToken',
           context: {'platform': platform, 'deviceId': deviceId},
         );
@@ -280,6 +323,7 @@ final class PushNotificationService {
         AppLogger.warning(
           'FCM register attempt $attempt/5 failed: $error',
           operation: 'PushNotificationService._registerToken',
+          context: {'platform': platform, 'deviceId': deviceId},
         );
         if (attempt < 5) {
           await Future<void>.delayed(Duration(seconds: 2 * attempt));
@@ -287,7 +331,7 @@ final class PushNotificationService {
       }
     }
     AppLogger.error(
-      'Failed to register FCM token after 5 attempts',
+      'Failed to register FCM token after 5 attempts — platform: $platform',
       operation: 'PushNotificationService._registerToken',
     );
   }
