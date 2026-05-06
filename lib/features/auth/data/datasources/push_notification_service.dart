@@ -207,17 +207,45 @@ final class PushNotificationService {
   // ---------------------------------------------------------------------------
 
   Future<void> _requestPermission() async {
-    final settings = await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-
     AppLogger.info(
-      'Notification permission status: ${settings.authorizationStatus.name}',
+      'Requesting notification permission...',
       operation: 'PushNotificationService._requestPermission',
     );
+
+    try {
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+
+      AppLogger.info(
+        'Notification permission result: ${settings.authorizationStatus.name}',
+        operation: 'PushNotificationService._requestPermission',
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        AppLogger.warning(
+          'User denied notification permission. Push notifications will not work. '
+          'User must enable in iOS Settings > Tander > Notifications.',
+          operation: 'PushNotificationService._requestPermission',
+        );
+      } else if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+        AppLogger.warning(
+          'Notification permission still undetermined after request. '
+          'This may indicate iOS did not show the permission dialog.',
+          operation: 'PushNotificationService._requestPermission',
+        );
+      }
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Failed to request notification permission: $error',
+        operation: 'PushNotificationService._requestPermission',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------

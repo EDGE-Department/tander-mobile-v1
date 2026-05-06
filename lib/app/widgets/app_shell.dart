@@ -77,18 +77,13 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   Future<void> _initializePushNotifications() async {
     try {
-      final messaging = FirebaseMessaging.instance;
-      final settings = await messaging.getNotificationSettings();
-      if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
-        await messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-      }
+      debugPrint('[AppShell] Starting push notification initialization...');
 
+      // Let push_notification_service handle permission request — don't duplicate
       final pushService = ref.read(pushNotificationServiceProvider);
       await pushService.initialize();
+
+      debugPrint('[AppShell] Push service initialized, setting up notification routing...');
 
       // Wire foreground notification routing with call push handling
       final router = ref.read(appRouterProvider);
@@ -101,9 +96,10 @@ class _AppShellState extends ConsumerState<AppShell> {
         },
       );
 
-      debugPrint('[AppShell] Push notification service initialized');
-    } catch (error) {
+      debugPrint('[AppShell] Push notification service fully initialized');
+    } catch (error, stackTrace) {
       debugPrint('[AppShell] Push init failed: $error');
+      debugPrint('[AppShell] Stack trace: $stackTrace');
     }
   }
 
