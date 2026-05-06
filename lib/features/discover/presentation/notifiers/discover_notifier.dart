@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/contracts/discover_contracts.dart';
 import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
+import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/discover/domain/repositories/discover_repository.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/providers/discover_providers.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/states/discover_state.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 
 /// Threshold: auto-fetch next page when fewer than this many remain.
 const int _refetchThreshold = 3;
@@ -35,10 +37,53 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
   DiscoverState build() {
     _repository = ref.read(discoverRepositoryProvider);
 
+    // Seed filters from persisted user settings if already loaded so
+    // age/distance survive an app restart instead of resetting to "all".
+    final initialSettings = ref.read(userSettingsProvider).valueOrNull;
+    if (initialSettings != null) {
+      _activeFilters = _filtersFromSettings(initialSettings, _activeFilters);
+    }
+
+    // React to settings changes (initial async load, or updates from another
+    // surface like the settings screen) and reload with the new filter window.
+    ref.listen<AsyncValue<UserSettings>>(userSettingsProvider, (_, next) {
+      next.whenData((settings) {
+        final fresh = _filtersFromSettings(settings, _activeFilters);
+        if (!_filtersMatch(fresh, _activeFilters)) {
+          _activeFilters = fresh;
+          Future.microtask(loadProfiles);
+        }
+      });
+    });
+
     // Auto-fetch profiles on first access.
     Future.microtask(loadProfiles);
 
     return const DiscoverLoading();
+  }
+
+  static DiscoveryFiltersDto _filtersFromSettings(
+    UserSettings s,
+    DiscoveryFiltersDto? carry,
+  ) {
+    return DiscoveryFiltersDto(
+      minAge: s.discoveryMinAge,
+      maxAge: s.discoveryMaxAge,
+      maxDistanceKm: s.discoveryMaxDistanceKm,
+      // genderPreference is not yet persisted server-side — keep whatever
+      // the user chose this session so toggling settings doesn't drop it.
+      genderPreference: carry?.genderPreference,
+      lookingFor: carry?.lookingFor,
+    );
+  }
+
+  static bool _filtersMatch(DiscoveryFiltersDto a, DiscoveryFiltersDto? b) {
+    if (b == null) return false;
+    return a.minAge == b.minAge &&
+        a.maxAge == b.maxAge &&
+        a.maxDistanceKm == b.maxDistanceKm &&
+        a.genderPreference == b.genderPreference &&
+        a.lookingFor == b.lookingFor;
   }
 
   // -----------------------------------------------------------------------

@@ -275,7 +275,7 @@ class _DraggablePhotoGridState extends State<_DraggablePhotoGrid> {
   Widget build(BuildContext context) {
     final bool canAddMore = widget.photos.length < _maxPhotoSlots;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final gap = screenWidth >= 640 ? 10.0 : 8.0;
+    final gap = screenWidth >= 768 ? 10.0 : 8.0;
     final gridWidth = screenWidth - AppSpacing.md * 2;
     final cellSize = (gridWidth - gap * (_gridColumnCount - 1)) / _gridColumnCount;
 

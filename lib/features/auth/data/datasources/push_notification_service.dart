@@ -1,13 +1,15 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
-
 import 'package:tander_flutter_v3/core/network/dio_client.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
+import 'package:uuid/uuid.dart';
 
 // ---------------------------------------------------------------------------
 // Notification channel IDs — Android only
@@ -31,6 +33,7 @@ const String _generalChannelDescription = 'General app notifications';
 // ---------------------------------------------------------------------------
 
 const String _deviceIdKey = 'tander_device_id';
+const String _voipTokenKey = 'tander_voip_push_token';
 
 /// Manages FCM token lifecycle: permission request, token registration,
 /// token refresh, and backend synchronisation.
@@ -46,6 +49,10 @@ final class PushNotificationService {
 
   final DioClient _dioClient;
   final SharedPreferences _sharedPreferences;
+
+  /// VoIP token event subscription (iOS-only). Held so we can cancel on
+  /// unregister/sign-out.
+  StreamSubscription<CallEvent?>? _voipEventSub;
 
   // ---------------------------------------------------------------------------
   // Public API
@@ -92,6 +99,15 @@ final class PushNotificationService {
       onError: _handleTokenRefreshError,
     );
 
+    // iOS VoIP token (PushKit). Two strategies in parallel — see TokenManager
+    // notes in legacy: a one-shot polling pass to catch tokens already
+    // delivered to the plugin, plus a persistent event listener so any later
+    // PushKit delivery is captured too.
+    if (Platform.isIOS) {
+      _listenForVoipTokenEvent();
+      unawaited(_acquireVoipToken());
+    }
+
     AppLogger.info(
       'Push notification service initialized',
       operation: 'PushNotificationService.initialize',
@@ -99,27 +115,25 @@ final class PushNotificationService {
   }
 
   /// Unregisters the current FCM token from the backend so the device
-  /// stops receiving push notifications (e.g. on sign-out).
+  /// stops receiving push notifications (e.g. on sign-out). Also clears the
+  /// VoIP token if one was registered.
   Future<void> unregisterToken() async {
+    // Stop listening for further VoIP token deliveries.
+    await _voipEventSub?.cancel();
+    _voipEventSub = null;
+
     try {
       final fcmToken = await FirebaseMessaging.instance.getToken();
-      if (fcmToken == null) {
-        AppLogger.warning(
-          'No FCM token available to unregister',
+      if (fcmToken != null) {
+        final encoded = Uri.encodeComponent(fcmToken);
+        await _dioClient.delete<void>(
+          '${ApiEndpoints.unregisterToken}?token=$encoded',
+        );
+        AppLogger.info(
+          'FCM token unregistered from backend',
           operation: 'PushNotificationService.unregisterToken',
         );
-        return;
       }
-
-      final encodedToken = Uri.encodeComponent(fcmToken);
-      await _dioClient.delete<void>(
-        '${ApiEndpoints.unregisterToken}?token=$encodedToken',
-      );
-
-      AppLogger.info(
-        'FCM token unregistered from backend',
-        operation: 'PushNotificationService.unregisterToken',
-      );
     } on Object catch (error, stackTrace) {
       AppLogger.error(
         'Failed to unregister FCM token',
@@ -127,6 +141,28 @@ final class PushNotificationService {
         error: error,
         stackTrace: stackTrace,
       );
+    }
+
+    // VoIP token is iOS-only and stored locally — also try to deactivate it
+    // backend-side so future calls don't ring a stale device.
+    final voipToken = _sharedPreferences.getString(_voipTokenKey);
+    if (voipToken != null && voipToken.isNotEmpty) {
+      try {
+        final encoded = Uri.encodeComponent(voipToken);
+        await _dioClient.delete<void>(
+          '${ApiEndpoints.unregisterToken}?token=$encoded',
+        );
+        await _sharedPreferences.remove(_voipTokenKey);
+        AppLogger.info(
+          'VoIP token unregistered from backend',
+          operation: 'PushNotificationService.unregisterToken',
+        );
+      } on Object catch (error) {
+        AppLogger.warning(
+          'Best-effort VoIP unregister failed: $error',
+          operation: 'PushNotificationService.unregisterToken',
+        );
+      }
     }
   }
 
@@ -187,6 +223,106 @@ final class PushNotificationService {
     AppLogger.error(
       'Failed to register FCM token after 5 attempts',
       operation: 'PushNotificationService._registerToken',
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // VoIP token (iOS only — PushKit / CallKit lock-screen wakes)
+  // ---------------------------------------------------------------------------
+
+  /// Polls the plugin for a VoIP token with progressive backoff. PushKit
+  /// delivery is asynchronous via the native AppDelegate's
+  /// `pushRegistry(didUpdate pushCredentials:)` callback — which may not have
+  /// fired yet on first call. ~28s window covers slow startups.
+  Future<void> _acquireVoipToken() async {
+    const delays = <int>[0, 2, 3, 5, 8, 10];
+
+    for (var attempt = 0; attempt < delays.length; attempt++) {
+      if (delays[attempt] > 0) {
+        await Future<void>.delayed(Duration(seconds: delays[attempt]));
+      }
+      try {
+        final result = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
+        final voipToken = result is String ? result : result?.toString();
+        if (voipToken != null && voipToken.isNotEmpty && voipToken != 'null') {
+          AppLogger.info(
+            'VoIP token acquired (attempt ${attempt + 1})',
+            operation: 'PushNotificationService._acquireVoipToken',
+          );
+          await _registerVoipToken(voipToken);
+          return;
+        }
+      } on Object catch (error) {
+        AppLogger.warning(
+          'VoIP token poll attempt ${attempt + 1}/${delays.length} failed: $error',
+          operation: 'PushNotificationService._acquireVoipToken',
+        );
+      }
+    }
+
+    AppLogger.warning(
+      'VoIP token still null after ${delays.length} attempts. iOS '
+      'lock-screen calls will not wake the app. Check: PushKit entitlements, '
+      'provisioning profile, VoIP Services capability in Apple dev portal.',
+      operation: 'PushNotificationService._acquireVoipToken',
+    );
+  }
+
+  /// Subscribes to the plugin's CallEvent stream and registers any VoIP
+  /// token PushKit delivers later. Idempotent — registers only when the token
+  /// changes.
+  void _listenForVoipTokenEvent() {
+    _voipEventSub?.cancel();
+    _voipEventSub = FlutterCallkitIncoming.onEvent.listen((event) async {
+      if (event == null) return;
+      if (event.event != Event.actionDidUpdateDevicePushTokenVoip) return;
+
+      final body = event.body as Map<dynamic, dynamic>?;
+      final voipToken = body?['deviceTokenVoIP']?.toString();
+      if (voipToken == null || voipToken.isEmpty) return;
+
+      final stored = _sharedPreferences.getString(_voipTokenKey);
+      if (stored == voipToken) return; // unchanged — skip re-register
+
+      AppLogger.info(
+        'VoIP token received via plugin event — registering',
+        operation: 'PushNotificationService._listenForVoipTokenEvent',
+      );
+      await _registerVoipToken(voipToken);
+    });
+  }
+
+  Future<void> _registerVoipToken(String voipToken) async {
+    final deviceId = _getOrCreateDeviceId();
+    for (var attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await _dioClient.post<Map<String, Object?>>(
+          ApiEndpoints.registerToken,
+          data: {
+            'token': voipToken,
+            'platform': 'voip',
+            'deviceId': deviceId,
+          },
+        );
+        await _sharedPreferences.setString(_voipTokenKey, voipToken);
+        AppLogger.info(
+          'VoIP token registered with backend (attempt $attempt)',
+          operation: 'PushNotificationService._registerVoipToken',
+        );
+        return;
+      } on Object catch (error) {
+        AppLogger.warning(
+          'VoIP register attempt $attempt/3 failed: $error',
+          operation: 'PushNotificationService._registerVoipToken',
+        );
+        if (attempt < 3) {
+          await Future<void>.delayed(Duration(seconds: 2 * attempt));
+        }
+      }
+    }
+    AppLogger.error(
+      'Failed to register VoIP token after 3 attempts',
+      operation: 'PushNotificationService._registerVoipToken',
     );
   }
 

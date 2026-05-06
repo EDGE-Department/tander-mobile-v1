@@ -401,9 +401,9 @@ class _NotificationsSheetContent extends ConsumerWidget {
     final settings = settingsAsync.valueOrNull;
 
     if (settings == null) {
-      return const Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Center(child: CircularProgressIndicator()),
+      return _SettingsLoadOrError(
+        hasError: settingsAsync.hasError,
+        onRetry: () => ref.invalidate(userSettingsProvider),
       );
     }
 
@@ -507,9 +507,9 @@ class _PrivacySheetContent extends ConsumerWidget {
     final settings = settingsAsync.valueOrNull;
 
     if (settings == null) {
-      return const Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Center(child: CircularProgressIndicator()),
+      return _SettingsLoadOrError(
+        hasError: settingsAsync.hasError,
+        onRetry: () => ref.invalidate(userSettingsProvider),
       );
     }
 
@@ -590,9 +590,9 @@ class _SecuritySheetContent extends ConsumerWidget {
     final settings = settingsAsync.valueOrNull;
 
     if (settings == null) {
-      return const Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Center(child: CircularProgressIndicator()),
+      return _SettingsLoadOrError(
+        hasError: settingsAsync.hasError,
+        onRetry: () => ref.invalidate(userSettingsProvider),
       );
     }
 
@@ -679,9 +679,9 @@ class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> 
     final settings = settingsAsync.valueOrNull;
 
     if (settings == null) {
-      return const Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Center(child: CircularProgressIndicator()),
+      return _SettingsLoadOrError(
+        hasError: settingsAsync.hasError,
+        onRetry: () => ref.invalidate(userSettingsProvider),
       );
     }
 
@@ -915,6 +915,34 @@ class _SheetRadioRow extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SettingsLoadOrError extends StatelessWidget {
+  const _SettingsLoadOrError({required this.hasError, required this.onRetry});
+
+  final bool hasError;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Center(
+        child: hasError
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: AppColors.danger, size: 32),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text("Couldn't load settings.", style: AppTypography.label),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextButton(onPressed: onRetry, child: const Text('Try again')),
+                ],
+              )
+            : const CircularProgressIndicator(),
       ),
     );
   }

@@ -84,10 +84,7 @@ class CreatePostSheet extends ConsumerStatefulWidget {
                 ),
               ),
               const Divider(height: 1, color: AppColors.border),
-              CreatePostSheet(onPostCreated: () {
-                onPostCreated();
-                Navigator.of(sheetContext).pop();
-              }),
+              CreatePostSheet(onPostCreated: onPostCreated),
             ],
           ),
         ),
@@ -130,10 +127,7 @@ class CreatePostSheet extends ConsumerStatefulWidget {
                 ),
                 const Divider(height: 1),
                 Flexible(
-                  child: CreatePostSheet(onPostCreated: () {
-                    onPostCreated();
-                    Navigator.of(dialogContext).pop();
-                  }),
+                  child: CreatePostSheet(onPostCreated: onPostCreated),
                 ),
               ],
             ),

@@ -66,17 +66,17 @@ class _ConversationAvatarRingState extends State<ConversationAvatarRing>
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = widget.photoUrl != null && widget.photoUrl!.isNotEmpty;
     final avatar = CircleAvatar(
       radius: 24,
       backgroundColor: const Color(0xFFFEFAF4),
-      backgroundImage:
-          widget.photoUrl != null ? NetworkImage(widget.photoUrl!) : null,
-      child: widget.photoUrl == null
-          ? Text(
+      backgroundImage: hasPhoto ? NetworkImage(widget.photoUrl!) : null,
+      child: hasPhoto
+          ? null
+          : Text(
               _computeInitials(widget.username),
               style: AppTypography.h3.copyWith(color: _orange),
-            )
-          : null,
+            ),
     );
 
     if (!widget.hasUnread) return avatar;

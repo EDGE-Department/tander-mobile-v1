@@ -55,7 +55,7 @@ class ProfilePhotosSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTabletWidth = MediaQuery.sizeOf(context).width >= 640;
+    final isTabletWidth = MediaQuery.sizeOf(context).width >= 768;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

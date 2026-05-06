@@ -155,6 +155,23 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                 participantName: participantName,
                 participantPhotoUrl: participantPhotoUrl,
                 scrollController: _scrollController,
+                onRefresh: () async {
+                  final ok = await ref
+                      .read(
+                        messageThreadNotifierProvider(
+                          widget.conversationId,
+                        ).notifier,
+                      )
+                      .refreshMessages();
+                  if (!ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Couldn't refresh messages."),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
                 onUnsend: (messageId) {
                   ref
                       .read(
@@ -310,18 +327,19 @@ class _HeaderAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
     return Stack(
       children: [
         CircleAvatar(
           radius: 20,
           backgroundColor: const Color(0xFFFFF8EE),
-          backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
-          child: photoUrl == null
-              ? Text(
+          backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
+          child: hasPhoto
+              ? null
+              : Text(
                   _computeInitials(name),
                   style: AppTypography.label.copyWith(color: AppColors.primary),
-                )
-              : null,
+                ),
         ),
         if (isOnline)
           Positioned(
@@ -351,6 +369,7 @@ class _ThreadBody extends StatelessWidget {
     required this.participantName,
     required this.participantPhotoUrl,
     required this.scrollController,
+    required this.onRefresh,
     this.onUnsend,
     this.onHide,
   });
@@ -360,6 +379,7 @@ class _ThreadBody extends StatelessWidget {
   final String participantName;
   final String? participantPhotoUrl;
   final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
   final ValueChanged<String>? onUnsend;
   final ValueChanged<String>? onHide;
 
@@ -379,7 +399,9 @@ class _ThreadBody extends StatelessWidget {
                 participantName: participantName,
                 participantPhotoUrl: participantPhotoUrl,
               )
-            : ListView.builder(
+            : RefreshIndicator.adaptive(
+                onRefresh: onRefresh,
+                child: ListView.builder(
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
                 itemCount: messages.length + (isPartnerTyping ? 1 : 0),
@@ -426,6 +448,7 @@ class _ThreadBody extends StatelessWidget {
                     ],
                   );
                 },
+              ),
               ),
     };
   }

@@ -248,7 +248,7 @@ class FriendRow extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _buildThumbnail(),
             _buildInfo(),
@@ -259,17 +259,23 @@ class FriendRow extends StatelessWidget {
     );
   }
 
-  /// Web: w-[88px] flex-shrink-0 cursor-pointer, h-full photo
+  /// Fixed 88×88 square crop. Without an explicit height the SizedBox
+  /// inherited the row's intrinsic height and Image.network fell back to
+  /// the photo's natural aspect ratio — a tall portrait stretched the
+  /// whole row vertically and BoxFit.cover then letterboxed the photo
+  /// inside a phone-mockup-shaped frame.
   Widget _buildThumbnail() {
     return GestureDetector(
       onTap: onViewProfile,
       child: SizedBox(
         width: 88,
+        height: 88,
         child: connection.otherPhotoUrl != null
             ? Image.network(
                 connection.otherPhotoUrl!,
                 fit: BoxFit.cover,
                 width: 88,
+                height: 88,
                 errorBuilder: (_, _, _) => connectionPhotoPlaceholder(),
               )
             : connectionPhotoPlaceholder(),

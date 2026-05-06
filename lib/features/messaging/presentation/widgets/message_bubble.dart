@@ -433,16 +433,17 @@ class PartnerAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
     return SizedBox(
       width: 40, height: 40,
       child: isVisible
           ? CircleAvatar(
               radius: 20,
               backgroundColor: const Color(0xFFF0F8F7),
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
-              child: photoUrl == null
-                  ? Text(_computeInitials(name), style: AppTypography.caption.copyWith(color: _teal))
-                  : null,
+              backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
+              child: hasPhoto
+                  ? null
+                  : Text(_computeInitials(name), style: AppTypography.caption.copyWith(color: _teal)),
             )
           : null,
     );

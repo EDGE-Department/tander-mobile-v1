@@ -2,7 +2,7 @@
 ///
 /// No cover banner. Flat layout with ambient glows, large rounded avatar
 /// with gradient ring, social stats row, bio, and meta pills.
-/// Phone: centered column. Tablet (>=640): side-by-side row.
+/// Phone: centered column. Tablet (>=768): side-by-side row.
 library;
 
 import 'package:flutter/material.dart';
@@ -49,7 +49,7 @@ class ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final isTablet = screenWidth >= 640;
+    final isTablet = screenWidth >= 768;
     // Web: h-32 w-32 (128px) mobile, sm:h-44 sm:w-44 (176px) tablet
     final avatarSize = isTablet ? 176.0 : 128.0;
 

@@ -91,6 +91,37 @@ final class MessageThreadNotifier
     );
   }
 
+  /// Pull-to-refresh: fetch the latest messages without dropping transient
+  /// state (typing flags, send-in-flight). Returns `true` on success, `false`
+  /// on failure so the UI can decide whether to show a SnackBar.
+  Future<bool> refreshMessages() async {
+    final fetchResult = await _repository.fetchMessages(
+      conversationId: _conversationId,
+    );
+
+    return fetchResult.when(
+      success: (messages) {
+        if (messages.isNotEmpty) {
+          _roomId = messages.first.roomId;
+        }
+        final current = state;
+        state = current is MessageThreadLoaded
+            ? current.copyWith(messages: messages)
+            : MessageThreadLoaded(messages: messages);
+        _markRead();
+        return true;
+      },
+      failure: (exception) {
+        AppLogger.error(
+          'Failed to refresh messages',
+          operation: _tag,
+          error: exception,
+        );
+        return false;
+      },
+    );
+  }
+
   // -----------------------------------------------------------------------
   // STOMP subscriptions
   // -----------------------------------------------------------------------

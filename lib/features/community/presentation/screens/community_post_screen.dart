@@ -26,25 +26,10 @@ class CommunityPostScreen extends ConsumerStatefulWidget {
 }
 
 class _CommunityPostScreenState extends ConsumerState<CommunityPostScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Hide bottom nav when post detail is open.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(modalVisibleProvider.notifier).state = true;
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    // Restore bottom nav when leaving.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(modalVisibleProvider.notifier).state = false;
-    });
-    super.dispose();
-  }
+  // Modal-visibility (bottom-nav hide/show) is managed by the caller that
+  // presents this screen — see _showPostDetailModal in community_feed_panel.
+  // Owning it here too caused a deferred dispose race on iOS/iPad that left
+  // the nav bar hidden after a comment-and-back round-trip.
 
   @override
   Widget build(BuildContext context) {

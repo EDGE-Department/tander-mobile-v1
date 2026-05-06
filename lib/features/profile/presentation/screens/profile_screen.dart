@@ -303,7 +303,7 @@ class _ProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final isTabletWidth = width >= 640;
+    final isTabletWidth = width >= 768;
 
     final interestsBlock = ProfileInterestsSection(
       interests: interests,

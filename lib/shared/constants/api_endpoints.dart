@@ -47,7 +47,7 @@ abstract final class ApiEndpoints {
   static const String privacySettings = '/settings/privacy';
   static const String securitySettings = '/settings/security';
   static const String discoverySettings = '/settings/discovery';
-  static const String userSettings = '/user/settings';
+  static const String userSettings = '/me/settings';
 
   // ── Discovery ────────────────────────────────────────────────────────
   static const String discoveryProfiles = '/api/discovery/profiles';
