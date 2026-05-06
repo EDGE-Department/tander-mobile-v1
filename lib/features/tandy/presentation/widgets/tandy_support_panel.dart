@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
@@ -37,28 +36,27 @@ class TandySupportPanel extends StatelessWidget {
                   const SizedBox(height: 26),
                   _SectionLabel(text: 'Crisis Support', color: AppColors.danger),
                   const SizedBox(height: 10),
-                  _CrisisCard(
+                  _ComingSoonCard(
                     label: 'National Center for Mental Health',
-                    sub: 'Free \u00B7 Available 24/7',
-                    phone: '1553',
+                    sub: 'Free crisis hotline \u00B7 24/7',
                     color: AppColors.danger,
-                    href: 'tel:1553',
+                    icon: Icons.phone,
                   ),
                   const SizedBox(height: 10),
-                  _CrisisCard(
+                  _ComingSoonCard(
                     label: 'Hopeline Philippines',
-                    sub: 'Mental Health Helpline \u00B7 24/7',
-                    phone: '8804-HOPE',
+                    sub: 'Mental health helpline \u00B7 24/7',
                     color: kTandyPurple,
-                    href: 'tel:028804-4673',
+                    icon: Icons.phone,
                   ),
                   const SizedBox(height: 24),
                   _SectionLabel(text: 'Community Support', color: kTandyOrange),
                   const SizedBox(height: 10),
-                  _ResourceRow(
-                    label: 'In Touch Community Services',
+                  _ComingSoonCard(
+                    label: 'Community Resources',
                     sub: 'Free counselling & mental health support',
                     color: kTandyOrange,
+                    icon: Icons.favorite,
                   ),
                   const SizedBox(height: 24),
                   _SectionLabel(text: 'Professional Care', color: kTandyPurple),
@@ -161,37 +159,40 @@ class _HeroCard extends StatelessWidget {
             style: TextStyle(fontSize: 14, color: Color(0xFF8B5500), height: 1.75),
           ),
           const SizedBox(height: 16),
-          // NCMH CTA
-          InkWell(
-            onTap: () => _launchPhone('1553'),
-            borderRadius: BorderRadius.circular(15),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.white.withAlpha(200),
-                border: Border.all(color: kTandyOrange.withAlpha(40)),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Container(
+          // Crisis hotlines - Coming Soon
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: Colors.white.withAlpha(200),
+              border: Border.all(color: kTandyOrange.withAlpha(40)),
+            ),
+            child: Row(
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.6,
+                  child: Container(
                     width: 38, height: 38,
                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(11), gradient: const LinearGradient(colors: <Color>[Color(0xFFF6B137), kTandyOrange])),
                     child: const Icon(Icons.phone, size: 18, color: Colors.white),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text('NCMH EMERGENCY HOTLINE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFFA06020), letterSpacing: 0.8)),
-                        Text('1553', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF7A3B00), letterSpacing: -0.8)),
-                      ],
-                    ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('CRISIS HOTLINES', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFFA06020), letterSpacing: 0.8)),
+                      Text('Coming Soon', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF9CA3AF), letterSpacing: -0.3)),
+                    ],
                   ),
-                  Text('Call free \u2192', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTandyOrange)),
-                ],
-              ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2.5),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), color: kTandyOrange.withAlpha(20), border: Border.all(color: kTandyOrange.withAlpha(40))),
+                  child: const Text('COMING SOON', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: kTandyOrange, letterSpacing: 0.5)),
+                ),
+              ],
             ),
           ),
         ],
@@ -219,19 +220,17 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _CrisisCard extends StatelessWidget {
-  const _CrisisCard({required this.label, required this.sub, required this.phone, required this.color, required this.href});
+class _ComingSoonCard extends StatelessWidget {
+  const _ComingSoonCard({required this.label, required this.sub, required this.color, required this.icon});
   final String label;
   final String sub;
-  final String phone;
   final Color color;
-  final String href;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _launchPhone(href.replaceFirst('tel:', '')),
-      borderRadius: BorderRadius.circular(18),
+    return Opacity(
+      opacity: 0.75,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -241,13 +240,15 @@ class _CrisisCard extends StatelessWidget {
         ),
         child: Row(
           children: <Widget>[
-            // Accent stripe
             Container(
-              width: 4, height: 60,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: color.withAlpha(230)),
+              width: 4, height: 50,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: color.withAlpha(128)),
             ),
             const SizedBox(width: 14),
-            Container(width: 46, height: 46, decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), color: color.withAlpha(18), border: Border.all(color: color.withAlpha(34))), child: Icon(Icons.phone, size: 20, color: color)),
+            Opacity(
+              opacity: 0.6,
+              child: Container(width: 46, height: 46, decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), color: color.withAlpha(18), border: Border.all(color: color.withAlpha(34))), child: Icon(icon, size: 20, color: color)),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -256,49 +257,16 @@ class _CrisisCard extends StatelessWidget {
                   Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: Color(0xFF1F2937))),
                   const SizedBox(height: 2),
                   Text(sub, style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
-                  const SizedBox(height: 6),
-                  Text(phone, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color, letterSpacing: -0.6)),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, size: 16, color: color.withAlpha(128)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2.5),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), color: color.withAlpha(20), border: Border.all(color: color.withAlpha(40))),
+              child: Text('COMING SOON', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: color, letterSpacing: 0.5)),
+            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ResourceRow extends StatelessWidget {
-  const _ResourceRow({required this.label, required this.sub, required this.color});
-  final String label;
-  final String sub;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: color.withAlpha(32)),
-        color: Colors.white,
-      ),
-      child: Row(
-        children: <Widget>[
-          Container(width: 46, height: 46, decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), color: const Color(0xFFFEF0E0), border: Border.all(color: color.withAlpha(36))), child: Icon(Icons.favorite, size: 20, color: color)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF1F2937))),
-                const SizedBox(height: 3),
-                Text(sub, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -380,12 +348,5 @@ class _Disclaimer extends StatelessWidget {
         style: TextStyle(fontSize: 12, color: Color(0xFF4D8080), height: 1.75),
       ),
     );
-  }
-}
-
-Future<void> _launchPhone(String number) async {
-  final uri = Uri(scheme: 'tel', path: number);
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri);
   }
 }
