@@ -1,8 +1,8 @@
-/// Profile hero section — 1:1 replica of web's ProfileHero.
+/// Profile hero section — always centered, scales gracefully on all screens.
 ///
 /// No cover banner. Flat layout with ambient glows, large rounded avatar
 /// with gradient ring, social stats row, bio, and meta pills.
-/// Phone: centered column. Tablet (>=768): side-by-side row.
+/// Always uses centered column layout - works on phones, tablets, any orientation.
 library;
 
 import 'package:flutter/material.dart';
@@ -49,79 +49,73 @@ class ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final isTablet = screenWidth >= 768;
-    // Web: h-32 w-32 (128px) mobile, sm:h-44 sm:w-44 (176px) tablet
-    final avatarSize = isTablet ? 176.0 : 128.0;
 
-    // Clamp glow offsets to prevent them drifting too far on wide screens
-    final glowOffset = (screenWidth * 0.15).clamp(40.0, 120.0);
+    // Scale avatar: 128px on small screens, up to 160px on larger screens
+    final avatarSize = screenWidth < 400 ? 120.0 : (screenWidth < 600 ? 128.0 : 160.0);
+
+    // Constrain content width on very wide screens for readability
+    final maxContentWidth = 500.0;
 
     return Stack(
       children: [
-        // Ambient glows behind identity — clamped to avoid drifting on tablets
+        // Ambient glows - positioned relative to center
         Positioned(
-          top: 0,
-          left: glowOffset,
-          child: Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primary.withValues(alpha: 0.08),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 60,
-          right: glowOffset,
-          child: Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.secondary.withValues(alpha: 0.08),
+          top: 20,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: SizedBox(
+              width: maxContentWidth + 100,
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: 20,
+                    child: Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 20,
+                    top: 40,
+                    child: Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.secondary.withValues(alpha: 0.08),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
 
-        // Content
+        // Content - always centered
         Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            isTablet ? 64 : 40,
-            16,
-            isTablet ? 48 : 32,
+          padding: const EdgeInsets.fromLTRB(16, 40, 16, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxContentWidth),
+              child: Column(
+                children: [
+                  _buildAvatar(avatarSize),
+                  const SizedBox(height: 28),
+                  _buildIdentity(),
+                ],
+              ),
+            ),
           ),
-          child: isTablet
-              ? _buildTabletLayout(avatarSize)
-              : _buildMobileLayout(avatarSize),
         ),
       ],
     );
   }
-
-  Widget _buildMobileLayout(double avatarSize) {
-    return Column(
-      children: [
-        _buildAvatar(avatarSize),
-        const SizedBox(height: 32),
-        _buildIdentity(centered: true),
-      ],
-    );
-  }
-
-  Widget _buildTabletLayout(double avatarSize) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildAvatar(avatarSize),
-        const SizedBox(width: 48),
-        Expanded(child: _buildIdentity(centered: false)),
-      ],
-    );
-  }
-
-  // ── Avatar with gradient ring + online badge ────────────────────────
 
   Widget _buildAvatar(double size) {
     final hasPhoto = gallery.isNotEmpty;
@@ -129,19 +123,18 @@ class ProfileHero extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Web: rounded-[40px] p-1.5 gradient ring, shadow
         Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(40),
+            borderRadius: BorderRadius.circular(size * 0.3),
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 AppColors.primary,
                 AppColors.secondary,
-                Color(0xFFFB923C), // orange-400
+                Color(0xFFFB923C),
               ],
             ),
             boxShadow: const [
@@ -153,11 +146,11 @@ class ProfileHero extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(5),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(34),
-              border: Border.all(color: Colors.white, width: 5),
+              borderRadius: BorderRadius.circular(size * 0.26),
+              border: Border.all(color: Colors.white, width: 4),
               color: AppColors.subtle,
             ),
             clipBehavior: Clip.antiAlias,
@@ -173,20 +166,19 @@ class ProfileHero extends StatelessWidget {
           ),
         ),
 
-        // Web: online badge — -bottom-2 -right-2, "ACTIVE" text
         if (isOnline)
           Positioned(
-            bottom: -8,
-            right: -8,
+            bottom: -6,
+            right: -6,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x33000000),
-                    blurRadius: 16,
+                    blurRadius: 12,
                     offset: Offset(0, 4),
                   ),
                 ],
@@ -196,20 +188,20 @@ class ProfileHero extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 10,
-                    height: 10,
+                    width: 8,
+                    height: 8,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: Color(0xFF22C55E),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   const Text(
                     'ACTIVE',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 2.0,
+                      letterSpacing: 1.5,
                       color: Color(0xFF16A34A),
                     ),
                   ),
@@ -230,27 +222,19 @@ class ProfileHero extends StatelessWidget {
     );
   }
 
-  // ── Identity: name, badges, stats, bio, meta ──────────────
-
-  Widget _buildIdentity({required bool centered}) {
-    final alignment = centered ? CrossAxisAlignment.center : CrossAxisAlignment.start;
-    final textAlign = centered ? TextAlign.center : TextAlign.left;
-    final wrapAlignment = centered ? WrapAlignment.center : WrapAlignment.start;
-
+  Widget _buildIdentity() {
     return Column(
-      crossAxisAlignment: alignment,
       children: [
-        // Name + verification + tier badge
+        // Name + badges
         Wrap(
-          alignment: wrapAlignment,
+          alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 12,
-          runSpacing: 8,
+          spacing: 10,
+          runSpacing: 6,
           children: [
-            // Web: font-display text-3xl sm:text-4xl font-black
             Text(
               displayName,
-              textAlign: textAlign,
+              textAlign: TextAlign.center,
               style: AppTypography.h1.copyWith(
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
@@ -258,40 +242,39 @@ class ProfileHero extends StatelessWidget {
             ),
             if (isVerified)
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFFD1FAE5)),
                 ),
                 child: const Icon(
                   Icons.verified_user,
-                  size: 22,
+                  size: 20,
                   color: AppColors.secondary,
                 ),
               ),
             TanderBadge(label: tierLabel),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
-        // Social stats row — Web: gap-10 sm:gap-14
+        // Stats row
         Row(
-          mainAxisAlignment:
-              centered ? MainAxisAlignment.center : MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _StatTile(
               value: '${gallery.length}',
               label: 'PHOTOS',
               valueColor: AppColors.textStrong,
             ),
-            SizedBox(width: centered ? 40 : 56),
+            const SizedBox(width: 36),
             _StatTile(
               value: '$interestsCount',
               label: 'INTERESTS',
               valueColor: AppColors.secondary,
             ),
-            SizedBox(width: centered ? 40 : 56),
+            const SizedBox(width: 36),
             _StatTile(
               value: '$completionPercent',
               label: 'STRENGTH',
@@ -300,28 +283,31 @@ class ProfileHero extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
-        // Bio (no @handle — social app, not a dating/Twitter handle model)
+        // Bio
         if (bio.isNotEmpty) ...[
-          Text(
-            bio,
-            textAlign: textAlign,
-            maxLines: centered ? 3 : null,
-            overflow: centered ? TextOverflow.ellipsis : null,
-            style: AppTypography.bodySm.copyWith(
-              color: AppColors.textBody,
-              height: 1.6,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              bio,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.bodySm.copyWith(
+                color: AppColors.textBody,
+                height: 1.6,
+              ),
             ),
           ),
+          const SizedBox(height: 16),
         ],
-        const SizedBox(height: 16),
 
-        // Meta pills — Web: text-[13px] font-black uppercase tracking-wider
+        // Meta pills
         Wrap(
-          alignment: wrapAlignment,
-          spacing: 20,
-          runSpacing: 10,
+          alignment: WrapAlignment.center,
+          spacing: 16,
+          runSpacing: 8,
           children: [
             if (displayLocation.isNotEmpty)
               _MetaPill(
@@ -354,8 +340,6 @@ class ProfileHero extends StatelessWidget {
   }
 }
 
-// ── Stat tile ─────────────────────────────────────────────────────────
-
 class _StatTile extends StatelessWidget {
   const _StatTile({
     required this.value,
@@ -380,7 +364,7 @@ class _StatTile extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
                 color: valueColor,
                 height: 1.0,
@@ -388,11 +372,11 @@ class _StatTile extends StatelessWidget {
             ),
             if (suffix != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: 2),
+                padding: const EdgeInsets.only(bottom: 1),
                 child: Text(
                   suffix!,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w900,
                     color: valueColor.withValues(alpha: 0.60),
                   ),
@@ -400,13 +384,13 @@ class _StatTile extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w900,
-            letterSpacing: 2.2,
+            letterSpacing: 2.0,
             color: AppColors.textMuted,
           ),
         ),
@@ -414,8 +398,6 @@ class _StatTile extends StatelessWidget {
     );
   }
 }
-
-// ── Meta pill ─────────────────────────────────────────────────────────
 
 class _MetaPill extends StatelessWidget {
   const _MetaPill({
@@ -433,14 +415,14 @@ class _MetaPill extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: iconColor),
-        const SizedBox(width: 8),
+        Icon(icon, size: 14, color: iconColor),
+        const SizedBox(width: 6),
         Text(
           label.toUpperCase(),
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w900,
-            letterSpacing: 1.0,
+            letterSpacing: 0.8,
             color: AppColors.textMuted,
           ),
         ),

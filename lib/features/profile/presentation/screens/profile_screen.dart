@@ -327,18 +327,9 @@ class _ProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final isTabletWidth = width >= 768;
-
-    final interestsBlock = ProfileInterestsSection(
-      interests: interests,
-      hasInterests: hasInterests,
-      onChooseInterests: onEdit,
-    );
-    final vitalFactsBlock = ProfileVitalFactsSection(
-      snapshotItems: snapshotItems,
-      onAddDetails: onEdit,
-    );
+    // Always use stacked layout - simpler and works on all screen sizes.
+    // Constrain max width on larger screens for readability.
+    const maxContentWidth = 500.0;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -347,42 +338,42 @@ class _ProfileContent extends StatelessWidget {
         AppSpacing.md,
         0,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ProfileActionRow(
-            onEdit: onEdit,
-            onPhotos: onPhotos,
-            onSettings: onSettings,
-            onHelp: onHelp,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: maxContentWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ProfileActionRow(
+                onEdit: onEdit,
+                onPhotos: onPhotos,
+                onSettings: onSettings,
+                onHelp: onHelp,
+              ),
+              const SizedBox(height: _kSectionGap),
+              ProfilePhotosSection(
+                gallery: gallery,
+                displayName: displayName,
+                onManage: onPhotos,
+                onAddPhoto: onPhotos,
+              ),
+              const SizedBox(height: _kSectionGap),
+              ProfileInterestsSection(
+                interests: interests,
+                hasInterests: hasInterests,
+                onChooseInterests: onEdit,
+              ),
+              const SizedBox(height: _kSectionGap),
+              ProfileVitalFactsSection(
+                snapshotItems: snapshotItems,
+                onAddDetails: onEdit,
+              ),
+              const SizedBox(height: 64),
+              const _SignOutButton(),
+              const SizedBox(height: 160),
+            ],
           ),
-          const SizedBox(height: _kSectionGap),
-          ProfilePhotosSection(
-            gallery: gallery,
-            displayName: displayName,
-            onManage: onPhotos,
-            onAddPhoto: onPhotos,
-          ),
-          const SizedBox(height: _kSectionGap),
-          if (isTabletWidth)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: interestsBlock),
-                const SizedBox(width: AppSpacing.xl),
-                Expanded(child: vitalFactsBlock),
-              ],
-            )
-          else ...[
-            interestsBlock,
-            const SizedBox(height: _kSectionGap),
-            vitalFactsBlock,
-          ],
-          const SizedBox(height: 64),
-          const _SignOutButton(),
-          // Reserve room so content clears the floating bottom nav bar.
-          const SizedBox(height: 160),
-        ],
+        ),
       ),
     );
   }
