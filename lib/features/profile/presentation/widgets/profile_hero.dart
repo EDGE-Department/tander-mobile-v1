@@ -53,12 +53,15 @@ class ProfileHero extends StatelessWidget {
     // Web: h-32 w-32 (128px) mobile, sm:h-44 sm:w-44 (176px) tablet
     final avatarSize = isTablet ? 176.0 : 128.0;
 
+    // Clamp glow offsets to prevent them drifting too far on wide screens
+    final glowOffset = (screenWidth * 0.15).clamp(40.0, 120.0);
+
     return Stack(
       children: [
-        // Ambient glows behind identity
+        // Ambient glows behind identity — clamped to avoid drifting on tablets
         Positioned(
           top: 0,
-          left: screenWidth * 0.15,
+          left: glowOffset,
           child: Container(
             width: 200,
             height: 200,
@@ -70,7 +73,7 @@ class ProfileHero extends StatelessWidget {
         ),
         Positioned(
           top: 60,
-          right: screenWidth * 0.15,
+          right: glowOffset,
           child: Container(
             width: 200,
             height: 200,

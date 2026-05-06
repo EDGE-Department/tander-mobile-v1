@@ -5,7 +5,7 @@
 ///   2. Action row (Edit Profile + Settings + Help)
 ///   3. Gallery section (header + photo grid or empty prompt)
 ///   4. Bento: Your Interests | Vital Facts (stacked on phone, side-by-side
-///      on tablet ≥ 640 wide)
+///      on tablet ≥ 768 wide)
 ///   5. Sign out button (white, danger-tinted, full uppercase)
 ///
 /// The background is a fixed cream wash with a top orange→transparent
@@ -239,15 +239,37 @@ void _showFullScreenSheet(BuildContext context, Widget child) {
     barrierLabel: 'Close',
     barrierColor: Colors.black.withValues(alpha: 0.4),
     transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, _, _) => Align(
-      alignment: Alignment.bottomCenter,
-      child: Material(
-        color: AppColors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        clipBehavior: Clip.none,
-        child: FractionallySizedBox(heightFactor: 0.92, child: child),
-      ),
-    ),
+    pageBuilder: (dialogContext, _, _) {
+      final screenSize = MediaQuery.sizeOf(dialogContext);
+      final isTablet = screenSize.width >= 768;
+      // On tablets, use a centered card with max width; on phones, use bottom sheet
+      final maxWidth = isTablet ? 600.0 : screenSize.width;
+      final heightFactor = isTablet ? 0.85 : 0.92;
+
+      return Align(
+        alignment: isTablet ? Alignment.center : Alignment.bottomCenter,
+        child: Material(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(isTablet ? 24 : 0).copyWith(
+            topLeft: const Radius.circular(24),
+            topRight: const Radius.circular(24),
+          ),
+          clipBehavior: Clip.antiAlias,
+          elevation: isTablet ? 8 : 0,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: maxWidth,
+              maxHeight: screenSize.height * heightFactor,
+            ),
+            child: SizedBox(
+              width: isTablet ? maxWidth : screenSize.width,
+              height: screenSize.height * heightFactor,
+              child: child,
+            ),
+          ),
+        ),
+      );
+    },
     transitionBuilder: (_, animation, _, child) {
       final curved = CurvedAnimation(
         parent: animation,
@@ -258,7 +280,10 @@ void _showFullScreenSheet(BuildContext context, Widget child) {
           begin: const Offset(0, 1),
           end: Offset.zero,
         ).animate(curved),
-        child: child,
+        child: FadeTransition(
+          opacity: curved,
+          child: child,
+        ),
       );
     },
   );
