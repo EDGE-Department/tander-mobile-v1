@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -124,8 +125,13 @@ final class CallManager {
     notifier.setStatus(const CallConnecting());
 
     try {
+      // Phase 0 F6-fix: await backend accept before setting up local media.
+      // If the backend rejects (race lost, call already ended), do not strand
+      // the user with a half-open Twilio session. Phase 1 v2 endpoint will
+      // return structured ANSWERED_ELSEWHERE etc.; for now any rejection is
+      // treated as a terminal failure.
       final datasource = _ref.read(callsRemoteDatasourceProvider);
-      unawaited(datasource.acceptCall(callInfo.roomName).catchError((_) {}));
+      await datasource.acceptCall(callInfo.roomName);
       await _setup.setupCall(callInfo, isOutgoing: false);
     } on MediaPermissionException catch (error) {
       await _cleanup();
@@ -154,7 +160,12 @@ final class CallManager {
 
     sendHangup(callInfo.roomName, 'declined', callInfo.remoteUserId);
     final datasource = _ref.read(callsRemoteDatasourceProvider);
-    unawaited(datasource.declineCall(callInfo.roomName).catchError((_) {}));
+    // Phase 0 F6-fix: surface backend failures instead of silent swallow.
+    // User wants to terminate locally regardless of backend reachability, so
+    // keep optimistic UI cleanup, but log failures (no silent .catchError).
+    unawaited(datasource.declineCall(callInfo.roomName).catchError((Object err) {
+      debugPrint('[CallManager] declineCall failed: $err');
+    }));
 
     unawaited(_cleanup());
     notifier.endCall(CallEndReason.declined);
@@ -178,10 +189,15 @@ final class CallManager {
     );
 
     final datasource = _ref.read(callsRemoteDatasourceProvider);
+    // Phase 0 F6-fix: surface backend failures instead of silent swallow.
     if (isCancellingOutgoing) {
-      unawaited(datasource.cancelCall(callInfo.roomName).catchError((_) {}));
+      unawaited(datasource.cancelCall(callInfo.roomName).catchError((Object err) {
+        debugPrint('[CallManager] cancelCall failed: $err');
+      }));
     } else {
-      unawaited(datasource.endCall(callInfo.roomName).catchError((_) {}));
+      unawaited(datasource.endCall(callInfo.roomName).catchError((Object err) {
+        debugPrint('[CallManager] endCall failed: $err');
+      }));
     }
 
     unawaited(_cleanup());

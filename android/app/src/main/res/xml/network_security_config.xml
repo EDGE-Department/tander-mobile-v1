@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Network Security Configuration for Tander (Phase 0 F2-fix)
+     Enforces HTTPS-only for production domains. Permits cleartext only
+     for 127.0.0.1 dev loopback (used by `adb reverse tcp:8080 tcp:8080`
+     when APP_ENV=dev points the Flutter app at the host's local backend).
+
+     TODO Phase 5: add certificate pinning once production cert hashes
+     are stable. See tander-flutter/android/app/src/main/res/xml/
+     network_security_config.xml for the pin-set template.
+-->
+<network-security-config>
+    <!-- Production / staging: HTTPS-only, no cleartext fallback. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">tanderconnect.com</domain>
+    </domain-config>
+
+    <!-- Dev loopback only. APP_ENV=dev builds talk to 127.0.0.1:8080
+         via `adb reverse`. Production builds never use this path. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>
