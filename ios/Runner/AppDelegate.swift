@@ -18,6 +18,12 @@ import TwilioVideo
   /// and PushKit token / push callbacks then never fire.
   private var voipRegistry: PKPushRegistry?
 
+  /// Strong reference to the cold-start fallback CXProvider. A local `let`
+  /// can be released by ARC before `reportNewIncomingCall`'s async completion
+  /// fires, which would violate the PushKit contract and let iOS terminate the
+  /// app on a cold-start VoIP push. Held until the completion runs.
+  private var fallbackProvider: CXProvider?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -130,12 +136,19 @@ import TwilioVideo
     // kills the app. Use CXProvider directly with a minimal CXCallUpdate.
     guard let plugin = SwiftFlutterCallkitIncomingPlugin.sharedInstance else {
       NSLog("[AppDelegate] CRITICAL: Plugin nil — minimal CXProvider report to satisfy PushKit contract")
+      // Hold a strong reference on self so ARC cannot release the provider
+      // before reportNewIncomingCall's async completion fires. A local `let`
+      // would be deallocated as soon as this function returns (the completion
+      // closure does not capture it), which violates the PushKit contract and
+      // can let iOS terminate the app on a cold-start VoIP push.
       let provider = CXProvider(configuration: CXProviderConfiguration(localizedName: "Tander"))
+      self.fallbackProvider = provider
       let update = CXCallUpdate()
       update.remoteHandle = CXHandle(type: .generic, value: callerName)
       let callUUID = UUID(uuidString: uuid) ?? UUID()
-      provider.reportNewIncomingCall(with: callUUID, update: update) { error in
+      provider.reportNewIncomingCall(with: callUUID, update: update) { [weak self] error in
         if let error = error { NSLog("[AppDelegate] Minimal call report error: \(error)") }
+        self?.fallbackProvider = nil
         completion()
       }
       return

@@ -1,5 +1,8 @@
-# Uncomment this line to define a global platform for your project
-platform :ios, '13.0'
+# iOS 15.5 is the floor required by GoogleMLKit 7.0 (pulled in transitively by
+# google_mlkit_text_recognition 0.14, used for the ID-scanner OCR). TwilioVideo
+# 5.x and flutter_callkit_incoming are both fine here. The earlier '13.0' floor
+# was set on Windows without compiling and is no longer satisfiable.
+platform :ios, '15.5'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'

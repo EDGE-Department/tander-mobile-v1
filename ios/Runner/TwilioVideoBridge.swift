@@ -39,6 +39,9 @@ final class TwilioVideoBridge: NSObject {
 
   /// Twilio audio device. CallKit (via the plugin) activates the AVAudioSession;
   /// we only flip `isEnabled` in AppDelegate's didActivate/didDeactivate.
+  /// Swift bridges the Obj-C `+audioDevice` factory as `init()`, so writing
+  /// `DefaultAudioDevice()` is correct (the importer hides the otherwise-unavailable
+  /// `-init`).
   let audioDevice = DefaultAudioDevice()
 
   private var channel: FlutterMethodChannel?
@@ -115,7 +118,12 @@ final class TwilioVideoBridge: NSObject {
     // Guard against double-connect (matches Android).
     guard room == nil else { return }
 
-    let audio = LocalAudioTrack()
+    // Swift bridges the Obj-C `+track` factory as `init?()`.
+    guard let audio = LocalAudioTrack() else {
+      NSLog("[TwilioVideoBridge] Failed to create LocalAudioTrack")
+      emit("roomConnectFailure", ["code": -1, "message": "Failed to create local audio track"])
+      return
+    }
     localAudioTrack = audio
 
     var videoTracks: [LocalVideoTrack] = []
