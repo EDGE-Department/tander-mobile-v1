@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
@@ -41,7 +40,7 @@ class DesktopHeroPanel extends StatelessWidget {
       child: Stack(
         children: [
           _buildAuroraBlobs(),
-          LoginConstellation(),
+          const LoginConstellation(),
           // Warm center glow — matches web's ambient golden light
           Positioned.fill(
             child: Center(
@@ -227,7 +226,7 @@ class DesktopHeroPanel extends StatelessWidget {
               'MADE FOR FILIPINO SENIORS 60+',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: Colors.white.withValues(alpha: 0.65),
                 letterSpacing: 3.2,
@@ -297,190 +296,12 @@ const _marqueeText =
     'PAGMAMAHAL \u00B7 TIWALA \u00B7 SAMA-SAMA \u00B7 TAHANAN '
     '\u00B7 KWENTUHAN \u00B7 MALASAKIT';
 
-class TabletPortraitHeroPanel extends StatelessWidget {
-  const TabletPortraitHeroPanel({required this.onlineCount, super.key});
-
-  final SimulatedOnlineCount onlineCount;
-
-  @override
-  Widget build(BuildContext context) {
-    const heroHeight = 320.0;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(42),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x29180804),
-            blurRadius: 72,
-            offset: Offset(0, 28),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(42),
-        child: SizedBox(
-          height: heroHeight,
-          child: Stack(
-            children: [
-              const Positioned.fill(
-                child: LoginHeaderBackground(
-                  headerHeight: heroHeight,
-                  showSocialOrbs: false,
-                ),
-              ),
-              LoginConstellation(),
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    '60+',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 240,
-                      color: Colors.white.withValues(alpha: 0.04),
-                      height: 1,
-                      letterSpacing: -12,
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(32, 32, 32, 24),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Spacer(),
-                        ValueListenableBuilder<int>(
-                          valueListenable: onlineCount,
-                          builder: (_, count, _) =>
-                              OnlineCountBadge(count: count),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 390),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'MADE FOR FILIPINO SENIORS 60+',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.65,
-                                      ),
-                                      letterSpacing: 3.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const LoginLogoWordmarkRow(
-                                    alignment: MainAxisAlignment.start,
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Text(
-                                    'Connect with fellow seniors who understand your world.',
-                                    style: AppTypography.h2.copyWith(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.88,
-                                      ),
-                                      height: 1.24,
-                                      shadows: const [
-                                        Shadow(
-                                          color: Color(0x2E000000),
-                                          blurRadius: 16,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  const SizedBox(
-                                    width: 332,
-                                    child: LoginFilipinoValuesMarquee(),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  const Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      _TrustBadge(
-                                        icon: Icons.people,
-                                        label: '2,400+ members',
-                                      ),
-                                      _TrustBadge(
-                                        icon: Icons.verified_user,
-                                        label: 'ID-verified',
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 296,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.10),
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.16,
-                                      ),
-                                    ),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Color(0x2E0C0400),
-                                        blurRadius: 56,
-                                        offset: Offset(0, 22),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const SizedBox(
-                                    width: 296,
-                                    child: ConnectionShowcase(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class LoginFilipinoValuesMarquee extends StatefulWidget {
-  const LoginFilipinoValuesMarquee();
+  const LoginFilipinoValuesMarquee({super.key});
 
   @override
-  State<LoginFilipinoValuesMarquee> createState() => _LoginFilipinoValuesMarqueeState();
+  State<LoginFilipinoValuesMarquee> createState() =>
+      _LoginFilipinoValuesMarqueeState();
 }
 
 class _LoginFilipinoValuesMarqueeState extends State<LoginFilipinoValuesMarquee>
@@ -524,7 +345,7 @@ class _MarqueeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textStyle = TextStyle(
-      fontSize: 9,
+      fontSize: 12,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.28 * 9,
       color: Colors.white.withValues(alpha: 0.20),
@@ -598,6 +419,7 @@ class _TrustBadge extends StatelessWidget {
 /// sizes are derived from the panel width (desktop default behaviour).
 class LoginLogoWordmarkRow extends StatelessWidget {
   const LoginLogoWordmarkRow({
+    super.key,
     this.alignment = MainAxisAlignment.center,
     this.logoSize,
     this.wordmarkSize,
@@ -641,7 +463,7 @@ class LoginLogoWordmarkRow extends StatelessWidget {
 ///
 /// [wordmarkSize] overrides the default panel-width-based calculation.
 class LoginWordmarkGlowSweep extends StatefulWidget {
-  const LoginWordmarkGlowSweep({this.wordmarkSize});
+  const LoginWordmarkGlowSweep({super.key, this.wordmarkSize});
 
   final double? wordmarkSize;
 
@@ -737,70 +559,3 @@ class _LoginWordmarkGlowSweepState extends State<LoginWordmarkGlowSweep>
   }
 }
 
-// ── Tablet Portrait Branding Block ──────────────────────────────────
-
-/// Centered branding block for the tablet portrait login layout.
-///
-/// Renders: label → logo+wordmark row → tagline → Filipino values marquee.
-/// Used exclusively by `_TabletPortraitLayout` in `login_screen.dart`.
-class TabletBrandingBlock extends StatelessWidget {
-  const TabletBrandingBlock({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final wordmarkSize = (screenWidth * 0.085).clamp(68.0, 96.0);
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 520),
-      child: Column(
-        children: [
-          Text(
-            'MADE FOR FILIPINO SENIORS 60+',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: Colors.white.withValues(alpha: 0.65),
-              letterSpacing: 3.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          LoginLogoWordmarkRow(
-            alignment: MainAxisAlignment.center,
-            logoSize: 72.0,
-            wordmarkSize: wordmarkSize,
-          ),
-          const SizedBox(height: 12),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Text(
-              'Connect with fellow seniors who understand your world',
-              textAlign: TextAlign.center,
-              style: AppTypography.h2.copyWith(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.85),
-                height: 1.24,
-                shadows: const [
-                  Shadow(
-                    color: Color(0x2E000000),
-                    blurRadius: 16,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-            )
-                .animate()
-                .fadeIn(duration: 500.ms, delay: 500.ms)
-                .slideY(begin: 0.06),
-          ),
-          const SizedBox(height: 10),
-          const SizedBox(
-            width: 420,
-            child: LoginFilipinoValuesMarquee(),
-          ),
-        ],
-      ),
-    );
-  }
-}

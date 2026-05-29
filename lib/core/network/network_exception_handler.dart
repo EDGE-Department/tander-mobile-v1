@@ -3,6 +3,22 @@ import 'package:dio/dio.dart';
 import 'package:tander_flutter_v3/core/errors/app_exception.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 
+// =============================================================================
+// Screen-side error-handling order for submission flows:
+//
+//   1. catch DioException → if statusCode == 401 → toast + go(login)
+//   2. catch NetworkException → show AuthErrorDisplay.banner with
+//      autoDismiss: false + onRetry (sticky offline banner)
+//   3. catch AppException → existing generic handling
+//   4. catch Exception → existing generic handling
+//
+// Result.when screens (SignUp, OTP): the NetworkException check lives INSIDE
+// the failure: branch — if (exception is NetworkException) → offline banner.
+//
+// This is the canonical reference for the offline-retry banner pattern wired
+// across the registration submission screens.
+// =============================================================================
+
 /// Maps [DioException] instances to typed [AppException] subclasses.
 ///
 /// Call [mapDioException] at the repository / data-source boundary so that
@@ -36,10 +52,7 @@ final class NetworkExceptionHandler {
       );
     }
 
-    return _mapStatusCode(
-      statusCode: statusCode,
-      exception: exception,
-    );
+    return _mapStatusCode(statusCode: statusCode, exception: exception);
   }
 
   // ---------------------------------------------------------------------------
@@ -57,53 +70,57 @@ final class NetworkExceptionHandler {
     return switch (statusCode) {
       400 => _buildValidationException(responseBody, exception, errorCode),
       401 => AuthException(
-          message: _extractMessage(responseBody) ??
-              'Your session has expired. Please sign in again.',
-          reason: errorCode == 'INVALID_CREDENTIALS'
-              ? AuthFailureReason.invalidCredentials
-              : AuthFailureReason.tokenExpired,
-          stackTrace: exception.stackTrace,
-          code: errorCode,
-        ),
+        message:
+            _extractMessage(responseBody) ??
+            'Your session has expired. Please sign in again.',
+        reason: errorCode == 'INVALID_CREDENTIALS'
+            ? AuthFailureReason.invalidCredentials
+            : AuthFailureReason.tokenExpired,
+        stackTrace: exception.stackTrace,
+        code: errorCode,
+      ),
       403 => AuthException(
-          message: _extractMessage(responseBody) ??
-              'You do not have permission to perform this action.',
-          reason: AuthFailureReason.forbidden,
-          stackTrace: exception.stackTrace,
-          code: errorCode,
-        ),
+        message:
+            _extractMessage(responseBody) ??
+            'You do not have permission to perform this action.',
+        reason: AuthFailureReason.forbidden,
+        stackTrace: exception.stackTrace,
+        code: errorCode,
+      ),
       404 => NotFoundException(
-          message: _extractMessage(responseBody) ??
-              'The requested resource was not found.',
-          stackTrace: exception.stackTrace,
-          code: errorCode,
-        ),
+        message:
+            _extractMessage(responseBody) ??
+            'The requested resource was not found.',
+        stackTrace: exception.stackTrace,
+        code: errorCode,
+      ),
       409 => ConflictException(
-          message: _extractMessage(responseBody) ??
-              'A conflict occurred with your request.',
-          stackTrace: exception.stackTrace,
-          code: errorCode,
-        ),
+        message:
+            _extractMessage(responseBody) ??
+            'A conflict occurred with your request.',
+        stackTrace: exception.stackTrace,
+        code: errorCode,
+      ),
       429 => RateLimitException(
-          message: _extractMessage(responseBody) ??
-              'Too many requests. Please wait and try again.',
-          retryAfterSeconds: _extractRetryAfter(responseBody),
-          stackTrace: exception.stackTrace,
-          code: errorCode,
-        ),
+        message:
+            _extractMessage(responseBody) ??
+            'Too many requests. Please wait and try again.',
+        retryAfterSeconds: _extractRetryAfter(responseBody),
+        stackTrace: exception.stackTrace,
+        code: errorCode,
+      ),
       >= 500 => ServerException(
-          message: _extractMessage(responseBody) ??
-              'Something went wrong on our end.',
-          statusCode: statusCode,
-          stackTrace: exception.stackTrace,
-          code: errorCode,
-        ),
+        message:
+            _extractMessage(responseBody) ?? 'Something went wrong on our end.',
+        statusCode: statusCode,
+        stackTrace: exception.stackTrace,
+        code: errorCode,
+      ),
       _ => UnknownException(
-          message: _extractMessage(responseBody) ??
-              'Unexpected HTTP $statusCode',
-          stackTrace: exception.stackTrace,
-          code: errorCode,
-        ),
+        message: _extractMessage(responseBody) ?? 'Unexpected HTTP $statusCode',
+        stackTrace: exception.stackTrace,
+        code: errorCode,
+      ),
     };
   }
 
@@ -119,7 +136,8 @@ final class NetworkExceptionHandler {
     final fieldErrors = _extractFieldErrors(responseBody);
 
     return ValidationException(
-      message: _extractMessage(responseBody) ??
+      message:
+          _extractMessage(responseBody) ??
           'Please correct the highlighted fields.',
       fieldErrors: fieldErrors,
       stackTrace: exception.stackTrace,
@@ -145,9 +163,9 @@ final class NetworkExceptionHandler {
     for (final entry in rawErrors.entries) {
       final rawMessages = entry.value;
       if (rawMessages is List<Object?>) {
-        parsed[entry.key] = rawMessages
-            .whereType<String>()
-            .toList(growable: false);
+        parsed[entry.key] = rawMessages.whereType<String>().toList(
+          growable: false,
+        );
       }
     }
 
@@ -186,10 +204,10 @@ final class NetworkExceptionHandler {
   // ---------------------------------------------------------------------------
 
   static bool _isConnectionFailure(DioExceptionType type) => switch (type) {
-        DioExceptionType.connectionTimeout => true,
-        DioExceptionType.receiveTimeout => true,
-        DioExceptionType.sendTimeout => true,
-        DioExceptionType.connectionError => true,
-        _ => false,
-      };
+    DioExceptionType.connectionTimeout => true,
+    DioExceptionType.receiveTimeout => true,
+    DioExceptionType.sendTimeout => true,
+    DioExceptionType.connectionError => true,
+    _ => false,
+  };
 }

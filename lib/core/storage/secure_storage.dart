@@ -173,14 +173,18 @@ final class SecureStorage {
     required String password,
     required String auditId,
   }) async {
-    if (email != null) await _storage.write(key: _pendingEmailKey, value: email);
-    if (phone != null) await _storage.write(key: _pendingPhoneKey, value: phone);
+    if (email != null) {
+      await _storage.write(key: _pendingEmailKey, value: email);
+    }
+    if (phone != null) {
+      await _storage.write(key: _pendingPhoneKey, value: phone);
+    }
     await _storage.write(key: _pendingPasswordKey, value: password);
     await _storage.write(key: _pendingAuditIdKey, value: auditId);
   }
 
   Future<({String? email, String? phone, String? password, String? auditId})>
-      readPendingRegistration() async {
+  readPendingRegistration() async {
     return (
       email: await _storage.read(key: _pendingEmailKey),
       phone: await _storage.read(key: _pendingPhoneKey),

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-
 import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/cooking_mode/cooking_timer.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Full-screen immersive cooking experience — step-by-step instructions,
 /// watermark step numbers, timers, and a Filipino-flavored completion view.
@@ -69,8 +68,9 @@ class _CookingModeOverlayState extends State<CookingModeOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final currentInstruction =
-        _currentStepIndex < _instructions.length ? _instructions[_currentStepIndex] : null;
+    final currentInstruction = _currentStepIndex < _instructions.length
+        ? _instructions[_currentStepIndex]
+        : null;
     final timerSeconds = (currentInstruction?.timerDurationMinutes ?? 0) * 60;
 
     return Material(
@@ -82,7 +82,9 @@ class _CookingModeOverlayState extends State<CookingModeOverlay> {
               // Header
               _CookingHeader(
                 title: widget.title,
-                stepLabel: _isCompleted ? null : 'Step ${_currentStepIndex + 1} / $_totalSteps',
+                stepLabel: _isCompleted
+                    ? null
+                    : 'Step ${_currentStepIndex + 1} / $_totalSteps',
                 onClose: widget.onClose,
               ),
 
@@ -95,7 +97,9 @@ class _CookingModeOverlayState extends State<CookingModeOverlay> {
                   alignment: Alignment.centerLeft,
                   child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
+                      borderRadius: const BorderRadius.horizontal(
+                        right: Radius.circular(4),
+                      ),
                       gradient: LinearGradient(
                         colors: _isCompleted
                             ? <Color>[kTandyGreen, const Color(0xFF34D399)]
@@ -109,7 +113,10 @@ class _CookingModeOverlayState extends State<CookingModeOverlay> {
               // Content
               Expanded(
                 child: _isCompleted
-                    ? _CompletionView(onRestart: _restart, onClose: widget.onClose)
+                    ? _CompletionView(
+                        onRestart: _restart,
+                        onClose: widget.onClose,
+                      )
                     : _StepView(
                         stepNumber: _currentStepIndex + 1,
                         instruction: currentInstruction?.text ?? '',
@@ -136,7 +143,11 @@ class _CookingModeOverlayState extends State<CookingModeOverlay> {
 }
 
 class _CookingHeader extends StatelessWidget {
-  const _CookingHeader({required this.title, required this.onClose, this.stepLabel});
+  const _CookingHeader({
+    required this.title,
+    required this.onClose,
+    this.stepLabel,
+  });
   final String title;
   final String? stepLabel;
   final VoidCallback onClose;
@@ -156,7 +167,9 @@ class _CookingHeader extends StatelessWidget {
             icon: const Icon(Icons.close, size: 18),
             style: IconButton.styleFrom(
               fixedSize: const Size(48, 48),
-              shape: const CircleBorder(side: BorderSide(color: AppColors.borderLight)),
+              shape: const CircleBorder(
+                side: BorderSide(color: AppColors.borderLight),
+              ),
               backgroundColor: Colors.white,
             ),
           ),
@@ -164,16 +177,33 @@ class _CookingHeader extends StatelessWidget {
           const Icon(Icons.restaurant, size: 20, color: kTandyOrange),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textStrong), overflow: TextOverflow.ellipsis),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                color: AppColors.textStrong,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           if (stepLabel != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
-                gradient: const LinearGradient(colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDE1C1)]),
+                gradient: const LinearGradient(
+                  colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDE1C1)],
+                ),
               ),
-              child: Text(stepLabel!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF9A3412))),
+              child: Text(
+                stepLabel!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF9A3412),
+                ),
+              ),
             ),
         ],
       ),
@@ -182,7 +212,11 @@ class _CookingHeader extends StatelessWidget {
 }
 
 class _StepView extends StatelessWidget {
-  const _StepView({required this.stepNumber, required this.instruction, required this.timerSeconds});
+  const _StepView({
+    required this.stepNumber,
+    required this.instruction,
+    required this.timerSeconds,
+  });
   final int stepNumber;
   final String instruction;
   final int timerSeconds;
@@ -199,13 +233,25 @@ class _StepView extends StatelessWidget {
             children: <Widget>[
               // Step badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  gradient: const LinearGradient(colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDE1C1)]),
+                  gradient: const LinearGradient(
+                    colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDE1C1)],
+                  ),
                   border: Border.all(color: kTandyOrange.withAlpha(38)),
                 ),
-                child: Text('Step $stepNumber', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF9A3412))),
+                child: Text(
+                  'Step $stepNumber',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF9A3412),
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
               // Instruction card
@@ -220,7 +266,12 @@ class _StepView extends StatelessWidget {
                 child: Text(
                   instruction,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textStrong, height: 1.45),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textStrong,
+                    height: 1.45,
+                  ),
                 ),
               ),
               if (timerSeconds > 0) ...<Widget>[
@@ -237,8 +288,12 @@ class _StepView extends StatelessWidget {
 
 class _NavigationBar extends StatelessWidget {
   const _NavigationBar({
-    required this.isFirst, required this.isLast, required this.totalSteps,
-    required this.currentStep, required this.onPrevious, required this.onNext,
+    required this.isFirst,
+    required this.isLast,
+    required this.totalSteps,
+    required this.currentStep,
+    required this.onPrevious,
+    required this.onNext,
   });
   final bool isFirst;
   final bool isLast;
@@ -262,7 +317,9 @@ class _NavigationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left, size: 20),
             style: IconButton.styleFrom(
               fixedSize: const Size(56, 56),
-              shape: const CircleBorder(side: BorderSide(color: AppColors.borderLight)),
+              shape: const CircleBorder(
+                side: BorderSide(color: AppColors.borderLight),
+              ),
               disabledForegroundColor: const Color(0xFFC4BBB0),
             ),
           ),
@@ -289,12 +346,20 @@ class _NavigationBar extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: isLast ? kTandyGreen : kTandyOrange,
               fixedSize: const Size(130, 56),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Text(isLast ? 'Done' : 'Next Step', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                Text(
+                  isLast ? 'Done' : 'Next Step',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(width: 4),
                 const Icon(Icons.chevron_right, size: 16),
               ],
@@ -320,31 +385,75 @@ class _CompletionView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
-              width: 120, height: 120,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(colors: <Color>[Color(0xFFD1FAE5), Color(0xFFA7F3D0)]),
+                gradient: const LinearGradient(
+                  colors: <Color>[Color(0xFFD1FAE5), Color(0xFFA7F3D0)],
+                ),
                 border: Border.all(color: const Color(0xFF6EE7B7), width: 3),
               ),
               child: const Icon(Icons.check, size: 56, color: kTandyGreen),
             ),
             const SizedBox(height: 24),
-            const Text('Kainan na!', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: AppColors.textStrong, letterSpacing: -0.4)),
+            const Text(
+              'Kainan na!',
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textStrong,
+                letterSpacing: -0.4,
+              ),
+            ),
             const SizedBox(height: 6),
-            const Text('Time to eat!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF9B8F80))),
+            const Text(
+              'Time to eat!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF9B8F80),
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('You have completed all the steps. Enjoy your meal!', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: AppColors.textBody, height: 1.6)),
+            const Text(
+              'You have completed all the steps. Enjoy your meal!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.textBody,
+                height: 1.6,
+              ),
+            ),
             const SizedBox(height: 28),
             FilledButton(
               onPressed: onClose,
-              style: FilledButton.styleFrom(backgroundColor: kTandyGreen, minimumSize: const Size(double.infinity, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-              child: const Text('Exit Cooking Mode', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              style: FilledButton.styleFrom(
+                backgroundColor: kTandyGreen,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                'Exit Cooking Mode',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              ),
             ),
             const SizedBox(height: 10),
             OutlinedButton(
               onPressed: onRestart,
-              style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), side: const BorderSide(color: AppColors.borderLight)),
-              child: const Text('Start Over', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                side: const BorderSide(color: AppColors.borderLight),
+              ),
+              child: const Text(
+                'Start Over',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),

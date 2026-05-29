@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
-
 /// Split-panel activity cards for breathing and meditation.
 class TandyQuickActions extends StatelessWidget {
   const TandyQuickActions({
@@ -92,7 +90,10 @@ class _ActionCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -107,7 +108,10 @@ class _ActionCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '$subtitle · $durationLabel',
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF7B7068)),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF7B7068),
+                        ),
                       ),
                     ],
                   ),

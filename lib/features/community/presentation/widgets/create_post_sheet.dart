@@ -19,10 +19,7 @@ import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 const int _maxPhotos = 4;
 
 class CreatePostSheet extends ConsumerStatefulWidget {
-  const CreatePostSheet({
-    required this.onPostCreated,
-    super.key,
-  });
+  const CreatePostSheet({required this.onPostCreated, super.key});
 
   final VoidCallback onPostCreated;
 
@@ -38,7 +35,11 @@ class CreatePostSheet extends ConsumerStatefulWidget {
     if (screenWidth >= 768) {
       return _showAsDialog(context: context, onPostCreated: onPostCreated);
     }
-    return _showAsSheet(context: context, ref: ref, onPostCreated: onPostCreated);
+    return _showAsSheet(
+      context: context,
+      ref: ref,
+      onPostCreated: onPostCreated,
+    );
   }
 
   static Future<void> _showAsSheet({
@@ -126,9 +127,7 @@ class CreatePostSheet extends ConsumerStatefulWidget {
                   ),
                 ),
                 const Divider(height: 1),
-                Flexible(
-                  child: CreatePostSheet(onPostCreated: onPostCreated),
-                ),
+                Flexible(child: CreatePostSheet(onPostCreated: onPostCreated)),
               ],
             ),
           ),
@@ -185,8 +184,7 @@ class _CreatePostSheetState extends ConsumerState<CreatePostSheet> {
 
     setState(() => _isSubmitting = true);
 
-    final photoPaths =
-        _selectedPhotos.map((file) => file.path).toList();
+    final photoPaths = _selectedPhotos.map((file) => file.path).toList();
 
     final repository = ref.read(communityRepositoryProvider);
     final createResult = await repository.createPost(
@@ -311,15 +309,10 @@ class _PhotoPickerRow extends StatelessWidget {
           children: [
             Text(
               'Photos',
-              style: AppTypography.label.copyWith(
-                color: AppColors.textMuted,
-              ),
+              style: AppTypography.label.copyWith(color: AppColors.textMuted),
             ),
             const SizedBox(width: AppSpacing.xs),
-            Text(
-              '${photos.length}/$_maxPhotos',
-              style: AppTypography.caption,
-            ),
+            Text('${photos.length}/$_maxPhotos', style: AppTypography.caption),
             const Spacer(),
             if (photos.length < _maxPhotos)
               GestureDetector(
@@ -366,8 +359,7 @@ class _PhotoPickerRow extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: photos.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: AppSpacing.xs),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.xs),
               itemBuilder: (context, index) {
                 return _PhotoThumbnail(
                   file: photos[index],
@@ -383,10 +375,7 @@ class _PhotoPickerRow extends StatelessWidget {
 }
 
 class _PhotoThumbnail extends StatelessWidget {
-  const _PhotoThumbnail({
-    required this.file,
-    required this.onRemove,
-  });
+  const _PhotoThumbnail({required this.file, required this.onRemove});
 
   final XFile file;
   final VoidCallback onRemove;

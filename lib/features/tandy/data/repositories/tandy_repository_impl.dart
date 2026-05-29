@@ -21,9 +21,8 @@ const List<String> _defaultGreetingSuggestions = <String>[
 /// Every public method catches all exceptions and wraps them in
 /// [Failure] so callers never see raw throws.
 final class TandyRepositoryImpl implements TandyRepository {
-  const TandyRepositoryImpl({
-    required TandyRemoteDatasource remoteDatasource,
-  }) : _remoteDatasource = remoteDatasource;
+  const TandyRepositoryImpl({required TandyRemoteDatasource remoteDatasource})
+    : _remoteDatasource = remoteDatasource;
 
   final TandyRemoteDatasource _remoteDatasource;
 
@@ -47,8 +46,9 @@ final class TandyRepositoryImpl implements TandyRepository {
   Future<Result<TandyGreeting>> fetchGreeting() {
     return _runSafe('fetchGreeting', () async {
       final response = await _remoteDatasource.fetchGreeting();
-      final greetingText =
-          response.data is String ? response.data as String : 'How are you feeling today?';
+      final greetingText = response.data is String
+          ? response.data as String
+          : 'How are you feeling today?';
       return buildTandyGreeting(greetingText, _defaultGreetingSuggestions);
     });
   }
@@ -118,10 +118,7 @@ final class TandyRepositoryImpl implements TandyRepository {
     required int rating,
   }) {
     return _runSafe('rateMessage', () async {
-      await _remoteDatasource.rateMessage(
-        messageId: messageId,
-        rating: rating,
-      );
+      await _remoteDatasource.rateMessage(messageId: messageId, rating: rating);
     });
   }
 
@@ -166,9 +163,7 @@ final class TandyRepositoryImpl implements TandyRepository {
     String endpointLabel,
   ) {
     if (body == null) {
-      throw FormatException(
-        'Empty response body from $endpointLabel endpoint',
-      );
+      throw FormatException('Empty response body from $endpointLabel endpoint');
     }
     return body;
   }

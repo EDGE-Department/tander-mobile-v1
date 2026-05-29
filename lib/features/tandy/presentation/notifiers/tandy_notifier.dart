@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
@@ -9,8 +11,9 @@ import 'package:tander_flutter_v3/features/tandy/presentation/states/tandy_state
 
 // ─── Provider ──────────────────────────────────────────────────────────
 
-final tandyNotifierProvider =
-    NotifierProvider<TandyNotifier, TandyState>(TandyNotifier.new);
+final tandyNotifierProvider = NotifierProvider<TandyNotifier, TandyState>(
+  TandyNotifier.new,
+);
 
 // ─── Notifier ──────────────────────────────────────────────────────────
 
@@ -116,11 +119,12 @@ final class TandyNotifier extends Notifier<TandyState> {
         if (loadedState is! TandyLoaded) return;
 
         // Remove optimistic messages, append real ones.
-        final confirmedMessages = loadedState.messages
-            .where((message) => !message.messageId.startsWith('opt-'))
-            .toList()
-          ..add(result.userMessage)
-          ..add(result.assistantMessage);
+        final confirmedMessages =
+            loadedState.messages
+                .where((message) => !message.messageId.startsWith('opt-'))
+                .toList()
+              ..add(result.userMessage)
+              ..add(result.assistantMessage);
 
         final updatedThread = TandyThread(
           conversationId: loadedState.thread.conversationId,
@@ -129,7 +133,8 @@ final class TandyNotifier extends Notifier<TandyState> {
           messages: confirmedMessages,
         );
 
-        final shouldSuggestBreathing = result.suggestBreathing ||
+        final shouldSuggestBreathing =
+            result.suggestBreathing ||
             (result.redirectAction != null &&
                 result.redirectAction!.startsWith('breathing:'));
 
@@ -153,8 +158,7 @@ final class TandyNotifier extends Notifier<TandyState> {
           NetworkException() =>
             'No internet connection. Please check your connection and try again.',
           ServerException() => exception.message,
-          AuthException() =>
-            'Your session has expired. Please sign in again.',
+          AuthException() => 'Your session has expired. Please sign in again.',
           AppException() => exception.userMessage,
         };
 
@@ -184,7 +188,9 @@ final class TandyNotifier extends Notifier<TandyState> {
     final clearResult = await _repository.clearConversation();
 
     clearResult.when(
-      success: (_) => loadConversation(),
+      success: (_) {
+        unawaited(loadConversation());
+      },
       failure: (exception) {
         AppLogger.error(
           'Failed to clear Tandy conversation',
@@ -239,9 +245,11 @@ final class TandyNotifier extends Notifier<TandyState> {
 
     final previousMessages = currentState.messages;
     final updatedMessages = previousMessages
-        .map((m) => m.messageId == messageId
-            ? m.copyWithRating(rating == 0 ? null : rating)
-            : m)
+        .map(
+          (m) => m.messageId == messageId
+              ? m.copyWithRating(rating == 0 ? null : rating)
+              : m,
+        )
         .toList();
     final updatedThread = TandyThread(
       conversationId: currentState.thread.conversationId,
@@ -251,11 +259,15 @@ final class TandyNotifier extends Notifier<TandyState> {
     );
     state = currentState.copyWith(thread: updatedThread);
 
-    final result =
-        await _repository.rateMessage(messageId: messageId, rating: rating);
+    final result = await _repository.rateMessage(
+      messageId: messageId,
+      rating: rating,
+    );
 
     result.when(
-      success: (_) { /* server confirmed; nothing more to do */ },
+      success: (_) {
+        /* server confirmed; nothing more to do */
+      },
       failure: (exception) {
         AppLogger.error(
           'Failed to rate Tandy message',

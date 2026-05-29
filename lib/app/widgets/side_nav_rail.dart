@@ -151,8 +151,9 @@ class _RailTab extends StatelessWidget {
                   borderRadius: isActive
                       ? NavBarConstants.activePillBorderRadius
                       : BorderRadius.circular(16),
-                  boxShadow:
-                      isActive ? NavBarConstants.activePillShadows : null,
+                  boxShadow: isActive
+                      ? NavBarConstants.activePillShadows
+                      : null,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -166,9 +167,10 @@ class _RailTab extends StatelessWidget {
                     Text(
                       descriptor.label,
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight:
-                            isActive ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 13,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: isActive
                             ? AppColors.textInverse
                             : AppColors.textMuted,
@@ -226,11 +228,7 @@ class _RailTabIcon extends StatelessWidget {
             ),
           ),
           if (badge > 0)
-            Positioned(
-              top: -6,
-              right: -5,
-              child: NavUnreadBadge(count: badge),
-            ),
+            Positioned(top: -6, right: -5, child: NavUnreadBadge(count: badge)),
         ],
       ),
     );

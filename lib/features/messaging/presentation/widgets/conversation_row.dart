@@ -69,10 +69,7 @@ class _ConversationRowState extends State<ConversationRow>
       animation: _entranceController,
       builder: (context, child) => Opacity(
         opacity: _opacityAnimation.value,
-        child: Transform.translate(
-          offset: _slideAnimation.value,
-          child: child,
-        ),
+        child: Transform.translate(offset: _slideAnimation.value, child: child),
       ),
       child: _ConversationRowContent(
         conversation: widget.conversation,
@@ -98,8 +95,7 @@ class _ConversationRowContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasUnread =
-        conversation.unreadCount > 0 && !conversation.isMuted;
+    final hasUnread = conversation.unreadCount > 0 && !conversation.isMuted;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -113,8 +109,7 @@ class _ConversationRowContent extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             constraints: const BoxConstraints(minHeight: 68),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isActive ? Colors.white : Colors.transparent,
               borderRadius: AppRadius.borderLg,
@@ -214,12 +209,7 @@ class _NameTimeRow extends StatelessWidget {
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.success,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x1F22C55E),
-                  spreadRadius: 3,
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Color(0x1F22C55E), spreadRadius: 3)],
             ),
           ),
           const SizedBox(width: 7),
@@ -276,8 +266,10 @@ class _PreviewBadgeRow extends StatelessWidget {
       return 'Voice message';
     }
     final body = lastMessage!.body ?? '';
-    final callPattern =
-        RegExp(r'^\W*(Audio|Video)\s+Call', caseSensitive: false);
+    final callPattern = RegExp(
+      r'^\W*(Audio|Video)\s+Call',
+      caseSensitive: false,
+    );
     if (callPattern.hasMatch(body)) {
       return body.replaceFirst(RegExp(r'^[\W\s]+'), '');
     }

@@ -11,7 +11,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/notifiers/tandy_notifier.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/states/tandy_state.dart';
@@ -20,8 +19,8 @@ import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_chat
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_composer.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_meditation_panel.dart';
-import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_psychiatrist_panel.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_message_thread.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_psychiatrist_panel.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_support_panel.dart';
 
 class TandyChatScreen extends ConsumerStatefulWidget {
@@ -117,10 +116,8 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
               // Feature chips bar
               TandyChatChipsBar(
                 onBreatheTap: () => _openPanel(TandyActivePanel.breathe),
-                onMeditateTap: () =>
-                    _openPanel(TandyActivePanel.meditate),
-                onSupportTap: () =>
-                    _openPanel(TandyActivePanel.support),
+                onMeditateTap: () => _openPanel(TandyActivePanel.meditate),
+                onSupportTap: () => _openPanel(TandyActivePanel.support),
               ),
 
               // Messages
@@ -132,15 +129,12 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
                         scrollController: _scrollController,
                       )
                     : const Center(
-                        child: CircularProgressIndicator(
-                          color: kTandyOrange,
-                        ),
+                        child: CircularProgressIndicator(color: kTandyOrange),
                       ),
               ),
 
               // Error bar
-              if (tandyState is TandyLoaded &&
-                  tandyState.sendError != null)
+              if (tandyState is TandyLoaded && tandyState.sendError != null)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -158,8 +152,7 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
                 ),
 
               // Breathing suggestion chip
-              if (tandyState is TandyLoaded &&
-                  tandyState.suggestBreathingPanel)
+              if (tandyState is TandyLoaded && tandyState.suggestBreathingPanel)
                 _buildBreathingSuggestion(),
 
               // Composer
@@ -251,20 +244,20 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
     return Positioned.fill(
       child: switch (panel) {
         TandyActivePanel.breathe => TandyBreathingPanel(
-            onClose: notifier.closePanel,
-          ),
+          onClose: notifier.closePanel,
+        ),
         TandyActivePanel.meditate => TandyMeditationPanel(
-            onClose: notifier.closePanel,
-          ),
+          onClose: notifier.closePanel,
+        ),
         TandyActivePanel.support => TandySupportPanel(
-            onClose: notifier.closePanel,
-            onOpenPsychiatrist: () =>
-                notifier.setActivePanel(TandyActivePanel.psychiatrist),
-          ),
+          onClose: notifier.closePanel,
+          onOpenPsychiatrist: () =>
+              notifier.setActivePanel(TandyActivePanel.psychiatrist),
+        ),
         TandyActivePanel.psychiatrist => TandyPsychiatristPanel(
-            onClose: notifier.closePanel,
-            onBack: () => notifier.setActivePanel(TandyActivePanel.support),
-          ),
+          onClose: notifier.closePanel,
+          onBack: () => notifier.setActivePanel(TandyActivePanel.support),
+        ),
       },
     );
   }

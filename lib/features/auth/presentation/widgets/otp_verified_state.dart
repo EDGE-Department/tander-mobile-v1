@@ -10,10 +10,7 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 /// Displays a green checkmark icon, "Verified!" heading, and a
 /// contextual redirect message while the parent navigates the user.
 class OtpVerifiedState extends StatelessWidget {
-  const OtpVerifiedState({
-    required this.isRegistration,
-    super.key,
-  });
+  const OtpVerifiedState({required this.isRegistration, super.key});
 
   /// When `true`, shows "Taking you to set up your profile..." instead
   /// of the default "Redirecting you to sign in..." message.

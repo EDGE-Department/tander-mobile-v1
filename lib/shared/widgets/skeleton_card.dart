@@ -65,15 +65,10 @@ class _SkeletonCardState extends State<SkeletonCard>
       duration: AppDurations.shimmer,
     )..repeat(reverse: true);
 
-    _opacityAnimation = Tween<double>(
-      begin: _opacityMin,
-      end: _opacityMax,
-    ).animate(
-      CurvedAnimation(
-        parent: _pulseController,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _opacityAnimation = Tween<double>(begin: _opacityMin, end: _opacityMax)
+        .animate(
+          CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+        );
   }
 
   @override
@@ -91,10 +86,7 @@ class _SkeletonCardState extends State<SkeletonCard>
     return AnimatedBuilder(
       animation: _opacityAnimation,
       builder: (context, child) {
-        return Opacity(
-          opacity: _opacityAnimation.value,
-          child: child,
-        );
+        return Opacity(opacity: _opacityAnimation.value, child: child);
       },
       child: Container(
         width: resolvedWidth,

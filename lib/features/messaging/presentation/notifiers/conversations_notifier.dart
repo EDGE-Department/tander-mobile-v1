@@ -14,8 +14,8 @@ const Duration _refreshInterval = Duration(seconds: 3);
 
 final conversationsNotifierProvider =
     NotifierProvider<ConversationsNotifier, ConversationsState>(
-  ConversationsNotifier.new,
-);
+      ConversationsNotifier.new,
+    );
 
 // ─── Notifier ──────────────────────────────────────────────────────────
 

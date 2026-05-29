@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 
 /// Animated checklist showing password strength requirements.
 class PasswordRequirementsChecklist extends StatelessWidget {
@@ -64,9 +64,9 @@ class _RequirementRow extends StatelessWidget {
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: met
-                ? Icon(
+                ? const Icon(
                     PhosphorIconsRegular.checkCircle,
-                    key: const ValueKey<bool>(true),
+                    key: ValueKey<bool>(true),
                     color: AppColors.secondary,
                     size: 18,
                   )

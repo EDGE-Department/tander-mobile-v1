@@ -14,10 +14,7 @@ import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_cons
 /// Web: flex lg:hidden, avatar 40px with glow, "Tandy" 15px/800,
 /// "Your Wellness Companion" 11px, online badge with teal dot.
 class TandyMobileHeader extends StatelessWidget {
-  const TandyMobileHeader({
-    this.onClearTap,
-    super.key,
-  });
+  const TandyMobileHeader({this.onClearTap, super.key});
 
   final VoidCallback? onClearTap;
 
@@ -30,9 +27,7 @@ class TandyMobileHeader extends StatelessWidget {
         right: 12,
         bottom: 12,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-      ),
+      decoration: const BoxDecoration(color: Colors.white),
       child: Row(
         children: <Widget>[
           Container(
@@ -73,7 +68,11 @@ class TandyMobileHeader extends StatelessWidget {
                 child: const SizedBox(
                   width: 42,
                   height: 42,
-                  child: Icon(Icons.refresh, color: Color(0xFFB0A8A0), size: 22),
+                  child: Icon(
+                    Icons.refresh,
+                    color: Color(0xFFB0A8A0),
+                    size: 22,
+                  ),
                 ),
               ),
             ),
@@ -105,13 +104,33 @@ class TandyQuickActionsBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: <Widget>[
-          _QuickTab(label: 'Chat', icon: Icons.chat_bubble_outline, color: kTandyOrange, onTap: onChatTap),
+          _QuickTab(
+            label: 'Chat',
+            icon: Icons.chat_bubble_outline,
+            color: kTandyOrange,
+            onTap: onChatTap,
+          ),
           const SizedBox(width: 8),
-          _QuickTab(label: 'Breathe', icon: Icons.spa_outlined, color: kTandyTeal, onTap: onBreatheTap),
+          _QuickTab(
+            label: 'Breathe',
+            icon: Icons.spa_outlined,
+            color: kTandyTeal,
+            onTap: onBreatheTap,
+          ),
           const SizedBox(width: 8),
-          _QuickTab(label: 'Meditate', icon: Icons.self_improvement, color: kTandyPurple, onTap: onMeditateTap),
+          _QuickTab(
+            label: 'Meditate',
+            icon: Icons.self_improvement,
+            color: kTandyPurple,
+            onTap: onMeditateTap,
+          ),
           const SizedBox(width: 8),
-          _QuickTab(label: 'Support', icon: Icons.favorite_outline, color: kTandyBlue, onTap: onSupportTap),
+          _QuickTab(
+            label: 'Support',
+            icon: Icons.favorite_outline,
+            color: kTandyBlue,
+            onTap: onSupportTap,
+          ),
         ],
       ),
     );

@@ -61,9 +61,7 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
   @override
   Future<Result<void>> sendConnectionRequest({required String targetUserId}) {
     return _runSafe('sendConnectionRequest', () async {
-      await _remoteDatasource.sendConnectionRequest(
-        targetUserId: targetUserId,
-      );
+      await _remoteDatasource.sendConnectionRequest(targetUserId: targetUserId);
     });
   }
 
@@ -80,8 +78,9 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
 
   PaginatedCandidates _mapPaginatedResponse(Map<String, Object?> body) {
     final contentRaw = body['content'];
-    final List<Object?> contentList =
-        contentRaw is List<Object?> ? contentRaw : <Object?>[];
+    final List<Object?> contentList = contentRaw is List<Object?>
+        ? contentRaw
+        : <Object?>[];
 
     final candidates = contentList
         .whereType<Map<String, Object?>>()
@@ -165,9 +164,7 @@ final class DiscoverRepositoryImpl implements DiscoverRepository {
     String endpointLabel,
   ) {
     if (body == null) {
-      throw FormatException(
-        'Empty response body from $endpointLabel endpoint',
-      );
+      throw FormatException('Empty response body from $endpointLabel endpoint');
     }
     return body;
   }

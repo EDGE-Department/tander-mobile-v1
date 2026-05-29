@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/shared/utils/launch_support_email.dart';
 
 const String _supportEmail = 'support@tander.ph';
 
@@ -25,21 +23,11 @@ class AccountSuspendedDialog extends StatelessWidget {
     );
   }
 
-  Future<void> _emailSupport(BuildContext context) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: _supportEmail,
-      queryParameters: const {'subject': 'Account suspended - help needed'},
+  Future<void> _emailSupport(BuildContext context) {
+    return launchSupportEmail(
+      context,
+      subject: 'Account suspended - help needed',
     );
-    final launched = await launchUrl(uri);
-    if (!launched && context.mounted) {
-      await Clipboard.setData(const ClipboardData(text: _supportEmail));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Support email copied to clipboard')),
-        );
-      }
-    }
   }
 
   @override

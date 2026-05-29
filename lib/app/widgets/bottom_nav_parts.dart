@@ -18,8 +18,10 @@ class NavTabDescriptor {
     this.activeIconData,
     this.iconColor,
     this.isTandy = false,
-  }) : assert(iconAsset != null || iconData != null,
-            'Either iconAsset or iconData must be provided');
+  }) : assert(
+         iconAsset != null || iconData != null,
+         'Either iconAsset or iconData must be provided',
+       );
 
   /// Unique identifier used for badge resolution.
   final String id;
@@ -130,11 +132,7 @@ abstract final class NavBarConstants {
       offset: Offset(0, 6),
       spreadRadius: 2,
     ),
-    BoxShadow(
-      color: Color(0x40E05C08),
-      blurRadius: 6,
-      offset: Offset(0, 1),
-    ),
+    BoxShadow(color: Color(0x40E05C08), blurRadius: 6, offset: Offset(0, 1)),
   ];
 
   /// Mobile dock box shadow.
@@ -145,16 +143,8 @@ abstract final class NavBarConstants {
       offset: Offset(0, -4),
       spreadRadius: 0,
     ),
-    BoxShadow(
-      color: Color(0x10000000),
-      blurRadius: 6,
-      offset: Offset(0, -1),
-    ),
-    BoxShadow(
-      color: Color(0x1C000000),
-      blurRadius: 40,
-      offset: Offset(0, 8),
-    ),
+    BoxShadow(color: Color(0x10000000), blurRadius: 6, offset: Offset(0, -1)),
+    BoxShadow(color: Color(0x1C000000), blurRadius: 40, offset: Offset(0, 8)),
   ];
 
   // ── Timing ──────────────────────────────────────────────────
@@ -194,8 +184,9 @@ class NavActiveBloomHalo extends StatelessWidget {
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius:
-                BorderRadius.circular(NavBarConstants.tabBorderRadius + 4),
+            borderRadius: BorderRadius.circular(
+              NavBarConstants.tabBorderRadius + 4,
+            ),
             gradient: RadialGradient(
               center: const Alignment(0.0, 0.88),
               radius: 0.78,
@@ -274,34 +265,42 @@ class NavTabEntrance extends StatelessWidget {
   Widget build(BuildContext context) {
     final int totalMs = entranceController.duration?.inMilliseconds ?? 1;
     final double startFraction = delay.inMilliseconds / totalMs;
-    final double endFraction =
-        ((delay.inMilliseconds + 300) / totalMs).clamp(0.0, 1.0);
-
-    final Animation<double> opacity =
-        Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: entranceController,
-        curve: Interval(startFraction, endFraction, curve: Curves.easeOut),
-      ),
+    final double endFraction = ((delay.inMilliseconds + 300) / totalMs).clamp(
+      0.0,
+      1.0,
     );
+
+    final Animation<double> opacity = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(
+          CurvedAnimation(
+            parent: entranceController,
+            curve: Interval(startFraction, endFraction, curve: Curves.easeOut),
+          ),
+        );
 
     final Animation<Offset> slide =
         Tween<Offset>(begin: const Offset(0, 14), end: Offset.zero).animate(
-      CurvedAnimation(
-        parent: entranceController,
-        curve:
-            Interval(startFraction, endFraction, curve: Curves.easeOutBack),
-      ),
-    );
+          CurvedAnimation(
+            parent: entranceController,
+            curve: Interval(
+              startFraction,
+              endFraction,
+              curve: Curves.easeOutBack,
+            ),
+          ),
+        );
 
-    final Animation<double> scale =
-        Tween<double>(begin: 0.88, end: 1.0).animate(
-      CurvedAnimation(
-        parent: entranceController,
-        curve:
-            Interval(startFraction, endFraction, curve: Curves.easeOutBack),
-      ),
-    );
+    final Animation<double> scale = Tween<double>(begin: 0.88, end: 1.0)
+        .animate(
+          CurvedAnimation(
+            parent: entranceController,
+            curve: Interval(
+              startFraction,
+              endFraction,
+              curve: Curves.easeOutBack,
+            ),
+          ),
+        );
 
     return AnimatedBuilder(
       animation: entranceController,
@@ -310,10 +309,7 @@ class NavTabEntrance extends StatelessWidget {
           opacity: opacity.value,
           child: Transform.translate(
             offset: slide.value,
-            child: Transform.scale(
-              scale: scale.value,
-              child: child,
-            ),
+            child: Transform.scale(scale: scale.value, child: child),
           ),
         );
       },
@@ -372,10 +368,7 @@ class NavBokehOrbs extends StatelessWidget {
 
 /// Single blurred radial-gradient ellipse used as a bokeh light pool.
 class _BokehOrb extends StatelessWidget {
-  const _BokehOrb({
-    required this.color,
-    required this.blurSigma,
-  });
+  const _BokehOrb({required this.color, required this.blurSigma});
 
   final Color color;
   final double blurSigma;

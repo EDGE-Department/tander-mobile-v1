@@ -30,8 +30,7 @@ abstract final class ApiEndpoints {
 
   static const String updateProfile = '/user/profile';
   static const String uploadProfilePhoto = '/user/upload-profile-photo';
-  static const String uploadAdditionalPhotos =
-      '/user/upload-additional-photos';
+  static const String uploadAdditionalPhotos = '/user/upload-additional-photos';
 
   static String deletePhotoByIndex(int photoIndex) =>
       '/user/delete-photo?photoIndex=$photoIndex';
@@ -39,8 +38,13 @@ abstract final class ApiEndpoints {
   static const String deleteProfilePhoto = '/user/delete-profile-photo';
   static const String reorderPhotos = '/user/reorder-photos';
   static const String changePassword = '/user/change-password';
-  static const String deleteAccount = '/user/delete-account';
-  static const String exportData = '/user/export-data';
+  static const String requestDataExport = '/privacy/export';
+
+  // ── Account deletion (privacy, 30-day grace window) ──────────────────
+  static const String requestAccountDeletion = '/privacy/account-deletion';
+  static const String cancelAccountDeletion =
+      '/privacy/account-deletion/cancel';
+  static const String accountDeletionStatus = '/privacy/account-deletion';
 
   // ── Settings ─────────────────────────────────────────────────────────
   static const String notificationSettings = '/settings/notifications';
@@ -62,8 +66,7 @@ abstract final class ApiEndpoints {
 
   static String matchAccept(String matchId) => '/api/matches/$matchId/accept';
 
-  static String matchDecline(String matchId) =>
-      '/api/matches/$matchId/decline';
+  static String matchDecline(String matchId) => '/api/matches/$matchId/decline';
 
   static String matchCancel(String matchId) => '/api/matches/$matchId/cancel';
 
@@ -117,7 +120,7 @@ abstract final class ApiEndpoints {
   static String tandySponsorImpressionClick(String impressionId) =>
       '/tandy/sponsor-impressions/$impressionId/click';
 
-  // ── Calls ────────────────────────────────────────────────────────────
+  // ── Calls (legacy v1, raw WebRTC P2P + STOMP) ────────────────────────
   static const String createCallRoom = '/api/twilio/video/room';
   static const String iceServers = '/api/twilio/video/ice-servers';
   static const String acceptCall = '/api/twilio/video/accept';
@@ -126,6 +129,29 @@ abstract final class ApiEndpoints {
   static const String cancelCall = '/api/twilio/video/cancel';
   static const String callHistory = '/api/twilio/video/history';
   static const String callConfig = '/api/twilio/video/config';
+
+  // ── Calls v2 (Phase 5 native Twilio Programmable Video + WPS) ────────
+  static const String callsV2Start = '/api/v2/calls';
+  static const String callsV2Active = '/api/v2/calls/active';
+  static String callsV2Accept(String callId) => '/api/v2/calls/$callId/accept';
+  static String callsV2Decline(String callId) =>
+      '/api/v2/calls/$callId/decline';
+  static String callsV2Cancel(String callId) => '/api/v2/calls/$callId/cancel';
+  static String callsV2End(String callId) => '/api/v2/calls/$callId/end';
+  static String callsV2DismissDevice(String callId) =>
+      '/api/v2/calls/$callId/dismiss-device';
+  static String callsV2Handoff(String callId) =>
+      '/api/v2/calls/$callId/handoff';
+  static String callsV2Token(String callId) => '/api/v2/calls/$callId/token';
+  static String callsV2AcceptAction(String callId) =>
+      '/api/v2/calls/$callId/accept-action';
+  static String callsV2DeclineAction(String callId) =>
+      '/api/v2/calls/$callId/decline-action';
+  static String callsV2DismissAction(String callId) =>
+      '/api/v2/calls/$callId/dismiss-action';
+
+  // ── Realtime (Azure Web PubSub negotiate) ────────────────────────────
+  static const String realtimeNegotiate = '/api/realtime/negotiate';
 
   // ── Push notifications ──────────────────────────────────────────────
   static const String registerToken = '/notifications/devices';
@@ -136,8 +162,7 @@ abstract final class ApiEndpoints {
   // ── Community ───────────────────────────────────────────────────────
   static const String communityFeed = '/api/community/feed';
 
-  static String communityPost(String postId) =>
-      '/api/community/posts/$postId';
+  static String communityPost(String postId) => '/api/community/posts/$postId';
 
   static const String createPost = '/api/community/posts';
 

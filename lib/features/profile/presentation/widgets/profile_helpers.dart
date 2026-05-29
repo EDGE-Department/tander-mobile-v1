@@ -73,8 +73,10 @@ abstract final class ProfileHelpers {
   static String? formatLookingFor(List<String>? values) {
     if (values == null || values.isEmpty) return null;
     return values
-        .map((item) =>
-            lookingForLabels[item] ?? toTitleCase(item.replaceAll('_', ' ')))
+        .map(
+          (item) =>
+              lookingForLabels[item] ?? toTitleCase(item.replaceAll('_', ' ')),
+        )
         .join(', ');
   }
 
@@ -83,8 +85,11 @@ abstract final class ProfileHelpers {
     return input
         .toLowerCase()
         .split(' ')
-        .map((word) =>
-            word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+        .map(
+          (word) => word.isEmpty
+              ? word
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
         .join(' ');
   }
 
@@ -118,9 +123,10 @@ abstract final class ProfileHelpers {
 
   /// Builds a location string from city and country, or empty string.
   static String buildDisplayLocation(UserProfile profile) {
-    return [profile.city, profile.country]
-        .where((part) => part != null && part.trim().isNotEmpty)
-        .join(', ');
+    return [
+      profile.city,
+      profile.country,
+    ].where((part) => part != null && part.trim().isNotEmpty).join(', ');
   }
 
   // ── Private helpers ──────────────────────────────────────────────────

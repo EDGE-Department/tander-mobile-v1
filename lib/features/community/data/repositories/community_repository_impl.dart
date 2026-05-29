@@ -32,9 +32,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
     return _runSafe('fetchFeed', () async {
       final response = await _remoteDatasource.fetchFeed(cursor: cursor);
       final body = _requireResponseBody(response.data, 'fetch feed');
-      return CommunityMapper.mapFeedResponse(
-        FeedResponseDto.fromJson(body),
-      );
+      return CommunityMapper.mapFeedResponse(FeedResponseDto.fromJson(body));
     });
   }
 
@@ -47,9 +45,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
     return _runSafe('fetchPost', () async {
       final response = await _remoteDatasource.fetchPost(postId: postId);
       final body = _requireResponseBody(response.data, 'fetch post');
-      return CommunityMapper.mapPostDto(
-        CommunityPostDto.fromJson(body),
-      );
+      return CommunityMapper.mapPostDto(CommunityPostDto.fromJson(body));
     });
   }
 
@@ -68,9 +64,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
         photoPaths: photoPaths,
       );
       final body = _requireResponseBody(response.data, 'create post');
-      return CommunityMapper.mapPostDto(
-        CommunityPostDto.fromJson(body),
-      );
+      return CommunityMapper.mapPostDto(CommunityPostDto.fromJson(body));
     });
   }
 
@@ -89,9 +83,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
         content: content,
       );
       final body = _requireResponseBody(response.data, 'update post');
-      return CommunityMapper.mapPostDto(
-        CommunityPostDto.fromJson(body),
-      );
+      return CommunityMapper.mapPostDto(CommunityPostDto.fromJson(body));
     });
   }
 
@@ -140,9 +132,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
         parentCommentId: parentCommentId,
       );
       final body = _requireResponseBody(response.data, 'create comment');
-      return CommunityMapper.mapCommentDto(
-        CommunityCommentDto.fromJson(body),
-      );
+      return CommunityMapper.mapCommentDto(CommunityCommentDto.fromJson(body));
     });
   }
 
@@ -215,9 +205,7 @@ final class CommunityRepositoryImpl implements CommunityRepository {
     String endpointLabel,
   ) {
     if (body == null) {
-      throw FormatException(
-        'Empty response body from $endpointLabel endpoint',
-      );
+      throw FormatException('Empty response body from $endpointLabel endpoint');
     }
     return body;
   }

@@ -101,11 +101,17 @@ class _CheckboxRow extends StatelessWidget {
           Expanded(
             child: Text.rich(
               TextSpan(
+                // height ~2.0 makes each inline line-box taller, which grows
+                // the vertical hit area of the inline link recognizer below
+                // (its tap box is line-height-tall) toward the 44px target
+                // without enlarging the glyphs themselves. Glyph size stays
+                // at 15 so the sentence keeps its layout and wraps cleanly
+                // under the global 1.3x text-scaling clamp.
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF4B5563),
-                  height: 1.35,
+                  height: 2.0,
                 ),
                 children: [
                   TextSpan(text: label),

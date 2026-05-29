@@ -64,11 +64,7 @@ List<FactRowData> buildSnapshotItems({
         value: '$age years old',
       ),
     if (gender != null)
-      FactRowData(
-        icon: Icons.people,
-        label: 'Gender',
-        value: gender,
-      ),
+      FactRowData(icon: Icons.people, label: 'Gender', value: gender),
     if (lookingFor != null)
       FactRowData(
         icon: Icons.favorite,
@@ -77,7 +73,6 @@ List<FactRowData> buildSnapshotItems({
       ),
   ];
 }
-
 
 /// Builds completion tip list.
 List<CompletionTipData> buildCompletionTips({
@@ -134,7 +129,7 @@ void _showSheet(BuildContext context, Widget child) {
     barrierLabel: 'Close',
     barrierColor: Colors.black.withAlpha(100),
     transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, __, ___) => Align(
+    pageBuilder: (_, _, _) => Align(
       alignment: Alignment.bottomCenter,
       child: Material(
         color: AppColors.card,
@@ -143,10 +138,12 @@ void _showSheet(BuildContext context, Widget child) {
         child: FractionallySizedBox(heightFactor: 0.92, child: child),
       ),
     ),
-    transitionBuilder: (_, animation, __, child) {
+    transitionBuilder: (_, animation, _, child) {
       return SlideTransition(
         position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-            .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+            .animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            ),
         child: child,
       );
     },

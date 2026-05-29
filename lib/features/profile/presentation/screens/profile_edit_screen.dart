@@ -118,7 +118,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       if (!_formKey.currentState!.validate()) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Validation failed'), duration: Duration(seconds: 2)),
+            const SnackBar(
+              content: Text('Validation failed'),
+              duration: Duration(seconds: 2),
+            ),
           );
         }
         return;
@@ -145,8 +148,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         interests: jsonEncode(_selectedInterests),
       );
 
-      final didSucceed =
-          await ref.read(myProfileNotifierProvider.notifier).updateProfile(request);
+      final didSucceed = await ref
+          .read(myProfileNotifierProvider.notifier)
+          .updateProfile(request);
 
       if (!mounted) return;
       setState(() => _isSaving = false);
@@ -166,7 +170,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $error'), duration: const Duration(seconds: 4)),
+          SnackBar(
+            content: Text('Error: $error'),
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     }
@@ -190,10 +197,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: _SaveButton(
-              isSaving: _isSaving,
-              onPressed: _handleSave,
-            ),
+            child: _SaveButton(isSaving: _isSaving, onPressed: _handleSave),
           ),
         ],
       ),
@@ -204,7 +208,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SectionLabel(label: 'Basic information'),
+              const SectionLabel(label: 'Basic information'),
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
@@ -234,45 +238,92 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              _BioField(
-                controller: _bioController,
-                bioLength: bioLength,
-              ),
+              _BioField(controller: _bioController, bioLength: bioLength),
               const SizedBox(height: AppSpacing.lg),
 
-              SectionLabel(label: 'Personal details'),
+              const SectionLabel(label: 'Personal details'),
               const SizedBox(height: AppSpacing.sm),
-              DateOfBirthPicker(selectedDate: _selectedDateOfBirth, onDateSelected: (date) => setState(() => _selectedDateOfBirth = date)),
+              DateOfBirthPicker(
+                selectedDate: _selectedDateOfBirth,
+                onDateSelected: (date) =>
+                    setState(() => _selectedDateOfBirth = date),
+              ),
               const SizedBox(height: AppSpacing.sm),
-              GenderDropdown(selectedGender: _selectedGender, onChanged: (gender) => setState(() => _selectedGender = gender)),
+              GenderDropdown(
+                selectedGender: _selectedGender,
+                onChanged: (gender) => setState(() => _selectedGender = gender),
+              ),
               const SizedBox(height: AppSpacing.sm),
-              CivilStatusDropdown(selectedStatus: _selectedCivilStatus, onChanged: (status) => setState(() => _selectedCivilStatus = status)),
+              CivilStatusDropdown(
+                selectedStatus: _selectedCivilStatus,
+                onChanged: (status) =>
+                    setState(() => _selectedCivilStatus = status),
+              ),
               const SizedBox(height: AppSpacing.sm),
-              ReligionDropdown(selectedReligion: _selectedReligion, onChanged: (religion) => setState(() => _selectedReligion = religion)),
+              ReligionDropdown(
+                selectedReligion: _selectedReligion,
+                onChanged: (religion) =>
+                    setState(() => _selectedReligion = religion),
+              ),
               const SizedBox(height: AppSpacing.sm),
-              ChildrenCountDropdown(selectedCount: _selectedChildrenCount, onChanged: (count) => setState(() => _selectedChildrenCount = count)),
+              ChildrenCountDropdown(
+                selectedCount: _selectedChildrenCount,
+                onChanged: (count) =>
+                    setState(() => _selectedChildrenCount = count),
+              ),
               const SizedBox(height: AppSpacing.lg),
               const SectionLabel(label: 'Location'),
               const SizedBox(height: AppSpacing.sm),
-              Row(children: [
-                Expanded(child: TanderTextField(label: 'City', controller: _cityController, hint: 'e.g. Manila')),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(child: TanderTextField(label: 'Country', controller: _countryController, hint: 'e.g. Philippines')),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: TanderTextField(
+                      label: 'City',
+                      controller: _cityController,
+                      hint: 'e.g. Manila',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: TanderTextField(
+                      label: 'Country',
+                      controller: _countryController,
+                      hint: 'e.g. Philippines',
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
               const SectionLabel(label: 'Looking for'),
               const SizedBox(height: AppSpacing.sm),
-              LookingForSelector(selectedValues: _selectedLookingFor, onChanged: (values) => setState(() => _selectedLookingFor = values)),
+              LookingForSelector(
+                selectedValues: _selectedLookingFor,
+                onChanged: (values) =>
+                    setState(() => _selectedLookingFor = values),
+              ),
               const SizedBox(height: AppSpacing.lg),
               const SectionLabel(label: 'Interests'),
               const SizedBox(height: AppSpacing.xs),
-              Text('Select up to 8 interests', style: AppTypography.bodySm.copyWith(color: AppColors.textMuted)),
+              Text(
+                'Select up to 8 interests',
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
-              InterestSelector(selectedInterests: _selectedInterests, onChanged: (interests) => setState(() => _selectedInterests = interests)),
+              InterestSelector(
+                selectedInterests: _selectedInterests,
+                onChanged: (interests) =>
+                    setState(() => _selectedInterests = interests),
+              ),
               const SizedBox(height: AppSpacing.lg),
               const SectionLabel(label: 'Languages'),
               const SizedBox(height: AppSpacing.sm),
-              LanguageSelector(selectedLanguages: _selectedLanguages, onChanged: (languages) => setState(() => _selectedLanguages = languages)),
+              LanguageSelector(
+                selectedLanguages: _selectedLanguages,
+                onChanged: (languages) =>
+                    setState(() => _selectedLanguages = languages),
+              ),
               const SizedBox(height: AppSpacing.xxl),
             ],
           ),
@@ -306,7 +357,9 @@ class _BioField extends StatelessWidget {
             Text(
               '$bioLength/$_maxBioLength',
               style: AppTypography.caption.copyWith(
-                color: bioLength > 270 ? AppColors.warning : AppColors.textMuted,
+                color: bioLength > 270
+                    ? AppColors.warning
+                    : AppColors.textMuted,
               ),
             ),
           ],
@@ -340,9 +393,7 @@ class _SaveButton extends StatelessWidget {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.xs,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.borderSm,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.borderSm),
         elevation: 0,
       ),
       icon: isSaving
@@ -351,8 +402,9 @@ class _SaveButton extends StatelessWidget {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(AppColors.textInverse),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.textInverse,
+                ),
               ),
             )
           : const Icon(Icons.check, size: 16),

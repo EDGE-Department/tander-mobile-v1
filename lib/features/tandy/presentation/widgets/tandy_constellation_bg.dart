@@ -69,11 +69,7 @@ const List<_Star> _stars = [
 ];
 
 // 3 edges: one connected path (0→1→4) plus one pair (2→3)
-const List<_Edge> _edges = [
-  _Edge(0, 1),
-  _Edge(1, 4),
-  _Edge(2, 3),
-];
+const List<_Edge> _edges = [_Edge(0, 1), _Edge(1, 4), _Edge(2, 3)];
 
 // ── Painter ───────────────────────────────────────────────────────────────
 
@@ -88,10 +84,8 @@ class _ConstellationPainter extends CustomPainter {
     _drawStars(canvas, size);
   }
 
-  Offset _pos(int index, Size size) => Offset(
-        _stars[index].x * size.width,
-        _stars[index].y * size.height,
-      );
+  Offset _pos(int index, Size size) =>
+      Offset(_stars[index].x * size.width, _stars[index].y * size.height);
 
   void _drawEdges(Canvas canvas, Size size) {
     final paint = Paint()
@@ -105,7 +99,7 @@ class _ConstellationPainter extends CustomPainter {
   }
 
   void _drawStars(Canvas canvas, Size size) {
-    final twoPi = math.pi * 2;
+    const twoPi = math.pi * 2;
 
     for (int i = 0; i < _stars.length; i++) {
       final star = _stars[i];
@@ -119,7 +113,7 @@ class _ConstellationPainter extends CustomPainter {
       canvas.drawCircle(
         pos,
         star.r,
-        Paint()..color = star.color.withOpacity(opacity.clamp(0.0, 1.0)),
+        Paint()..color = star.color.withValues(alpha: opacity.clamp(0.0, 1.0)),
       );
     }
   }

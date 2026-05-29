@@ -76,8 +76,7 @@ class _FloatingOrbState extends State<FloatingOrb>
 
   @override
   Widget build(BuildContext context) {
-    final orbColor = widget.color ??
-        AppColors.primary.withValues(alpha: 0.14);
+    final orbColor = widget.color ?? AppColors.primary.withValues(alpha: 0.14);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -87,10 +86,10 @@ class _FloatingOrbState extends State<FloatingOrb>
 
         final double offsetX =
             math.sin(progressRadians * widget.frequencyX) *
-                widget.driftAmplitudeX;
+            widget.driftAmplitudeX;
         final double offsetY =
             math.sin(progressRadians * widget.frequencyY) *
-                widget.driftAmplitudeY;
+            widget.driftAmplitudeY;
 
         return Transform.translate(
           offset: Offset(offsetX, offsetY),
@@ -109,10 +108,7 @@ class _FloatingOrbState extends State<FloatingOrb>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(
-              colors: [
-                orbColor,
-                orbColor.withValues(alpha: 0.0),
-              ],
+              colors: [orbColor, orbColor.withValues(alpha: 0.0)],
               stops: const [0.0, 0.68],
             ),
           ),

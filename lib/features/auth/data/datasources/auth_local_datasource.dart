@@ -17,8 +17,8 @@ final class AuthLocalDatasource {
   const AuthLocalDatasource({
     required SecureStorage secureStorage,
     required LocalStorage localStorage,
-  })  : _secureStorage = secureStorage,
-        _localStorage = localStorage;
+  }) : _secureStorage = secureStorage,
+       _localStorage = localStorage;
 
   final SecureStorage _secureStorage;
   final LocalStorage _localStorage;
@@ -142,9 +142,13 @@ final class AuthLocalDatasource {
     };
 
     final email = map['email'] is String ? map['email'] as String : null;
-    final username = map['username'] is String ? map['username'] as String : null;
+    final username = map['username'] is String
+        ? map['username'] as String
+        : null;
 
-    final registrationPhase = _parsePhaseFromCacheName(map['registrationPhase']);
+    final registrationPhase = _parsePhaseFromCacheName(
+      map['registrationPhase'],
+    );
 
     final isEmailVerified = map['isEmailVerified'];
     final isIdVerified = map['isIdVerified'];
@@ -157,10 +161,9 @@ final class AuthLocalDatasource {
       registrationPhase: registrationPhase,
       isEmailVerified: isEmailVerified is bool ? isEmailVerified : true,
       isIdVerified: isIdVerified is bool ? isIdVerified : false,
-      profilePhotoUrl:
-          profilePhotoUrl is String && profilePhotoUrl.isNotEmpty
-              ? profilePhotoUrl
-              : null,
+      profilePhotoUrl: profilePhotoUrl is String && profilePhotoUrl.isNotEmpty
+          ? profilePhotoUrl
+          : null,
     );
   }
 

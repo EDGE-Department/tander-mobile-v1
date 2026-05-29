@@ -11,22 +11,21 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:tander_flutter_v3/core/errors/app_exception.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/notifiers/tandy_notifier.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/states/tandy_state.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_breathing_panel.dart';
-import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constellation_bg.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_composer.dart';
-import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_meditation_panel.dart';
-import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_psychiatrist_panel.dart';
-import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_support_panel.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constellation_bg.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_empty_state.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_meditation_panel.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_message_thread.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_mobile_bar.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_psychiatrist_panel.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_sidebar.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_support_panel.dart';
 
 /// Tablet breakpoint matching the web's `lg:` (1024px).
 const double _kTabletBreakpoint = 1024;
@@ -152,17 +151,15 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
               Column(
                 children: <Widget>[
                   // Mobile header (web: flex lg:hidden)
-                  if (!isTablet)
-                    TandyMobileHeader(
-                      onClearTap: _handleClear,
-                    ),
+                  if (!isTablet) TandyMobileHeader(onClearTap: _handleClear),
 
                   // Quick actions bar (60+ friendly)
                   if (!isTablet)
                     TandyQuickActionsBar(
                       onChatTap: () => _focusNode.requestFocus(),
                       onBreatheTap: () => _openPanel(TandyActivePanel.breathe),
-                      onMeditateTap: () => _openPanel(TandyActivePanel.meditate),
+                      onMeditateTap: () =>
+                          _openPanel(TandyActivePanel.meditate),
                       onSupportTap: () => _openPanel(TandyActivePanel.support),
                     ),
 
@@ -178,26 +175,25 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
                       tandyState.suggestBreathingPanel)
                     _buildBreathingSuggestion(),
 
-
-              // Composer
-              if (tandyState is TandyLoaded)
-                TandyComposer(
-                  controller: _inputController,
-                  focusNode: _focusNode,
-                  isSending: tandyState.isSending,
-                  showSuggestions: tandyState.showEmptyState,
-                  suggestions: tandyState.greeting.suggestions,
-                  onSend: _handleSend,
-                  onSuggestionTap: (suggestion) {
-                    _inputController.text = suggestion;
-                    _focusNode.requestFocus();
-                  },
-                ),
-              ],
-            ),
-            // Panel overlay — covers main content area only, sidebar stays visible
-            if (tandyState is TandyLoaded && tandyState.activePanel != null)
-              _buildPanelOverlay(tandyState.activePanel!),
+                  // Composer
+                  if (tandyState is TandyLoaded)
+                    TandyComposer(
+                      controller: _inputController,
+                      focusNode: _focusNode,
+                      isSending: tandyState.isSending,
+                      showSuggestions: tandyState.showEmptyState,
+                      suggestions: tandyState.greeting.suggestions,
+                      onSend: _handleSend,
+                      onSuggestionTap: (suggestion) {
+                        _inputController.text = suggestion;
+                        _focusNode.requestFocus();
+                      },
+                    ),
+                ],
+              ),
+              // Panel overlay — covers main content area only, sidebar stays visible
+              if (tandyState is TandyLoaded && tandyState.activePanel != null)
+                _buildPanelOverlay(tandyState.activePanel!),
             ],
           ),
         ),
@@ -208,20 +204,17 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
   Widget _buildBody(TandyState tandyState) {
     return switch (tandyState) {
       TandyLoading() => const Center(
-          child: CircularProgressIndicator(color: kTandyOrange),
-        ),
+        child: CircularProgressIndicator(color: kTandyOrange),
+      ),
       TandyError(:final exception) => _buildErrorState(exception),
-      final TandyLoaded loaded when loaded.showEmptyState =>
-        _buildEmptyState(loaded),
-      TandyLoaded(
-        :final messages,
-        :final isSending,
-      ) =>
-        TandyMessageThread(
-          messages: messages,
-          isSending: isSending,
-          scrollController: _scrollController,
-        ),
+      final TandyLoaded loaded when loaded.showEmptyState => _buildEmptyState(
+        loaded,
+      ),
+      TandyLoaded(:final messages, :final isSending) => TandyMessageThread(
+        messages: messages,
+        isSending: isSending,
+        scrollController: _scrollController,
+      ),
     };
   }
 
@@ -239,8 +232,7 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
               _focusNode.requestFocus();
             },
             onBreathingTap: () => _openPanel(TandyActivePanel.breathe),
-            onMeditationTap: () =>
-                _openPanel(TandyActivePanel.meditate),
+            onMeditationTap: () => _openPanel(TandyActivePanel.meditate),
             onChatTap: () => _focusNode.requestFocus(),
             onWellnessTap: () => _openPanel(TandyActivePanel.support),
           ),
@@ -256,11 +248,7 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(
-              Icons.error_outline,
-              size: 48,
-              color: AppColors.danger,
-            ),
+            const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
             const SizedBox(height: 16),
             Text(
               exception.userMessage,
@@ -269,9 +257,8 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => ref
-                  .read(tandyNotifierProvider.notifier)
-                  .loadConversation(),
+              onPressed: () =>
+                  ref.read(tandyNotifierProvider.notifier).loadConversation(),
               child: const Text('Retry'),
             ),
           ],
@@ -300,7 +287,9 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFE0F5F4),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF0F9D94).withValues(alpha: 0.28)),
+        border: Border.all(
+          color: const Color(0xFF0F9D94).withValues(alpha: 0.28),
+        ),
       ),
       child: Row(
         children: <Widget>[
@@ -363,20 +352,20 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
     return Positioned.fill(
       child: switch (panel) {
         TandyActivePanel.breathe => TandyBreathingPanel(
-            onClose: notifier.closePanel,
-          ),
+          onClose: notifier.closePanel,
+        ),
         TandyActivePanel.meditate => TandyMeditationPanel(
-            onClose: notifier.closePanel,
-          ),
+          onClose: notifier.closePanel,
+        ),
         TandyActivePanel.support => TandySupportPanel(
-            onClose: notifier.closePanel,
-            onOpenPsychiatrist: () =>
-                notifier.setActivePanel(TandyActivePanel.psychiatrist),
-          ),
+          onClose: notifier.closePanel,
+          onOpenPsychiatrist: () =>
+              notifier.setActivePanel(TandyActivePanel.psychiatrist),
+        ),
         TandyActivePanel.psychiatrist => TandyPsychiatristPanel(
-            onClose: notifier.closePanel,
-            onBack: () => notifier.setActivePanel(TandyActivePanel.support),
-          ),
+          onClose: notifier.closePanel,
+          onBack: () => notifier.setActivePanel(TandyActivePanel.support),
+        ),
       },
     );
   }

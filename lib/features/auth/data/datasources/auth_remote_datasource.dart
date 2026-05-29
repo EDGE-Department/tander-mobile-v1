@@ -17,7 +17,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 /// `void` — they succeed or throw.
 final class AuthRemoteDatasource {
   const AuthRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -95,18 +95,12 @@ final class AuthRemoteDatasource {
     AppLogger.debug(
       'Requesting password reset',
       operation: 'AuthRemoteDatasource.requestPasswordReset',
-      context: {
-        if (email != null) 'email': email,
-        if (phone != null) 'phone': phone,
-      },
+      context: {'email': ?email, 'phone': ?phone},
     );
 
     await _dioClient.post<Map<String, Object?>>(
       ApiEndpoints.forgotPassword,
-      data: ForgotPasswordRequestDto(
-        email: email,
-        phoneNumber: phone,
-      ).toJson(),
+      data: ForgotPasswordRequestDto(email: email, phoneNumber: phone).toJson(),
     );
   }
 
@@ -120,10 +114,7 @@ final class AuthRemoteDatasource {
     AppLogger.debug(
       'Verifying reset OTP',
       operation: 'AuthRemoteDatasource.verifyResetOtp',
-      context: {
-        if (email != null) 'email': email,
-        if (phone != null) 'phone': phone,
-      },
+      context: {'email': ?email, 'phone': ?phone},
     );
 
     return _dioClient.post<Map<String, Object?>>(
@@ -146,10 +137,7 @@ final class AuthRemoteDatasource {
     AppLogger.debug(
       'Resetting password',
       operation: 'AuthRemoteDatasource.resetPassword',
-      context: {
-        if (email != null) 'email': email,
-        if (phone != null) 'phone': phone,
-      },
+      context: {'email': ?email, 'phone': ?phone},
     );
 
     await _dioClient.post<Map<String, Object?>>(
@@ -190,10 +178,7 @@ final class AuthRemoteDatasource {
     AppLogger.debug(
       'Sending registration OTP',
       operation: 'AuthRemoteDatasource.sendRegistrationOtp',
-      context: {
-        if (email != null) 'email': email,
-        if (phone != null) 'phone': phone,
-      },
+      context: {'email': ?email, 'phone': ?phone},
     );
 
     if (phone != null && phone.isNotEmpty) {
@@ -218,10 +203,7 @@ final class AuthRemoteDatasource {
     AppLogger.debug(
       'Verifying registration OTP',
       operation: 'AuthRemoteDatasource.verifyRegistrationOtp',
-      context: {
-        if (email != null) 'email': email,
-        if (phone != null) 'phone': phone,
-      },
+      context: {'email': ?email, 'phone': ?phone},
     );
 
     if (phone != null && phone.isNotEmpty) {
@@ -293,15 +275,45 @@ final class AuthRemoteDatasource {
   /// Backend returns `{ data: { exists: bool, blocked: bool } }`.
   /// Available = not exists AND not blocked.
   bool _parseAvailability(Map<String, Object?>? body) {
-    if (body == null) return false;
-    final data = body['data'];
+    final data = body?['data'];
     if (data is Map<String, Object?>) {
       final exists = data['exists'];
       final blocked = data['blocked'];
+      // Legitimately taken/blocked — a normal result, not drift. No warning.
       if (exists is bool && exists) return false;
       if (blocked is bool && blocked) return false;
+      // At least one flag is a readable bool (and false) → legitimately
+      // available. Normal result, no warning. (Behaviour preserved.)
+      if (exists is bool || blocked is bool) return true;
+
+      // Shape drift (arm 2): `data` is a Map but neither `exists` nor
+      // `blocked` is a readable bool. Log, then preserve the original
+      // available (`true`) behaviour for this in-Map path.
+      //
+      // NOTE: On unexpected shape we log but keep the original return value.
+      // A backend response-shape drift surfaces in logs rather than silently
+      // mis-parsing. See registration review (Theme B).
+      AppLogger.warning(
+        'Availability data missing exists/blocked flags — treating as available',
+        operation: 'AuthRemoteDatasource._parseAvailability',
+        context: {'data': '$data'},
+      );
       return true;
     }
+
+    // Shape drift (arm 1): `data` is missing or not a Map, so neither flag
+    // could be read. This is the higher-stakes silent-failure case — a drift
+    // here returns false ("taken") and would block all signups with no
+    // diagnostic. Log it so the drift is diagnosable.
+    //
+    // NOTE: On unexpected shape we log + return false (treated as "taken"). A
+    // backend response-shape drift will surface in logs rather than silently
+    // blocking all signups. See registration review (Theme B).
+    AppLogger.warning(
+      'Unexpected availability response shape — treating as taken',
+      operation: 'AuthRemoteDatasource._parseAvailability',
+      context: {'body': '$body'},
+    );
     return false;
   }
 
@@ -329,13 +341,11 @@ final class AuthRemoteDatasource {
     return 60;
   }
 
-  /// Verifies ID pre-registration with selfie + ID photo (multipart upload).
+  /// Verifies ID pre-registration with the ID photo (multipart upload).
   ///
   /// Returns the raw response so the caller can extract auditId.
   Future<Response<Map<String, Object?>>> verifyIdPreRegister({
     required String idPhotoFrontPath,
-    String? selfiePath,
-    Map<String, dynamic>? livenessMetadata,
     Map<String, dynamic>? frontendOcrData,
     String? deviceFingerprint,
   }) async {
@@ -350,17 +360,6 @@ final class AuthRemoteDatasource {
         contentType: DioMediaType.parse('image/jpeg'),
       ),
     };
-
-    if (selfiePath != null && selfiePath.isNotEmpty) {
-      formMap['selfie'] = await MultipartFile.fromFile(
-        selfiePath,
-        contentType: DioMediaType.parse('image/jpeg'),
-      );
-    }
-
-    if (livenessMetadata != null) {
-      formMap['livenessMetadata'] = jsonEncode(livenessMetadata);
-    }
 
     if (frontendOcrData != null) {
       formMap['frontendOcrData'] = jsonEncode(frontendOcrData);

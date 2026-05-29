@@ -14,10 +14,12 @@ abstract final class MessagingMapper {
     final otherUser = dto.otherUser;
     final primaryPhoto = otherUser?.photos?.firstWhere(
       (p) => p.primary,
-      orElse: () => otherUser?.photos?.firstOrNull ?? const ConversationPhotoDto(url: ''),
+      orElse: () =>
+          otherUser.photos?.firstOrNull ?? const ConversationPhotoDto(url: ''),
     );
 
-    final updatedAt = DateTime.tryParse(dto.lastMessageAt ?? '') ?? DateTime.now();
+    final updatedAt =
+        DateTime.tryParse(dto.lastMessageAt ?? '') ?? DateTime.now();
 
     return ConversationItem(
       conversationId: dto.id,
@@ -57,7 +59,9 @@ abstract final class MessagingMapper {
       readAt: dto.readAt != null ? DateTime.tryParse(dto.readAt!) : null,
       deliveryState: dto.readAt != null
           ? MessageDeliveryState.read
-          : (dto.deliveredAt != null ? MessageDeliveryState.delivered : MessageDeliveryState.sent),
+          : (dto.deliveredAt != null
+                ? MessageDeliveryState.delivered
+                : MessageDeliveryState.sent),
       isDeleted: false,
       isUnsent: false,
       unsentAt: null,

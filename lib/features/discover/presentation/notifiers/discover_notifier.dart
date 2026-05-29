@@ -149,10 +149,7 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
 
     sendResult.when(
       success: (_) {
-        AppLogger.debug(
-          'Liked profile ${candidate.userId}',
-          operation: _tag,
-        );
+        AppLogger.debug('Liked profile ${candidate.userId}', operation: _tag);
       },
       failure: (exception) {
         AppLogger.error(
@@ -296,11 +293,11 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
 /// Used by the discover profile screen to load detailed data.
 final discoverProfileProvider = FutureProvider.family
     .autoDispose<DiscoveryCandidate, String>((ref, userId) async {
-  final repository = ref.read(discoverRepositoryProvider);
-  final fetchResult = await repository.fetchProfile(userId: userId);
+      final repository = ref.read(discoverRepositoryProvider);
+      final fetchResult = await repository.fetchProfile(userId: userId);
 
-  return fetchResult.when(
-    success: (candidate) => candidate,
-    failure: (exception) => throw exception,
-  );
-});
+      return fetchResult.when(
+        success: (candidate) => candidate,
+        failure: (exception) => throw exception,
+      );
+    });

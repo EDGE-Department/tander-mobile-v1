@@ -43,7 +43,9 @@ class _TandyMoodCheckinState extends State<TandyMoodCheckin> {
           opacity: isDisabled ? 0.3 : 1.0,
           duration: const Duration(milliseconds: 200),
           child: Material(
-            color: isSelected ? mood.accentColor : mood.accentColor.withAlpha(20),
+            color: isSelected
+                ? mood.accentColor
+                : mood.accentColor.withAlpha(20),
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
@@ -52,7 +54,9 @@ class _TandyMoodCheckinState extends State<TandyMoodCheckin> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected ? mood.accentColor : mood.accentColor.withAlpha(60),
+                    color: isSelected
+                        ? mood.accentColor
+                        : mood.accentColor.withAlpha(60),
                     width: 2,
                   ),
                 ),

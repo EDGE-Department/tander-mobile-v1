@@ -53,7 +53,8 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
     if (source == ImageSource.camera) {
       final camStatus = await Permission.camera.request();
       if (!camStatus.isGranted) {
-        if ((camStatus.isPermanentlyDenied || camStatus.isRestricted) && mounted) {
+        if ((camStatus.isPermanentlyDenied || camStatus.isRestricted) &&
+            mounted) {
           await _showPermissionSettingsDialog(
             'Camera Access Required',
             'Camera permission was denied. Please enable camera access in Settings to take a photo.',
@@ -108,7 +109,10 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
     }
   }
 
-  Future<void> _showPermissionSettingsDialog(String title, String message) async {
+  Future<void> _showPermissionSettingsDialog(
+    String title,
+    String message,
+  ) async {
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -157,9 +161,7 @@ class _ProfilePhotosScreenState extends ConsumerState<ProfilePhotosScreen> {
   }
 
   Future<void> _handleReorder(List<String> newOrder) async {
-    await ref
-        .read(myProfileNotifierProvider.notifier)
-        .reorderPhotos(newOrder);
+    await ref.read(myProfileNotifierProvider.notifier).reorderPhotos(newOrder);
   }
 
   Future<void> _handleRemovePhoto(int galleryIndex) async {
@@ -277,7 +279,8 @@ class _DraggablePhotoGridState extends State<_DraggablePhotoGrid> {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final gap = screenWidth >= 768 ? 10.0 : 8.0;
     final gridWidth = screenWidth - AppSpacing.md * 2;
-    final cellSize = (gridWidth - gap * (_gridColumnCount - 1)) / _gridColumnCount;
+    final cellSize =
+        (gridWidth - gap * (_gridColumnCount - 1)) / _gridColumnCount;
 
     return Wrap(
       spacing: gap,
@@ -372,7 +375,10 @@ class _DraggablePhotoTile extends StatelessWidget {
               height: cellSize,
               child: Opacity(
                 opacity: 0.85,
-                child: Image.network(resolvePhotoUrl(photoUrl) ?? photoUrl, fit: BoxFit.cover),
+                child: Image.network(
+                  resolvePhotoUrl(photoUrl) ?? photoUrl,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -409,7 +415,12 @@ class _DraggablePhotoTile extends StatelessWidget {
 // ── Filled photo slot ───────────────────────────────────────────────────
 
 class _FilledSlot extends StatelessWidget {
-  const _FilledSlot({required this.photoUrl, required this.isMain, required this.onRemove, this.showDragHandle = false});
+  const _FilledSlot({
+    required this.photoUrl,
+    required this.isMain,
+    required this.onRemove,
+    this.showDragHandle = false,
+  });
   final String photoUrl;
   final bool isMain;
   final VoidCallback onRemove;
@@ -430,7 +441,10 @@ class _FilledSlot extends StatelessWidget {
               errorBuilder: (_, _, _) => Container(
                 color: AppColors.subtle,
                 alignment: Alignment.center,
-                child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+                child: const Icon(
+                  Icons.broken_image_outlined,
+                  color: AppColors.textMuted,
+                ),
               ),
             ),
           ),
@@ -448,7 +462,11 @@ class _FilledSlot extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.drag_indicator, size: 14, color: AppColors.textInverse),
+              child: const Icon(
+                Icons.drag_indicator,
+                size: 14,
+                color: AppColors.textInverse,
+              ),
             ),
           ),
         // "Main" badge
@@ -457,9 +475,22 @@ class _FilledSlot extends StatelessWidget {
             bottom: AppSpacing.xs,
             left: AppSpacing.xs,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
-              decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppRadius.borderFull),
-              child: Text('Main', style: AppTypography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textInverse)),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+                vertical: 3,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: AppRadius.borderFull,
+              ),
+              child: Text(
+                'Main',
+                style: AppTypography.caption.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textInverse,
+                ),
+              ),
             ),
           ),
         // Delete button — outside ClipRRect so it's never clipped
@@ -479,7 +510,11 @@ class _FilledSlot extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.delete_outline, size: 13, color: AppColors.textInverse),
+                child: const Icon(
+                  Icons.delete_outline,
+                  size: 13,
+                  color: AppColors.textInverse,
+                ),
               ),
             ),
           ),
@@ -501,14 +536,40 @@ class _EmptySlot extends StatelessWidget {
     return GestureDetector(
       onTap: isUploading ? null : onTap,
       child: Container(
-        decoration: BoxDecoration(borderRadius: AppRadius.borderLg, border: Border.all(color: AppColors.border, width: 2, strokeAlign: BorderSide.strokeAlignInside)),
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.borderLg,
+          border: Border.all(
+            color: AppColors.border,
+            width: 2,
+            strokeAlign: BorderSide.strokeAlignInside,
+          ),
+        ),
         child: isUploading
-            ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary))))
-            : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.add, size: 24, color: AppColors.textMuted),
-                const SizedBox(height: AppSpacing.xxs),
-                Text('Add Photo', style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600)),
-              ]),
+            ? const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                  ),
+                ),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add, size: 24, color: AppColors.textMuted),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    'Add Photo',
+                    style: AppTypography.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -517,7 +578,11 @@ class _EmptySlot extends StatelessWidget {
 // ── Source picker option ────────────────────────────────────────────────
 
 class _SourceOption extends StatelessWidget {
-  const _SourceOption({required this.icon, required this.label, required this.onTap});
+  const _SourceOption({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -525,18 +590,30 @@ class _SourceOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.card, borderRadius: AppRadius.borderLg,
+      color: AppColors.card,
+      borderRadius: AppRadius.borderLg,
       child: InkWell(
-        onTap: onTap, borderRadius: AppRadius.borderLg,
+        onTap: onTap,
+        borderRadius: AppRadius.borderLg,
         child: Container(
-          constraints: const BoxConstraints(minHeight: AppSpacing.touchComfortable),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-          decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: AppRadius.borderLg),
-          child: Row(children: [
-            Icon(icon, size: 22, color: AppColors.primary),
-            const SizedBox(width: AppSpacing.sm),
-            Text(label, style: AppTypography.label),
-          ]),
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.touchComfortable,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.borderLg,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: AppColors.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Text(label, style: AppTypography.label),
+            ],
+          ),
         ),
       ),
     );

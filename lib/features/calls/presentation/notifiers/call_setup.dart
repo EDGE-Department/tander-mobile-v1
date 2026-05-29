@@ -26,11 +26,11 @@ final class CallSetup {
     required void Function(String, CallEndReason, [String?]) onTerminate,
     required Future<void> Function() onCleanup,
     required void Function() onScheduleIdleReset,
-  })  : _ref = ref,
-        _signalHandler = signalHandler,
-        _onTerminate = onTerminate,
-        _onCleanup = onCleanup,
-        _onScheduleIdleReset = onScheduleIdleReset;
+  }) : _ref = ref,
+       _signalHandler = signalHandler,
+       _onTerminate = onTerminate,
+       _onCleanup = onCleanup,
+       _onScheduleIdleReset = onScheduleIdleReset;
 
   final Ref _ref;
   final CallSignalHandler _signalHandler;
@@ -40,10 +40,7 @@ final class CallSetup {
 
   /// Creates peer connection, acquires media, subscribes to signals,
   /// and either sends an offer (outgoing) or drains the buffered offer (incoming).
-  Future<void> setupCall(
-    CallInfo callInfo, {
-    required bool isOutgoing,
-  }) async {
+  Future<void> setupCall(CallInfo callInfo, {required bool isOutgoing}) async {
     final callRefs = getCallRefs();
     final userId = _ref.read(currentUserIdProvider);
     final notifier = _ref.read(callNotifierProvider.notifier);
@@ -77,7 +74,10 @@ final class CallSetup {
               freshCallInfo.remoteUserId,
             );
           } else {
-            AppLogger.warning('ICE candidate dropped — no callInfo', operation: 'CallSetup.onIceCandidate');
+            AppLogger.warning(
+              'ICE candidate dropped — no callInfo',
+              operation: 'CallSetup.onIceCandidate',
+            );
           }
         },
         onIceStateChange: _signalHandler.handleIceStateChange,
@@ -151,8 +151,7 @@ final class CallSetup {
       if (freshStatus is CallRinging || freshStatus is CallInitiating) {
         final freshInfo = freshState.callInfo;
         if (freshInfo != null) {
-          sendHangup(
-              freshInfo.roomName, 'no_response', freshInfo.remoteUserId);
+          sendHangup(freshInfo.roomName, 'no_response', freshInfo.remoteUserId);
           final datasource = _ref.read(callsRemoteDatasourceProvider);
           unawaited(
             datasource.cancelCall(freshInfo.roomName).catchError((_) {}),
@@ -184,8 +183,7 @@ final class CallSetup {
     callRefs.timeoutTimer = Timer(CallTimeouts.connecting, () {
       final freshStatus = _ref.read(callNotifierProvider).status;
       if (freshStatus is CallConnecting) {
-        _onTerminate(
-            'timeout', CallEndReason.timeout, 'Connection timed out');
+        _onTerminate('timeout', CallEndReason.timeout, 'Connection timed out');
       }
     });
   }
@@ -209,7 +207,10 @@ final class CallSetup {
     final capturedIsVideo = capturedCallInfo?.callType == CallType.video;
 
     if (capturedCallInfo == null) {
-      AppLogger.error('processRemoteOffer: callInfo is null', operation: 'CallSetup.processRemoteOffer');
+      AppLogger.error(
+        'processRemoteOffer: callInfo is null',
+        operation: 'CallSetup.processRemoteOffer',
+      );
       return;
     }
 
@@ -217,15 +218,29 @@ final class CallSetup {
       await callRefs.peer!.setRemoteOffer(sdp);
       await flushPendingIceCandidates();
 
-      final answerSdp =
-          await callRefs.peer!.createAnswer(isVideo: capturedIsVideo);
-
-      AppLogger.info('Sending SDP answer', operation: 'CallSetup.processRemoteOffer',
-        context: {'roomName': capturedCallInfo.roomName, 'answerLength': answerSdp.length},
+      final answerSdp = await callRefs.peer!.createAnswer(
+        isVideo: capturedIsVideo,
       );
-      sendAnswer(capturedCallInfo.roomName, answerSdp, capturedCallInfo.remoteUserId);
+
+      AppLogger.info(
+        'Sending SDP answer',
+        operation: 'CallSetup.processRemoteOffer',
+        context: {
+          'roomName': capturedCallInfo.roomName,
+          'answerLength': answerSdp.length,
+        },
+      );
+      sendAnswer(
+        capturedCallInfo.roomName,
+        answerSdp,
+        capturedCallInfo.remoteUserId,
+      );
     } on Exception catch (error) {
-      AppLogger.error('processRemoteOffer failed', operation: 'CallSetup.processRemoteOffer', error: error);
+      AppLogger.error(
+        'processRemoteOffer failed',
+        operation: 'CallSetup.processRemoteOffer',
+        error: error,
+      );
       _onTerminate('failed', CallEndReason.failed, error.toString());
     }
   }
@@ -246,8 +261,9 @@ final class CallSetup {
     final callRefs = getCallRefs();
     if (callRefs.peer == null) return;
 
-    final candidates =
-        List<IceCandidateInfo>.from(callRefs.pendingIceCandidates);
+    final candidates = List<IceCandidateInfo>.from(
+      callRefs.pendingIceCandidates,
+    );
     callRefs.pendingIceCandidates = [];
 
     for (final candidate in candidates) {

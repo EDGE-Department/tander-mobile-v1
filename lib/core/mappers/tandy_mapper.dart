@@ -5,9 +5,9 @@
 /// response that merges response-level data into the assistant message.
 library;
 
+import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
 import 'package:tander_flutter_v3/core/contracts/tandy_content_contracts.dart';
 import 'package:tander_flutter_v3/core/contracts/tandy_contracts.dart';
-import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
 
 // ── Recipe DTO -> Block ───────────────────────────────────────────────
 
@@ -123,7 +123,9 @@ TandyMessage mapTandyMessageDto(TandyMessageDto dto) {
 
   return TandyMessage(
     messageId: dto.id.toString(),
-    role: dto.role == 'user' ? TandyMessageRole.user : TandyMessageRole.assistant,
+    role: dto.role == 'user'
+        ? TandyMessageRole.user
+        : TandyMessageRole.assistant,
     body: dto.content,
     structuredBlocks: blocks,
     sentAt: DateTime.tryParse(dto.timestamp) ?? DateTime.now(),
@@ -144,14 +146,16 @@ TandySendResult mapSendMessageResponse(TandySendMessageResponseDto dto) {
   final extraBlocks = <TandyStructuredBlock>[];
 
   if (dto.recipe != null) {
-    final alreadyHasRecipe = assistantMessage.structuredBlocks
-        .any((block) => block is RecipeBlock);
+    final alreadyHasRecipe = assistantMessage.structuredBlocks.any(
+      (block) => block is RecipeBlock,
+    );
     if (!alreadyHasRecipe) extraBlocks.add(recipeToBlock(dto.recipe!));
   }
 
   if (dto.guide != null) {
-    final alreadyHasGuide = assistantMessage.structuredBlocks
-        .any((block) => block is GuideBlock);
+    final alreadyHasGuide = assistantMessage.structuredBlocks.any(
+      (block) => block is GuideBlock,
+    );
     if (!alreadyHasGuide) extraBlocks.add(guideToBlock(dto.guide!));
   }
 
@@ -168,14 +172,10 @@ TandySendResult mapSendMessageResponse(TandySendMessageResponseDto dto) {
       messageId: assistantMessage.messageId,
       role: assistantMessage.role,
       body: assistantMessage.body,
-      structuredBlocks: [
-        ...assistantMessage.structuredBlocks,
-        ...extraBlocks,
-      ],
+      structuredBlocks: [...assistantMessage.structuredBlocks, ...extraBlocks],
       sentAt: assistantMessage.sentAt,
       isCardExpanded: assistantMessage.isCardExpanded,
-      detectedEmotion:
-          dto.detectedEmotion ?? assistantMessage.detectedEmotion,
+      detectedEmotion: dto.detectedEmotion ?? assistantMessage.detectedEmotion,
       domain: assistantMessage.domain,
       safetyNotices: dto.safetyNotices,
       rating: assistantMessage.rating,
@@ -208,8 +208,5 @@ TandyGreeting buildTandyGreeting(
   String greetingText,
   List<String> defaultSuggestions,
 ) {
-  return TandyGreeting(
-    greeting: greetingText,
-    suggestions: defaultSuggestions,
-  );
+  return TandyGreeting(greeting: greetingText, suggestions: defaultSuggestions);
 }

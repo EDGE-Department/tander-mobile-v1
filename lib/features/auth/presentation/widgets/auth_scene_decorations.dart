@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
+import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
 import 'package:tander_flutter_v3/features/splash/presentation/widgets/splash_painters.dart';
 
 // ── Gradients ────────────────────────────────────────────────────────
@@ -62,11 +65,20 @@ class AuthConstellationPainter extends CustomPainter {
   ];
 
   static const List<List<int>> _normalEdges = [
-    [0, 1], [0, 3], [2, 3], [5, 6], [5, 7], [7, 8], [9, 4], [10, 0], [11, 6],
+    [0, 1],
+    [0, 3],
+    [2, 3],
+    [5, 6],
+    [5, 7],
+    [7, 8],
+    [9, 4],
+    [10, 0],
+    [11, 6],
   ];
 
   static const List<List<int>> _bridgeEdges = [
-    [3, 4], [4, 5],
+    [3, 4],
+    [4, 5],
   ];
 
   @override
@@ -195,14 +207,38 @@ class WaveSeamPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final path = Path()
       ..moveTo(size.width * 0.53, 0)
-      ..cubicTo(size.width * 0.66, size.height * 0.078, size.width * 0.80,
-          size.height * 0.143, size.width * 0.59, size.height * 0.266)
-      ..cubicTo(size.width * 0.44, size.height * 0.39, size.width * 0.72,
-          size.height * 0.456, size.width * 0.56, size.height * 0.576)
-      ..cubicTo(size.width * 0.44, size.height * 0.696, size.width * 0.67,
-          size.height * 0.75, size.width * 0.53, size.height * 0.876)
-      ..cubicTo(size.width * 0.44, size.height * 0.96, size.width * 0.56,
-          size.height * 0.983, size.width * 0.53, size.height);
+      ..cubicTo(
+        size.width * 0.66,
+        size.height * 0.078,
+        size.width * 0.80,
+        size.height * 0.143,
+        size.width * 0.59,
+        size.height * 0.266,
+      )
+      ..cubicTo(
+        size.width * 0.44,
+        size.height * 0.39,
+        size.width * 0.72,
+        size.height * 0.456,
+        size.width * 0.56,
+        size.height * 0.576,
+      )
+      ..cubicTo(
+        size.width * 0.44,
+        size.height * 0.696,
+        size.width * 0.67,
+        size.height * 0.75,
+        size.width * 0.53,
+        size.height * 0.876,
+      )
+      ..cubicTo(
+        size.width * 0.44,
+        size.height * 0.96,
+        size.width * 0.56,
+        size.height * 0.983,
+        size.width * 0.53,
+        size.height,
+      );
 
     canvas.drawPath(
       path,
@@ -277,8 +313,11 @@ class _AuthHeaderSceneState extends State<AuthHeaderScene>
             child: IgnorePointer(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final fontSize =
-                      clampDouble(constraints.maxWidth * 0.34, 116, 176);
+                  final fontSize = clampDouble(
+                    constraints.maxWidth * 0.34,
+                    116,
+                    176,
+                  );
                   return Center(
                     child: Transform.translate(
                       offset: Offset(0, fontSize * 0.08),
@@ -299,74 +338,6 @@ class _AuthHeaderSceneState extends State<AuthHeaderScene>
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Frosted parchment sheet ──────────────────────────────────────────
-
-class AuthParchmentSheet extends StatelessWidget {
-  const AuthParchmentSheet({required this.child, super.key});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0.14),
-            Colors.white.withValues(alpha: 0.08),
-            Colors.white.withValues(alpha: 0.04),
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(36),
-          topRight: Radius.circular(36),
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x26000000),
-            blurRadius: 28,
-            offset: Offset(0, -8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-          const AuthSheetHandle(),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-// ── Sheet drag handle ────────────────────────────────────────────────
-
-class AuthSheetHandle extends StatelessWidget {
-  const AuthSheetHandle({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 48,
-        height: 4,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
-          ),
-          borderRadius: BorderRadius.circular(999),
-        ),
       ),
     );
   }
@@ -396,8 +367,9 @@ class AuthParchmentFormPanel extends StatelessWidget {
             child: IgnorePointer(
               child: Opacity(
                 opacity: 0.45,
-                child:
-                    CustomPaint(painter: ParchmentDotGridPainter(spacing: 24)),
+                child: CustomPaint(
+                  painter: ParchmentDotGridPainter(spacing: 24),
+                ),
               ),
             ),
           ),
@@ -433,6 +405,276 @@ class AuthParchmentFormPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Sheet handle (top-of-bottom-sheet drag indicator) ──────────────
+
+class AuthSheetHandle extends StatelessWidget {
+  const AuthSheetHandle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 36,
+        height: 4,
+        decoration: BoxDecoration(
+          color: const Color(0x33000000),
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Composable step header (gradient + AuthHeaderScene + step badge) ──
+
+/// Top section of a registration step screen: gradient background,
+/// constellation header scene, logo + wordmark, and centered step badge.
+///
+/// Matches the canonical pattern in photo_setup_screen.
+class AuthStepHeader extends StatelessWidget {
+  const AuthStepHeader({
+    required this.currentStep,
+    this.totalSteps = 6,
+    super.key,
+  });
+
+  /// Current step number. When null, no step badge is rendered.
+  final int? currentStep;
+  final int totalSteps;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final headerHeight = resolveHeaderHeight(screenHeight);
+    final horizontalOverscan = MediaQuery.sizeOf(context).width * 0.10;
+
+    return SizedBox(
+      height: headerHeight + headerOverlap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: -horizontalOverscan,
+            right: -horizontalOverscan,
+            top: 0,
+            bottom: 0,
+            child: const IgnorePointer(child: AuthHeaderScene()),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+              child: Column(
+                children: [
+                  if (currentStep != null)
+                    _StepBadgeRow(
+                      currentStep: currentStep!,
+                      totalSteps: totalSteps,
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  const Spacer(),
+                  Image.asset(
+                    'assets/icons/tander_icon.png',
+                    width: 52,
+                    height: 52,
+                    semanticLabel: 'Tander logo',
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Tander',
+                    style: AppTypography.brandWordmark(
+                      fontSize: 26,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepBadgeRow extends StatelessWidget {
+  const _StepBadgeRow({required this.currentStep, required this.totalSteps});
+
+  final int currentStep;
+  final int totalSteps;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const SizedBox(width: 40),
+        const Spacer(),
+        StepBadgeEntry(
+          child: Container(
+            padding: const EdgeInsets.all(1.2),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
+              ),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'Step $currentStep of $totalSteps',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const Spacer(),
+        const SizedBox(width: 40),
+      ],
+    );
+  }
+}
+
+/// One-shot fade + scale-up entry animation for step-progress badges.
+///
+/// Wrap a step-badge container with this widget to give it a subtle
+/// "pop in" when a step screen appears. Respects
+/// [MediaQuery.disableAnimationsOf] for vestibular accessibility.
+class StepBadgeEntry extends StatelessWidget {
+  const StepBadgeEntry({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    return child
+        .animate()
+        .fadeIn(duration: 600.ms)
+        .scale(
+          begin: const Offset(0.85, 0.85),
+          end: const Offset(1.0, 1.0),
+          duration: 700.ms,
+          curve: Curves.easeOutBack,
+        );
+  }
+}
+
+// ── Composable parchment sheet (rounded white sheet w/ handle) ──────
+
+/// White parchment sheet with rounded top corners + AuthSheetHandle +
+/// scrollable content area. Mirrors photo_setup_screen's _buildWhiteSheet.
+class AuthStepParchment extends StatelessWidget {
+  const AuthStepParchment({
+    required this.child,
+    this.scrollable = true,
+    this.contentPadding = const EdgeInsets.fromLTRB(24, 12, 24, 40),
+    super.key,
+  });
+
+  final Widget child;
+  final bool scrollable;
+  final EdgeInsets contentPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final inner = scrollable
+        ? Expanded(
+            child: SingleChildScrollView(
+              padding: contentPadding,
+              child: child,
+            ),
+          )
+        : Expanded(child: Padding(padding: contentPadding, child: child));
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(36),
+          topRight: Radius.circular(36),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1A000000),
+            offset: Offset(0, -8),
+            blurRadius: 24,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(36),
+          topRight: Radius.circular(36),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 12),
+            const AuthSheetHandle(),
+            const SizedBox(height: 4),
+            inner,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Convenience scaffold body composing [AuthStepHeader] + [AuthStepParchment]
+/// in the canonical Stack-over-gradient layout. Returns the body widget;
+/// wrap in a Scaffold(backgroundColor: Color(0xFF20BF68), body: ...) at the call site.
+class AuthStepScaffoldBody extends StatelessWidget {
+  const AuthStepScaffoldBody({
+    required this.parchment,
+    this.header,
+    super.key,
+  });
+
+  /// Top header widget. Typically an [AuthStepHeader]. If null, the parchment
+  /// fills the full screen (use for terminal screens like verification result).
+  final Widget? header;
+
+  /// Parchment body widget. Typically an [AuthStepParchment].
+  final Widget parchment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: authGradient),
+            ),
+          ),
+        ),
+        Column(
+          children: [
+            ?header,
+            Expanded(
+              child: Transform.translate(
+                offset: const Offset(0, -8),
+                child: parchment,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -35,11 +35,15 @@ class MessageBubbleWidget extends StatelessWidget {
 
   void _showMessageOptions(BuildContext context) {
     if (message.isUnsent) return;
-    final canUnsend = isMine && !message.isUnsent &&
+    final canUnsend =
+        isMine &&
+        !message.isUnsent &&
         (DateTime.now().difference(message.sentAt).inMinutes < 60);
 
     final messagePreview = message.media != null
-        ? (message.media!.type == MessageMediaType.image ? '📷 Photo' : '🎤 Voice message')
+        ? (message.media!.type == MessageMediaType.image
+              ? '📷 Photo'
+              : '🎤 Voice message')
         : message.body ?? '';
 
     showModalBottomSheet<void>(
@@ -68,8 +72,14 @@ class MessageBubbleWidget extends StatelessWidget {
             children: [
               // Handle
               const SizedBox(height: 10),
-              Container(width: 36, height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFDDD3C2), borderRadius: BorderRadius.circular(2))),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDDD3C2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               const SizedBox(height: 12),
 
               // Message preview
@@ -134,7 +144,9 @@ class MessageBubbleWidget extends StatelessWidget {
                         label: 'Copy text',
                         onTap: () {
                           Navigator.of(sheetContext).pop();
-                          Clipboard.setData(ClipboardData(text: message.body ?? ''));
+                          Clipboard.setData(
+                            ClipboardData(text: message.body ?? ''),
+                          );
                         },
                       ),
                   ],
@@ -163,20 +175,26 @@ class MessageBubbleWidget extends StatelessWidget {
   }
 
   Widget _buildBubbleContent(BuildContext context, double topGap, String time) {
-
     if (message.media?.type == MessageMediaType.image) {
       return _ImageMessage(
-        message: message, isMine: isMine, isGroupStart: isGroupStart,
-        isGroupEnd: isGroupEnd, topGap: topGap, time: time,
+        message: message,
+        isMine: isMine,
+        isGroupStart: isGroupStart,
+        isGroupEnd: isGroupEnd,
+        topGap: topGap,
+        time: time,
         participantName: participantName,
         participantPhotoUrl: participantPhotoUrl,
       );
     }
 
-    final isVoice = message.media?.type == MessageMediaType.voice ||
+    final isVoice =
+        message.media?.type == MessageMediaType.voice ||
         (message.body != null &&
-            RegExp(r'^\[Voice message\]', caseSensitive: false)
-                .hasMatch(message.body!));
+            RegExp(
+              r'^\[Voice message\]',
+              caseSensitive: false,
+            ).hasMatch(message.body!));
 
     final Widget bubbleContent;
     if (message.isUnsent) {
@@ -186,14 +204,21 @@ class MessageBubbleWidget extends StatelessWidget {
       bubbleContent = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.block, size: 14,
-              color: isMine ? Colors.white.withValues(alpha: 0.5) : AppColors.textMuted),
+          Icon(
+            Icons.block,
+            size: 14,
+            color: isMine
+                ? Colors.white.withValues(alpha: 0.5)
+                : AppColors.textMuted,
+          ),
           const SizedBox(width: 6),
           Text(
             unsentLabel,
             style: AppTypography.bodySm.copyWith(
               fontStyle: FontStyle.italic,
-              color: isMine ? Colors.white.withValues(alpha: 0.55) : AppColors.textMuted,
+              color: isMine
+                  ? Colors.white.withValues(alpha: 0.55)
+                  : AppColors.textMuted,
             ),
           ),
         ],
@@ -203,7 +228,9 @@ class MessageBubbleWidget extends StatelessWidget {
         'This message was deleted.',
         style: AppTypography.bodySm.copyWith(
           fontStyle: FontStyle.italic,
-          color: isMine ? Colors.white.withValues(alpha: 0.55) : AppColors.textMuted,
+          color: isMine
+              ? Colors.white.withValues(alpha: 0.55)
+              : AppColors.textMuted,
         ),
       );
     } else if (isVoice) {
@@ -228,17 +255,22 @@ class MessageBubbleWidget extends StatelessWidget {
 
     if (isMine) {
       return _MineBubble(
-        topGap: topGap, borderRadius: borderRadius,
-        isGroupEnd: isGroupEnd, time: time,
+        topGap: topGap,
+        borderRadius: borderRadius,
+        isGroupEnd: isGroupEnd,
+        time: time,
         deliveryState: message.deliveryState,
         child: bubbleContent,
       );
     }
 
     return _TheirBubble(
-      topGap: topGap, borderRadius: borderRadius,
-      isGroupStart: isGroupStart, isGroupEnd: isGroupEnd,
-      time: time, participantName: participantName,
+      topGap: topGap,
+      borderRadius: borderRadius,
+      isGroupStart: isGroupStart,
+      isGroupEnd: isGroupEnd,
+      time: time,
+      participantName: participantName,
       participantPhotoUrl: participantPhotoUrl,
       child: bubbleContent,
     );
@@ -249,9 +281,12 @@ class MessageBubbleWidget extends StatelessWidget {
 
 class _MineBubble extends StatelessWidget {
   const _MineBubble({
-    required this.topGap, required this.borderRadius,
-    required this.isGroupEnd, required this.time,
-    required this.deliveryState, required this.child,
+    required this.topGap,
+    required this.borderRadius,
+    required this.isGroupEnd,
+    required this.time,
+    required this.deliveryState,
+    required this.child,
   });
 
   final double topGap;
@@ -275,12 +310,23 @@ class _MineBubble extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 14),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                begin: Alignment(-0.5, -1), end: Alignment(0.5, 1),
-                colors: [Color(0xFFE38A2F), Color(0xFFC86717), Color(0xFFB45312)],
+                begin: Alignment(-0.5, -1),
+                end: Alignment(0.5, 1),
+                colors: [
+                  Color(0xFFE38A2F),
+                  Color(0xFFC86717),
+                  Color(0xFFB45312),
+                ],
               ),
               borderRadius: borderRadius,
               boxShadow: isGroupEnd
-                  ? const [BoxShadow(color: Color(0x38A0460A), blurRadius: 28, offset: Offset(0, 14))]
+                  ? const [
+                      BoxShadow(
+                        color: Color(0x38A0460A),
+                        blurRadius: 28,
+                        offset: Offset(0, 14),
+                      ),
+                    ]
                   : null,
             ),
             child: child,
@@ -296,10 +342,14 @@ class _MineBubble extends StatelessWidget {
 
 class _TheirBubble extends StatelessWidget {
   const _TheirBubble({
-    required this.topGap, required this.borderRadius,
-    required this.isGroupStart, required this.isGroupEnd,
-    required this.time, required this.participantName,
-    required this.participantPhotoUrl, required this.child,
+    required this.topGap,
+    required this.borderRadius,
+    required this.isGroupStart,
+    required this.isGroupEnd,
+    required this.time,
+    required this.participantName,
+    required this.participantPhotoUrl,
+    required this.child,
   });
 
   final double topGap;
@@ -322,21 +372,40 @@ class _TheirBubble extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              PartnerAvatar(name: participantName, photoUrl: participantPhotoUrl, isVisible: isGroupEnd),
+              PartnerAvatar(
+                name: participantName,
+                photoUrl: participantPhotoUrl,
+                isVisible: isGroupEnd,
+              ),
               const SizedBox(width: 10),
               Flexible(
                 child: Container(
-                  constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.74),
-                  padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 14),
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.sizeOf(context).width * 0.74,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 19,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                       colors: [Color(0xF5F4FCFB), Color(0xFAFFFFFF)],
                     ),
                     borderRadius: borderRadius,
-                    border: Border.all(color: _teal.withValues(alpha: 0.14), width: 1.5),
+                    border: Border.all(
+                      color: _teal.withValues(alpha: 0.14),
+                      width: 1.5,
+                    ),
                     boxShadow: isGroupEnd
-                        ? const [BoxShadow(color: Color(0x140F9D94), blurRadius: 28, offset: Offset(0, 14))]
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x140F9D94),
+                              blurRadius: 28,
+                              offset: Offset(0, 14),
+                            ),
+                          ]
                         : null,
                   ),
                   child: child,
@@ -349,9 +418,22 @@ class _TheirBubble extends StatelessWidget {
               padding: const EdgeInsets.only(left: 52, top: 5),
               child: Row(
                 children: [
-                  Container(width: 4, height: 4, decoration: BoxDecoration(shape: BoxShape.circle, color: _metaColor.withValues(alpha: 0.55))),
+                  Container(
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _metaColor.withValues(alpha: 0.55),
+                    ),
+                  ),
                   const SizedBox(width: 6),
-                  Text(time, style: AppTypography.caption.copyWith(fontSize: 12.5, color: _metaColor)),
+                  Text(
+                    time,
+                    style: AppTypography.caption.copyWith(
+                      fontSize: 12.5,
+                      color: _metaColor,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -365,7 +447,11 @@ class _TheirBubble extends StatelessWidget {
 
 /// Timestamp and delivery state icon for sent messages.
 class SentMetaRow extends StatelessWidget {
-  const SentMetaRow({super.key, required this.time, required this.deliveryState});
+  const SentMetaRow({
+    super.key,
+    required this.time,
+    required this.deliveryState,
+  });
 
   final String time;
   final MessageDeliveryState deliveryState;
@@ -377,7 +463,13 @@ class SentMetaRow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(time, style: AppTypography.caption.copyWith(fontSize: 12.5, color: _metaColor)),
+          Text(
+            time,
+            style: AppTypography.caption.copyWith(
+              fontSize: 12.5,
+              color: _metaColor,
+            ),
+          ),
           const SizedBox(width: 5),
           _DeliveryIcon(state: deliveryState),
         ],
@@ -395,13 +487,35 @@ class _DeliveryIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (state) {
       MessageDeliveryState.sending => const SizedBox(
-          width: 12, height: 12,
-          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC8BFB6))),
+        width: 12,
+        height: 12,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC8BFB6)),
         ),
-      MessageDeliveryState.sent => const Icon(Icons.check, size: 13, color: Color(0xFFC8BFB6)),
-      MessageDeliveryState.delivered => const Icon(Icons.done_all, size: 13, color: Color(0xFFC8BFB6)),
-      MessageDeliveryState.read => const Icon(Icons.done_all, size: 13, color: _teal),
-      MessageDeliveryState.failed => Text('!', style: AppTypography.caption.copyWith(color: AppColors.danger, fontWeight: FontWeight.w700)),
+      ),
+      MessageDeliveryState.sent => const Icon(
+        Icons.check,
+        size: 13,
+        color: Color(0xFFC8BFB6),
+      ),
+      MessageDeliveryState.delivered => const Icon(
+        Icons.done_all,
+        size: 13,
+        color: Color(0xFFC8BFB6),
+      ),
+      MessageDeliveryState.read => const Icon(
+        Icons.done_all,
+        size: 13,
+        color: _teal,
+      ),
+      MessageDeliveryState.failed => Text(
+        '!',
+        style: AppTypography.caption.copyWith(
+          color: AppColors.danger,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     };
   }
 }
@@ -418,14 +532,25 @@ class PartnerLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 54, bottom: 6),
-      child: Text(name, style: AppTypography.caption.copyWith(fontSize: 11.5, fontWeight: FontWeight.w700, color: const Color(0xFF7A6E64))),
+      child: Text(
+        name,
+        style: AppTypography.caption.copyWith(
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF7A6E64),
+        ),
+      ),
     );
   }
 }
 
 /// Partner avatar shown at the bottom of a received message group.
 class PartnerAvatar extends StatelessWidget {
-  const PartnerAvatar({super.key, required this.name, required this.photoUrl, required this.isVisible});
+  const PartnerAvatar({
+    super.key,
+    required this.name,
+    required this.photoUrl,
+    required this.isVisible,
+  });
 
   final String name;
   final String? photoUrl;
@@ -435,7 +560,8 @@ class PartnerAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
     return SizedBox(
-      width: 40, height: 40,
+      width: 40,
+      height: 40,
       child: isVisible
           ? CircleAvatar(
               radius: 20,
@@ -443,7 +569,10 @@ class PartnerAvatar extends StatelessWidget {
               backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
               child: hasPhoto
                   ? null
-                  : Text(_computeInitials(name), style: AppTypography.caption.copyWith(color: _teal)),
+                  : Text(
+                      _computeInitials(name),
+                      style: AppTypography.caption.copyWith(color: _teal),
+                    ),
             )
           : null,
     );
@@ -454,10 +583,14 @@ class PartnerAvatar extends StatelessWidget {
 
 class _ImageMessage extends StatelessWidget {
   const _ImageMessage({
-    required this.message, required this.isMine,
-    required this.isGroupStart, required this.isGroupEnd,
-    required this.topGap, required this.time,
-    required this.participantName, required this.participantPhotoUrl,
+    required this.message,
+    required this.isMine,
+    required this.isGroupStart,
+    required this.isGroupEnd,
+    required this.topGap,
+    required this.time,
+    required this.participantName,
+    required this.participantPhotoUrl,
   });
 
   final MessageItem message;
@@ -478,8 +611,10 @@ class _ImageMessage extends StatelessWidget {
         ? ClipRRect(
             borderRadius: borderRadius,
             child: Image.network(
-                  imageUrl, width: 280, fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const _ImagePlaceholder(),
+              imageUrl,
+              width: 280,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const _ImagePlaceholder(),
             ),
           )
         : const _ImagePlaceholder();
@@ -491,7 +626,8 @@ class _ImageMessage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             imageWidget,
-            if (isGroupEnd) SentMetaRow(time: time, deliveryState: message.deliveryState),
+            if (isGroupEnd)
+              SentMetaRow(time: time, deliveryState: message.deliveryState),
           ],
         ),
       );
@@ -506,7 +642,11 @@ class _ImageMessage extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              PartnerAvatar(name: participantName, photoUrl: participantPhotoUrl, isVisible: isGroupEnd),
+              PartnerAvatar(
+                name: participantName,
+                photoUrl: participantPhotoUrl,
+                isVisible: isGroupEnd,
+              ),
               const SizedBox(width: 10),
               imageWidget,
             ],
@@ -523,7 +663,8 @@ class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 200, height: 150,
+      width: 200,
+      height: 150,
       color: const Color(0x2EC4A88C),
       child: const Center(child: Icon(Icons.image, size: 32)),
     );
@@ -554,26 +695,59 @@ class CallChipWidget extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             color: chipColor.withValues(alpha: 0.11),
-            border: Border.all(color: chipColor.withValues(alpha: 0.24), width: 1.5),
+            border: Border.all(
+              color: chipColor.withValues(alpha: 0.24),
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
               Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: chipColor.withValues(alpha: 0.14)),
-                child: Icon(isMissed ? Icons.phone_disabled : Icons.phone, size: 16, color: chipColor),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: chipColor.withValues(alpha: 0.14),
+                ),
+                child: Icon(
+                  isMissed ? Icons.phone_disabled : Icons.phone,
+                  size: 16,
+                  color: chipColor,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(callLabel, style: AppTypography.label.copyWith(color: isMissed ? const Color(0xFF7A1A1A) : const Color(0xFF0A6860))),
-                    Text(isMissed ? 'Call was not answered.' : 'Call activity was saved in this thread.', style: AppTypography.caption.copyWith(fontSize: 12.5, color: const Color(0xFF7A6E64))),
+                    Text(
+                      callLabel,
+                      style: AppTypography.label.copyWith(
+                        color: isMissed
+                            ? const Color(0xFF7A1A1A)
+                            : const Color(0xFF0A6860),
+                      ),
+                    ),
+                    Text(
+                      isMissed
+                          ? 'Call was not answered.'
+                          : 'Call activity was saved in this thread.',
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 12.5,
+                        color: const Color(0xFF7A6E64),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Text(time, style: AppTypography.caption.copyWith(fontSize: 12.5, fontWeight: FontWeight.w600, color: const Color(0xFF7A6E64))),
+              Text(
+                time,
+                style: AppTypography.caption.copyWith(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF7A6E64),
+                ),
+              ),
             ],
           ),
         ),
@@ -584,7 +758,11 @@ class CallChipWidget extends StatelessWidget {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
-BorderRadius _computeBorderRadius(bool isMine, bool isGroupStart, bool isGroupEnd) {
+BorderRadius _computeBorderRadius(
+  bool isMine,
+  bool isGroupStart,
+  bool isGroupEnd,
+) {
   if (isMine) {
     return BorderRadius.only(
       topLeft: const Radius.circular(26),
@@ -603,13 +781,19 @@ BorderRadius _computeBorderRadius(bool isMine, bool isGroupStart, bool isGroupEn
 
 bool _isCallRecord(String? body) {
   if (body == null) return false;
-  return RegExp(r'^\W*(Audio|Video)\s+Call\b', caseSensitive: false).hasMatch(body);
+  return RegExp(
+    r'^\W*(Audio|Video)\s+Call\b',
+    caseSensitive: false,
+  ).hasMatch(body);
 }
 
 String _computeInitials(String name) {
   final trimmed = name.trim();
   if (trimmed.isEmpty) return '?';
-  final parts = trimmed.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+  final parts = trimmed
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList();
   if (parts.isEmpty) return '?';
   if (parts.length == 1) return parts[0][0].toUpperCase();
   return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
@@ -670,7 +854,6 @@ class _MessageOptionTile extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: AppTypography.caption.copyWith(
-                          fontSize: 11.5,
                           color: const Color(0xFF9C8E82),
                         ),
                       ),

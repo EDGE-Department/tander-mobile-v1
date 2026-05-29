@@ -50,22 +50,16 @@ class _BannerContent extends StatelessWidget {
         AppSpacing.md,
         AppSpacing.xs,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.warning,
-      ),
-      child: Row(
+      decoration: const BoxDecoration(color: AppColors.warning),
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.wifi_off_rounded,
-            size: 16,
-            color: AppColors.textStrong,
-          ),
-          const SizedBox(width: AppSpacing.xs),
+          Icon(Icons.wifi_off_rounded, size: 16, color: AppColors.textStrong),
+          SizedBox(width: AppSpacing.xs),
           Text(
             'No internet connection',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: AppColors.textStrong,
             ),

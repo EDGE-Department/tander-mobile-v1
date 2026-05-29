@@ -204,24 +204,30 @@ StompUnsubscribeCallback subscribeToRoomSignals(
       // Handle BOTH "ice" and "ice-candidate" — backend relays as "ice-candidate"
       case 'ice' || 'ice-candidate':
         if (signal.candidate != null) {
-          handler(IceCandidateEvent(
-            roomName: signal.roomName,
-            candidate: signal.candidate!,
-          ));
+          handler(
+            IceCandidateEvent(
+              roomName: signal.roomName,
+              candidate: signal.candidate!,
+            ),
+          );
         }
       case 'hangup':
-        handler(HangupEvent(
-          roomName: signal.roomName,
-          reason: signal.reason ?? 'hangup',
-        ));
+        handler(
+          HangupEvent(
+            roomName: signal.roomName,
+            reason: signal.reason ?? 'hangup',
+          ),
+        );
       case 'busy':
         handler(BusyEvent(roomName: signal.roomName));
       case 'media_state':
-        handler(MediaStateEvent(
-          roomName: signal.roomName,
-          audioMuted: signal.audioMuted,
-          videoOff: signal.videoOff,
-        ));
+        handler(
+          MediaStateEvent(
+            roomName: signal.roomName,
+            audioMuted: signal.audioMuted,
+            videoOff: signal.videoOff,
+          ),
+        );
     }
   }
 
@@ -262,27 +268,23 @@ StompUnsubscribeCallback subscribeToRoomSignals(
 // ---------------------------------------------------------------------------
 
 void sendOffer(String roomName, String sdp, String targetUserId) {
-  StompClientManager.instance.send(
-    CallDestinations.sendOffer,
-    <String, Object?>{
-      'roomName': roomName,
-      'sdp': sdp,
-      'type': 'offer',
-      'targetUserId': parseTargetUserId(targetUserId),
-    },
-  );
+  StompClientManager.instance
+      .send(CallDestinations.sendOffer, <String, Object?>{
+        'roomName': roomName,
+        'sdp': sdp,
+        'type': 'offer',
+        'targetUserId': parseTargetUserId(targetUserId),
+      });
 }
 
 void sendAnswer(String roomName, String sdp, String targetUserId) {
-  StompClientManager.instance.send(
-    CallDestinations.sendAnswer,
-    <String, Object?>{
-      'roomName': roomName,
-      'sdp': sdp,
-      'type': 'answer',
-      'targetUserId': parseTargetUserId(targetUserId),
-    },
-  );
+  StompClientManager.instance
+      .send(CallDestinations.sendAnswer, <String, Object?>{
+        'roomName': roomName,
+        'sdp': sdp,
+        'type': 'answer',
+        'targetUserId': parseTargetUserId(targetUserId),
+      });
 }
 
 void sendIceCandidate(
@@ -290,31 +292,26 @@ void sendIceCandidate(
   IceCandidateInfo candidate,
   String targetUserId,
 ) {
-  StompClientManager.instance.send(
-    CallDestinations.sendIce,
-    <String, Object?>{
-      'roomName': roomName,
-      'candidate': {
-        'candidate': candidate.candidate,
-        'sdpMid': candidate.sdpMid,
-        'sdpMLineIndex': candidate.sdpMLineIndex,
-      },
-      'type': 'ice',
-      'targetUserId': parseTargetUserId(targetUserId),
+  StompClientManager.instance.send(CallDestinations.sendIce, <String, Object?>{
+    'roomName': roomName,
+    'candidate': {
+      'candidate': candidate.candidate,
+      'sdpMid': candidate.sdpMid,
+      'sdpMLineIndex': candidate.sdpMLineIndex,
     },
-  );
+    'type': 'ice',
+    'targetUserId': parseTargetUserId(targetUserId),
+  });
 }
 
 void sendHangup(String roomName, String reason, String targetUserId) {
-  StompClientManager.instance.send(
-    CallDestinations.sendHangup,
-    <String, Object?>{
-      'roomName': roomName,
-      'reason': reason,
-      'type': 'hangup',
-      'targetUserId': parseTargetUserId(targetUserId),
-    },
-  );
+  StompClientManager.instance
+      .send(CallDestinations.sendHangup, <String, Object?>{
+        'roomName': roomName,
+        'reason': reason,
+        'type': 'hangup',
+        'targetUserId': parseTargetUserId(targetUserId),
+      });
 }
 
 void sendMediaStateSignal(
@@ -323,39 +320,33 @@ void sendMediaStateSignal(
   bool videoOff,
   String targetUserId,
 ) {
-  StompClientManager.instance.send(
-    CallDestinations.sendMediaState,
-    <String, Object?>{
-      'roomName': roomName,
-      'type': 'media_state',
-      'audioMuted': audioMuted,
-      'videoOff': videoOff,
-      'targetUserId': parseTargetUserId(targetUserId),
-    },
-  );
+  StompClientManager.instance
+      .send(CallDestinations.sendMediaState, <String, Object?>{
+        'roomName': roomName,
+        'type': 'media_state',
+        'audioMuted': audioMuted,
+        'videoOff': videoOff,
+        'targetUserId': parseTargetUserId(targetUserId),
+      });
 }
 
 void sendRingAck(String roomName, String targetUserId) {
-  StompClientManager.instance.send(
-    CallDestinations.sendRingAck,
-    <String, Object?>{
-      'roomName': roomName,
-      'type': 'ring_ack',
-      'targetUserId': parseTargetUserId(targetUserId),
-      'platform': 'flutter',
-      'receivedAt': DateTime.now().millisecondsSinceEpoch,
-    },
-  );
+  StompClientManager.instance
+      .send(CallDestinations.sendRingAck, <String, Object?>{
+        'roomName': roomName,
+        'type': 'ring_ack',
+        'targetUserId': parseTargetUserId(targetUserId),
+        'platform': 'flutter',
+        'receivedAt': DateTime.now().millisecondsSinceEpoch,
+      });
 }
 
 void sendBusy(String roomName, String targetUserId) {
-  StompClientManager.instance.send(
-    CallDestinations.sendHangup,
-    <String, Object?>{
-      'roomName': roomName,
-      'reason': 'busy',
-      'type': 'busy',
-      'targetUserId': parseTargetUserId(targetUserId),
-    },
-  );
+  StompClientManager.instance
+      .send(CallDestinations.sendHangup, <String, Object?>{
+        'roomName': roomName,
+        'reason': 'busy',
+        'type': 'busy',
+        'targetUserId': parseTargetUserId(targetUserId),
+      });
 }

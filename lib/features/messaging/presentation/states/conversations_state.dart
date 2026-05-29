@@ -35,9 +35,10 @@ final class ConversationsLoaded extends ConversationsState {
   List<ConversationItem> get filteredConversations {
     final tabFiltered = switch (filterTab) {
       ConversationFilterTab.all => conversations,
-      ConversationFilterTab.unread => conversations
-          .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
-          .toList(),
+      ConversationFilterTab.unread =>
+        conversations
+            .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
+            .toList(),
     };
 
     if (searchQuery.trim().isEmpty) return tabFiltered;
@@ -45,13 +46,16 @@ final class ConversationsLoaded extends ConversationsState {
     final lowerQuery = searchQuery.toLowerCase();
     return tabFiltered
         .where(
-            (conv) => conv.participant.username.toLowerCase().contains(lowerQuery))
+          (conv) =>
+              conv.participant.username.toLowerCase().contains(lowerQuery),
+        )
         .toList();
   }
 
   /// Number of conversations with unread messages (excluding muted).
-  int get unreadCount =>
-      conversations.where((conv) => conv.unreadCount > 0 && !conv.isMuted).length;
+  int get unreadCount => conversations
+      .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
+      .length;
 
   ConversationsLoaded copyWith({
     List<ConversationItem>? conversations,

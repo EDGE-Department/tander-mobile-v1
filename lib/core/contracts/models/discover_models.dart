@@ -49,7 +49,8 @@ class DiscoveryCandidate {
   int get hashCode => userId.hashCode;
 
   @override
-  String toString() => 'DiscoveryCandidate('
+  String toString() =>
+      'DiscoveryCandidate('
       'userId: $userId, '
       'name: $firstName)';
 }
@@ -84,16 +85,12 @@ class DiscoveryFilters {
           lookingFor == other.lookingFor;
 
   @override
-  int get hashCode => Object.hash(
-        minAge,
-        maxAge,
-        maxDistanceKm,
-        genderPreference,
-        lookingFor,
-      );
+  int get hashCode =>
+      Object.hash(minAge, maxAge, maxDistanceKm, genderPreference, lookingFor);
 
   @override
-  String toString() => 'DiscoveryFilters('
+  String toString() =>
+      'DiscoveryFilters('
       'age: $minAge-$maxAge, '
       'distance: ${maxDistanceKm}km)';
 }

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,21 +8,29 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
+import 'package:tander_flutter_v3/core/errors/app_exception.dart';
 import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
+import 'package:tander_flutter_v3/core/utils/result.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_error_display.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_success_confirmation.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_trust_footer.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/dob_help_sheet.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/profile_form_fields.dart';
 import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
-/// Onboarding step 3 of 4 — collects first name, last name, date of birth,
+/// Onboarding step 3 of 5 — collects first name, last name, date of birth,
 /// gender, and bio.
 ///
 /// Matches sign-up/OTP design: gradient bg + constellation header + white sheet.
@@ -27,8 +38,7 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
   @override
-  ConsumerState<ProfileSetupScreen> createState() =>
-      _ProfileSetupScreenState();
+  ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
@@ -44,13 +54,34 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _isSubmitting = false;
   bool _dobLocked = false;
   String? _apiErrorMessage;
+  NetworkException? _offlineError;
   bool _showScrollIndicator = true;
+
+  // Autosave state — draft persists across back-press / app-kill so seniors
+  // don't lose typed names. Scoped per-user; 7-day TTL. Draft-wins precedence
+  // is per-field via empty-check inside `_fetchIdentityData`, not via a flag.
+  Timer? _draftSaveTimer;
+  static const Duration _draftTtl = Duration(days: 7);
+
+  // OCR empty-state hint flags — set in _fetchIdentityData's finally block.
+  bool _ocrFetchAttempted = false;
+  bool _ocrPrefilledAnything = false;
+
+  String? get _draftKey {
+    final userId = ref.read(sessionManagerProvider).session?.userId;
+    return userId == null ? null : 'profile_setup_draft_$userId';
+  }
 
   @override
   void initState() {
     super.initState();
-    _fetchIdentityData();
+    // Load draft FIRST so OCR fills only empty fields (draft-wins per-field).
+    _loadDraft().then((_) => _fetchIdentityData());
     _scrollController.addListener(_onScroll);
+    _firstNameController.addListener(_scheduleDraftSave);
+    _middleNameController.addListener(_scheduleDraftSave);
+    _lastNameController.addListener(_scheduleDraftSave);
+    _bioController.addListener(_scheduleDraftSave);
   }
 
   void _onScroll() {
@@ -74,12 +105,103 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   void dispose() {
+    _draftSaveTimer?.cancel();
+    _firstNameController.removeListener(_scheduleDraftSave);
+    _middleNameController.removeListener(_scheduleDraftSave);
+    _lastNameController.removeListener(_scheduleDraftSave);
+    _bioController.removeListener(_scheduleDraftSave);
     _firstNameController.dispose();
     _middleNameController.dispose();
     _lastNameController.dispose();
     _bioController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // -- Autosave -------------------------------------------------------------
+
+  Future<void> _loadDraft() async {
+    final key = _draftKey;
+    if (key == null) return;
+    final result = ref.read(localStorageProvider).getString(key);
+    final json = result is Success<String?> ? result.value : null;
+    if (json == null || json.isEmpty) return;
+    try {
+      final draft = jsonDecode(json) as Map<String, dynamic>;
+      final savedAtStr = draft['savedAt'] as String?;
+      final savedAt = savedAtStr == null ? null : DateTime.tryParse(savedAtStr);
+      if (savedAt == null ||
+          DateTime.now().difference(savedAt) > _draftTtl) {
+        // Stale or invalid — discard
+        await ref.read(localStorageProvider).remove(key);
+        return;
+      }
+      if (!mounted) return;
+      _firstNameController.text = (draft['firstName'] as String?) ?? '';
+      _middleNameController.text = (draft['middleName'] as String?) ?? '';
+      _lastNameController.text = (draft['lastName'] as String?) ?? '';
+      _bioController.text = (draft['bio'] as String?) ?? '';
+      final dobStr = draft['dateOfBirth'] as String?;
+      if (dobStr != null) {
+        _selectedBirthDate = DateTime.tryParse(dobStr);
+      }
+      _selectedGender = draft['gender'] as String?;
+      if (mounted) setState(() {});
+    } catch (e, st) {
+      AppLogger.warning(
+        'Profile draft parse failed; discarding',
+        operation: 'ProfileSetupScreen._loadDraft',
+        error: e,
+        stackTrace: st,
+      );
+      await ref.read(localStorageProvider).remove(key);
+    }
+  }
+
+  void _scheduleDraftSave() {
+    _draftSaveTimer?.cancel();
+    _draftSaveTimer = Timer(const Duration(milliseconds: 600), _saveDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    final key = _draftKey;
+    if (key == null) return;
+    final draft = <String, dynamic>{
+      'firstName': _firstNameController.text,
+      'middleName': _middleNameController.text,
+      'lastName': _lastNameController.text,
+      'dateOfBirth': _selectedBirthDate?.toIso8601String(),
+      'gender': _selectedGender,
+      'bio': _bioController.text,
+      'savedAt': DateTime.now().toIso8601String(),
+    };
+    final hasContent = (draft['firstName'] as String).isNotEmpty ||
+        (draft['middleName'] as String).isNotEmpty ||
+        (draft['lastName'] as String).isNotEmpty ||
+        (draft['bio'] as String).isNotEmpty ||
+        draft['dateOfBirth'] != null ||
+        draft['gender'] != null;
+    if (!hasContent) {
+      // Nothing worth saving — clear any stale draft instead
+      await ref.read(localStorageProvider).remove(key);
+      return;
+    }
+    final result = await ref
+        .read(localStorageProvider)
+        .saveString(key, jsonEncode(draft));
+    if (result is Failure) {
+      AppLogger.warning(
+        'Profile draft save failed (non-fatal)',
+        operation: 'ProfileSetupScreen._saveDraft',
+        error: result.exception,
+      );
+    }
+  }
+
+  Future<void> _clearDraft() async {
+    final key = _draftKey;
+    if (key == null) return;
+    await ref.read(localStorageProvider).remove(key);
   }
 
   Future<void> _fetchIdentityData() async {
@@ -96,23 +218,31 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         final dob = data['dateOfBirth'] as String?;
         final gender = data['gender'] as String?;
 
-        if (firstName != null && firstName.isNotEmpty) {
+        // Draft-wins per-field: OCR fills only EMPTY fields so user's typed
+        // values aren't blown away if they navigated back to a draft session.
+        if (firstName != null &&
+            firstName.isNotEmpty &&
+            _firstNameController.text.isEmpty) {
           _firstNameController.text = _cleanName(firstName);
         }
-        if (middleName != null && middleName.isNotEmpty) {
+        if (middleName != null &&
+            middleName.isNotEmpty &&
+            _middleNameController.text.isEmpty) {
           _middleNameController.text = _cleanName(middleName);
         }
-        if (lastName != null && lastName.isNotEmpty) {
+        if (lastName != null &&
+            lastName.isNotEmpty &&
+            _lastNameController.text.isEmpty) {
           _lastNameController.text = _cleanName(lastName);
         }
-        if (dob != null && dob.isNotEmpty) {
+        if (dob != null && dob.isNotEmpty && _selectedBirthDate == null) {
           final parsed = DateTime.tryParse(dob);
           if (parsed != null) {
             _selectedBirthDate = parsed;
             _dobLocked = true;
           }
         }
-        if (gender != null && gender.isNotEmpty) {
+        if (gender != null && gender.isNotEmpty && _selectedGender == null) {
           final normalizedGender = gender.trim().toUpperCase();
           if (normalizedGender == 'M' || normalizedGender == 'MALE') {
             _selectedGender = 'Male';
@@ -125,7 +255,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     } catch (_) {
       // Non-fatal — user can still fill manually
     } finally {
-      if (mounted) setState(() {});
+      if (mounted) {
+        final anyFilled = _firstNameController.text.isNotEmpty ||
+            _middleNameController.text.isNotEmpty ||
+            _lastNameController.text.isNotEmpty ||
+            _selectedBirthDate != null ||
+            _selectedGender != null;
+        setState(() {
+          _ocrFetchAttempted = true;
+          _ocrPrefilledAnything = anyFilled;
+        });
+      }
     }
   }
 
@@ -138,20 +278,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     return cleaned
         .toLowerCase()
         .split(' ')
-        .map((word) =>
-            word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1)}')
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
         .join(' ');
   }
 
   // -- Validation -----------------------------------------------------------
 
   String? _validateFirstName(String? value) {
-    if (value == null || value.trim().isEmpty) return 'First name is required';
+    if (value == null || value.trim().isEmpty) {
+      return 'Please share your first name';
+    }
     return null;
   }
 
   String? _validateLastName(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Last name is required';
+    if (value == null || value.trim().isEmpty) {
+      return 'Please share your last name';
+    }
     return null;
   }
 
@@ -159,16 +306,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     if (_selectedBirthDate == null) return false;
     final today = DateTime.now();
     final age = today.year - _selectedBirthDate!.year;
-    final hasBirthdayPassed = today.month > _selectedBirthDate!.month ||
+    final hasBirthdayPassed =
+        today.month > _selectedBirthDate!.month ||
         (today.month == _selectedBirthDate!.month &&
             today.day >= _selectedBirthDate!.day);
-    return (hasBirthdayPassed ? age : age - 1) >= 18;
+    return (hasBirthdayPassed ? age : age - 1) >= 60;
   }
 
   // -- Submit ---------------------------------------------------------------
 
   Future<void> _submitForm() async {
-    setState(() => _apiErrorMessage = null);
+    setState(() {
+      _apiErrorMessage = null;
+      _offlineError = null;
+    });
 
     if (!_formKey.currentState!.validate()) return;
 
@@ -177,7 +328,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       return;
     }
     if (!_isBirthDateValid) {
-      setState(() => _apiErrorMessage = 'You must be at least 18 years old.');
+      setState(
+        () => _apiErrorMessage =
+            "You need to be 60 or older to join Tander. Come back when you're eligible!",
+      );
       return;
     }
 
@@ -202,8 +356,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       );
 
       await ref.read(authNotifierProvider.notifier).refreshSession();
+      // Profile saved successfully — clear draft so a future return to this
+      // screen (after re-registration or other flows) starts fresh.
+      await _clearDraft();
+      if (!mounted) return;
+      await AuthSuccessConfirmation.show(context, 'Profile saved!');
       if (mounted) context.go(AppRoutes.photoSetup);
     } on DioException catch (error, stackTrace) {
+      // Catch ordering policy — see network_exception_handler.dart.
+      // DioException only reaches here for raw Dio errors that escape
+      // DioClient's mapping (e.g. session-expired sentinel). 401 is checked
+      // first and short-circuits to login.
       AppLogger.error(
         'Profile setup submission failed',
         operation: 'ProfileSetupScreen._submitForm',
@@ -211,7 +374,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         stackTrace: stackTrace,
       );
       if (mounted) {
-        final isSessionExpired = error.message?.contains('Session expired') == true ||
+        final isSessionExpired =
+            error.message?.contains('Session expired') == true ||
             error.response?.statusCode == 401;
 
         if (isSessionExpired) {
@@ -234,6 +398,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           );
         }
       }
+    } on NetworkException catch (error, stackTrace) {
+      AppLogger.error(
+        'Profile setup submission failed (offline)',
+        operation: 'ProfileSetupScreen._submitForm',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted) setState(() => _offlineError = error);
     } on Exception catch (error, stackTrace) {
       AppLogger.error(
         'Profile setup submission failed',
@@ -332,27 +504,31 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               left: false,
               child: Padding(
                 padding: const EdgeInsets.only(right: 20, top: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(1.2),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
-                    ),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
+                child: StepBadgeEntry(
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.all(1.2),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.22),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
+                      ),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(
-                      'Step 3 of 4',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.95),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Step 3 of 5',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.95),
+                        ),
                       ),
                     ),
                   ),
@@ -383,24 +559,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     // White "Tander" wordmark with shadow
                     Text(
                       'Tander',
-                      style: AppTypography.brandWordmark(
-                        fontSize: wordmarkSize,
-                        color: Colors.white,
-                        letterSpacing: -0.03 * wordmarkSize,
-                      ).copyWith(
-                        height: 0.95,
-                        shadows: const [
-                          Shadow(
-                            offset: Offset(0, 4),
-                            blurRadius: 24,
-                            color: Color(0x38000000),
+                      style:
+                          AppTypography.brandWordmark(
+                            fontSize: wordmarkSize,
+                            color: Colors.white,
+                            letterSpacing: -0.03 * wordmarkSize,
+                          ).copyWith(
+                            height: 0.95,
+                            shadows: const [
+                              Shadow(
+                                offset: Offset(0, 4),
+                                blurRadius: 24,
+                                color: Color(0x38000000),
+                              ),
+                              Shadow(blurRadius: 50, color: Color(0x47FFA050)),
+                            ],
                           ),
-                          Shadow(
-                            blurRadius: 50,
-                            color: Color(0x47FFA050),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ),
@@ -412,18 +586,25 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-
   Widget _buildWhiteSheet() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFFBF8),
-          ),
+          decoration: const BoxDecoration(color: Color(0xFFFFFBF8)),
           child: Stack(
             children: [
+              const Positioned.fill(
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: 0.45,
+                    child: CustomPaint(
+                      painter: ParchmentDotGridPainter(spacing: 24),
+                    ),
+                  ),
+                ),
+              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -444,12 +625,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       child: _buildFormContent(),
                     ),
                   ),
+                  // Trust signal — small lock + reassurance text
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(24, 4, 24, 0),
+                    child: AuthTrustFooter(),
+                  ),
                   // Sticky Continue button
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                    child: _ContinueButton(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                    child: TanderButton(
+                      label: _isSubmitting ? 'Saving...' : 'Continue',
+                      onPressed: _isSubmitting ? null : _submitForm,
+                      variant: TanderButtonVariant.primary,
+                      size: TanderButtonSize.normal,
                       isLoading: _isSubmitting,
-                      onPressed: _submitForm,
+                      icon: _isSubmitting ? null : Icons.arrow_forward_rounded,
+                      iconPosition: IconPosition.trailing,
                     ),
                   ),
                 ],
@@ -474,7 +665,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFE67E22).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFE67E22,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -513,35 +706,41 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Help others get to know the real you',
+          'Your bio helps others learn about you',
           style: AppTypography.body.copyWith(color: AppColors.textMuted),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 24),
-        if (_apiErrorMessage != null) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.danger.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.danger.withValues(alpha: 0.3),
+        if (_ocrFetchAttempted && !_ocrPrefilledAnything) ...[
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              "Please type your details below — we couldn't auto-fill them from your ID this time.",
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textMuted,
+                height: 1.4,
               ),
+              textAlign: TextAlign.center,
             ),
-            child: Row(
-              children: [
-                Icon(Icons.error_outline,
-                    size: 18, color: AppColors.danger),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _apiErrorMessage!,
-                    style: AppTypography.bodySm
-                        .copyWith(color: AppColors.danger),
-                  ),
-                ),
-              ],
-            ),
+          ),
+        ],
+        const SizedBox(height: 24),
+        if (_offlineError != null) ...[
+          // Offline-retry banner — see network_exception_handler.dart policy.
+          AuthErrorDisplay.banner(
+            message: _offlineError!.userMessage,
+            autoDismiss: false,
+            onRetry: _submitForm,
+            onDismiss: () => setState(() => _offlineError = null),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (_apiErrorMessage != null) ...[
+          // Banner tier: see AuthErrorDisplay docs for tier policy.
+          AuthErrorDisplay.banner(
+            message: _apiErrorMessage!,
+            onDismiss: () => setState(() => _apiErrorMessage = null),
           ),
           const SizedBox(height: AppSpacing.md),
         ],
@@ -555,18 +754,24 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               BirthDatePickerField(
                 selectedDate: _selectedBirthDate,
                 locked: _dobLocked,
+                onHelpTapped: () => DobHelpSheet.show(context),
                 onPicked: _dobLocked
                     ? null
-                    : (date) => setState(() {
+                    : (date) {
+                        setState(() {
                           _selectedBirthDate = date;
                           _apiErrorMessage = null;
-                        }),
+                        });
+                        _scheduleDraftSave();
+                      },
               ),
               const SizedBox(height: AppSpacing.md),
               GenderDropdownField(
                 selectedGender: _selectedGender,
-                onChanged: (value) =>
-                    setState(() => _selectedGender = value),
+                onChanged: (value) {
+                  setState(() => _selectedGender = value);
+                  _scheduleDraftSave();
+                },
               ),
               const SizedBox(height: AppSpacing.md),
               BioTextField(
@@ -619,150 +824,3 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 }
 
-/// Orange gradient continue button matching login submit button style.
-class _ContinueButton extends StatefulWidget {
-  const _ContinueButton({
-    required this.isLoading,
-    required this.onPressed,
-  });
-
-  final bool isLoading;
-  final VoidCallback onPressed;
-
-  @override
-  State<_ContinueButton> createState() => _ContinueButtonState();
-}
-
-class _ContinueButtonState extends State<_ContinueButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _shimmerController;
-
-  @override
-  void initState() {
-    super.initState();
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 4000),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _shimmerController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isInteractive = !widget.isLoading;
-
-    return Opacity(
-      opacity: widget.isLoading ? 0.6 : 1.0,
-      child: GestureDetector(
-        onTap: isInteractive ? widget.onPressed : null,
-        child: Container(
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFE67E22), Color(0xFFD35400)],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x59E67E22),
-                blurRadius: 40,
-                offset: Offset(0, 20),
-                spreadRadius: -12,
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Shimmer sweep
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: AnimatedBuilder(
-                    animation: _shimmerController,
-                    builder: (_, __) {
-                      final translateX =
-                          (_shimmerController.value * 3.0 - 1.0);
-                      return FractionallySizedBox(
-                        widthFactor: 1.0,
-                        child: Transform.translate(
-                          offset: Offset(
-                            translateX * MediaQuery.sizeOf(context).width,
-                            0,
-                          ),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Color(0x00FFFFFF),
-                                  Color(0x38FFFFFF),
-                                  Color(0x00FFFFFF),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              widget.isLoading
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'SAVING...',
-                          style: AppTypography.body.copyWith(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.12 * 16,
-                            height: 1.0,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'CONTINUE',
-                          style: AppTypography.body.copyWith(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.12 * 16,
-                            height: 1.0,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 24,
-                          color: Colors.white,
-                        ),
-                      ],
-                    ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

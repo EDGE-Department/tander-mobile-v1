@@ -25,6 +25,7 @@ import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/providers/discover_providers.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/photo_lightbox.dart';
@@ -226,13 +227,26 @@ class _ProfileModalBodyState extends ConsumerState<_ProfileModalBody> {
 
   Future<void> _handleConnect() async {
     setState(() => _isSendingRequest = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(discoverNotifierProvider.notifier).likeCurrentProfile();
-      if (mounted) {
-        setState(
-          () => _localRelationship = ProfileRelationship.pendingOutgoing,
-        );
-      }
+      // Target the user this modal is showing — NOT the discover stack top.
+      // (likeCurrentProfile acts on the discover stack and is wrong here.)
+      final result = await ref
+          .read(discoverRepositoryProvider)
+          .sendConnectionRequest(targetUserId: widget.userId);
+      if (!mounted) return;
+      result.when(
+        success: (_) {
+          setState(
+            () => _localRelationship = ProfileRelationship.pendingOutgoing,
+          );
+        },
+        failure: (exception) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(exception.userMessage)),
+          );
+        },
+      );
     } finally {
       if (mounted) setState(() => _isSendingRequest = false);
     }

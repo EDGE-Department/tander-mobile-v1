@@ -1,0 +1,21 @@
+# Android release signing credentials.
+#
+# Copy this file to android/key.properties (which is gitignored) and fill in
+# real values. Without it, `flutter build appbundle --release` fails loudly so
+# we never ship a debug-signed, unpublishable artifact.
+#
+# Generate an UPLOAD keystore (run from android/app/):
+#   keytool -genkey -v -keystore upload-keystore.jks \
+#       -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# This is an *upload* key. Google Play App Signing manages the real app-signing
+# key, so a lost/rotated upload key is recoverable via the Play Console — keep
+# it safe, but it is not an unrecoverable secret.
+#
+# storeFile is resolved relative to android/app/, so if the .jks lives there,
+# just use its filename. If you place it in android/, use ../upload-keystore.jks.
+
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=upload-keystore.jks

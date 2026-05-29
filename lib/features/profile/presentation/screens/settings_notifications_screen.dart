@@ -74,24 +74,45 @@ const List<_NotificationToggleItem> _toggleItems = [
 class SettingsNotificationsScreen extends ConsumerWidget {
   const SettingsNotificationsScreen({super.key});
 
-  void _handleToggle(BuildContext context, WidgetRef ref, String toggleId, bool currentValue) {
+  void _handleToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String toggleId,
+    bool currentValue,
+  ) {
     final nextValue = !currentValue;
 
     switch (toggleId) {
       case 'notifyMessages':
-        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyMessages: nextValue));
+        ref
+            .read(userSettingsProvider.notifier)
+            .updateSettings(
+              UpdateSettingsRequestDto(notifyMessages: nextValue),
+            );
         break;
       case 'notifyMatches':
-        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyMatches: nextValue));
+        ref
+            .read(userSettingsProvider.notifier)
+            .updateSettings(UpdateSettingsRequestDto(notifyMatches: nextValue));
         break;
       case 'notifyProfileViews':
-        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyProfileViews: nextValue));
+        ref
+            .read(userSettingsProvider.notifier)
+            .updateSettings(
+              UpdateSettingsRequestDto(notifyProfileViews: nextValue),
+            );
         break;
       case 'notifyCommunity':
-        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyCommunity: nextValue));
+        ref
+            .read(userSettingsProvider.notifier)
+            .updateSettings(
+              UpdateSettingsRequestDto(notifyCommunity: nextValue),
+            );
         break;
       case 'notifyTandy':
-        ref.read(userSettingsProvider.notifier).updateSettings(UpdateSettingsRequestDto(notifyTandy: nextValue));
+        ref
+            .read(userSettingsProvider.notifier)
+            .updateSettings(UpdateSettingsRequestDto(notifyTandy: nextValue));
         break;
     }
 
@@ -182,8 +203,16 @@ class SettingsNotificationsScreen extends ConsumerWidget {
                       icon: _toggleItems[index].icon,
                       label: _toggleItems[index].label,
                       description: _toggleItems[index].description,
-                      isEnabled: _getSettingValue(settings, _toggleItems[index].id),
-                      onToggle: () => _handleToggle(context, ref, _toggleItems[index].id, _getSettingValue(settings, _toggleItems[index].id)),
+                      isEnabled: _getSettingValue(
+                        settings,
+                        _toggleItems[index].id,
+                      ),
+                      onToggle: () => _handleToggle(
+                        context,
+                        ref,
+                        _toggleItems[index].id,
+                        _getSettingValue(settings, _toggleItems[index].id),
+                      ),
                     ),
                   ],
                 ],
@@ -242,7 +271,9 @@ class _ToggleRow extends StatelessWidget {
       onTap: onToggle,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        constraints: const BoxConstraints(minHeight: AppSpacing.touchComfortable),
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.touchComfortable,
+        ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
@@ -269,8 +300,9 @@ class _ToggleRow extends StatelessWidget {
                   Text(label, style: AppTypography.label),
                   Text(
                     description,
-                    style: AppTypography.bodySm
-                        .copyWith(color: AppColors.textMuted),
+                    style: AppTypography.bodySm.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),

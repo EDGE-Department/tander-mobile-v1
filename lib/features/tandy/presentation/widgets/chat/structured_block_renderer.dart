@@ -22,23 +22,22 @@ class StructuredBlockRenderer extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (block) {
       RecipeBlock(:final recipeData, :final title) => RecipeCardWidget(
-          recipeData: recipeData,
-          title: title,
-          isExpanded: isExpanded,
-        ),
+        recipeData: recipeData,
+        title: title,
+        isExpanded: isExpanded,
+      ),
       GuideBlock(:final guideData, :final title) => GuideCardWidget(
-          guideData: guideData,
-          title: title,
-        ),
-      SponsorCardBlock(:final sponsorData, :final title) =>
-        SponsorCardWidget(
-          sponsorData: sponsorData,
-          title: title,
-          isExpanded: isExpanded,
-        ),
+        guideData: guideData,
+        title: title,
+      ),
+      SponsorCardBlock(:final sponsorData, :final title) => SponsorCardWidget(
+        sponsorData: sponsorData,
+        title: title,
+        isExpanded: isExpanded,
+      ),
       SafetyNoticeBlock(:final notices) => SafetyNoticeBarWidget(
-          notices: notices,
-        ),
+        notices: notices,
+      ),
       QuickActionBlock() => const SizedBox.shrink(),
     };
   }

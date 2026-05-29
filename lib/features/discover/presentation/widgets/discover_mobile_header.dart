@@ -163,7 +163,7 @@ class _TabButton extends StatelessWidget {
         child: AnimatedContainer(
           duration: AppDurations.base,
           curve: AppCurves.premiumEase,
-          height: 40,
+          constraints: const BoxConstraints(minHeight: 40),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: isSelected
@@ -182,38 +182,30 @@ class _TabButton extends StatelessWidget {
                 : null,
           ),
           alignment: Alignment.center,
-          child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.noScaling,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 16,
-                  color: isSelected
-                      ? AppColors.textInverse
-                      : AppColors.textMuted,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: AppTypography.label.copyWith(
-                      color: isSelected
-                          ? AppColors.textInverse
-                          : AppColors.textMuted,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? AppColors.textInverse : AppColors.textMuted,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppTypography.label.copyWith(
+                    color: isSelected
+                        ? AppColors.textInverse
+                        : AppColors.textMuted,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: 15,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -250,11 +242,7 @@ class _MobileFilterButton extends StatelessWidget {
             ],
           ),
           alignment: Alignment.center,
-          child: const Icon(
-            Icons.tune,
-            size: 20,
-            color: AppColors.textMuted,
-          ),
+          child: const Icon(Icons.tune, size: 20, color: AppColors.textMuted),
         ),
       ),
     );
@@ -275,7 +263,7 @@ class _MobileNewPostButton extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          height: 44,
+          constraints: const BoxConstraints(minHeight: 44),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -291,29 +279,20 @@ class _MobileNewPostButton extends StatelessWidget {
             ],
           ),
           alignment: Alignment.center,
-          child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.noScaling,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.add,
-                  size: 18,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.add, size: 18, color: AppColors.textInverse),
+              const SizedBox(width: AppSpacing.xxs),
+              Text(
+                'New post',
+                style: AppTypography.label.copyWith(
                   color: AppColors.textInverse,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
-                const SizedBox(width: AppSpacing.xxs),
-                Text(
-                  'New post',
-                  style: AppTypography.label.copyWith(
-                    color: AppColors.textInverse,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

@@ -38,9 +38,7 @@ class ForgotPasswordFormCard extends StatelessWidget {
           _buildAccentBar(),
           // White card content
           Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFFBF8),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFFFFFBF8)),
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isWide ? 40 : 24,
@@ -273,24 +271,22 @@ class ForgotPasswordMobileHeader extends StatelessWidget {
                     // Wordmark
                     Text(
                       'Tander',
-                      style: AppTypography.brandWordmark(
-                        fontSize: wordmarkSize,
-                        color: Colors.white,
-                        letterSpacing: -0.03 * wordmarkSize,
-                      ).copyWith(
-                        height: 0.95,
-                        shadows: const [
-                          Shadow(
-                            offset: Offset(0, 4),
-                            blurRadius: 24,
-                            color: Color(0x38000000),
+                      style:
+                          AppTypography.brandWordmark(
+                            fontSize: wordmarkSize,
+                            color: Colors.white,
+                            letterSpacing: -0.03 * wordmarkSize,
+                          ).copyWith(
+                            height: 0.95,
+                            shadows: const [
+                              Shadow(
+                                offset: Offset(0, 4),
+                                blurRadius: 24,
+                                color: Color(0x38000000),
+                              ),
+                              Shadow(blurRadius: 50, color: Color(0x47FFA050)),
+                            ],
                           ),
-                          Shadow(
-                            blurRadius: 50,
-                            color: Color(0x47FFA050),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ),

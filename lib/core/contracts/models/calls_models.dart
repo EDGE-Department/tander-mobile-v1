@@ -9,24 +9,13 @@ import 'package:flutter/foundation.dart';
 // ── Call Enums ────────────────────────────────────────────────
 
 /// Whether the call is audio-only or includes video.
-enum CallType {
-  video,
-  audio,
-}
+enum CallType { video, audio }
 
 /// Whether the current user initiated or received the call.
-enum CallDirection {
-  outgoing,
-  incoming,
-}
+enum CallDirection { outgoing, incoming }
 
 /// Terminal status of a completed call.
-enum CallStatus {
-  completed,
-  missed,
-  declined,
-  cancelled,
-}
+enum CallStatus { completed, missed, declined, cancelled }
 
 /// Lifecycle state of an in-progress call session.
 enum CallSessionLifecycle {
@@ -65,8 +54,7 @@ class CallParticipant {
   int get hashCode => userId.hashCode;
 
   @override
-  String toString() =>
-      'CallParticipant(userId: $userId, username: $username)';
+  String toString() => 'CallParticipant(userId: $userId, username: $username)';
 }
 
 // ── Call Session State ───────────────────────────────────────
@@ -109,7 +97,8 @@ class CallSessionState {
   int get hashCode => Object.hash(callId, lifecycle);
 
   @override
-  String toString() => 'CallSessionState('
+  String toString() =>
+      'CallSessionState('
       'callId: $callId, '
       'lifecycle: ${lifecycle.name})';
 }
@@ -151,7 +140,8 @@ class CallHistoryItem {
   int get hashCode => callId.hashCode;
 
   @override
-  String toString() => 'CallHistoryItem('
+  String toString() =>
+      'CallHistoryItem('
       'callId: $callId, '
       'type: ${callType.name}, '
       'status: ${status.name})';

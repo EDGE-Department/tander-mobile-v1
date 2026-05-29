@@ -140,10 +140,7 @@ class SendMessageRequestDto {
 
 @JsonSerializable()
 class StompMessagePayload {
-  const StompMessagePayload({
-    required this.type,
-    required this.message,
-  });
+  const StompMessagePayload({required this.type, required this.message});
 
   factory StompMessagePayload.fromJson(Map<String, Object?> json) =>
       _$StompMessagePayloadFromJson(json);

@@ -4,9 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:tander_flutter_v3/core/auth/session_manager.dart';
 import 'package:tander_flutter_v3/core/network/dio_client.dart';
+import 'package:tander_flutter_v3/core/realtime/realtime_negotiate_datasource.dart';
+import 'package:tander_flutter_v3/core/realtime/wps_client.dart';
 import 'package:tander_flutter_v3/core/services/device_id_service.dart';
 import 'package:tander_flutter_v3/core/storage/local_storage.dart';
 import 'package:tander_flutter_v3/core/storage/secure_storage.dart';
+import 'package:tander_flutter_v3/features/calls/data/datasources/calls_v2_remote_datasource.dart';
+import 'package:tander_flutter_v3/features/calls/v2/v2_active_call_state.dart';
+import 'package:tander_flutter_v3/features/calls/v2/v2_callkit_listener.dart';
 
 // ---------------------------------------------------------------------------
 // SharedPreferences — must be overridden at startup in ProviderScope.overrides
@@ -66,14 +71,62 @@ final onTokenRefreshedProvider = Provider<void Function(String)>((ref) {
 });
 
 /// Late-bound reference to SessionManager — set by auth layer after creation.
-final sessionManagerLateProvider = StateProvider<SessionManager?>((ref) => null);
+final sessionManagerLateProvider = StateProvider<SessionManager?>(
+  (ref) => null,
+);
 
 final dioClientProvider = Provider<DioClient>((ref) {
   return DioClient(
     secureStorage: ref.watch(secureStorageProvider),
+    deviceIdService: ref.watch(deviceIdServiceProvider),
     onSessionExpired: ref.watch(onSessionExpiredProvider),
     onTokenRefreshed: ref.watch(onTokenRefreshedProvider),
   );
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5 — v2 calls + Web PubSub
+// ---------------------------------------------------------------------------
+
+final callsV2RemoteDatasourceProvider = Provider<CallsV2RemoteDatasource>((
+  ref,
+) {
+  return CallsV2RemoteDatasource(
+    dioClient: ref.watch(dioClientProvider),
+    deviceIdService: ref.watch(deviceIdServiceProvider),
+  );
+});
+
+final realtimeNegotiateDatasourceProvider =
+    Provider<RealtimeNegotiateDatasource>((ref) {
+      return RealtimeNegotiateDatasource(
+        dioClient: ref.watch(dioClientProvider),
+      );
+    });
+
+/// Singleton WPS subscriber. Auth layer owns lifecycle: `connect()` on
+/// successful login, `disconnect()` on logout. App-foreground/background
+/// is handled internally via [WidgetsBindingObserver].
+final wpsClientProvider = Provider<WpsClient>((ref) {
+  final client = WpsClient(
+    negotiateDatasource: ref.watch(realtimeNegotiateDatasourceProvider),
+  );
+  ref.onDispose(client.dispose);
+  return client;
+});
+
+/// Bridges `flutter_callkit_incoming` accept/decline events to the v2
+/// REST endpoints + Twilio media connect. Auto-starts on first read so
+/// app bootstrap just needs to `ref.read(v2CallkitListenerProvider)` once
+/// to wire it up. Idempotent — multiple reads / hot-restarts are safe.
+final v2CallkitListenerProvider = Provider<V2CallkitListener>((ref) {
+  final listener = V2CallkitListener(
+    datasource: ref.watch(callsV2RemoteDatasourceProvider),
+    activeCall: ref.watch(v2ActiveCallProvider.notifier),
+  );
+  listener.start();
+  ref.onDispose(listener.stop);
+  return listener;
 });
 
 // ---------------------------------------------------------------------------

@@ -13,13 +13,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final isOnlineProvider = StreamProvider<bool>((ref) {
   final connectivity = Connectivity();
 
-  return connectivity.onConnectivityChanged.map(
-    (List<ConnectivityResult> results) {
-      return results.isNotEmpty &&
-          !results.every(
-            (connectivityResult) =>
-                connectivityResult == ConnectivityResult.none,
-          );
-    },
-  );
+  return connectivity.onConnectivityChanged.map((
+    List<ConnectivityResult> results,
+  ) {
+    return results.isNotEmpty &&
+        !results.every(
+          (connectivityResult) => connectivityResult == ConnectivityResult.none,
+        );
+  });
 });

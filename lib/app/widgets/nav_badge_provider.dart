@@ -49,8 +49,7 @@ const Duration _connectionsPollInterval = Duration(seconds: 60);
 ///
 /// Derives counts from the existing conversation and connection notifiers
 /// rather than making separate API calls.
-final navBadgeProvider =
-    NotifierProvider<NavBadgeNotifier, NavBadgeCounts>(
+final navBadgeProvider = NotifierProvider<NavBadgeNotifier, NavBadgeCounts>(
   NavBadgeNotifier.new,
 );
 
@@ -111,9 +110,10 @@ final class NavBadgeNotifier extends Notifier<NavBadgeCounts> {
     final connectionState = ref.read(connectionNotifierProvider);
 
     final int unreadMessages = switch (conversationsState) {
-      ConversationsLoaded(:final conversations) => conversations
-          .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
-          .length,
+      ConversationsLoaded(:final conversations) =>
+        conversations
+            .where((conv) => conv.unreadCount > 0 && !conv.isMuted)
+            .length,
       _ => 0,
     };
 

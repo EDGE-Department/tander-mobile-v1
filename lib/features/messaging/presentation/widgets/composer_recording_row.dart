@@ -38,11 +38,7 @@ class ComposerRecordingRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: AppColors.danger.withValues(alpha: 0.08),
             ),
-            child: const Icon(
-              Icons.close,
-              size: 16,
-              color: AppColors.danger,
-            ),
+            child: const Icon(Icons.close, size: 16, color: AppColors.danger),
           ),
         ),
         const SizedBox(width: 12),
@@ -101,11 +97,7 @@ class ComposerRecordingRow extends StatelessWidget {
               ],
             ),
             child: const Center(
-              child: Icon(
-                Icons.send,
-                size: 18,
-                color: Colors.white,
-              ),
+              child: Icon(Icons.send, size: 18, color: Colors.white),
             ),
           ),
         ),

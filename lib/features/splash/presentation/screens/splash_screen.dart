@@ -177,10 +177,13 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
     _wordmarkTranslateY = Tween<double>(begin: 18.0, end: 0.0).animate(
       CurvedAnimation(parent: _wordmarkEntranceCtrl, curve: premiumEase),
     );
-    _wordmarkBlur = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 6.0, end: 0.0), weight: 60),
-      TweenSequenceItem(tween: ConstantTween(0.0), weight: 40),
-    ]).animate(CurvedAnimation(parent: _wordmarkEntranceCtrl, curve: premiumEase));
+    _wordmarkBlur =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 6.0, end: 0.0), weight: 60),
+          TweenSequenceItem(tween: ConstantTween(0.0), weight: 40),
+        ]).animate(
+          CurvedAnimation(parent: _wordmarkEntranceCtrl, curve: premiumEase),
+        );
 
     // Tagline entrance
     _taglineOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -189,10 +192,13 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
     _taglineTranslateY = Tween<double>(begin: 12.0, end: 0.0).animate(
       CurvedAnimation(parent: _taglineEntranceCtrl, curve: premiumEase),
     );
-    _taglineBlur = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 4.0, end: 0.0), weight: 60),
-      TweenSequenceItem(tween: ConstantTween(0.0), weight: 40),
-    ]).animate(CurvedAnimation(parent: _taglineEntranceCtrl, curve: premiumEase));
+    _taglineBlur =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 4.0, end: 0.0), weight: 60),
+          TweenSequenceItem(tween: ConstantTween(0.0), weight: 40),
+        ]).animate(
+          CurvedAnimation(parent: _taglineEntranceCtrl, curve: premiumEase),
+        );
   }
 
   // ── Entrance sequence ─────────────────────────────────────────────────────
@@ -286,7 +292,9 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
                   child: AnimatedBuilder(
                     animation: _constellationCtrl,
                     builder: (_, _) => CustomPaint(
-                      painter: SplashConstellationPainter(_constellationCtrl.value),
+                      painter: SplashConstellationPainter(
+                        _constellationCtrl.value,
+                      ),
                       size: Size.infinite,
                     ),
                   ),
@@ -309,10 +317,7 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: RadialGradient(
-                      colors: [
-                        Colors.transparent,
-                        Color(0x59000000),
-                      ],
+                      colors: [Colors.transparent, Color(0x59000000)],
                       radius: 0.65,
                     ),
                   ),
@@ -469,10 +474,7 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
           opacity: _iconOpacity.value,
           child: Transform.translate(
             offset: Offset(0, _iconTranslateY.value),
-            child: Transform.scale(
-              scale: _iconScale.value,
-              child: child,
-            ),
+            child: Transform.scale(scale: _iconScale.value, child: child),
           ),
         );
         if (sigma > 0.1) {
@@ -496,10 +498,8 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
             // Halo glow (breathing)
             AnimatedBuilder(
               animation: _haloCtrl,
-              builder: (_, child) => Opacity(
-                opacity: 0.7 + 0.3 * _haloCtrl.value,
-                child: child,
-              ),
+              builder: (_, child) =>
+                  Opacity(opacity: 0.7 + 0.3 * _haloCtrl.value, child: child),
               child: Container(
                 width: 180,
                 height: 180,
@@ -555,14 +555,8 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
                       blurRadius: 56,
                       color: Color(0x66000000),
                     ),
-                    BoxShadow(
-                      blurRadius: 90,
-                      color: Color(0x66FFA050),
-                    ),
-                    BoxShadow(
-                      spreadRadius: 5,
-                      color: Color(0x4DFFFFFF),
-                    ),
+                    BoxShadow(blurRadius: 90, color: Color(0x66FFA050)),
+                    BoxShadow(spreadRadius: 5, color: Color(0x4DFFFFFF)),
                   ],
                 ),
                 child: ClipOval(
@@ -626,23 +620,21 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
           },
           child: Text(
             'Tander',
-            style: AppTypography.brandWordmark(
-              fontSize: fontSize,
-              color: Colors.white,
-              letterSpacing: -0.02 * fontSize,
-            ).copyWith(
-              shadows: const [
-                Shadow(
-                  offset: Offset(0, 4),
-                  blurRadius: 24,
-                  color: Color(0x59000000),
+            style:
+                AppTypography.brandWordmark(
+                  fontSize: fontSize,
+                  color: Colors.white,
+                  letterSpacing: -0.02 * fontSize,
+                ).copyWith(
+                  shadows: const [
+                    Shadow(
+                      offset: Offset(0, 4),
+                      blurRadius: 24,
+                      color: Color(0x59000000),
+                    ),
+                    Shadow(blurRadius: 70, color: Color(0x4DFFA050)),
+                  ],
                 ),
-                Shadow(
-                  blurRadius: 70,
-                  color: Color(0x4DFFA050),
-                ),
-              ],
-            ),
           ),
         ),
 
@@ -782,7 +774,7 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
           const Text(
             'INIHAHANDA ANG INYONG KWADRA',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               letterSpacing: 2.2,
               color: Color(0x66FFFFFF), // white 40%
@@ -836,4 +828,3 @@ final class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
 }
-

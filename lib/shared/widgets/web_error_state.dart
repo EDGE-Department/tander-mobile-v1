@@ -220,7 +220,7 @@ class _SolidErrorButton extends StatelessWidget {
                 label,
                 style: AppTypography.label.copyWith(
                   color: AppColors.textInverse,
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.4,
                 ),

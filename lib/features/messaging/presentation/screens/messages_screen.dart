@@ -254,10 +254,7 @@ class _SidebarPanel extends StatelessWidget {
 // ---- Thread panel (visual container) -------------------------------------
 
 class _ThreadPanel extends StatelessWidget {
-  const _ThreadPanel({
-    required this.conversationId,
-    required this.onBack,
-  });
+  const _ThreadPanel({required this.conversationId, required this.onBack});
 
   final String conversationId;
   final VoidCallback onBack;

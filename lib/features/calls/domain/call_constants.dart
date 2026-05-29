@@ -2,6 +2,7 @@
 ///
 /// Mirrors the web's `call.types.ts` constants and Flutter's original
 /// `CallConfig` values exactly.
+library;
 
 // ---------------------------------------------------------------------------
 // Timeouts

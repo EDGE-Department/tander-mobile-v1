@@ -245,13 +245,15 @@ class _AnimatedAvatarRingState extends State<_AnimatedAvatarRing>
       duration: const Duration(milliseconds: 2500),
     )..repeat();
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-    _opacityAnimation = Tween<double>(begin: 0.25, end: 0.08).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _opacityAnimation = Tween<double>(
+      begin: 0.25,
+      end: 0.08,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -284,8 +286,9 @@ class _AnimatedAvatarRingState extends State<_AnimatedAvatarRing>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFE67E22)
-                            .withValues(alpha: _opacityAnimation.value),
+                        color: const Color(
+                          0xFFE67E22,
+                        ).withValues(alpha: _opacityAnimation.value),
                         width: 2,
                       ),
                     ),
@@ -358,8 +361,10 @@ class CallPreConnectOverlay extends StatelessWidget {
                     ? Image.network(
                         callState.callInfo!.remotePhotoUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            _AvatarFallback(displayName: displayName, radius: 48),
+                        errorBuilder: (_, _, _) => _AvatarFallback(
+                          displayName: displayName,
+                          radius: 48,
+                        ),
                       )
                     : _AvatarFallback(displayName: displayName, radius: 48),
               ),
@@ -466,8 +471,10 @@ class CallEndedOverlay extends StatelessWidget {
                 onPressed: () async => openAppSettings(),
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.orange.withValues(alpha: 0.2),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -498,8 +505,10 @@ class CallEndedOverlay extends StatelessWidget {
               onPressed: onReturn,
               style: TextButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.1),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -547,8 +556,7 @@ class CallControlButton extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color:
-              isActive ? Colors.white : Colors.white.withValues(alpha: 0.15),
+          color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.15),
           shape: BoxShape.circle,
         ),
         child: Icon(

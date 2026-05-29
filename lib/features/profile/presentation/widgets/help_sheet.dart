@@ -5,8 +5,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -14,11 +12,16 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // ── FAQ data ────────────────────────────────────────────────────────────
 
 class _FaqItem {
-  const _FaqItem({required this.id, required this.question, required this.answer});
+  const _FaqItem({
+    required this.id,
+    required this.question,
+    required this.answer,
+  });
   final String id;
   final String question;
   final String answer;
@@ -123,10 +126,7 @@ class _HelpSheetContentState extends State<HelpSheetContent> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      AppLogger.error(
-        'Could not launch email client',
-        operation: 'HelpSheet',
-      );
+      AppLogger.error('Could not launch email client', operation: 'HelpSheet');
     }
   }
 
@@ -141,24 +141,18 @@ class _HelpSheetContentState extends State<HelpSheetContent> {
           _IntroCard(),
           const SizedBox(height: AppSpacing.md),
 
-          _SectionLabel(label: 'Frequently asked questions'),
+          const _SectionLabel(label: 'Frequently asked questions'),
           const SizedBox(height: AppSpacing.sm),
-          _FaqAccordion(
-            expandedId: _expandedId,
-            onToggle: _toggleItem,
-          ),
+          _FaqAccordion(expandedId: _expandedId, onToggle: _toggleItem),
           const SizedBox(height: AppSpacing.lg),
 
-          _SectionLabel(label: 'Still need help?'),
+          const _SectionLabel(label: 'Still need help?'),
           const SizedBox(height: AppSpacing.sm),
           _ContactSupportCard(onTap: _openEmailSupport),
           const SizedBox(height: AppSpacing.lg),
 
           Center(
-            child: Text(
-              'Tander v$_appVersion',
-              style: AppTypography.caption,
-            ),
+            child: Text('Tander v$_appVersion', style: AppTypography.caption),
           ),
           const SizedBox(height: AppSpacing.md),
         ],
@@ -238,8 +232,9 @@ class _FaqTile extends StatelessWidget {
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
           child: Container(
-            constraints:
-                const BoxConstraints(minHeight: AppSpacing.touchComfortable),
+            constraints: const BoxConstraints(
+              minHeight: AppSpacing.touchComfortable,
+            ),
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.sm,
@@ -247,10 +242,7 @@ class _FaqTile extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    faqItem.question,
-                    style: AppTypography.label,
-                  ),
+                  child: Text(faqItem.question, style: AppTypography.label),
                 ),
                 AnimatedRotation(
                   turns: isExpanded ? 0.5 : 0,
@@ -259,9 +251,7 @@ class _FaqTile extends StatelessWidget {
                   child: Icon(
                     Icons.keyboard_arrow_down,
                     size: 18,
-                    color: isExpanded
-                        ? AppColors.primary
-                        : AppColors.textMuted,
+                    color: isExpanded ? AppColors.primary : AppColors.textMuted,
                   ),
                 ),
               ],
@@ -307,8 +297,9 @@ class _ContactSupportCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppRadius.borderLg,
         child: Container(
-          constraints:
-              const BoxConstraints(minHeight: AppSpacing.touchComfortable),
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.touchComfortable,
+          ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
@@ -329,8 +320,11 @@ class _ContactSupportCard extends StatelessWidget {
                   borderRadius: AppRadius.borderMd,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.chat_bubble, size: 20,
-                    color: AppColors.textInverse),
+                child: const Icon(
+                  Icons.chat_bubble,
+                  size: 20,
+                  color: AppColors.textInverse,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -340,8 +334,9 @@ class _ContactSupportCard extends StatelessWidget {
                     Text('Contact support', style: AppTypography.label),
                     Text(
                       'We typically respond within 24 hours',
-                      style: AppTypography.bodySm
-                          .copyWith(color: AppColors.textMuted),
+                      style: AppTypography.bodySm.copyWith(
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
                 ),

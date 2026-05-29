@@ -10,8 +10,8 @@ import 'package:tander_flutter_v3/features/profile/presentation/providers/profil
 /// Manages the user's settings state.
 final userSettingsProvider =
     AsyncNotifierProvider<UserSettingsNotifier, UserSettings>(
-  UserSettingsNotifier.new,
-);
+      UserSettingsNotifier.new,
+    );
 
 class UserSettingsNotifier extends AsyncNotifier<UserSettings> {
   @override
@@ -62,7 +62,8 @@ class UserSettingsNotifier extends AsyncNotifier<UserSettings> {
           request.discoveryMaxDistanceKm ?? current.discoveryMaxDistanceKm,
       notifyMessages: request.notifyMessages ?? current.notifyMessages,
       notifyMatches: request.notifyMatches ?? current.notifyMatches,
-      notifyProfileViews: request.notifyProfileViews ?? current.notifyProfileViews,
+      notifyProfileViews:
+          request.notifyProfileViews ?? current.notifyProfileViews,
       notifyCommunity: request.notifyCommunity ?? current.notifyCommunity,
       notifyTandy: request.notifyTandy ?? current.notifyTandy,
       notifyCalls: request.notifyCalls ?? current.notifyCalls,
@@ -76,7 +77,8 @@ class UserSettingsNotifier extends AsyncNotifier<UserSettings> {
       consentMarketing: request.consentMarketing ?? current.consentMarketing,
       consentAdPersonalization:
           request.consentAdPersonalization ?? current.consentAdPersonalization,
-      consentTandyMemory: request.consentTandyMemory ?? current.consentTandyMemory,
+      consentTandyMemory:
+          request.consentTandyMemory ?? current.consentTandyMemory,
       familyAlertContactPhone: current.familyAlertContactPhone,
       familyAlertContactLabel: current.familyAlertContactLabel,
     );

@@ -12,10 +12,7 @@ sealed class AppException implements Exception {
 }
 
 final class NetworkException extends AppException {
-  const NetworkException({
-    required super.message,
-    super.stackTrace,
-  });
+  const NetworkException({required super.message, super.stackTrace});
 
   @override
   String get userMessage =>
@@ -49,13 +46,13 @@ final class AuthException extends AppException {
 
   @override
   String get userMessage => switch (reason) {
-        AuthFailureReason.tokenExpired =>
-          'Your session has expired. Please sign in again.',
-        AuthFailureReason.forbidden =>
-          'You do not have permission to perform this action.',
-        AuthFailureReason.invalidCredentials =>
-          'Invalid email or password. Please try again.',
-      };
+    AuthFailureReason.tokenExpired =>
+      'Your session has expired. Please sign in again.',
+    AuthFailureReason.forbidden =>
+      'You do not have permission to perform this action.',
+    AuthFailureReason.invalidCredentials =>
+      'Invalid email or password. Please try again.',
+  };
 }
 
 enum AuthFailureReason { tokenExpired, forbidden, invalidCredentials }
@@ -77,10 +74,7 @@ final class ValidationException extends AppException {
 }
 
 final class StorageException extends AppException {
-  const StorageException({
-    required super.message,
-    super.stackTrace,
-  });
+  const StorageException({required super.message, super.stackTrace});
 
   @override
   String get userMessage =>

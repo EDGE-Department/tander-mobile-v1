@@ -1,22 +1,25 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:cunning_document_scanner/cunning_document_scanner.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cunning_document_scanner/cunning_document_scanner.dart';
-import '../../../../shared/constants/routes.dart';
-import '../../data/id_ocr_service.dart';
-import '../notifiers/auth_notifier.dart';
-import 'verification_result_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:tander_flutter_v3/core/errors/app_exception.dart';
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/features/auth/data/id_ocr_service.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/screens/verification_result_screen.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_error_display.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
+import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/utils/launch_support_email.dart';
+import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 class IdScannerScreen extends ConsumerStatefulWidget {
-  final String? selfiePath;
-  final Map<String, dynamic>? livenessMetadata;
-
-  const IdScannerScreen({
-    Key? key,
-    this.selfiePath,
-    this.livenessMetadata,
-  }) : super(key: key);
+  const IdScannerScreen({super.key});
 
   @override
   ConsumerState<IdScannerScreen> createState() => _IdScannerScreenState();
@@ -26,11 +29,31 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   bool _isScanning = false;
   bool _isSubmitting = false;
   String? _error;
+  NetworkException? _offlineError;
   String? _scannedIdPath;
   // When true, the current error is something a fresh scan or resubmit will
   // never fix (e.g. duplicate ID, age-not-met, expired ID). We hide the
   // "Retry" button in that case and only offer Cancel + Go to Login.
   bool _errorIsTerminal = false;
+
+  // Safety-net timers for the submitting state. The submit dialog used to
+  // own these; now they live inline with the parchment view.
+  Timer? _submitTimeoutTimer;
+  Timer? _cancelAffordanceTimer;
+  bool _showCancelAffordance = false;
+  int _consecutiveNonNetworkFailures = 0;
+
+  @override
+  void dispose() {
+    _submitTimeoutTimer?.cancel();
+    _cancelAffordanceTimer?.cancel();
+    super.dispose();
+  }
+
+  void _resetSubmitTimers() {
+    _submitTimeoutTimer?.cancel();
+    _cancelAffordanceTimer?.cancel();
+  }
 
   @override
   void initState() {
@@ -43,10 +66,33 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
   Future<void> _startScan() async {
     if (_isScanning) return;
 
+    // Pre-check camera permission. If denied or restricted, show the
+    // system dialog (for first-time deny) or custom Open-Settings dialog
+    // (for permanent deny / restricted). Skip the document scanner call
+    // when permission isn't granted, so the user gets actionable guidance
+    // instead of a generic "Scan failed" error.
+    final initialStatus = await Permission.camera.status;
+    if (!initialStatus.isGranted) {
+      final requestResult = await Permission.camera.request();
+      if (!requestResult.isGranted) {
+        if (!mounted) return;
+        if (requestResult.isPermanentlyDenied || requestResult.isRestricted) {
+          await _showCameraPermissionDialog();
+        } else {
+          // User denied non-permanently — treat as cancellation.
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+        }
+        return;
+      }
+    }
+
     setState(() {
       _isScanning = true;
       _error = null;
       _errorIsTerminal = false;
+      _consecutiveNonNetworkFailures = 0;
     });
 
     try {
@@ -97,24 +143,37 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       _isSubmitting = true;
       _error = null;
       _errorIsTerminal = false;
+      _offlineError = null;
+      _showCancelAffordance = false;
+    });
+
+    _submitTimeoutTimer?.cancel();
+    _cancelAffordanceTimer?.cancel();
+
+    // Safety net: if backend hangs > 30s, surface a transient error and let
+    // the user retry. The Dio request itself isn't aborted (no CancelToken
+    // in scope); we just stop showing the spinner so the user has a way
+    // forward.
+    _submitTimeoutTimer = Timer(const Duration(seconds: 30), () {
+      if (!mounted || !_isSubmitting) return;
+      setState(() {
+        _isSubmitting = false;
+        _error = 'This is taking longer than expected. Please try again.';
+        _errorIsTerminal = false;
+      });
+    });
+
+    // After 4s of waiting, expose a Cancel button so the user has agency.
+    // Kept short because a 60+ user can read a longer wait as "stuck".
+    // Tap-cancel just pops the screen back (orphans the in-flight request
+    // — same behavior as the prior dialog's cancel button).
+    _cancelAffordanceTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted || !_isSubmitting) return;
+      setState(() => _showCancelAffordance = true);
     });
 
     try {
       final authNotifier = ref.read(authNotifierProvider.notifier);
-
-      // Build liveness metadata if not provided (required by backend)
-      final metadata = widget.livenessMetadata ?? {
-        'method': 'passive_auto_v1',
-        'captureSource': 'camera_stream',
-        'blinkDetected': true,
-        'maxFacesSeen': 1,
-        'minFaceSizeRatio': 0.15,
-        'frontalHoldMs': 2000,
-        'sessionDurationMs': 5000,
-        'motionScore': 0.02,
-        'liveFrameCount': 30,
-        'verifiedAt': DateTime.now().toIso8601String(),
-      };
 
       // Run on-device OCR over the captured ID before upload so the
       // backend can persist real PII (firstName, lastName, dob, etc.)
@@ -131,19 +190,22 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         // parseOcrJson handles missing fields gracefully (returns null
         // for whatever is absent).
         final candidate = ocr.toFrontendOcrData();
-        final hasAnything = candidate['firstName'] != null
-                || candidate['lastName'] != null
-                || candidate['middleName'] != null
-                || candidate['dob'] != null
-                || candidate['documentNumber'] != null;
+        final hasAnything =
+            candidate['firstName'] != null ||
+            candidate['lastName'] != null ||
+            candidate['middleName'] != null ||
+            candidate['dob'] != null ||
+            candidate['documentNumber'] != null;
         if (hasAnything) {
           ocrPayload = candidate;
           debugPrint('[OCR] sending prefill data: ${candidate.keys}');
         } else {
-          debugPrint('[OCR] no extractable data: success=${ocr.success}, '
-                  'qualityScore=${ocr.qualityScore}, '
-                  'rawTextLength=${ocr.rawTextLength}, '
-                  'error=${ocr.errorMessage}');
+          debugPrint(
+            '[OCR] no extractable data: success=${ocr.success}, '
+            'qualityScore=${ocr.qualityScore}, '
+            'rawTextLength=${ocr.rawTextLength}, '
+            'error=${ocr.errorMessage}',
+          );
         }
       } catch (e) {
         debugPrint('[OCR] threw: $e');
@@ -154,8 +216,6 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       // Returns auditId on success, null on failure
       final auditId = await authNotifier.verifyIdPreRegister(
         idPhotoFrontPath: _scannedIdPath!,
-        selfiePath: widget.selfiePath,
-        livenessMetadata: metadata,
         frontendOcrData: ocrPayload,
       );
 
@@ -164,22 +224,63 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
       if (auditId != null && auditId.isNotEmpty) {
         // SUCCESS! AuditId is saved to secure storage by the repository.
         // Show success screen, then redirect to sign-up to complete registration.
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const VerificationResultScreen(
-              state: VerificationResultState.success,
+        _resetSubmitTimers();
+        unawaited(
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const VerificationResultScreen(
+                state: VerificationResultState.success,
+              ),
             ),
           ),
         );
       } else {
         // Verification returned null without throwing — should not happen
         // for the current notifier contract, but keep a defensive fallback.
+        _resetSubmitTimers();
         setState(() {
-          _error = 'Verification failed. Please try again or contact support.';
+          _error = "We couldn't verify your ID this time. Make sure your ID is clear and fully visible, then try again.";
           _isSubmitting = false;
+          _consecutiveNonNetworkFailures++;
         });
       }
     } catch (e) {
+      // Error policy: terminal outcomes (duplicate, face-mismatch, age, fraud,
+      // blocked, cooldown, rate-limited) push to VerificationResultScreen.
+      // Transient outcomes (network, OCR fail, generic) stay inline via _buildErrorView.
+      //
+      // 401 unauthorized must be handled BEFORE any string-matching of
+      // backend error codes — otherwise an expired session falls into
+      // duplicate-ID / age / fraud misclassification paths.
+      if (e is DioException && e.response?.statusCode == 401) {
+        if (mounted) {
+          _resetSubmitTimers();
+          setState(() => _isSubmitting = false);
+          TanderToastOverlay.show(
+            context,
+            const TanderToastData(
+              message: 'Session expired. Please sign in again.',
+              variant: TanderToastVariant.error,
+            ),
+          );
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) context.go(AppRoutes.login);
+        }
+        return;
+      }
+      // Offline / connection failure — show sticky retry banner instead of
+      // falling into the OCR/backend-code parsing path. See
+      // network_exception_handler.dart for the catch-order policy.
+      if (e is NetworkException) {
+        if (mounted) {
+          _resetSubmitTimers();
+          setState(() {
+            _isSubmitting = false;
+            _offlineError = e;
+          });
+        }
+        return;
+      }
       debugPrint('Verification submission error: $e');
       if (mounted) {
         final raw = e.toString();
@@ -193,7 +294,8 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         // Check for duplicate ID / identifier already in use. Match on stable
         // code first (id-duplicate from v3k+), then fall back to legacy text
         // patterns including the new "already exists for this person" copy.
-        final isDuplicate = backendCode == 'id-duplicate' ||
+        final isDuplicate =
+            backendCode == 'id-duplicate' ||
             errorStr.contains('identifier_in_use') ||
             errorStr.contains('duplicate') ||
             errorStr.contains('already registered') ||
@@ -201,6 +303,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
             errorStr.contains('already exists for this person') ||
             errorStr.contains("haven't finished your profile");
         if (isDuplicate) {
+          _resetSubmitTimers();
           setState(() => _isSubmitting = false);
 
           String? emailHint;
@@ -210,7 +313,17 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           final stateMatch = RegExp(r'\|STATE:([A-Z_]+)').firstMatch(raw);
           if (stateMatch != null) existingState = stateMatch.group(1);
 
-          _showDuplicateIdDialog(emailHint: emailHint, existingState: existingState);
+          unawaited(
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => VerificationResultScreen(
+                  state: VerificationResultState.duplicateIdDetected,
+                  emailHint: emailHint,
+                  existingAccountState: existingState,
+                ),
+              ),
+            ),
+          );
           return;
         }
 
@@ -218,20 +331,22 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         VerificationResultState? resultState;
         if (errorStr.contains('face') && errorStr.contains('mismatch')) {
           resultState = VerificationResultState.faceMismatch;
-        } else if (backendCode == 'id-age-not-met' || errorStr.contains('age')) {
+        } else if (backendCode == 'id-age-not-met' ||
+            errorStr.contains('age')) {
           resultState = VerificationResultState.ageRequirementNotMet;
         } else if (errorStr.contains('fraud')) {
           resultState = VerificationResultState.fraudDetected;
-        } else if (errorStr.contains('liveness')) {
-          resultState = VerificationResultState.livenessCheckFailed;
         } else if (errorStr.contains('blocked')) {
           resultState = VerificationResultState.idBlocked;
         }
 
         if (resultState != null) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => VerificationResultScreen(state: resultState!),
+          _resetSubmitTimers();
+          unawaited(
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => VerificationResultScreen(state: resultState!),
+              ),
             ),
           );
         } else {
@@ -243,14 +358,56 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
             'id-expired',
             'id-duplicate',
           };
-          final isTerminal = backendCode != null && terminalCodes.contains(backendCode);
+          final isTerminal =
+              backendCode != null && terminalCodes.contains(backendCode);
+          _resetSubmitTimers();
           setState(() {
-            _error = _humanizeError(e ?? 'Verification failed. Please try again or contact support.');
+            _error = _humanizeError(e);
             _errorIsTerminal = isTerminal;
             _isSubmitting = false;
+            _consecutiveNonNetworkFailures++;
           });
         }
       }
+    }
+  }
+
+  Future<void> _showCameraPermissionDialog() async {
+    final shouldOpenSettings = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Camera permission needed'),
+        content: const Text(
+          'Tander needs camera access to scan your ID. Open Settings to enable it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (shouldOpenSettings == true) {
+      await openAppSettings();
+      // User must come back and tap "Retry Scan" — no auto-retry on resume.
+      // Surface an actionable error so the screen isn't stuck on the
+      // "Starting Document Scanner..." spinner forever.
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'Camera permission is required. Tap Retry after enabling it in Settings.';
+        _errorIsTerminal = false;
+      });
+    } else if (Navigator.canPop(context)) {
+      Navigator.pop(context);
     }
   }
 
@@ -278,181 +435,34 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         }
       }
     }
+    s = s.replaceAll(RegExp(r'CODE:[a-z0-9-]+:\s*'), '').trim();
     if (s.isEmpty) {
-      return 'Verification failed. Please try again or contact support.';
+      return "We couldn't verify your ID this time. Make sure your ID is clear and fully visible, then try again.";
     }
     return s;
   }
 
-  void _showDuplicateIdDialog({String? emailHint, String? existingState}) {
-    // Use email hint from backend if available, otherwise show placeholder
-    final maskedEmail = emailHint ?? '***@***.com';
-    // existingState comes from backend "data.existingAccountState":
-    //   PROFILE_INCOMPLETE → user has an account but never finished onboarding,
-    //                       send them to login (which will route to profile setup).
-    //   PROFILE_COMPLETE   → fully onboarded user, just sign in.
-    //   null/UNKNOWN       → fall back to old generic copy.
-    final isIncompleteProfile = existingState == 'PROFILE_INCOMPLETE';
-    final dialogTitle = isIncompleteProfile
-        ? 'Finish Your Registration'
-        : 'ID Already Registered';
-    final dialogBody = isIncompleteProfile
-        ? "You already have an account but haven't finished your profile yet. Log in to continue setting it up."
-        : 'This ID has already been used to create an account. If this is your ID, please log in to your existing account.';
-    final primaryButtonLabel = isIncompleteProfile
-        ? 'Log in to continue'
-        : 'Go to Login';
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE86035).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.person_search_rounded,
-                  color: Color(0xFFE86035),
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Title
-              Text(
-                dialogTitle,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-
-              // Description
-              Text(
-                dialogBody,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey[600],
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-
-              // Email hint
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.email_outlined, size: 18, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Text(
-                      maskedEmail,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        fontFamily: 'monospace',
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Go to Login button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE86035),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close dialog
-                    context.go(AppRoutes.login);
-                  },
-                  child: Text(
-                    primaryButtonLabel,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Contact Support button
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey[700],
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close dialog
-                    // TODO: Open support email or help page
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Contact us at support@tander.app'),
-                        backgroundColor: const Color(0xFF5BBFB3),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    );
-                    context.go(AppRoutes.login);
-                  },
-                  child: const Text(
-                    'Contact Support',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: _isSubmitting
-            ? _buildSubmittingView()
-            : _error != null
+    return PopScope(
+      // Block system back-press while a verification submit is in flight —
+      // popping orphans the Dio request and would land the user in an
+      // ambiguous state. The 4s-delayed Cancel button in _buildSubmittingView
+      // is the sanctioned escape hatch.
+      canPop: !_isSubmitting,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: AuthStepScaffoldBody(
+          parchment: AuthStepParchment(
+            child: _isSubmitting
+                ? _buildSubmittingView()
+                : _offlineError != null
+                ? _buildOfflineRetryView()
+                : _error != null
                 ? _buildErrorView()
                 : _buildLoadingView(),
+          ),
+        ),
       ),
     );
   }
@@ -465,12 +475,12 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         const SizedBox(height: 24),
         const Text(
           'Starting Document Scanner...',
-          style: TextStyle(color: Colors.white70, fontSize: 16),
+          style: TextStyle(color: Colors.black54, fontSize: 16),
         ),
         const SizedBox(height: 8),
         Text(
           Platform.isIOS ? 'Apple VisionKit' : 'ML-powered edge detection',
-          style: const TextStyle(color: Colors.white38, fontSize: 14),
+          style: const TextStyle(color: Colors.black45, fontSize: 14),
         ),
       ],
     );
@@ -484,7 +494,7 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            color: const Color(0xFF5BBFB3).withOpacity(0.2),
+            color: const Color(0xFF5BBFB3).withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: const Center(
@@ -495,20 +505,82 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
           ),
         ),
         const SizedBox(height: 32),
-        const Text(
-          'Verifying your identity...',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        // liveRegion so screen readers announce the transition into the
+        // verifying state (and out of it, into error/success). Wrap only the
+        // primary status line — a single live region per view avoids
+        // double-announcing.
+        Semantics(
+          liveRegion: true,
+          child: const Text(
+            'Verifying your identity...',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 12),
         const Text(
           'This may take a moment',
-          style: TextStyle(color: Colors.white60, fontSize: 15),
+          style: TextStyle(color: Colors.black54, fontSize: 15),
         ),
+        const SizedBox(height: 16),
+        // Privacy reassurance repeated at the submit point (the only other
+        // place it appears is the screen one step back). Must stay consistent
+        // with the actual retention policy: encrypted, identity-only,
+        // permanently deleted within 30 days, never shared. No biometric /
+        // face-recognition claims.
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            "Your ID is encrypted and only used to confirm it's really you. We delete the photo within 30 days and never share it.",
+            style: TextStyle(color: Colors.black54, fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        if (_showCancelAffordance) ...[
+          const SizedBox(height: 24),
+          TextButton(
+            onPressed: () {
+              _resetSubmitTimers();
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  void _retryOffline() {
+    setState(() => _offlineError = null);
+    _submitVerification();
+  }
+
+  Widget _buildOfflineRetryView() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AuthErrorDisplay.banner(
+            message: _offlineError!.userMessage,
+            autoDismiss: false,
+            onRetry: _retryOffline,
+            onDismiss: () => setState(() => _offlineError = null),
+          ),
+        ],
+      ),
     );
   }
 
@@ -531,10 +603,15 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         children: [
           const Icon(Icons.error_outline, color: Color(0xFFE86035), size: 64),
           const SizedBox(height: 24),
-          Text(
-            _error!,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            textAlign: TextAlign.center,
+          // liveRegion so screen readers announce the transition into the
+          // error state (verifying -> error). One live region per view.
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              _error!,
+              style: const TextStyle(color: Colors.black87, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 32),
           Row(
@@ -544,17 +621,24 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[800],
                   minimumSize: const Size(120, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
               const SizedBox(width: 16),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE86035),
                   minimumSize: const Size(120, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: primaryOnPressed,
                 child: Text(
@@ -564,6 +648,20 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
               ),
             ],
           ),
+          if (_consecutiveNonNetworkFailures >= 3) ...[
+            const SizedBox(height: 20),
+            TextButton.icon(
+              onPressed: () => launchSupportEmail(
+                context,
+                subject: 'ID Scanner verification issue',
+              ),
+              icon: const Icon(Icons.mail_outline_rounded),
+              label: const Text('Contact Support'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFE86035),
+              ),
+            ),
+          ],
         ],
       ),
     );

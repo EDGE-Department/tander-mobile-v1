@@ -44,8 +44,8 @@ final class PushNotificationService {
   PushNotificationService({
     required DioClient dioClient,
     required SharedPreferences sharedPreferences,
-  })  : _dioClient = dioClient,
-        _sharedPreferences = sharedPreferences;
+  }) : _dioClient = dioClient,
+       _sharedPreferences = sharedPreferences;
 
   final DioClient _dioClient;
   final SharedPreferences _sharedPreferences;
@@ -95,9 +95,9 @@ final class PushNotificationService {
     String? fcmToken;
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        fcmToken = await FirebaseMessaging.instance
-            .getToken()
-            .timeout(const Duration(seconds: 15));
+        fcmToken = await FirebaseMessaging.instance.getToken().timeout(
+          const Duration(seconds: 15),
+        );
         if (fcmToken != null) {
           AppLogger.info(
             'FCM token obtained on attempt $attempt: ${fcmToken.substring(0, 20)}...',
@@ -231,7 +231,8 @@ final class PushNotificationService {
           'User must enable in iOS Settings > Tander > Notifications.',
           operation: 'PushNotificationService._requestPermission',
         );
-      } else if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+      } else if (settings.authorizationStatus ==
+          AuthorizationStatus.notDetermined) {
         AppLogger.warning(
           'Notification permission still undetermined after request. '
           'This may indicate iOS did not show the permission dialog.',
@@ -258,10 +259,10 @@ final class PushNotificationService {
   Future<void> _configureIOSForegroundPresentation() async {
     await FirebaseMessaging.instance
         .setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+          alert: true,
+          badge: true,
+          sound: true,
+        );
 
     AppLogger.debug(
       'iOS foreground notification presentation configured',
@@ -436,11 +437,7 @@ final class PushNotificationService {
       try {
         await _dioClient.post<Map<String, Object?>>(
           ApiEndpoints.registerToken,
-          data: {
-            'token': voipToken,
-            'platform': 'voip',
-            'deviceId': deviceId,
-          },
+          data: {'token': voipToken, 'platform': 'voip', 'deviceId': deviceId},
         );
         await _sharedPreferences.setString(_voipTokenKey, voipToken);
         AppLogger.info(
@@ -518,15 +515,15 @@ final class PushNotificationService {
       importance: Importance.low,
     );
 
-    final androidPlugin =
-        flutterLocalNotifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = flutterLocalNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlugin == null) {
       AppLogger.warning(
         'Android notification plugin unavailable — channels not created',
-        operation:
-            'PushNotificationService._createAndroidNotificationChannels',
+        operation: 'PushNotificationService._createAndroidNotificationChannels',
       );
       return;
     }

@@ -5,7 +5,7 @@ import 'package:tander_flutter_v3/features/auth/domain/repositories/auth_reposit
 /// Authenticates a user with email and password credentials.
 final class SignInUseCase {
   const SignInUseCase({required AuthRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   final AuthRepository _repository;
 

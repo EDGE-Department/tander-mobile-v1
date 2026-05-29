@@ -1,6 +1,7 @@
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
 import 'package:tander_flutter_v3/core/utils/result.dart';
+import 'package:tander_flutter_v3/features/profile/domain/models/account_deletion_status.dart';
 
 /// Contract for all profile operations.
 ///
@@ -62,6 +63,19 @@ abstract interface class ProfileRepository {
     required String newPassword,
   });
 
-  /// Permanently deletes the user's account.
-  Future<Result<void>> deleteAccount();
+  /// Requests account deletion. The account enters a 30-day grace window
+  /// during which it stays usable and the request can be cancelled.
+  Future<Result<AccountDeletionStatus>> requestAccountDeletion({
+    String? reason,
+  });
+
+  /// Cancels an in-grace account-deletion request.
+  Future<Result<AccountDeletionStatus>> cancelAccountDeletion();
+
+  /// Returns the active deletion request, or `null` if none is pending.
+  Future<Result<AccountDeletionStatus?>> fetchAccountDeletionStatus();
+
+  /// Requests a data export. The server prepares it asynchronously and
+  /// notifies the user when it's ready.
+  Future<Result<void>> requestDataExport();
 }

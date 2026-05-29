@@ -4,14 +4,21 @@
 /// and delegates rendering to the shared [ProfileViewContent] widget.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tander_flutter_v3/core/contracts/models/discover_models.dart';
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/providers/discover_providers.dart';
+import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/photo_lightbox.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
@@ -29,15 +36,35 @@ class UserProfileScreen extends ConsumerWidget {
       return _buildErrorState(context, 'No user ID provided.');
     }
 
-    // TODO(#125): Wire to a real user profile provider, e.g.:
-    // final profileAsync = ref.watch(userProfileProvider(userId));
-    // return profileAsync.when(
-    //   loading: () => _buildLoadingState(),
-    //   error: (error, _) => _buildErrorState(context, 'Could not load this profile.'),
-    //   data: (profile) => _UserProfileBody(profile: profile),
-    // );
+    final profileAsync = ref.watch(discoverProfileProvider(userId));
+    return profileAsync.when(
+      loading: () => _buildLoadingState(),
+      error: (error, _) =>
+          _buildErrorState(context, 'Could not load this profile.'),
+      data: (candidate) => UserProfileBody(
+        profile: _candidateToProfile(candidate),
+        userId: userId,
+      ),
+    );
+  }
 
-    return _buildLoadingState();
+  UserProfile _candidateToProfile(DiscoveryCandidate candidate) {
+    return UserProfile(
+      userId: candidate.userId,
+      firstName: candidate.firstName,
+      isOnline: candidate.isOnline,
+      isVerified: false,
+      isProfileCompleted: true,
+      additionalPhotos: candidate.additionalPhotos,
+      interests: candidate.interests,
+      lookingFor: const [],
+      languages: const [],
+      age: candidate.age,
+      bio: candidate.bio,
+      city: candidate.city,
+      country: candidate.country,
+      profilePhotoUrl: candidate.profilePhotoUrl,
+    );
   }
 
   Widget _buildLoadingState() {
@@ -111,14 +138,91 @@ class UserProfileScreen extends ConsumerWidget {
 }
 
 /// Renders the loaded user profile with a top nav bar and content body.
-class UserProfileBody extends StatelessWidget {
-  const UserProfileBody({required this.profile, super.key});
+class UserProfileBody extends ConsumerStatefulWidget {
+  const UserProfileBody({
+    required this.profile,
+    required this.userId,
+    super.key,
+  });
 
   final UserProfile profile;
+  final String userId;
+
+  @override
+  ConsumerState<UserProfileBody> createState() => _UserProfileBodyState();
+}
+
+class _UserProfileBodyState extends ConsumerState<UserProfileBody> {
+  // No caller supplies a relationship for this route (it's a deep-link target),
+  // so we start at `none` and flip optimistically on a successful connect.
+  // TODO: fetch the real relationship by userId when an API exists.
+  ProfileRelationship _localRelationship = ProfileRelationship.none;
+  bool _isSendingRequest = false;
+  bool _isOpeningConversation = false;
+
+  Future<void> _handleConnect() async {
+    setState(() => _isSendingRequest = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await ref
+          .read(discoverRepositoryProvider)
+          .sendConnectionRequest(targetUserId: widget.userId);
+      if (!mounted) return;
+      result.when(
+        success: (_) {
+          setState(
+            () => _localRelationship = ProfileRelationship.pendingOutgoing,
+          );
+        },
+        failure: (exception) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(exception.userMessage)),
+          );
+        },
+      );
+    } finally {
+      if (mounted) setState(() => _isSendingRequest = false);
+    }
+  }
+
+  void _handleMessage() {
+    if (_isOpeningConversation) return;
+    unawaited(_openConversation());
+  }
+
+  Future<void> _openConversation() async {
+    setState(() => _isOpeningConversation = true);
+
+    final router = GoRouter.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final currentUserId = ref.read(currentUserIdProvider);
+    final result = await ref
+        .read(messagingRepositoryProvider)
+        .startConversation(
+          otherUserId: widget.userId,
+          currentUserId: currentUserId,
+        );
+
+    if (!mounted) return;
+    setState(() => _isOpeningConversation = false);
+
+    result.when(
+      success: (conversation) {
+        router.go(AppRoutes.messageThread(conversation.conversationId));
+      },
+      failure: (exception) {
+        messenger.showSnackBar(SnackBar(content: Text(exception.userMessage)));
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final allPhotos = _buildAllPhotos(profile);
+    final allPhotos = _buildAllPhotos(widget.profile);
+    final sessionManager = ref.read(sessionManagerLateProvider);
+    final currentUserId = sessionManager?.session?.userId;
+    final isSelf =
+        currentUserId != null && currentUserId.toString() == widget.userId;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -140,9 +244,10 @@ class UserProfileBody extends StatelessWidget {
           // Profile content
           Expanded(
             child: ProfileViewContent(
-              profile: profile,
-              relationship: ProfileRelationship.none,
-              isSendingRequest: false,
+              profile: widget.profile,
+              relationship: _localRelationship,
+              isSendingRequest: _isSendingRequest,
+              isSelf: isSelf,
               onClose: () {
                 if (context.canPop()) {
                   context.pop();
@@ -157,12 +262,8 @@ class UserProfileBody extends StatelessWidget {
                   );
                 }
               },
-              onMessage: () {
-                context.go(AppRoutes.messages);
-              },
-              onConnect: () {
-                // TODO(#127): Send connection request
-              },
+              onMessage: _handleMessage,
+              onConnect: _handleConnect,
             ),
           ),
         ],

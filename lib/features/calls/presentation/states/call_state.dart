@@ -45,8 +45,9 @@ final class CallState {
       remoteMedia: remoteMedia ?? this.remoteMedia,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       endReason: clearEndReason ? null : (endReason ?? this.endReason),
-      errorMessage:
-          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 
@@ -64,8 +65,7 @@ final class CallState {
 
   /// Whether we're in an incoming ringing state.
   bool get isIncomingRinging =>
-      status is CallRinging &&
-      callInfo?.direction == CallDirection.incoming;
+      status is CallRinging && callInfo?.direction == CallDirection.incoming;
 
   /// Formatted duration as MM:SS.
   String get formattedDuration {

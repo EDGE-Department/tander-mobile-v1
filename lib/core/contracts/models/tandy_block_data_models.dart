@@ -11,11 +11,7 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class RecipeIngredient {
-  const RecipeIngredient({
-    required this.name,
-    this.amount,
-    this.unit,
-  });
+  const RecipeIngredient({required this.name, this.amount, this.unit});
 
   final String name;
   final String? amount;
@@ -238,6 +234,5 @@ class SponsorBlockData {
   int get hashCode => sponsorId.hashCode;
 
   @override
-  String toString() =>
-      'SponsorBlockData(id: $sponsorId, name: $sponsorName)';
+  String toString() => 'SponsorBlockData(id: $sponsorId, name: $sponsorName)';
 }

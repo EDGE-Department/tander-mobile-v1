@@ -5,7 +5,7 @@ import 'package:tander_flutter_v3/features/auth/domain/repositories/auth_reposit
 /// Creates a new user account and returns the initial session.
 final class RegisterUseCase {
   const RegisterUseCase({required AuthRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   final AuthRepository _repository;
 

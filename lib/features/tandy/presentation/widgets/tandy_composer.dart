@@ -38,9 +38,7 @@ class TandyComposer extends StatelessWidget {
             AppColors.canvas,
           ],
         ),
-        border: const Border(
-          top: BorderSide(color: AppColors.borderLight),
-        ),
+        border: const Border(top: BorderSide(color: AppColors.borderLight)),
       ),
       child: SafeArea(
         top: false,
@@ -58,7 +56,7 @@ class TandyComposer extends StatelessWidget {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: suggestions.length.clamp(0, 3),
-                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        separatorBuilder: (_, _) => const SizedBox(width: 10),
                         itemBuilder: (_, index) {
                           final suggestion = suggestions[index];
                           return _PromptChip(
@@ -89,10 +87,7 @@ class TandyComposer extends StatelessWidget {
 // ── Prompt Chip ─────────────────────────────────────────────────────
 
 class _PromptChip extends StatelessWidget {
-  const _PromptChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _PromptChip({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -144,7 +139,7 @@ class _InputRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      builder: (_, textValue, __) {
+      builder: (_, textValue, _) {
         final canSend = textValue.text.trim().isNotEmpty && !isSending;
 
         return Container(

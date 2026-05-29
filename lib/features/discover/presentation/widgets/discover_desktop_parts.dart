@@ -63,11 +63,7 @@ class DesktopFilterButton extends StatelessWidget {
             border: Border.all(color: AppColors.border),
           ),
           alignment: Alignment.center,
-          child: const Icon(
-            Icons.tune,
-            size: 18,
-            color: AppColors.textMuted,
-          ),
+          child: const Icon(Icons.tune, size: 18, color: AppColors.textMuted),
         ),
       ),
     );
@@ -108,11 +104,7 @@ class DesktopNewPostButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.add,
-                size: 16,
-                color: AppColors.textInverse,
-              ),
+              const Icon(Icons.add, size: 16, color: AppColors.textInverse),
               const SizedBox(width: AppSpacing.xxs),
               Text(
                 'New post',

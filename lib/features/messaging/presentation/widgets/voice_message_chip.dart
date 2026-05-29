@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -41,7 +42,21 @@ class _VoiceMessageChipState extends State<VoiceMessageChip>
   late final AnimationController _buttonScaleController;
   late final Animation<double> _buttonScale;
 
-  static const List<int> _barHeights = [4, 9, 14, 7, 11, 5, 9, 13, 6, 10, 8, 4, 7];
+  static const List<int> _barHeights = [
+    4,
+    9,
+    14,
+    7,
+    11,
+    5,
+    9,
+    13,
+    6,
+    10,
+    8,
+    4,
+    7,
+  ];
 
   @override
   void initState() {
@@ -67,7 +82,8 @@ class _VoiceMessageChipState extends State<VoiceMessageChip>
   void _setupListeners() {
     _audioPlayer.playerStateStream.listen((playerState) {
       if (!mounted) return;
-      final isPlaying = playerState.playing &&
+      final isPlaying =
+          playerState.playing &&
           playerState.processingState != ProcessingState.completed;
 
       if (isPlaying && !_isPlaying) {
@@ -82,14 +98,20 @@ class _VoiceMessageChipState extends State<VoiceMessageChip>
       if (playerState.processingState == ProcessingState.completed) {
         _audioPlayer.seek(Duration.zero);
         _audioPlayer.pause();
-        if (mounted) setState(() { _progress = 0; _elapsedSeconds = 0; });
+        if (mounted) {
+          setState(() {
+            _progress = 0;
+            _elapsedSeconds = 0;
+          });
+        }
       }
     });
 
     _audioPlayer.positionStream.listen((position) {
       if (!mounted) return;
       final totalDuration = _audioPlayer.duration;
-      final durationMs = totalDuration?.inMilliseconds ??
+      final durationMs =
+          totalDuration?.inMilliseconds ??
           ((widget.durationSeconds ?? 0) * 1000);
       setState(() {
         _elapsedSeconds = position.inSeconds;
@@ -111,7 +133,7 @@ class _VoiceMessageChipState extends State<VoiceMessageChip>
 
     // Button press feedback
     await _buttonScaleController.forward();
-    _buttonScaleController.reverse();
+    unawaited(_buttonScaleController.reverse());
 
     try {
       if (_isPlaying) {
@@ -124,7 +146,11 @@ class _VoiceMessageChipState extends State<VoiceMessageChip>
         await _audioPlayer.play();
       }
     } on Object catch (error) {
-      AppLogger.error('Voice playback failed', operation: 'VoiceMessageChip', error: error);
+      AppLogger.error(
+        'Voice playback failed',
+        operation: 'VoiceMessageChip',
+        error: error,
+      );
     }
   }
 
@@ -279,7 +305,8 @@ class _ProgressClipper extends CustomClipper<Rect> {
   }
 
   @override
-  bool shouldReclip(_ProgressClipper oldClipper) => progress != oldClipper.progress;
+  bool shouldReclip(_ProgressClipper oldClipper) =>
+      progress != oldClipper.progress;
 }
 
 /// Play triangle icon matching web's CSS border-triangle.
@@ -327,9 +354,23 @@ class _PauseBars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 3.5, height: 12, decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: color)),
+        Container(
+          width: 3.5,
+          height: 12,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(2),
+            color: color,
+          ),
+        ),
         const SizedBox(width: 3.5),
-        Container(width: 3.5, height: 12, decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: color)),
+        Container(
+          width: 3.5,
+          height: 12,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(2),
+            color: color,
+          ),
+        ),
       ],
     );
   }

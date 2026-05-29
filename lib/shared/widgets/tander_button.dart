@@ -131,13 +131,10 @@ class _TanderButtonState extends State<TanderButton>
               boxShadow: specs.boxShadow,
             ),
             padding: _resolvePadding(),
-            child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _buildChildren(specs),
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: _buildChildren(specs),
             ),
           ),
         ),
@@ -161,11 +158,7 @@ class _TanderButtonState extends State<TanderButton>
             child: Center(
               child: widget.isLoading
                   ? _buildLoader(AppColors.primary)
-                  : Icon(
-                      widget.icon,
-                      size: 20,
-                      color: AppColors.primary,
-                    ),
+                  : Icon(widget.icon, size: 20, color: AppColors.primary),
             ),
           ),
         ),
@@ -184,7 +177,7 @@ class _TanderButtonState extends State<TanderButton>
     // width + the row's min-sizing has nowhere to clip).
     final label = Flexible(
       child: Text(
-        widget.label.toUpperCase(),
+        widget.label,
         style: _resolveLabelStyle(specs.foregroundColor),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -228,7 +221,7 @@ class _TanderButtonState extends State<TanderButton>
       color: color,
       fontWeight: FontWeight.w900,
       height: 1.0,
-      letterSpacing: 0.12 * 16,
+      letterSpacing: 0.15,
     );
   }
 
@@ -243,12 +236,18 @@ class _TanderButtonState extends State<TanderButton>
 
   EdgeInsets _resolvePadding() {
     return switch (widget.size) {
-      TanderButtonSize.compact =>
-        const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-      TanderButtonSize.normal =>
-        const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-      TanderButtonSize.large =>
-        const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+      TanderButtonSize.compact => const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      TanderButtonSize.normal => const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      TanderButtonSize.large => const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
     };
   }
 }
@@ -269,9 +268,13 @@ class _VariantSpecs {
   final BorderSide? borderSide;
   final List<BoxShadow>? boxShadow;
 
-  // Web: bg-gradient-to-r from-[#E67E22] to-[#D35400]
+  // Web: bg-gradient-to-r from-[#E67E22] to-[#D35400].
+  // The lighter stop is darkened slightly (#E67E22 → #D96E1A) so that the
+  // white label clears WCAG AA contrast for large/bold text (3.0:1). The
+  // un-darkened original lands at 2.85:1 against white. The shadow token
+  // below intentionally keeps the brighter brand hue.
   static const _primaryGradient = LinearGradient(
-    colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+    colors: [Color(0xFFD96E1A), Color(0xFFD35400)],
   );
 
   // Web: shadow-[0_20px_40px_-12px_rgba(230,126,34,0.35)]
@@ -287,31 +290,31 @@ class _VariantSpecs {
   static _VariantSpecs resolve(TanderButtonVariant variant) {
     return switch (variant) {
       TanderButtonVariant.primary => const _VariantSpecs(
-            foregroundColor: AppColors.textInverse,
-            gradient: _primaryGradient,
-            boxShadow: _primaryShadow,
-          ),
+        foregroundColor: AppColors.textInverse,
+        gradient: _primaryGradient,
+        boxShadow: _primaryShadow,
+      ),
       TanderButtonVariant.secondary => const _VariantSpecs(
-            foregroundColor: AppColors.textInverse,
-            backgroundColor: AppColors.secondary,
-          ),
+        foregroundColor: AppColors.textInverse,
+        backgroundColor: AppColors.secondary,
+      ),
       TanderButtonVariant.outline => const _VariantSpecs(
-            foregroundColor: AppColors.primary,
-            backgroundColor: Color(0x00000000),
-            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-          ),
+        foregroundColor: AppColors.primary,
+        backgroundColor: Color(0x00000000),
+        borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+      ),
       TanderButtonVariant.ghost => const _VariantSpecs(
-            foregroundColor: AppColors.primary,
-            backgroundColor: Color(0x00000000),
-          ),
+        foregroundColor: AppColors.primary,
+        backgroundColor: Color(0x00000000),
+      ),
       TanderButtonVariant.danger => const _VariantSpecs(
-            foregroundColor: AppColors.textInverse,
-            backgroundColor: AppColors.danger,
-          ),
+        foregroundColor: AppColors.textInverse,
+        backgroundColor: AppColors.danger,
+      ),
       TanderButtonVariant.iconOnly => const _VariantSpecs(
-            foregroundColor: AppColors.primary,
-            backgroundColor: Color(0x00000000),
-          ),
+        foregroundColor: AppColors.primary,
+        backgroundColor: Color(0x00000000),
+      ),
     };
   }
 }

@@ -136,85 +136,103 @@ class _State extends ConsumerState<SettingsDiscoveryScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _SliderCard(
-            title: 'Age range',
-            badge: '${_ageRange!.start.round()}\u2013${_ageRange!.end.round()}',
-            child: Column(children: [
-              SliderTheme(
-                data: _sliderTheme(context),
-                child: RangeSlider(
-                  values: _ageRange!,
-                  min: minAgeLimit,
-                  max: maxAgeLimit,
-                  divisions: (maxAgeLimit - minAgeLimit).round(),
-                  labels: RangeLabels(
-                      '${_ageRange!.start.round()}', '${_ageRange!.end.round()}'),
-                  onChanged: (values) {
-                    setState(() => _ageRange = values);
-                    _debouncedSave(UpdateSettingsRequestDto(
-                      discoveryMinAge: values.start.round(),
-                      discoveryMaxAge: values.end.round(),
-                    ));
-                  },
-                ),
-              ),
-              _RangeLabelsRow(
-                start: '${minAgeLimit.round()}',
-                end: '${maxAgeLimit.round()}+',
-              ),
-            ]),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _SliderCard(
-            title: 'Maximum distance',
-            badge: distanceLabel,
-            child: Column(children: [
-              SliderTheme(
-                data: _sliderTheme(context),
-                child: Slider(
-                  value: _distanceKm!,
-                  min: _minDistanceKm,
-                  max: _maxDistanceKm,
-                  divisions: 99,
-                  label: distanceLabel,
-                  onChanged: (value) {
-                    setState(() => _distanceKm = value);
-                    _debouncedSave(UpdateSettingsRequestDto(
-                      discoveryMaxDistanceKm: value.round(),
-                    ));
-                  },
-                ),
-              ),
-              const _RangeLabelsRow(start: '1 km', end: 'Anywhere'),
-            ]),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const SectionLabel(label: 'Visibility'),
-          const SizedBox(height: AppSpacing.sm),
-          _HiddenToggleCard(
-            isHidden: _isHidden!,
-            onToggle: () {
-              setState(() => _isHidden = !_isHidden!);
-              ref.read(userSettingsProvider.notifier).updateSettings(
-                    UpdateSettingsRequestDto(discoveryVisible: !_isHidden!),
-                  );
-              _showSavedToast();
-            },
-          ),
-          if (_isHidden!) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.xxs),
-              child: Text(
-                'Your profile is currently hidden from discovery.',
-                style: AppTypography.caption.copyWith(
-                    color: AppColors.warning, fontWeight: FontWeight.w600),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SliderCard(
+              title: 'Age range',
+              badge:
+                  '${_ageRange!.start.round()}\u2013${_ageRange!.end.round()}',
+              child: Column(
+                children: [
+                  SliderTheme(
+                    data: _sliderTheme(context),
+                    child: RangeSlider(
+                      values: _ageRange!,
+                      min: minAgeLimit,
+                      max: maxAgeLimit,
+                      divisions: (maxAgeLimit - minAgeLimit).round(),
+                      labels: RangeLabels(
+                        '${_ageRange!.start.round()}',
+                        '${_ageRange!.end.round()}',
+                      ),
+                      onChanged: (values) {
+                        setState(() => _ageRange = values);
+                        _debouncedSave(
+                          UpdateSettingsRequestDto(
+                            discoveryMinAge: values.start.round(),
+                            discoveryMaxAge: values.end.round(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  _RangeLabelsRow(
+                    start: '${minAgeLimit.round()}',
+                    end: '${maxAgeLimit.round()}+',
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            _SliderCard(
+              title: 'Maximum distance',
+              badge: distanceLabel,
+              child: Column(
+                children: [
+                  SliderTheme(
+                    data: _sliderTheme(context),
+                    child: Slider(
+                      value: _distanceKm!,
+                      min: _minDistanceKm,
+                      max: _maxDistanceKm,
+                      divisions: 99,
+                      label: distanceLabel,
+                      onChanged: (value) {
+                        setState(() => _distanceKm = value);
+                        _debouncedSave(
+                          UpdateSettingsRequestDto(
+                            discoveryMaxDistanceKm: value.round(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const _RangeLabelsRow(start: '1 km', end: 'Anywhere'),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const SectionLabel(label: 'Visibility'),
+            const SizedBox(height: AppSpacing.sm),
+            _HiddenToggleCard(
+              isHidden: _isHidden!,
+              onToggle: () {
+                setState(() => _isHidden = !_isHidden!);
+                ref
+                    .read(userSettingsProvider.notifier)
+                    .updateSettings(
+                      UpdateSettingsRequestDto(discoveryVisible: !_isHidden!),
+                    );
+                _showSavedToast();
+              },
+            ),
+            if (_isHidden!) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xxs),
+                child: Text(
+                  'Your profile is currently hidden from discovery.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xxl),
           ],
-          const SizedBox(height: AppSpacing.xxl),
-        ]),
+        ),
       ),
     );
   }
@@ -234,8 +252,11 @@ class _State extends ConsumerState<SettingsDiscoveryScreen> {
 // ── Slider card ─────────────────────────────────────────────────────────
 
 class _SliderCard extends StatelessWidget {
-  const _SliderCard(
-      {required this.title, required this.badge, required this.child});
+  const _SliderCard({
+    required this.title,
+    required this.badge,
+    required this.child,
+  });
   final String title;
   final String badge;
   final Widget child;
@@ -249,22 +270,32 @@ class _SliderCard extends StatelessWidget {
         borderRadius: AppRadius.borderLg,
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(title, style: AppTypography.label),
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-            decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: AppRadius.borderFull),
-            child: Text(badge,
-                style: AppTypography.label.copyWith(color: AppColors.primary)),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: AppTypography.label),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xxs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: AppRadius.borderFull,
+                ),
+                child: Text(
+                  badge,
+                  style: AppTypography.label.copyWith(color: AppColors.primary),
+                ),
+              ),
+            ],
           ),
-        ]),
-        const SizedBox(height: AppSpacing.sm),
-        child,
-      ]),
+          const SizedBox(height: AppSpacing.sm),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -278,10 +309,13 @@ class _RangeLabelsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(start, style: AppTypography.caption),
-      Text(end, style: AppTypography.caption),
-    ]);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(start, style: AppTypography.caption),
+        Text(end, style: AppTypography.caption),
+      ],
+    );
   }
 }
 
@@ -304,32 +338,47 @@ class _HiddenToggleCard extends StatelessWidget {
         onTap: onToggle,
         behavior: HitTestBehavior.opaque,
         child: Container(
-          constraints:
-              const BoxConstraints(minHeight: AppSpacing.touchComfortable),
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.touchComfortable,
+          ),
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-          child: Row(children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                  color: AppColors.success, borderRadius: AppRadius.borderMd),
-              alignment: Alignment.center,
-              child: const Icon(Icons.visibility_off_outlined,
-                  size: 20, color: AppColors.textInverse),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.success,
+                  borderRadius: AppRadius.borderMd,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.visibility_off_outlined,
+                  size: 20,
+                  color: AppColors.textInverse,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
                 child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text('Hide from discovery', style: AppTypography.label),
-                  Text("Your profile won't appear to new people",
-                      style: AppTypography.bodySm
-                          .copyWith(color: AppColors.textMuted)),
-                ])),
-            WarmSwitch(isEnabled: isHidden, onToggle: onToggle),
-          ]),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Hide from discovery', style: AppTypography.label),
+                    Text(
+                      "Your profile won't appear to new people",
+                      style: AppTypography.bodySm.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              WarmSwitch(isEnabled: isHidden, onToggle: onToggle),
+            ],
+          ),
         ),
       ),
     );

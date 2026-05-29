@@ -33,9 +33,7 @@ class CallHistoryScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(4, 10, 20, 12),
               decoration: const BoxDecoration(
                 color: Color(0xFFFFFDF9),
-                border: Border(
-                  bottom: BorderSide(color: Color(0xCCEDE8DE)),
-                ),
+                border: Border(bottom: BorderSide(color: Color(0xCCEDE8DE))),
               ),
               child: Row(
                 children: [
@@ -77,11 +75,7 @@ class CallHistoryScreen extends ConsumerWidget {
                             width: 1.5,
                           ),
                         ),
-                        child: const Icon(
-                          Icons.phone,
-                          size: 32,
-                          color: _teal,
-                        ),
+                        child: const Icon(Icons.phone, size: 32, color: _teal),
                       ),
                       const SizedBox(height: 20),
                       Text(

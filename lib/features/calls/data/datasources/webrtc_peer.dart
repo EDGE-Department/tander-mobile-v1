@@ -24,7 +24,7 @@ final class WebrtcPeerCallbacks {
   final void Function(RTCIceConnectionState iceState) onIceStateChange;
   final void Function(MediaStream stream) onRemoteStream;
   final void Function(RTCPeerConnectionState connectionState)
-      onConnectionStateChange;
+  onConnectionStateChange;
 }
 
 // ---------------------------------------------------------------------------
@@ -43,7 +43,8 @@ final class PeerConnectionClosedException implements Exception {
   const PeerConnectionClosedException();
 
   @override
-  String toString() => 'PeerConnectionClosedException: Peer connection is closed';
+  String toString() =>
+      'PeerConnectionClosedException: Peer connection is closed';
 }
 
 // ---------------------------------------------------------------------------
@@ -55,8 +56,7 @@ final class PeerConnectionClosedException implements Exception {
 /// Mirrors the web's `WebrtcPeer` class: create, acquireMedia, offer/answer,
 /// ICE candidates, media toggles, dispose.
 final class WebrtcPeer {
-  WebrtcPeer({required WebrtcPeerCallbacks callbacks})
-      : _callbacks = callbacks;
+  WebrtcPeer({required WebrtcPeerCallbacks callbacks}) : _callbacks = callbacks;
 
   static const String _tag = 'WebrtcPeer';
 
@@ -77,15 +77,14 @@ final class WebrtcPeer {
       _callbacks.onIceCandidate(candidate);
     };
 
-    _peerConnection!.onIceConnectionState =
-        (RTCIceConnectionState iceState) {
+    _peerConnection!.onIceConnectionState = (RTCIceConnectionState iceState) {
       _callbacks.onIceStateChange(iceState);
     };
 
     _peerConnection!.onConnectionState =
         (RTCPeerConnectionState connectionState) {
-      _callbacks.onConnectionStateChange(connectionState);
-    };
+          _callbacks.onConnectionStateChange(connectionState);
+        };
 
     _peerConnection!.onTrack = (RTCTrackEvent event) {
       if (event.streams.isNotEmpty) {
@@ -114,19 +113,20 @@ final class WebrtcPeer {
         micStatus.isPermanentlyDenied || micStatus.isRestricted
             ? 'microphone:settings'
             : 'Microphone access is required to make calls. '
-                'Please allow microphone access in your device settings.',
+                  'Please allow microphone access in your device settings.',
       );
     }
 
     if (isVideo) {
       final camStatus = await Permission.camera.request();
-      if (!camStatus.isGranted && (camStatus.isPermanentlyDenied || camStatus.isRestricted)) {
+      if (!camStatus.isGranted &&
+          (camStatus.isPermanentlyDenied || camStatus.isRestricted)) {
         // Camera is permanently denied — fall back to audio-only silently
         isVideo = false;
       }
     }
 
-    final audioConstraints = CallMediaConstraints.audioConstraints;
+    const audioConstraints = CallMediaConstraints.audioConstraints;
     final videoConstraints = isVideo
         ? CallMediaConstraints.videoConstraints
         : false;
@@ -164,10 +164,7 @@ final class WebrtcPeer {
       await _peerConnection!.addTrack(track, _localStream!);
     }
 
-    AppLogger.debug(
-      'Media acquired (isVideo: $isVideo)',
-      operation: _tag,
-    );
+    AppLogger.debug('Media acquired (isVideo: $isVideo)', operation: _tag);
 
     return _localStream!;
   }
@@ -213,11 +210,14 @@ final class WebrtcPeer {
   /// Sets the remote SDP offer (callee side).
   Future<void> setRemoteOffer(String sdp) async {
     _requireOpenConnection();
-    await _peerConnection!.setRemoteDescription(
-      RTCSessionDescription(sdp, 'offer'),
-    ).timeout(const Duration(seconds: 10), onTimeout: () {
-      throw TimeoutException('setRemoteDescription(offer) timed out');
-    });
+    await _peerConnection!
+        .setRemoteDescription(RTCSessionDescription(sdp, 'offer'))
+        .timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw TimeoutException('setRemoteDescription(offer) timed out');
+          },
+        );
   }
 
   /// Sets the remote SDP answer (caller side).
@@ -286,14 +286,14 @@ final class WebrtcPeer {
     // via the signalingState instead.
     final signalingState = _peerConnection?.signalingState;
     return signalingState == RTCSignalingState.RTCSignalingStateStable ||
-        signalingState ==
-            RTCSignalingState.RTCSignalingStateHaveRemoteOffer;
+        signalingState == RTCSignalingState.RTCSignalingStateHaveRemoteOffer;
   }
 
   bool get isAlive {
     if (_peerConnection == null) return false;
     final connectionState = _peerConnection!.connectionState;
-    return connectionState != RTCPeerConnectionState.RTCPeerConnectionStateClosed;
+    return connectionState !=
+        RTCPeerConnectionState.RTCPeerConnectionStateClosed;
   }
 
   // -----------------------------------------------------------------------
@@ -330,7 +330,8 @@ final class WebrtcPeer {
       );
     }
     final connectionState = _peerConnection!.connectionState;
-    if (connectionState == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
+    if (connectionState ==
+        RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
       throw const PeerConnectionClosedException();
     }
   }
@@ -344,8 +345,7 @@ final class WebrtcPeer {
       };
     }).toList();
 
-    final effectiveServers =
-        servers.isNotEmpty ? servers : fallbackIceServers;
+    final effectiveServers = servers.isNotEmpty ? servers : fallbackIceServers;
 
     return {
       'iceServers': effectiveServers,

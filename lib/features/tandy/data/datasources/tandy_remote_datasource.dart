@@ -11,7 +11,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 /// to domain models and wrap errors in [Result].
 final class TandyRemoteDatasource {
   const TandyRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -28,9 +28,7 @@ final class TandyRemoteDatasource {
       operation: '$_tag.fetchConversation',
     );
 
-    return _dioClient.get<Map<String, Object?>>(
-      ApiEndpoints.tandyConversation,
-    );
+    return _dioClient.get<Map<String, Object?>>(ApiEndpoints.tandyConversation);
   }
 
   /// Fetches the Tandy greeting message.

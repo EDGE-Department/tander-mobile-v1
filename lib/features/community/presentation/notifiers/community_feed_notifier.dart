@@ -13,8 +13,8 @@ import 'package:tander_flutter_v3/features/community/presentation/states/communi
 
 final communityFeedNotifierProvider =
     NotifierProvider<CommunityFeedNotifier, CommunityFeedState>(
-  CommunityFeedNotifier.new,
-);
+      CommunityFeedNotifier.new,
+    );
 
 // ─── Notifier ──────────────────────────────────────────────────────────
 
@@ -179,8 +179,9 @@ final class CommunityFeedNotifier extends Notifier<CommunityFeedState> {
     if (currentState is! CommunityFeedLoaded) return false;
 
     // Optimistic removal.
-    final updatedPosts =
-        currentState.posts.where((post) => post.postId != postId).toList();
+    final updatedPosts = currentState.posts
+        .where((post) => post.postId != postId)
+        .toList();
     state = currentState.copyWith(posts: updatedPosts);
 
     final result = await _repository.deletePost(postId: postId);

@@ -10,10 +10,7 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 /// is a no-op pass-through.
 final class LoggingInterceptor extends Interceptor {
   @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (kDebugMode) {
       final maskedHeaders = _maskSensitiveHeaders(options.headers);
 
@@ -49,10 +46,7 @@ final class LoggingInterceptor extends Interceptor {
   }
 
   @override
-  void onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) {
+  void onError(DioException err, ErrorInterceptorHandler handler) {
     if (kDebugMode) {
       AppLogger.warning(
         '✗ ${err.requestOptions.method} ${err.requestOptions.path} '
@@ -66,14 +60,9 @@ final class LoggingInterceptor extends Interceptor {
   }
 
   /// Returns a copy of [headers] with the `Authorization` value masked.
-  Map<String, Object?> _maskSensitiveHeaders(
-    Map<String, Object?> headers,
-  ) {
+  Map<String, Object?> _maskSensitiveHeaders(Map<String, Object?> headers) {
     if (!headers.containsKey('Authorization')) return headers;
 
-    return {
-      ...headers,
-      'Authorization': '***',
-    };
+    return {...headers, 'Authorization': '***'};
   }
 }

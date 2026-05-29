@@ -2,11 +2,13 @@ import Flutter
 import UIKit
 import PushKit
 import CallKit
+import AVFAudio
 import UserNotifications
 import flutter_callkit_incoming
+import TwilioVideo
 
 @main
-@objc class AppDelegate: FlutterAppDelegate, PKPushRegistryDelegate {
+@objc class AppDelegate: FlutterAppDelegate, PKPushRegistryDelegate, CallkitIncomingAppDelegate {
   /// Controls whether the app is locked to portrait orientation.
   /// When true, only portrait orientations are allowed (for liveness/ID verification screens).
   static var isPortraitLocked: Bool = false
@@ -21,6 +23,18 @@ import flutter_callkit_incoming
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+
+    // ── Twilio Video media bridge (iOS parity with Android) ──────────────
+    // Register the `tander/twilio_call` MethodChannel + `tander/twilio_video_view`
+    // PlatformView. The Dart side is platform-agnostic; this completes the iOS
+    // half. See TwilioVideoBridge.swift / TwilioVideoViewFactory.swift.
+    if let registrar = self.registrar(forPlugin: "tander-twilio-video") {
+      let twilioChannel = FlutterMethodChannel(
+        name: TwilioVideoBridge.methodChannelName,
+        binaryMessenger: registrar.messenger())
+      TwilioVideoBridge.shared.attachChannel(twilioChannel)
+      registrar.register(TwilioVideoViewFactory(), withId: "tander/twilio_video_view")
+    }
 
     // Required for flutter_local_notifications and firebase_messaging
     // to show notifications while app is in foreground.
@@ -103,7 +117,10 @@ import flutter_callkit_incoming
     // that crashes on non-UUID strings. Backend roomId is not a UUID, so
     // fold it into a deterministic UUID. Same roomId always yields the same
     // UUID, so subsequent cancel pushes match the original incoming call.
-    let uuid = roomId.isEmpty ? UUID().uuidString : uuidFromRoomId(roomId)
+    // Same helper the Twilio bridge uses for ConnectOptions.uuid, so the
+    // CallKit call UUID and the Twilio Room UUID match (shared source of truth
+    // in TwilioVideoBridge.swift).
+    let uuid = roomId.isEmpty ? UUID().uuidString : tanderDeterministicUUID(from: roomId)
 
     NSLog("[AppDelegate] VoIP push: type=\(pushType), caller=\(callerName), roomId=\(roomId), uuid=\(uuid)")
 
@@ -172,22 +189,47 @@ import flutter_callkit_incoming
     return fallback
   }
 
-  /// Folds an arbitrary string into a deterministic UUID v4 (string form).
-  /// Same input always returns the same UUID, so cancel pushes correctly
-  /// match the original incoming-call UUID.
-  private func uuidFromRoomId(_ roomId: String) -> String {
-    if UUID(uuidString: roomId) != nil { return roomId }
+  // (UUID derivation lives in TwilioVideoBridge.swift as the file-scope
+  // `tanderDeterministicUUID(from:)` so CallKit + Twilio share one source.)
 
-    let bytes = Array(roomId.utf8)
-    var hash = [UInt8](repeating: 0, count: 16)
-    for (i, byte) in bytes.enumerated() {
-      hash[i % 16] ^= byte
-    }
-    // Stamp UUID v4 + variant bits.
-    hash[6] = (hash[6] & 0x0F) | 0x40
-    hash[8] = (hash[8] & 0x3F) | 0x80
+  // MARK: - CallkitIncomingAppDelegate
+  //
+  // Conforming to this protocol makes flutter_callkit_incoming STOP
+  // auto-fulfilling CallKit actions — we MUST call action.fulfill() in each of
+  // onAccept/onDecline/onEnd or the action hangs in CallKit. The Dart event
+  // stream still fires independently (V2CallkitListener drives accept/decline/
+  // end + Twilio connect/disconnect), so these stay thin: fulfill, let Dart run.
+  // The PushKit handler above is unaffected by this conformance.
 
-    let hex = hash.map { String(format: "%02x", $0) }.joined()
-    return "\(hex.prefix(8))-\(hex.dropFirst(8).prefix(4))-\(hex.dropFirst(12).prefix(4))-\(hex.dropFirst(16).prefix(4))-\(hex.dropFirst(20))"
+  func onAccept(_ call: Call, _ action: CXAnswerCallAction) {
+    // Fulfill immediately. Dart's accept handler calls TwilioNativeBridge.connect
+    // via the plugin's accept event; the bridge installs its audioDevice BEFORE
+    // connecting, so didActivateAudioSession arrives after connect and enables
+    // the device. Do NOT reorder to fulfill-after-connect.
+    action.fulfill()
+  }
+
+  func onDecline(_ call: Call, _ action: CXEndCallAction) {
+    action.fulfill()
+  }
+
+  func onEnd(_ call: Call, _ action: CXEndCallAction) {
+    // Native end (CallKit UI). Dart's end event drives backend-end + Twilio
+    // disconnect (idempotent), so just fulfill here.
+    action.fulfill()
+  }
+
+  func onTimeOut(_ call: Call) {
+    // Unanswered timeout — plugin reports the ended call; nothing to fulfill.
+  }
+
+  func didActivateAudioSession(_ audioSession: AVAudioSession) {
+    // CallKit activated the session → enable Twilio's audio device. We never
+    // call AVAudioSession.setActive ourselves; CallKit owns the session.
+    TwilioVideoBridge.shared.audioDevice.isEnabled = true
+  }
+
+  func didDeactivateAudioSession(_ audioSession: AVAudioSession) {
+    TwilioVideoBridge.shared.audioDevice.isEnabled = false
   }
 }

@@ -62,8 +62,7 @@ final class NotificationHandler {
     );
 
     // App was terminated and launched by tapping a notification
-    final initialMessage =
-        await FirebaseMessaging.instance.getInitialMessage();
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       _handleNotificationTap(initialMessage, router);
     }
@@ -129,10 +128,7 @@ final class NotificationHandler {
   // Notification tap routing (background + terminated launch)
   // ---------------------------------------------------------------------------
 
-  static void _handleNotificationTap(
-    RemoteMessage message,
-    GoRouter router,
-  ) {
+  static void _handleNotificationTap(RemoteMessage message, GoRouter router) {
     final notificationType = _extractNotificationType(message);
 
     AppLogger.info(
@@ -143,10 +139,7 @@ final class NotificationHandler {
 
     switch (notificationType) {
       case _typeNewMessage:
-        final conversationId = _extractStringField(
-          message,
-          'conversationId',
-        );
+        final conversationId = _extractStringField(message, 'conversationId');
         if (conversationId != null) {
           router.go(AppRoutes.messageThread(conversationId));
         } else {
@@ -257,15 +250,18 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
   final rawType = message.data['type'];
   final notificationType = rawType is String ? rawType : 'unknown';
 
-  debugPrint('[BG] Background message received: type=$notificationType '
-      'keys=${message.data.keys.toList()}');
+  debugPrint(
+    '[BG] Background message received: type=$notificationType '
+    'keys=${message.data.keys.toList()}',
+  );
 
   // Route call-related pushes to CallPushBridge for native UI
   if (notificationType == _typeIncomingCall ||
       notificationType == _typeCallCancelled ||
       notificationType == 'call_ended') {
-    final wasHandled =
-        await CallPushBridge.handleBackgroundCallPush(message.data);
+    final wasHandled = await CallPushBridge.handleBackgroundCallPush(
+      message.data,
+    );
     debugPrint('[BG] Call push handled=$wasHandled type=$notificationType');
   }
 }

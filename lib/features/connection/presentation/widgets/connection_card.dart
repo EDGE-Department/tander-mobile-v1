@@ -73,10 +73,7 @@ class RequestCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildProfileRow(),
-          _buildActionButtons(),
-        ],
+        children: [_buildProfileRow(), _buildActionButtons()],
       ),
     );
   }
@@ -135,21 +132,15 @@ class RequestCard extends StatelessWidget {
         if (connection.otherCity != null) ...[
           const Icon(Icons.location_on, size: 10, color: AppColors.textMuted),
           const SizedBox(width: 2),
-          Text(
-            connection.otherCity!,
-            style: AppTypography.caption.copyWith(fontSize: 11),
-          ),
+          Text(connection.otherCity!, style: AppTypography.caption),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              '\u00B7',
-              style: AppTypography.caption,
-            ),
+            child: Text('\u00B7', style: AppTypography.caption),
           ),
         ],
         Text(
           formatConnectionTimeAgo(connection.createdAt),
-          style: AppTypography.caption.copyWith(fontSize: 11),
+          style: AppTypography.caption.copyWith(fontSize: 13),
         ),
       ],
     );
@@ -162,15 +153,13 @@ class RequestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.secondaryLight,
         borderRadius: AppRadius.borderFull,
-        border: Border.all(
-          color: AppColors.secondary.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.25)),
       ),
       child: Text(
         'Wants to connect',
         style: AppTypography.caption.copyWith(
           fontWeight: FontWeight.w600,
-          fontSize: 11,
+          fontSize: 13,
           color: AppColors.secondary,
         ),
       ),
@@ -289,7 +278,11 @@ Widget connectionPhotoPlaceholder({double iconSize = 24}) {
   return Container(
     color: AppColors.subtle,
     child: Center(
-      child: Icon(Icons.people_outline, size: iconSize, color: AppColors.textMuted),
+      child: Icon(
+        Icons.people_outline,
+        size: iconSize,
+        color: AppColors.textMuted,
+      ),
     ),
   );
 }

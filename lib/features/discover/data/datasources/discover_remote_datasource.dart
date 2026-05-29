@@ -11,7 +11,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 /// can map DTOs to domain models and wrap errors in [Result].
 final class DiscoverRemoteDatasource {
   const DiscoverRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -82,10 +82,7 @@ final class DiscoverRemoteDatasource {
 
     await _dioClient.post<Map<String, Object?>>(
       ApiEndpoints.swipe,
-      data: {
-        'targetUserId': targetUserId,
-        'direction': 'RIGHT',
-      },
+      data: {'targetUserId': targetUserId, 'direction': 'RIGHT'},
     );
   }
 
@@ -99,10 +96,7 @@ final class DiscoverRemoteDatasource {
 
     await _dioClient.post<Map<String, Object?>>(
       ApiEndpoints.swipe,
-      data: {
-        'targetUserId': targetUserId,
-        'direction': 'LEFT',
-      },
+      data: {'targetUserId': targetUserId, 'direction': 'LEFT'},
     );
   }
 }

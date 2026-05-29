@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/states/call_state.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/widgets/call_screen_widgets.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Full-screen call page with video renderers, controls, and status overlays.
 ///
@@ -247,17 +246,14 @@ class _LocalPipView extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.2),
             width: 2,
           ),
-          boxShadow: const [
-            BoxShadow(blurRadius: 16, color: Colors.black45),
-          ],
+          boxShadow: const [BoxShadow(blurRadius: 16, color: Colors.black45)],
         ),
         clipBehavior: Clip.antiAlias,
         child: isCameraOn
             ? RTCVideoView(
                 renderer,
                 mirror: true,
-                objectFit:
-                    RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
               )
             : ColoredBox(
                 color: const Color(0xCC000000),
@@ -300,10 +296,7 @@ class _CallControls extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.5),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.5)],
         ),
       ),
       child: Row(
@@ -312,9 +305,7 @@ class _CallControls extends StatelessWidget {
           CallControlButton(
             onTap: callManager.toggleMute,
             isActive: callState.media.isMuted,
-            icon: callState.media.isMuted
-                ? Icons.mic_off
-                : Icons.mic,
+            icon: callState.media.isMuted ? Icons.mic_off : Icons.mic,
             label: callState.media.isMuted ? 'Unmute' : 'Mute',
           ),
           if (isVideoCall) ...[
@@ -325,8 +316,7 @@ class _CallControls extends StatelessWidget {
               icon: callState.media.isCameraOn
                   ? Icons.videocam
                   : Icons.videocam_off,
-              label:
-                  callState.media.isCameraOn ? 'Camera off' : 'Camera on',
+              label: callState.media.isCameraOn ? 'Camera off' : 'Camera on',
             ),
           ],
           const SizedBox(width: 20),
@@ -361,8 +351,7 @@ class _CallTopBar extends StatelessWidget {
                 size: 20,
                 color: Colors.white.withValues(alpha: 0.6),
               ),
-              constraints:
-                  const BoxConstraints(minWidth: 44, minHeight: 44),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             ),
             if (callState.isConnected &&
                 callState.callInfo?.callType == CallType.video)

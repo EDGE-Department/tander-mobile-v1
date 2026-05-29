@@ -18,7 +18,7 @@ const List<NavTabDescriptor> navTabs = [
     route: AppRoutes.discover,
     iconData: Icons.explore_outlined,
     activeIconData: Icons.explore,
-    iconColor: const Color(0xFF89B8E8),
+    iconColor: Color(0xFF89B8E8),
   ),
   NavTabDescriptor(
     id: 'connections',
@@ -82,13 +82,17 @@ class _TanderBottomNavBarState extends ConsumerState<TanderBottomNavBar>
 
     _tandyPulseAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 8.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 0.0,
+          end: 8.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 58,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 8.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 8.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 42,
       ),
     ]).animate(_tandyPulseController);
@@ -96,7 +100,8 @@ class _TanderBottomNavBarState extends ConsumerState<TanderBottomNavBar>
     _entranceController = AnimationController(
       vsync: this,
       duration: Duration(
-        milliseconds: NavBarConstants.entranceInitialDelay.inMilliseconds +
+        milliseconds:
+            NavBarConstants.entranceInitialDelay.inMilliseconds +
             (NavBarConstants.staggerDelay.inMilliseconds * navTabs.length) +
             300,
       ),
@@ -145,9 +150,22 @@ class _TanderBottomNavBarState extends ConsumerState<TanderBottomNavBar>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
-            BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 48, offset: const Offset(0, 16), spreadRadius: -6),
-            BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 20, offset: const Offset(0, 6)),
-            BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 6, offset: const Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black.withAlpha(50),
+              blurRadius: 48,
+              offset: const Offset(0, 16),
+              spreadRadius: -6,
+            ),
+            BoxShadow(
+              color: Colors.black.withAlpha(30),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withAlpha(15),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: ClipRRect(
@@ -161,21 +179,25 @@ class _TanderBottomNavBarState extends ConsumerState<TanderBottomNavBar>
                 borderRadius: BorderRadius.circular(32),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: List.generate(navTabs.length, (index) {
-                  return NavTabEntrance(
-                    delay: Duration(
-                      milliseconds:
-                          NavBarConstants.entranceInitialDelay.inMilliseconds +
-                              (NavBarConstants.staggerDelay.inMilliseconds * index),
-                    ),
-                    entranceController: _entranceController,
-                    child: _MobileDockTab(
-                      descriptor: navTabs[index],
-                      isActive: index == activeIndex,
-                      badge: _badgeForTab(navTabs[index].id, badgeCounts),
-                      tandyPulseAnimation: _tandyPulseAnimation,
-                      onTap: () => _onTabTapped(index),
+                  return Expanded(
+                    child: NavTabEntrance(
+                      delay: Duration(
+                        milliseconds:
+                            NavBarConstants
+                                .entranceInitialDelay
+                                .inMilliseconds +
+                            (NavBarConstants.staggerDelay.inMilliseconds *
+                                index),
+                      ),
+                      entranceController: _entranceController,
+                      child: _MobileDockTab(
+                        descriptor: navTabs[index],
+                        isActive: index == activeIndex,
+                        badge: _badgeForTab(navTabs[index].id, badgeCounts),
+                        tandyPulseAnimation: _tandyPulseAnimation,
+                        onTap: () => _onTabTapped(index),
+                      ),
                     ),
                   );
                 }),
@@ -239,10 +261,19 @@ class _MobileDockTab extends StatelessWidget {
                   // Solid orange gradient pill matching web's ACTIVE_PILL_STYLE
                   color: isActive ? const Color(0xFFE67E22) : null,
                   borderRadius: BorderRadius.circular(20),
-                  border: isActive ? Border.all(color: Colors.white.withAlpha(80), width: 0.5) : null,
+                  border: isActive
+                      ? Border.all(
+                          color: Colors.white.withAlpha(80),
+                          width: 0.5,
+                        )
+                      : null,
                   boxShadow: isActive
                       ? [
-                          BoxShadow(color: const Color(0xFFF07020).withAlpha(50), blurRadius: 20, offset: const Offset(0, 6)),
+                          BoxShadow(
+                            color: const Color(0xFFF07020).withAlpha(50),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
+                          ),
                         ]
                       : null,
                 ),
@@ -259,20 +290,26 @@ class _MobileDockTab extends StatelessWidget {
                             child: descriptor.usesIconData
                                 ? Icon(
                                     isActive
-                                        ? (descriptor.activeIconData ?? descriptor.iconData!)
+                                        ? (descriptor.activeIconData ??
+                                              descriptor.iconData!)
                                         : descriptor.iconData!,
                                     size: 26,
                                     color: isActive
                                         ? Colors.white
-                                        : (descriptor.iconColor ?? AppColors.textMuted),
+                                        : (descriptor.iconColor ??
+                                              AppColors.textMuted),
                                   )
                                 : Image.asset(
                                     descriptor.iconAsset!,
                                     width: 30,
                                     height: 30,
                                     color: isActive ? Colors.white : null,
-                                    colorBlendMode: isActive ? BlendMode.srcIn : null,
-                                    opacity: AlwaysStoppedAnimation(isActive ? 1.0 : 0.9),
+                                    colorBlendMode: isActive
+                                        ? BlendMode.srcIn
+                                        : null,
+                                    opacity: AlwaysStoppedAnimation(
+                                      isActive ? 1.0 : 0.9,
+                                    ),
                                   ),
                           ),
                           if (badge > 0)
@@ -285,19 +322,20 @@ class _MobileDockTab extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    MediaQuery(
-                      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-                      child: Text(
-                        descriptor.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                          color: isActive ? Colors.white : const Color(0xFF6B5B4F),
-                          height: 1,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      descriptor.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        color: isActive
+                            ? Colors.white
+                            : const Color(0xFF6B5B4F),
+                        height: 1,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -309,4 +347,3 @@ class _MobileDockTab extends StatelessWidget {
     );
   }
 }
-

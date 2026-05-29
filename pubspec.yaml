@@ -1,5 +1,5 @@
 name: tander_flutter_v3
-description: "Tander — Dating & wellness app for Filipino seniors 60+"
+description: "Tander — Social connection & wellness app for Filipino seniors 60+"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -21,8 +21,10 @@ dependencies:
 
   # Real-time
   stomp_dart_client: ^2.0.0
+  # Azure Web PubSub subscriber (Phase 5 native call signaling)
+  web_socket_channel: ^3.0.0
 
-  # WebRTC
+  # WebRTC (legacy P2P stack; Phase 5 migrates to native Twilio SDK)
   flutter_webrtc: ^0.12.2
 
   # Push notifications
@@ -42,8 +44,7 @@ dependencies:
   camera: ^0.11.0+2
   flutter_image_compress: ^2.3.0
 
-  # ML Kit (on-device face detection + OCR + document scanner for ID verification)
-  google_mlkit_face_detection: ^0.12.0
+  # ML Kit (on-device OCR + document scanner for ID verification)
   google_mlkit_text_recognition: ^0.14.0
   cunning_document_scanner: ^1.2.3
 
@@ -77,6 +78,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4
+  http_mock_adapter: ^0.6.1
   build_runner: ^2.4.13
   json_serializable: ^6.8.0
   freezed: ^2.5.7

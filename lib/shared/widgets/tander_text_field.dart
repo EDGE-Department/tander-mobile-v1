@@ -5,6 +5,28 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
+/// Controls when validation errors appear in [TanderTextField].
+///
+/// Default is [legacy] for backward compatibility — parents fully control
+/// error display via the [TanderTextField.errorText] prop and validation
+/// timing is the parent's responsibility.
+///
+/// [onBlurThenLive] is the senior-UX-friendly mode: errors only appear when
+/// the field loses focus AFTER the user has typed (touched), and clear
+/// immediately on the next valid keystroke. In this mode, the
+/// [TanderTextField.errorText] prop is IGNORED and errors must be returned
+/// from the [TanderTextField.validator] callback.
+enum ValidationMode {
+  /// Default: parent fully controls error display via [TanderTextField.errorText].
+  legacy,
+
+  /// Errors appear when the field loses focus AFTER the user has typed.
+  /// Clear immediately on the next valid keystroke. In this mode,
+  /// [TanderTextField.errorText] is IGNORED; errors must be returned
+  /// from [TanderTextField.validator].
+  onBlurThenLive,
+}
+
 /// Elder-friendly text field matching the Tander web INPUT token system.
 ///
 /// Renders an optional [label] above the field, with built-in support for
@@ -32,6 +54,7 @@ class TanderTextField extends StatelessWidget {
     this.enabled = true,
     this.focusNode,
     this.inputFormatters,
+    this.validationMode = ValidationMode.legacy,
     super.key,
   });
 
@@ -53,8 +76,11 @@ class TanderTextField extends StatelessWidget {
   final bool enabled;
   final FocusNode? focusNode;
   final List<TextInputFormatter>? inputFormatters;
+  final ValidationMode validationMode;
 
-  bool get _hasError => errorText != null && errorText!.isNotEmpty;
+  bool get _isOnBlurMode => validationMode == ValidationMode.onBlurThenLive;
+  bool get _hasError =>
+      !_isOnBlurMode && errorText != null && errorText!.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +124,8 @@ class TanderTextField extends StatelessWidget {
       maxLength: maxLength,
       onChanged: onChanged,
       validator: validator,
+      // onBlurThenLive: native onUnfocus autovalidation; legacy: parent-driven.
+      autovalidateMode: _isOnBlurMode ? AutovalidateMode.onUnfocus : null,
       textInputAction: textInputAction,
       autofocus: autofocus,
       enabled: enabled,
@@ -129,7 +157,12 @@ class TanderTextField extends StatelessWidget {
         errorBorder: _buildBorder(AppColors.danger),
         focusedErrorBorder: _buildBorder(AppColors.danger),
         disabledBorder: _buildBorder(AppColors.borderLight),
-        errorStyle: const TextStyle(fontSize: 0, height: 0),
+        // In onBlurThenLive mode, allow native error text to render with the
+        // same caption style as the legacy custom error widget. In legacy
+        // mode, suppress native rendering (parent uses errorText prop).
+        errorStyle: _isOnBlurMode
+            ? AppTypography.caption.copyWith(color: AppColors.danger)
+            : const TextStyle(fontSize: 0, height: 0),
       ),
     );
   }
@@ -167,9 +200,6 @@ class TanderTextField extends StatelessWidget {
   }
 
   Widget _buildHelperText() {
-    return Text(
-      helperText!,
-      style: AppTypography.caption,
-    );
+    return Text(helperText!, style: AppTypography.caption);
   }
 }

@@ -63,8 +63,7 @@ class SpringPageDto<TItem> {
   factory SpringPageDto.fromJson(
     Map<String, Object?> json,
     TItem Function(Object? json) fromJsonTItem,
-  ) =>
-      _$SpringPageDtoFromJson(json, fromJsonTItem);
+  ) => _$SpringPageDtoFromJson(json, fromJsonTItem);
 
   final List<TItem> content;
   final int totalElements;
@@ -84,10 +83,7 @@ class SpringPageDto<TItem> {
 
 @JsonSerializable()
 class SwipeRequestDto {
-  const SwipeRequestDto({
-    required this.targetUserId,
-    required this.direction,
-  });
+  const SwipeRequestDto({required this.targetUserId, required this.direction});
 
   factory SwipeRequestDto.fromJson(Map<String, Object?> json) =>
       _$SwipeRequestDtoFromJson(json);

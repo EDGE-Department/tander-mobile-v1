@@ -29,8 +29,5 @@ final appConfigProvider = FutureProvider<AppConfig>((ref) async {
   }
 
   // Defaults
-  return const AppConfig(
-    discoveryMinAge: 60,
-    discoveryMaxAge: 120,
-  );
+  return const AppConfig(discoveryMinAge: 60, discoveryMaxAge: 120);
 });

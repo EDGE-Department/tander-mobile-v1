@@ -9,13 +9,15 @@ import 'package:tander_flutter_v3/features/messaging/domain/repositories/messagi
 
 // ─── Datasources ────────────────────────────────────────────────────────
 
-final messagingRemoteDatasourceProvider =
-    Provider<MessagingRemoteDatasource>((ref) {
+final messagingRemoteDatasourceProvider = Provider<MessagingRemoteDatasource>((
+  ref,
+) {
   return MessagingRemoteDatasource(dioClient: ref.watch(dioClientProvider));
 });
 
-final messagingStompDatasourceProvider =
-    Provider<MessagingStompDatasource>((ref) {
+final messagingStompDatasourceProvider = Provider<MessagingStompDatasource>((
+  ref,
+) {
   return const MessagingStompDatasource();
 });
 

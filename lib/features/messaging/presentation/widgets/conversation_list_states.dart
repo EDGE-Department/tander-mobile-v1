@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
-import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
 const Color _orange = AppColors.primary;

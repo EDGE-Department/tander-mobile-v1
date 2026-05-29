@@ -14,11 +14,11 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/community/presentation/notifiers/community_feed_notifier.dart';
+import 'package:tander_flutter_v3/features/community/presentation/screens/community_post_screen.dart';
 import 'package:tander_flutter_v3/features/community/presentation/states/community_state.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/create_post_sheet.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/daily_prompt_card.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/post_card.dart';
-import 'package:tander_flutter_v3/features/community/presentation/screens/community_post_screen.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
@@ -359,7 +359,7 @@ void _showEditPostAsSheet(
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: 'Update your post...',
-                  hintStyle: TextStyle(color: AppColors.textDisabled),
+                  hintStyle: const TextStyle(color: AppColors.textDisabled),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: const BorderSide(color: AppColors.border),
@@ -398,7 +398,7 @@ void _showEditPostAsSheet(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.photo_outlined,
                     size: 20,
                     color: AppColors.primary,
@@ -406,7 +406,7 @@ void _showEditPostAsSheet(
                   const SizedBox(width: 6),
                   Text(
                     'Photos (${post.mediaUrls.length}/4)',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
@@ -456,7 +456,10 @@ void _showEditPostAsDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
         ),
         FilledButton(
           onPressed: () async {
@@ -498,7 +501,10 @@ void _showDeleteConfirmation(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
         ),
         FilledButton(
           onPressed: () async {

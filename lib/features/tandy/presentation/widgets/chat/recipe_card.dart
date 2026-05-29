@@ -63,13 +63,17 @@ class _RecipeCardWidgetState extends State<RecipeCardWidget> {
                   Container(
                     width: 36,
                     height: 36,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: <Color>[kTandyOrange, Color(0xFFD35400)],
                       ),
                     ),
-                    child: const Icon(Icons.restaurant, color: Colors.white, size: 18),
+                    child: const Icon(
+                      Icons.restaurant,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -104,9 +108,15 @@ class _RecipeCardWidgetState extends State<RecipeCardWidget> {
               children: <Widget>[
                 _StatColumn(label: 'Prep', value: recipeData.prepTime ?? '--'),
                 Container(width: 1, height: 32, color: const Color(0xFFE8E3DA)),
-                _StatColumn(label: 'Calories', value: recipeData.calories.toString()),
+                _StatColumn(
+                  label: 'Calories',
+                  value: recipeData.calories.toString(),
+                ),
                 Container(width: 1, height: 32, color: const Color(0xFFE8E3DA)),
-                _StatColumn(label: 'Serves', value: recipeData.servings.toString()),
+                _StatColumn(
+                  label: 'Serves',
+                  value: recipeData.servings.toString(),
+                ),
               ],
             ),
           ),
@@ -150,12 +160,16 @@ class _StatColumn extends StatelessWidget {
       children: <Widget>[
         Text(
           value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF2D2A26)),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF2D2A26),
+          ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF9B8F80)),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF9B8F80)),
         ),
       ],
     );
@@ -196,13 +210,19 @@ class _ExpandedContent extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(7),
                         border: Border.all(
-                          color: isChecked ? kTandyOrange : const Color(0xFFD5CFC4),
+                          color: isChecked
+                              ? kTandyOrange
+                              : const Color(0xFFD5CFC4),
                           width: 2,
                         ),
                         color: isChecked ? kTandyOrange : Colors.transparent,
                       ),
                       child: isChecked
-                          ? const Icon(Icons.check, size: 14, color: Colors.white)
+                          ? const Icon(
+                              Icons.check,
+                              size: 14,
+                              color: Colors.white,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 12),
@@ -211,8 +231,12 @@ class _ExpandedContent extends StatelessWidget {
                         recipeData.ingredients[index],
                         style: TextStyle(
                           fontSize: 15,
-                          color: isChecked ? const Color(0xFF9B8F80) : const Color(0xFF2D2A26),
-                          decoration: isChecked ? TextDecoration.lineThrough : null,
+                          color: isChecked
+                              ? const Color(0xFF9B8F80)
+                              : const Color(0xFF2D2A26),
+                          decoration: isChecked
+                              ? TextDecoration.lineThrough
+                              : null,
                           decorationColor: kTandyOrange,
                         ),
                       ),
@@ -230,10 +254,7 @@ class _ExpandedContent extends StatelessWidget {
           ...recipeData.instructions.asMap().entries.map((entry) {
             final instruction = entry.value;
             final isLast = entry.key == recipeData.instructions.length - 1;
-            return _InstructionStep(
-              instruction: instruction,
-              isLast: isLast,
-            );
+            return _InstructionStep(instruction: instruction, isLast: isLast);
           }),
         ],
       ),
@@ -252,12 +273,25 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         children: <Widget>[
-          Container(width: 4, height: 20, decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(2),
-            gradient: const LinearGradient(colors: <Color>[kTandyOrange, Color(0xFFD35400)]),
-          )),
+          Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2),
+              gradient: const LinearGradient(
+                colors: <Color>[kTandyOrange, Color(0xFFD35400)],
+              ),
+            ),
+          ),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF2D2A26))),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF2D2A26),
+            ),
+          ),
         ],
       ),
     );
@@ -278,21 +312,29 @@ class _InstructionStep extends StatelessWidget {
         Column(
           children: <Widget>[
             Container(
-              width: 30, height: 30,
+              width: 30,
+              height: 30,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(colors: <Color>[kTandyOrange, Color(0xFFD35400)]),
+                gradient: LinearGradient(
+                  colors: <Color>[kTandyOrange, Color(0xFFD35400)],
+                ),
               ),
               child: Center(
                 child: Text(
                   instruction.stepNumber.toString(),
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
             if (!isLast)
               Container(
-                width: 2, height: 32,
+                width: 2,
+                height: 32,
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 color: const Color(0xFFE8E3DA),
               ),
@@ -305,19 +347,36 @@ class _InstructionStep extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(instruction.text, style: const TextStyle(fontSize: 15, color: Color(0xFF2D2A26), height: 1.6)),
-                if (instruction.timerDurationMinutes != null && instruction.timerDurationMinutes! > 0)
+                Text(
+                  instruction.text,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF2D2A26),
+                    height: 1.6,
+                  ),
+                ),
+                if (instruction.timerDurationMinutes != null &&
+                    instruction.timerDurationMinutes! > 0)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
-                        gradient: const LinearGradient(colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDDCB0)]),
+                        gradient: const LinearGradient(
+                          colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDDCB0)],
+                        ),
                       ),
                       child: Text(
                         '${instruction.timerDurationMinutes} min',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF9A3412)),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF9A3412),
+                        ),
                       ),
                     ),
                   ),

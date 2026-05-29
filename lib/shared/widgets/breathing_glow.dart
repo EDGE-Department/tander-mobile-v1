@@ -49,24 +49,18 @@ class _BreathingGlowState extends State<BreathingGlow>
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    )..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: widget.duration)
+      ..repeat(reverse: true);
 
     _scaleAnimation = Tween<double>(
       begin: widget.minScale,
       end: widget.maxScale,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _opacityAnimation = Tween<double>(
       begin: 0.4,
       end: 1.0,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -77,8 +71,8 @@ class _BreathingGlowState extends State<BreathingGlow>
 
   @override
   Widget build(BuildContext context) {
-    final glowColor = widget.glowColor ??
-        AppColors.primary.withValues(alpha: 0.30);
+    final glowColor =
+        widget.glowColor ?? AppColors.primary.withValues(alpha: 0.30);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -91,7 +85,10 @@ class _BreathingGlowState extends State<BreathingGlow>
               boxShadow: [
                 BoxShadow(
                   color: glowColor.withValues(
-                    alpha: (glowColor.a * _opacityAnimation.value).clamp(0.0, 1.0),
+                    alpha: (glowColor.a * _opacityAnimation.value).clamp(
+                      0.0,
+                      1.0,
+                    ),
                   ),
                   blurRadius: widget.glowRadius,
                   spreadRadius: widget.glowRadius * 0.25,

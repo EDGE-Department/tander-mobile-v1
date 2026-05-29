@@ -64,15 +64,9 @@ class TandyChatHeader extends StatelessWidget {
               gradient: const LinearGradient(
                 colors: <Color>[Color(0xFFFEF0E0), Color(0xFFFDE8CC)],
               ),
-              border: Border.all(
-                color: kTandyOrange.withAlpha(77),
-                width: 2,
-              ),
+              border: Border.all(color: kTandyOrange.withAlpha(77), width: 2),
               boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: kTandyOrange.withAlpha(56),
-                  blurRadius: 20,
-                ),
+                BoxShadow(color: kTandyOrange.withAlpha(56), blurRadius: 20),
               ],
             ),
             child: Center(
@@ -135,9 +129,7 @@ class TandyChatHeader extends StatelessWidget {
           IconButton(
             onPressed: onClear,
             icon: const Icon(Icons.delete_outline, size: 16),
-            style: IconButton.styleFrom(
-              foregroundColor: AppColors.textMuted,
-            ),
+            style: IconButton.styleFrom(foregroundColor: AppColors.textMuted),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:tander_flutter_v3/core/mappers/profile_mapper.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/core/utils/result.dart';
 import 'package:tander_flutter_v3/features/profile/data/datasources/profile_remote_datasource.dart';
+import 'package:tander_flutter_v3/features/profile/domain/models/account_deletion_status.dart';
 import 'package:tander_flutter_v3/features/profile/domain/repositories/profile_repository.dart';
 
 /// Coordinates [ProfileRemoteDatasource] and [ProfileMapper] to fulfil
@@ -36,9 +37,7 @@ final class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Result<UserProfile>> fetchUserProfile({required int userId}) {
     return _runSafe('fetchUserProfile', () async {
-      final response = await _remoteDatasource.fetchUserProfile(
-        userId: userId,
-      );
+      final response = await _remoteDatasource.fetchUserProfile(userId: userId);
       return _mapProfileResponse(response.data);
     });
   }
@@ -142,9 +141,43 @@ final class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Result<void>> deleteAccount() {
-    return _runSafe('deleteAccount', () async {
-      await _remoteDatasource.deleteAccount();
+  Future<Result<AccountDeletionStatus>> requestAccountDeletion({
+    String? reason,
+  }) {
+    return _runSafe('requestAccountDeletion', () async {
+      final response = await _remoteDatasource.requestAccountDeletion(
+        reason: reason,
+      );
+      return AccountDeletionStatus.fromJson(
+        response.data ?? const <String, Object?>{},
+      );
+    });
+  }
+
+  @override
+  Future<Result<AccountDeletionStatus>> cancelAccountDeletion() {
+    return _runSafe('cancelAccountDeletion', () async {
+      final response = await _remoteDatasource.cancelAccountDeletion();
+      return AccountDeletionStatus.fromJson(
+        response.data ?? const <String, Object?>{},
+      );
+    });
+  }
+
+  @override
+  Future<Result<AccountDeletionStatus?>> fetchAccountDeletionStatus() {
+    return _runSafe('fetchAccountDeletionStatus', () async {
+      final response = await _remoteDatasource.fetchAccountDeletionStatus();
+      // 204 No Content → no active deletion request.
+      if (response.statusCode == 204 || response.data == null) return null;
+      return AccountDeletionStatus.fromJson(response.data!);
+    });
+  }
+
+  @override
+  Future<Result<void>> requestDataExport() {
+    return _runSafe('requestDataExport', () async {
+      await _remoteDatasource.requestDataExport();
     });
   }
 

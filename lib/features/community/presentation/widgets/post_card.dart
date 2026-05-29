@@ -145,7 +145,7 @@ class _AuthorHeader extends StatelessWidget {
                       Flexible(
                         child: Text(
                           _formatPostTime(createdAt).toUpperCase(),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.12 * 12,
@@ -167,10 +167,10 @@ class _AuthorHeader extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       // Web: text-[12px] text-primary font-black uppercase tracking-[0.12em]
-                      Text(
+                      const Text(
                         'NEIGHBOR',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.08 * 11,
                           color: AppColors.primary,
@@ -293,7 +293,11 @@ class _PostMenu extends StatelessWidget {
       width: 44,
       height: 44,
       child: IconButton(
-        icon: const Icon(Icons.more_horiz, size: 28, color: AppColors.textMuted),
+        icon: const Icon(
+          Icons.more_horiz,
+          size: 28,
+          color: AppColors.textMuted,
+        ),
         padding: EdgeInsets.zero,
         onPressed: () => _showMenu(context),
       ),
@@ -479,9 +483,7 @@ class _PostPhotoCarouselState extends State<_PostPhotoCarousel> {
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.50),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.20),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
               ),
               child: Text(
                 '${_currentPage + 1} / ${widget.urls.length}',
@@ -550,9 +552,7 @@ class _ActionBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.40),
-          ),
+          top: BorderSide(color: AppColors.border.withValues(alpha: 0.40)),
         ),
       ),
       child: Row(
@@ -601,7 +601,9 @@ class _LikeButton extends StatelessWidget {
       color: hasReacted ? AppColors.danger : AppColors.subtle,
       borderRadius: BorderRadius.circular(24),
       elevation: hasReacted ? 2 : 0,
-      shadowColor: hasReacted ? AppColors.danger.withValues(alpha: 0.20) : Colors.transparent,
+      shadowColor: hasReacted
+          ? AppColors.danger.withValues(alpha: 0.20)
+          : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
@@ -624,9 +626,7 @@ class _LikeButton extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                reactionCount > 0
-                    ? '$reactionCount'
-                    : 'LIKE',
+                reactionCount > 0 ? '$reactionCount' : 'LIKE',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
@@ -644,10 +644,7 @@ class _LikeButton extends StatelessWidget {
 
 /// Web chat button: bg-gray-50 text-text-strong hover:bg-secondary/10 hover:text-secondary
 class _ChatButton extends StatelessWidget {
-  const _ChatButton({
-    required this.commentCount,
-    required this.onTap,
-  });
+  const _ChatButton({required this.commentCount, required this.onTap});
 
   final int commentCount;
   final VoidCallback onTap;
@@ -673,9 +670,7 @@ class _ChatButton extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                commentCount > 0
-                    ? '$commentCount'
-                    : 'CHAT',
+                commentCount > 0 ? '$commentCount' : 'CHAT',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,

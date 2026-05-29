@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:tander_flutter_v3/core/errors/app_exception.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_shadows.dart';
@@ -10,9 +13,13 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:tander_flutter_v3/features/auth/presentation/widgets/onboarding_chrome.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_error_display.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_success_confirmation.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_trust_footer.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
+import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 // ---------------------------------------------------------------------------
 // Notification features — matches web NOTIFICATION_FEATURES
@@ -33,18 +40,18 @@ class _NotificationFeature {
 const List<_NotificationFeature> _notificationFeatures = [
   _NotificationFeature(
     icon: Icons.chat_bubble_outline,
-    label: 'New messages',
-    description: 'Know the moment someone sends you a message',
+    label: 'Messages and calls',
+    description: 'See when someone reaches out, so you never miss a hello',
   ),
   _NotificationFeature(
     icon: Icons.people,
-    label: 'Connection requests',
-    description: 'Be notified when someone wants to connect with you',
+    label: 'New connections',
+    description: 'Know when someone would like to connect with you',
   ),
   _NotificationFeature(
     icon: Icons.favorite,
-    label: 'Community activity',
-    description: 'Reactions and comments on your posts',
+    label: 'From your community',
+    description: 'Gentle updates when people respond to what you share',
   ),
 ];
 
@@ -71,6 +78,7 @@ class NotificationPermissionScreen extends ConsumerStatefulWidget {
 class _NotificationPermissionScreenState
     extends ConsumerState<NotificationPermissionScreen> {
   bool _isEnabling = false;
+  NetworkException? _offlineError;
 
   // -- Actions --------------------------------------------------------------
 
@@ -85,7 +93,7 @@ class _NotificationPermissionScreenState
         operation: 'NotificationPermissionScreen._enableNotifications',
       );
 
-      if ((status.isPermanentlyDenied || status.isRestricted) && mounted) {
+      if ((status.isPermanentlyDenied || status.isRestricted || status.isDenied) && mounted) {
         setState(() => _isEnabling = false);
         final confirmed = await showDialog<bool>(
           context: context,
@@ -97,9 +105,9 @@ class _NotificationPermissionScreenState
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Skip'),
+                child: const Text('Not now'),
               ),
-              TextButton(
+              FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
                 child: const Text('Open Settings'),
               ),
@@ -128,10 +136,57 @@ class _NotificationPermissionScreenState
   }
 
   Future<void> _navigateToHome() async {
-    await ref.read(authNotifierProvider.notifier).refreshSession();
+    if (mounted) setState(() => _offlineError = null);
+    try {
+      await ref.read(authNotifierProvider.notifier).refreshSession();
+    } on DioException catch (error, stackTrace) {
+      // Catch ordering policy — see network_exception_handler.dart.
+      if (error.response?.statusCode == 401) {
+        if (mounted) {
+          setState(() => _isEnabling = false);
+          TanderToastOverlay.show(
+            context,
+            const TanderToastData(
+              message: 'Session expired. Please sign in again.',
+              variant: TanderToastVariant.error,
+            ),
+          );
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) context.go(AppRoutes.login);
+        }
+        return;
+      }
+      AppLogger.error(
+        'Session refresh failed before home navigation',
+        operation: 'NotificationPermissionScreen._navigateToHome',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } on NetworkException catch (error, stackTrace) {
+      AppLogger.error(
+        'Session refresh failed (offline)',
+        operation: 'NotificationPermissionScreen._navigateToHome',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted) {
+        setState(() {
+          _isEnabling = false;
+          _offlineError = error;
+        });
+      }
+      return;
+    }
     if (mounted) {
       setState(() => _isEnabling = false);
-      context.go(AppRoutes.home);
+      // First-time post-onboarding users get the celebration screen;
+      // returning users (flag already set) go straight to the home tab.
+      final localStorage = ref.read(localStorageProvider);
+      final hasSeenWelcome =
+          localStorage.getBool('has_seen_welcome_screen').valueOrNull ?? false;
+      await AuthSuccessConfirmation.show(context, 'All set!');
+      if (!mounted) return;
+      context.go(hasSeenWelcome ? AppRoutes.home : AppRoutes.welcome);
     }
   }
 
@@ -140,35 +195,44 @@ class _NotificationPermissionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: onboardingGradientBackground,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.xl,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const OnboardingStepBadge(currentStep: 3),
-                    const SizedBox(height: AppSpacing.xxl),
-                    _buildBellIcon(),
-                    const SizedBox(height: AppSpacing.lg),
-                    _buildHeading(),
-                    const SizedBox(height: AppSpacing.lg),
-                    _buildFeatureList(),
-                    const SizedBox(height: AppSpacing.xl),
-                    _buildEnableButton(),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildSkipButton(),
+      backgroundColor: const Color(0xFF20BF68),
+      body: AuthStepScaffoldBody(
+        header: const AuthStepHeader(currentStep: 5, totalSteps: 5),
+        parchment: AuthStepParchment(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppSpacing.md),
+                  _buildBellIcon(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildHeading(),
+                  const SizedBox(height: AppSpacing.lg),
+                  if (_offlineError != null) ...[
+                    AuthErrorDisplay.banner(
+                      message: _offlineError!.userMessage,
+                      autoDismiss: false,
+                      onRetry: _navigateToHome,
+                      onDismiss: () =>
+                          setState(() => _offlineError = null),
+                    ),
                     const SizedBox(height: AppSpacing.md),
-                    _buildFooterNote(),
                   ],
-                ),
+                  _buildFeatureList(),
+                  const SizedBox(height: AppSpacing.xl),
+                  _buildEnableButton(),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildSkipButton(),
+                  const SizedBox(height: AppSpacing.md),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: AuthTrustFooter(),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildFooterNote(),
+                ],
               ),
             ),
           ),
@@ -261,6 +325,7 @@ class _NotificationPermissionScreenState
             style: AppTypography.bodySm.copyWith(
               color: AppColors.textMuted,
               fontWeight: FontWeight.w500,
+              decoration: TextDecoration.underline,
             ),
           ),
         ),
@@ -310,11 +375,7 @@ class _FeatureCard extends StatelessWidget {
               ),
               borderRadius: AppRadius.borderMd,
             ),
-            child: Icon(
-              feature.icon,
-              size: 22,
-              color: AppColors.textInverse,
-            ),
+            child: Icon(feature.icon, size: 22, color: AppColors.textInverse),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(

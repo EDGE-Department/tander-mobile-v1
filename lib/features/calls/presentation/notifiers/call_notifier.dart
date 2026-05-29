@@ -7,8 +7,9 @@ import 'package:tander_flutter_v3/features/calls/presentation/states/call_state.
 // Provider
 // ---------------------------------------------------------------------------
 
-final callNotifierProvider =
-    NotifierProvider<CallNotifier, CallState>(CallNotifier.new);
+final callNotifierProvider = NotifierProvider<CallNotifier, CallState>(
+  CallNotifier.new,
+);
 
 // ---------------------------------------------------------------------------
 // Notifier
@@ -68,8 +69,9 @@ final class CallNotifier extends Notifier<CallState> {
   // -----------------------------------------------------------------------
 
   void endCall(CallEndReason reason, [String? errorMessage]) {
-    final endStatus =
-        reason == CallEndReason.failed ? const CallFailed() : const CallEnded();
+    final endStatus = reason == CallEndReason.failed
+        ? const CallFailed()
+        : const CallEnded();
 
     state = state.copyWith(
       status: endStatus,

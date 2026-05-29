@@ -9,7 +9,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 /// on the backend (room creation, acceptance, termination).
 final class CallsRemoteDatasource {
   const CallsRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -30,18 +30,12 @@ final class CallsRemoteDatasource {
     AppLogger.debug(
       'Creating call room',
       operation: '$_tag.createRoom',
-      context: {
-        'receiverId': receiverId,
-        'callType': callType.backendValue,
-      },
+      context: {'receiverId': receiverId, 'callType': callType.backendValue},
     );
 
     final response = await _dioClient.post<Map<String, Object?>>(
       ApiEndpoints.createCallRoom,
-      data: {
-        'receiverId': receiverId,
-        'callType': callType.backendValue,
-      },
+      data: {'receiverId': receiverId, 'callType': callType.backendValue},
     );
 
     final body = response.data;
@@ -60,10 +54,7 @@ final class CallsRemoteDatasource {
   ///
   /// Returns an empty list on failure — callers fall back to public STUN.
   Future<List<IceServerDto>> fetchIceServers() async {
-    AppLogger.debug(
-      'Fetching ICE servers',
-      operation: '$_tag.fetchIceServers',
-    );
+    AppLogger.debug('Fetching ICE servers', operation: '$_tag.fetchIceServers');
 
     final response = await _dioClient.get<Map<String, Object?>>(
       ApiEndpoints.iceServers,

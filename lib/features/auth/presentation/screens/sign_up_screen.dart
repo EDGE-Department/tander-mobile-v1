@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
-import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_background.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_desktop_hero.dart';
@@ -14,7 +13,7 @@ import 'package:tander_flutter_v3/features/auth/presentation/widgets/registratio
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/sign_up_form_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
-/// Registration screen — Step 1 of 4 (Account Setup).
+/// Registration screen — Step 1 of 5 (Account Setup).
 ///
 /// Matches login screen layout exactly:
 ///   - **Phone portrait**: gradient bg + header (constellation) + parchment sheet
@@ -78,8 +77,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
 
     final screenSize = MediaQuery.sizeOf(context);
     final isWideLayout = screenSize.width >= 1024;
-    final isTabletPortrait =
-        screenSize.width >= 768 && screenSize.width < 1024;
+    final isTabletPortrait = screenSize.width >= 768 && screenSize.width < 1024;
 
     if (isWideLayout) return _buildLandscapeLayout(context);
     if (isTabletPortrait) return _buildTabletPortraitLayout(context);
@@ -90,6 +88,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
 
   Widget _buildPhoneLayout(BuildContext context, double screenHeight) {
     final headerHeight = resolveHeaderHeight(screenHeight);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    final sheet = Transform.translate(
+      offset: const Offset(0, -20),
+      child: _SignUpSheet(
+        child: SignUpFormCard(
+          entrance: _entrance,
+          onSignIn: _onSignIn,
+          isBottomSheet: true,
+        ),
+      ),
+    );
 
     return PopScope(
       canPop: false,
@@ -98,6 +108,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
+        // resizeToAvoidBottomInset: true (default) lets the keyboard shrink
+        // the sheet so the sticky CTA stays just above the keyboard.
         body: Stack(
           children: [
             const Positioned.fill(
@@ -107,36 +119,32 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ),
               ),
             ),
-            SingleChildScrollView(
-              child: Column(
-                children: [
-                  _SignUpHeaderSection(
-                    headerHeight: headerHeight,
-                    onlineCount: _onlineCount,
-                    onBack: _onBack,
-                  ),
-                  Transform.translate(
-                        offset: const Offset(0, -20),
-                        child: _SignUpSheet(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 32),
-                            child: SignUpFormCard(
-                              entrance: _entrance,
-                              onSignIn: _onSignIn,
-                              isBottomSheet: true,
+            // Phone layout: fixed header + bounded sheet so the form card
+            // owns its own scroll and the Create Account CTA is always
+            // pinned at the bottom (see profile_setup_screen.dart:597 ref).
+            Column(
+              children: [
+                _SignUpHeaderSection(
+                  headerHeight: headerHeight,
+                  onlineCount: _onlineCount,
+                  onBack: _onBack,
+                ),
+                Expanded(
+                  child: reduceMotion
+                      ? sheet
+                      : sheet
+                            .animate()
+                            .fadeIn(
+                              duration: 700.ms,
+                              delay: 100.ms,
+                              curve: AppCurves.premiumEase,
+                            )
+                            .slideY(
+                              begin: 0.08,
+                              curve: AppCurves.premiumEase,
                             ),
-                          ),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(
-                        duration: 700.ms,
-                        delay: 100.ms,
-                        curve: AppCurves.premiumEase,
-                      )
-                      .slideY(begin: 0.08, curve: AppCurves.premiumEase),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
@@ -176,7 +184,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                         const Center(
                           child: RegistrationStepDots(
                             currentStep: 1,
-                            totalSteps: 4,
+                            totalSteps: 5,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -187,10 +195,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                               delay: 120.ms,
                               curve: AppCurves.premiumEase,
                             )
-                            .slideX(
-                              begin: 0.04,
-                              curve: AppCurves.premiumEase,
-                            ),
+                            .slideX(begin: 0.04, curve: AppCurves.premiumEase),
                       ],
                     ),
                   ),
@@ -242,7 +247,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                         const Center(
                           child: RegistrationStepDots(
                             currentStep: 1,
-                            totalSteps: 4,
+                            totalSteps: 5,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -253,10 +258,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                               delay: 120.ms,
                               curve: AppCurves.premiumEase,
                             )
-                            .slideY(
-                              begin: 0.08,
-                              curve: AppCurves.premiumEase,
-                            ),
+                            .slideY(begin: 0.08, curve: AppCurves.premiumEase),
                       ],
                     ),
                   ),
@@ -323,13 +325,17 @@ class _SignUpHeaderSection extends StatelessWidget {
             child: IgnorePointer(
               child: Center(
                 child: Transform.translate(
-                  offset: Offset(0, (screenWidth * 0.26).clamp(82.0, 108.0) * 0.25),
+                  offset: Offset(
+                    0,
+                    (screenWidth * 0.26).clamp(82.0, 108.0) * 0.25,
+                  ),
                   child: Text(
                     'Tander',
                     style: AppTypography.brandWordmark(
                       fontSize: (screenWidth * 0.26).clamp(82.0, 108.0),
                       color: Colors.white.withValues(alpha: 0.09),
-                      letterSpacing: -0.03 * (screenWidth * 0.26).clamp(82.0, 108.0),
+                      letterSpacing:
+                          -0.03 * (screenWidth * 0.26).clamp(82.0, 108.0),
                     ).copyWith(height: 1),
                   ),
                 ),
@@ -348,7 +354,7 @@ class _SignUpHeaderSection extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 20, top: 8),
                 child: ValueListenableBuilder<int>(
                   valueListenable: onlineCount,
-                  builder: (_, count, __) =>
+                  builder: (_, count, _) =>
                       OnlineCountBadge(count: count, useSeniorsLabel: false),
                 ),
               ),
@@ -364,25 +370,29 @@ class _SignUpHeaderSection extends StatelessWidget {
               right: false,
               child: Padding(
                 padding: const EdgeInsets.only(left: 16, top: 8),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onBack,
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.18),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
+                child: Semantics(
+                  label: 'Go back',
+                  button: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onBack,
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.18),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: Colors.white,
-                        size: 20,
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
                     ),
                   ),
@@ -413,24 +423,22 @@ class _SignUpHeaderSection extends StatelessWidget {
                     // Wordmark
                     Text(
                       'Tander',
-                      style: AppTypography.brandWordmark(
-                        fontSize: wordmarkSize,
-                        color: Colors.white,
-                        letterSpacing: -0.03 * wordmarkSize,
-                      ).copyWith(
-                        height: 0.95,
-                        shadows: const [
-                          Shadow(
-                            offset: Offset(0, 4),
-                            blurRadius: 24,
-                            color: Color(0x38000000),
+                      style:
+                          AppTypography.brandWordmark(
+                            fontSize: wordmarkSize,
+                            color: Colors.white,
+                            letterSpacing: -0.03 * wordmarkSize,
+                          ).copyWith(
+                            height: 0.95,
+                            shadows: const [
+                              Shadow(
+                                offset: Offset(0, 4),
+                                blurRadius: 24,
+                                color: Color(0x38000000),
+                              ),
+                              Shadow(blurRadius: 50, color: Color(0x47FFA050)),
+                            ],
                           ),
-                          Shadow(
-                            blurRadius: 50,
-                            color: Color(0x47FFA050),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ),
@@ -446,10 +454,7 @@ class _SignUpHeaderSection extends StatelessWidget {
 // ── Tablet portrait brand panel (matches login's brand panel) ────────
 
 class _SignUpBrandPanel extends StatelessWidget {
-  const _SignUpBrandPanel({
-    required this.onlineCount,
-    required this.onBack,
-  });
+  const _SignUpBrandPanel({required this.onlineCount, required this.onBack});
 
   final SimulatedOnlineCount onlineCount;
   final VoidCallback onBack;
@@ -504,7 +509,7 @@ class _SignUpBrandPanel extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 20, right: 20),
                 child: ValueListenableBuilder<int>(
                   valueListenable: onlineCount,
-                  builder: (_, count, __) => OnlineCountBadge(count: count),
+                  builder: (_, count, _) => OnlineCountBadge(count: count),
                 ),
               ),
             ),
@@ -516,25 +521,29 @@ class _SignUpBrandPanel extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: onBack,
-                      customBorder: const CircleBorder(),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.18),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
+                  Semantics(
+                    label: 'Go back',
+                    button: true,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onBack,
+                        customBorder: const CircleBorder(),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.18),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
                           ),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                          size: 22,
+                          child: const Icon(
+                            Icons.arrow_back_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
                       ),
                     ),
@@ -543,7 +552,7 @@ class _SignUpBrandPanel extends StatelessWidget {
                   Text(
                     'CREATE YOUR ACCOUNT',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.65),
                       letterSpacing: 2.8,
@@ -558,7 +567,7 @@ class _SignUpBrandPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Step 1 of 4\nAccount Setup',
+                    'Step 1 of 5\nAccount Setup',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

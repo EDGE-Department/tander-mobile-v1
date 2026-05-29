@@ -55,7 +55,8 @@ class ConnectionSummary {
   int get hashCode => connectionId.hashCode;
 
   @override
-  String toString() => 'ConnectionSummary('
+  String toString() =>
+      'ConnectionSummary('
       'id: $connectionId, '
       'user: $otherUsername, '
       'state: ${relationshipState.name})';
@@ -96,7 +97,8 @@ class PaginatedResult<TItem> {
   int get hashCode => Object.hash(totalCount, currentPage, pageSize);
 
   @override
-  String toString() => 'PaginatedResult('
+  String toString() =>
+      'PaginatedResult('
       'page: $currentPage/$totalPages, '
       'items: ${items.length}/$totalCount)';
 }

@@ -30,18 +30,6 @@ const LinearGradient _parchmentGradient = LinearGradient(
   stops: [0.0, 0.35, 0.65, 1.0],
 );
 
-const LinearGradient _mobileAuthGradient = LinearGradient(
-  begin: Alignment(-1, -1),
-  end: Alignment(1, 1),
-  colors: [
-    Color(0xFFF07040),
-    Color(0xFFE86035),
-    Color(0xFF2EC878),
-    Color(0xFF20BF68),
-  ],
-  stops: [0.0, 0.30, 0.70, 1.0],
-);
-
 /// Reset password screen — user sets a new password after OTP verification.
 ///
 /// Layout mirrors the login screen pattern:
@@ -78,11 +66,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   void initState() {
     super.initState();
     _onlineCount = SimulatedOnlineCount();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      systemNavigationBarColor: _navBarColor,
-      systemNavigationBarDividerColor: Colors.transparent,
-      systemNavigationBarContrastEnforced: false,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: _navBarColor,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: false,
+      ),
+    );
   }
 
   @override
@@ -98,10 +88,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   void dispose() {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarContrastEnforced: false,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: false,
+      ),
+    );
     _passwordController.dispose();
     _confirmController.dispose();
     _passwordFocusNode.dispose();
@@ -268,10 +260,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          Positioned.fill(
+          const Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(
-                decoration: const BoxDecoration(gradient: authGradient),
+                decoration: BoxDecoration(gradient: authGradient),
               ),
             ),
           ),
@@ -339,24 +331,22 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   // White "Tander" wordmark with shadow
                   Text(
                     'Tander',
-                    style: AppTypography.brandWordmark(
-                      fontSize: wordmarkSize,
-                      color: Colors.white,
-                      letterSpacing: -0.03 * wordmarkSize,
-                    ).copyWith(
-                      height: 0.95,
-                      shadows: const [
-                        Shadow(
-                          offset: Offset(0, 4),
-                          blurRadius: 24,
-                          color: Color(0x38000000),
+                    style:
+                        AppTypography.brandWordmark(
+                          fontSize: wordmarkSize,
+                          color: Colors.white,
+                          letterSpacing: -0.03 * wordmarkSize,
+                        ).copyWith(
+                          height: 0.95,
+                          shadows: const [
+                            Shadow(
+                              offset: Offset(0, 4),
+                              blurRadius: 24,
+                              color: Color(0x38000000),
+                            ),
+                            Shadow(blurRadius: 50, color: Color(0x47FFA050)),
+                          ],
                         ),
-                        Shadow(
-                          blurRadius: 50,
-                          color: Color(0x47FFA050),
-                        ),
-                      ],
-                    ),
                   ),
                 ],
               ),
@@ -370,25 +360,29 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Widget _buildNavRow() {
     return Row(
       children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.pop(),
-            customBorder: const CircleBorder(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.18),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
+        Semantics(
+          label: 'Go back',
+          button: true,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => context.pop(),
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-                size: 20,
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -397,7 +391,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         // Online count badge
         ValueListenableBuilder<int>(
           valueListenable: _onlineCount,
-          builder: (_, count, __) =>
+          builder: (_, count, _) =>
               OnlineCountBadge(count: count, useSeniorsLabel: true),
         ),
       ],
@@ -435,7 +429,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                child: _isSuccess ? _buildSuccessContent() : _buildFormContent(),
+                child: _isSuccess
+                    ? _buildSuccessContent()
+                    : _buildFormContent(),
               ),
             ),
           ],
@@ -457,9 +453,21 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         borderRadius: BorderRadius.circular(isWide ? 32 : 28),
         border: Border.all(color: const Color(0x1AE6A032)),
         boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 2, offset: Offset(0, 1)),
-          BoxShadow(color: Color(0x0FB46414), blurRadius: 12, offset: Offset(0, 4)),
-          BoxShadow(color: Color(0x1AC85A12), blurRadius: 48, offset: Offset(0, 16)),
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color(0x0FB46414),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Color(0x1AC85A12),
+            blurRadius: 48,
+            offset: Offset(0, 16),
+          ),
         ],
       ),
       child: ClipRRect(
@@ -501,7 +509,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.lock_reset_rounded, size: 48, color: AppColors.primary),
+          const Icon(
+            Icons.lock_reset_rounded,
+            size: 48,
+            color: AppColors.primary,
+          ),
           const SizedBox(height: AppSpacing.md),
           Text(
             'Set New Password',
@@ -656,194 +668,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 }
 
-// ── Mobile header ────────────────────────────────────────────────────
-
-class _ResetPasswordMobileHeader extends StatelessWidget {
-  const _ResetPasswordMobileHeader({
-    required this.headerHeight,
-    required this.onlineCount,
-  });
-
-  final double headerHeight;
-  final SimulatedOnlineCount onlineCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final horizontalOverscan = MediaQuery.sizeOf(context).width * 0.10;
-
-    return SizedBox(
-      height: headerHeight + headerOverlap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: -horizontalOverscan,
-            right: -horizontalOverscan,
-            top: 0,
-            bottom: 0,
-            child: const IgnorePointer(child: _MobileHeaderScene()),
-          ),
-          Positioned.fill(
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 2, 24, 8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Flexible(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset(
-                            'assets/icons/tander_icon.png',
-                            width: 32,
-                            height: 32,
-                            semanticLabel: 'Tander logo',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Tander',
-                            style: AppTypography.brandWordmark(
-                              fontSize: 21,
-                              color: Colors.white,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Reset Password',
-                      style: AppTypography.h1.copyWith(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    ValueListenableBuilder<int>(
-                      valueListenable: onlineCount,
-                      builder: (_, count, _) =>
-                          OnlineCountBadge(count: count, useSeniorsLabel: true),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Mobile header scene (constellation + grain + ghost text) ─────────
-
-class _MobileHeaderScene extends StatelessWidget {
-  const _MobileHeaderScene();
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: IgnorePointer(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final fontSize =
-                      (constraints.maxWidth * 0.34).clamp(116.0, 176.0);
-                  return Center(
-                    child: Transform.translate(
-                      offset: Offset(0, fontSize * 0.08),
-                      child: Text(
-                        '60+',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: fontSize,
-                          color: Colors.white.withValues(alpha: 0.05),
-                          height: 1,
-                          letterSpacing: -0.05 * fontSize,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Mobile frosted parchment sheet ──────────────────────────────────
-
-class _MobileParchmentSheet extends StatelessWidget {
-  const _MobileParchmentSheet({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0.14),
-            Colors.white.withValues(alpha: 0.08),
-            Colors.white.withValues(alpha: 0.04),
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(36),
-          topRight: Radius.circular(36),
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x26000000),
-            blurRadius: 28,
-            offset: Offset(0, -8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-          Center(
-            child: Container(
-              width: 48,
-              height: 4,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
-                ),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-// ── Tablet portrait brand panel (left 42%) ────────────────────────────────
-
 class _ResetTabletBrandPanel extends StatelessWidget {
   const _ResetTabletBrandPanel({required this.onlineCount});
 
@@ -924,7 +748,8 @@ class _ResetTabletBrandPanel extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 20, right: 20),
                 child: ValueListenableBuilder<int>(
                   valueListenable: onlineCount,
-                  builder: (context, count, child) => OnlineCountBadge(count: count),
+                  builder: (context, count, child) =>
+                      OnlineCountBadge(count: count),
                 ),
               ),
             ),
@@ -939,7 +764,7 @@ class _ResetTabletBrandPanel extends StatelessWidget {
                   Text(
                     'MADE FOR FILIPINO SENIORS 60+',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.65),
                       letterSpacing: 2.8,

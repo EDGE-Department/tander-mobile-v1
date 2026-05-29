@@ -7,9 +7,11 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import 'package:tander_flutter_v3/core/contracts/models/profile_models.dart';
 import 'package:tander_flutter_v3/core/contracts/profile_contracts.dart';
@@ -18,8 +20,11 @@ import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/providers/profile_providers.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/providers/user_settings_provider.dart';
 import 'package:tander_flutter_v3/features/profile/presentation/widgets/profile_page_components.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/widgets/security_form_sections.dart';
+import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/section_label.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_bottom_sheet.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
@@ -33,6 +38,13 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A pending (in-grace) deletion swaps the "Delete account" action for a
+    // "Cancel deletion" affordance. Null while loading, on error, or when none.
+    final deletionStatus = ref.watch(accountDeletionStatusProvider).valueOrNull;
+    final pendingDeletion = (deletionStatus != null && deletionStatus.isPending)
+        ? deletionStatus
+        : null;
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -50,7 +62,7 @@ class SettingsScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SectionHeading(label: 'Account'),
+            const _SectionHeading(label: 'Account'),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
               icon: Icons.notifications_outlined,
@@ -83,7 +95,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            _SectionHeading(label: 'Preferences'),
+            const _SectionHeading(label: 'Preferences'),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
               icon: Icons.explore,
@@ -96,7 +108,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            _SectionHeading(label: 'Support'),
+            const _SectionHeading(label: 'Support'),
             const SizedBox(height: AppSpacing.xs),
             ActionCard(
               icon: Icons.help_outline,
@@ -109,17 +121,33 @@ class SettingsScreen extends ConsumerWidget {
               label: 'About Tander',
               onTap: () => _showAboutDialog(context),
             ),
+            // Phase 5 dev-only call test harness — never shown in release
+            // builds (the route is likewise debug-gated in app_router.dart).
+            if (kDebugMode) ...[
+              const SizedBox(height: AppSpacing.xs),
+              ActionCard(
+                icon: Icons.bug_report,
+                label: 'Debug: v2 call test',
+                onTap: () => context.push(AppRoutes.debugV2Call),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
 
-            _SectionHeading(label: 'Actions'),
+            const _SectionHeading(label: 'Actions'),
             const SizedBox(height: AppSpacing.xs),
-            _SignOutCard(
-              onTap: () => _handleSignOut(context, ref),
-            ),
+            _SignOutCard(onTap: () => _handleSignOut(context, ref)),
             const SizedBox(height: AppSpacing.xs),
-            _DeleteAccountCard(
-              onTap: () => _handleDeleteAccount(context, ref),
-            ),
+            // When a deletion is already scheduled (in its grace window), offer
+            // to cancel it instead of starting a new request.
+            if (pendingDeletion != null)
+              _PendingDeletionCard(
+                graceUntil: pendingDeletion.graceUntil,
+                onCancel: () => _handleCancelDeletion(context, ref),
+              )
+            else
+              _DeleteAccountCard(
+                onTap: () => _handleDeleteAccount(context, ref),
+              ),
             const SizedBox(height: AppSpacing.xxl),
           ],
         ),
@@ -166,39 +194,103 @@ class SettingsScreen extends ConsumerWidget {
     );
 
     if (didConfirm != true) return;
-    ref.read(authNotifierProvider.notifier).signOut();
+    unawaited(ref.read(authNotifierProvider.notifier).signOut());
   }
 
-  Future<void> _handleDeleteAccount(
-      BuildContext context, WidgetRef ref) async {
+  Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref) async {
     final didConfirm = await TanderConfirmDialog.show(
       context: context,
       title: 'Delete account?',
       message:
-          'This action is permanent and cannot be undone. All your data, '
-          'connections, and messages will be permanently deleted.',
-      confirmLabel: 'Delete forever',
+          'Your account will be scheduled for deletion. You have 30 days to '
+          'change your mind — just sign back in before then to cancel. After '
+          'the grace period, your data, connections, and messages are '
+          'permanently removed.',
+      confirmLabel: 'Schedule deletion',
       isDanger: true,
     );
 
     if (didConfirm != true) return;
 
-    // Second confirmation for destructive action
-    final didDoubleConfirm = await TanderConfirmDialog.show(
+    final result = await ref
+        .read(profileRepositoryProvider)
+        .requestAccountDeletion();
+    if (!context.mounted) return;
+
+    result.when(
+      success: (status) {
+        final graceUntil = status.graceUntil;
+        final message = graceUntil != null
+            ? 'Account scheduled for deletion on ${_formatDate(graceUntil)}. '
+                  'Sign in before then to cancel.'
+            : 'Account scheduled for deletion. Sign in to cancel.';
+        TanderToastOverlay.show(
+          context,
+          TanderToastData(
+            message: message,
+            variant: TanderToastVariant.success,
+          ),
+        );
+        // Clear the local session; the router redirects to sign-in.
+        unawaited(ref.read(authNotifierProvider.notifier).signOut());
+      },
+      failure: (_) {
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message: "Couldn't schedule deletion. Please try again.",
+            variant: TanderToastVariant.error,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleCancelDeletion(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final didConfirm = await TanderConfirmDialog.show(
       context: context,
-      title: 'Are you absolutely sure?',
+      title: 'Keep your account?',
       message:
-          'There is no way to recover your account after deletion. '
-          'This cannot be undone.',
-      confirmLabel: 'Yes, delete my account',
-      isDanger: true,
+          'This cancels the scheduled deletion. Your account and data stay '
+          'exactly as they are.',
+      confirmLabel: 'Cancel deletion',
     );
 
-    if (didDoubleConfirm != true) return;
+    if (didConfirm != true) return;
 
-    // Delegate to auth notifier (which calls the delete endpoint)
-    ref.read(authNotifierProvider.notifier).signOut();
+    final result = await ref
+        .read(profileRepositoryProvider)
+        .cancelAccountDeletion();
+    if (!context.mounted) return;
+
+    result.when(
+      success: (_) {
+        ref.invalidate(accountDeletionStatusProvider);
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message: 'Your account deletion has been cancelled.',
+            variant: TanderToastVariant.success,
+          ),
+        );
+      },
+      failure: (_) {
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message: "Couldn't cancel deletion. Please try again.",
+            variant: TanderToastVariant.error,
+          ),
+        );
+      },
+    );
   }
+
+  static String _formatDate(DateTime date) =>
+      DateFormat('MMMM d, y').format(date.toLocal());
 }
 
 // ── Private widgets ──────────────────────────────────────────────────────
@@ -252,8 +344,11 @@ class _SignOutCard extends StatelessWidget {
                   borderRadius: AppRadius.borderMd,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.logout, size: 18,
-                    color: AppColors.warning),
+                child: const Icon(
+                  Icons.logout,
+                  size: 18,
+                  color: AppColors.warning,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -262,8 +357,11 @@ class _SignOutCard extends StatelessWidget {
                   style: AppTypography.label.copyWith(color: AppColors.warning),
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 16,
-                  color: AppColors.textMuted),
+              const Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),
@@ -304,8 +402,11 @@ class _DeleteAccountCard extends StatelessWidget {
                   borderRadius: AppRadius.borderMd,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.delete_outline, size: 18,
-                    color: AppColors.danger),
+                child: const Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: AppColors.danger,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -314,8 +415,85 @@ class _DeleteAccountCard extends StatelessWidget {
                   style: AppTypography.label.copyWith(color: AppColors.danger),
                 ),
               ),
-              const Icon(Icons.warning_amber, size: 16,
-                  color: AppColors.danger),
+              const Icon(
+                Icons.warning_amber,
+                size: 16,
+                color: AppColors.danger,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown in place of [_DeleteAccountCard] when a deletion is already scheduled
+/// within its grace window, letting the user cancel it.
+class _PendingDeletionCard extends StatelessWidget {
+  const _PendingDeletionCard({
+    required this.graceUntil,
+    required this.onCancel,
+  });
+  final DateTime? graceUntil;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final whenText = graceUntil != null
+        ? 'Scheduled for deletion on '
+              '${DateFormat('MMMM d, y').format(graceUntil!.toLocal())}.'
+        : 'Your account is scheduled for deletion.';
+
+    return Material(
+      color: AppColors.card,
+      borderRadius: AppRadius.borderLg,
+      child: InkWell(
+        onTap: onCancel,
+        borderRadius: AppRadius.borderLg,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: AppSpacing.touchMinimum),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+            borderRadius: AppRadius.borderLg,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.dangerLight,
+                  borderRadius: AppRadius.borderMd,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.schedule,
+                  size: 18,
+                  color: AppColors.danger,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cancel deletion',
+                      style: AppTypography.label.copyWith(
+                        color: AppColors.danger,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(whenText, style: AppTypography.caption),
+                  ],
+                ),
+              ),
+              const Icon(Icons.undo, size: 16, color: AppColors.danger),
             ],
           ),
         ),
@@ -355,15 +533,277 @@ class _HelpSheetPlaceholder extends StatelessWidget {
 // Settings sheet content widgets
 // ═══════════════════════════════════════════════════════════════════════
 
+class _SecuritySheetContent extends ConsumerStatefulWidget {
+  const _SecuritySheetContent();
+
+  @override
+  ConsumerState<_SecuritySheetContent> createState() =>
+      _SecuritySheetContentState();
+}
+
+class _SecuritySheetContentState extends ConsumerState<_SecuritySheetContent> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _currentPasswordController;
+  late final TextEditingController _newPasswordController;
+  late final TextEditingController _confirmPasswordController;
+
+  bool _isChangingPassword = false;
+  bool _showPasswordForm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPasswordController = TextEditingController();
+    _newPasswordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _toggleTwoFactor(bool currentValue) {
+    ref
+        .read(userSettingsProvider.notifier)
+        .updateSettings(
+          UpdateSettingsRequestDto(twoFactorEnabled: !currentValue),
+        );
+    TanderToastOverlay.show(
+      context,
+      TanderToastData(
+        message: !currentValue
+            ? 'Two-factor authentication enabled.'
+            : 'Two-factor authentication disabled.',
+        variant: TanderToastVariant.success,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _handleChangePassword() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_isChangingPassword) return;
+
+    setState(() => _isChangingPassword = true);
+    // Capture before the await — context is suspect after.
+    final navigator = Navigator.of(context);
+    final result = await ref
+        .read(profileRepositoryProvider)
+        .changePassword(
+          oldPassword: _currentPasswordController.text,
+          newPassword: _newPasswordController.text,
+        );
+    if (!mounted) return;
+    setState(() => _isChangingPassword = false);
+
+    result.when(
+      success: (_) {
+        _currentPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message:
+                'Password changed. For your security, please sign in again.',
+            variant: TanderToastVariant.success,
+          ),
+        );
+        // Close the sheet before the auth redirect, then clear the session.
+        navigator.pop();
+        unawaited(ref.read(authNotifierProvider.notifier).signOut());
+      },
+      failure: (exception) {
+        final isWrongCurrent = exception.code == 'current-password-incorrect';
+        TanderToastOverlay.show(
+          context,
+          TanderToastData(
+            message: isWrongCurrent
+                ? 'Your current password is incorrect.'
+                : exception.userMessage,
+            variant: TanderToastVariant.error,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleExportData() async {
+    final result = await ref
+        .read(profileRepositoryProvider)
+        .requestDataExport();
+    if (!mounted) return;
+
+    result.when(
+      success: (_) {
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message:
+                "We're preparing your data export — you'll be notified "
+                'when it\'s ready to download.',
+            variant: TanderToastVariant.success,
+          ),
+        );
+      },
+      failure: (_) {
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message: "Couldn't start your data export. Please try again.",
+            variant: TanderToastVariant.error,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final didConfirm = await TanderConfirmDialog.show(
+      context: context,
+      title: 'Delete account?',
+      message:
+          'Your account will be scheduled for deletion. You have 30 days to '
+          'change your mind — sign back in before then to cancel. After the '
+          'grace period, your data is permanently removed.',
+      confirmLabel: 'Schedule deletion',
+      isDanger: true,
+    );
+    if (didConfirm != true) return;
+    if (!mounted) return;
+
+    final navigator = Navigator.of(context);
+    final result = await ref
+        .read(profileRepositoryProvider)
+        .requestAccountDeletion();
+    if (!mounted) return;
+
+    result.when(
+      success: (_) {
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message:
+                'Account scheduled for deletion. Sign back in within 30 '
+                'days to cancel.',
+            variant: TanderToastVariant.success,
+          ),
+        );
+        // Close the sheet before the auth redirect, then clear the session.
+        navigator.pop();
+        unawaited(ref.read(authNotifierProvider.notifier).signOut());
+      },
+      failure: (_) {
+        TanderToastOverlay.show(
+          context,
+          const TanderToastData(
+            message: "Couldn't schedule deletion. Please try again.",
+            variant: TanderToastVariant.error,
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsAsync = ref.watch(userSettingsProvider);
+    final settings = settingsAsync.valueOrNull;
+
+    if (settings == null) {
+      return _SettingsLoadOrError(
+        hasError: settingsAsync.hasError,
+        onRetry: () => ref.invalidate(userSettingsProvider),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionLabel(label: 'Password'),
+          const SizedBox(height: AppSpacing.sm),
+          PasswordSection(
+            showForm: _showPasswordForm,
+            onToggleForm: () =>
+                setState(() => _showPasswordForm = !_showPasswordForm),
+            formKey: _formKey,
+            currentPasswordController: _currentPasswordController,
+            newPasswordController: _newPasswordController,
+            confirmPasswordController: _confirmPasswordController,
+            isChangingPassword: _isChangingPassword,
+            onSubmit: _handleChangePassword,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const SectionLabel(label: 'Two-factor authentication'),
+          const SizedBox(height: AppSpacing.sm),
+          TwoFactorSection(
+            isEnabled: settings.twoFactorEnabled,
+            onToggle: () => _toggleTwoFactor(settings.twoFactorEnabled),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const SectionLabel(label: 'Data'),
+          const SizedBox(height: AppSpacing.sm),
+          DataActionCard(
+            icon: Icons.file_download_outlined,
+            label: 'Export my data',
+            description: 'Download a copy of your personal data',
+            onTap: _handleExportData,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const SectionLabel(label: 'Danger zone'),
+          const SizedBox(height: AppSpacing.sm),
+          DangerDeleteCard(onTap: _handleDeleteAccount),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            'Account deletion is permanent and cannot be undone.',
+            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NotificationsSheetContent extends ConsumerWidget {
   const _NotificationsSheetContent();
 
   static const _items = [
-    (id: 'notifyMessages', icon: Icons.chat_bubble_outline, label: 'New messages', desc: 'Notify me when I receive a message'),
-    (id: 'notifyMatches', icon: Icons.favorite, label: 'Connection requests', desc: 'Notify me when someone wants to connect'),
-    (id: 'notifyProfileViews', icon: Icons.account_circle, label: 'Profile views', desc: 'Notify me when someone visits my profile'),
-    (id: 'notifyCommunity', icon: Icons.campaign, label: 'Community activity', desc: 'Replies and reactions to my posts'),
-    (id: 'notifyTandy', icon: Icons.notifications_outlined, label: 'Tandy reminders', desc: 'Daily wellness check-in prompts'),
+    (
+      id: 'notifyMessages',
+      icon: Icons.chat_bubble_outline,
+      label: 'New messages',
+      desc: 'Notify me when I receive a message',
+    ),
+    (
+      id: 'notifyMatches',
+      icon: Icons.favorite,
+      label: 'Connection requests',
+      desc: 'Notify me when someone wants to connect',
+    ),
+    (
+      id: 'notifyProfileViews',
+      icon: Icons.account_circle,
+      label: 'Profile views',
+      desc: 'Notify me when someone visits my profile',
+    ),
+    (
+      id: 'notifyCommunity',
+      icon: Icons.campaign,
+      label: 'Community activity',
+      desc: 'Replies and reactions to my posts',
+    ),
+    (
+      id: 'notifyTandy',
+      icon: Icons.notifications_outlined,
+      label: 'Tandy reminders',
+      desc: 'Daily wellness check-in prompts',
+    ),
   ];
 
   bool _getValue(UserSettings s, String id) => switch (id) {
@@ -380,18 +820,23 @@ class _NotificationsSheetContent extends ConsumerWidget {
     final req = switch (id) {
       'notifyMessages' => UpdateSettingsRequestDto(notifyMessages: next),
       'notifyMatches' => UpdateSettingsRequestDto(notifyMatches: next),
-      'notifyProfileViews' => UpdateSettingsRequestDto(notifyProfileViews: next),
+      'notifyProfileViews' => UpdateSettingsRequestDto(
+        notifyProfileViews: next,
+      ),
       'notifyCommunity' => UpdateSettingsRequestDto(notifyCommunity: next),
       'notifyTandy' => UpdateSettingsRequestDto(notifyTandy: next),
       _ => null,
     };
     if (req != null) {
       ref.read(userSettingsProvider.notifier).updateSettings(req);
-      TanderToastOverlay.show(context, const TanderToastData(
-        message: 'Preference saved.',
-        variant: TanderToastVariant.success,
-        duration: Duration(seconds: 2),
-      ));
+      TanderToastOverlay.show(
+        context,
+        const TanderToastData(
+          message: 'Preference saved.',
+          variant: TanderToastVariant.success,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -432,7 +877,12 @@ class _NotificationsSheetContent extends ConsumerWidget {
                     label: _items[i].label,
                     description: _items[i].desc,
                     isEnabled: _getValue(settings, _items[i].id),
-                    onToggle: () => _toggle(context, ref, _items[i].id, _getValue(settings, _items[i].id)),
+                    onToggle: () => _toggle(
+                      context,
+                      ref,
+                      _items[i].id,
+                      _getValue(settings, _items[i].id),
+                    ),
                   ),
                 ],
               ],
@@ -454,9 +904,24 @@ class _PrivacySheetContent extends ConsumerWidget {
   const _PrivacySheetContent();
 
   static const _privacyToggles = [
-    (id: 'showOnline', icon: Icons.visibility_outlined, label: 'Show online status', desc: "Let others see when you're active"),
-    (id: 'showLastSeen', icon: Icons.visibility_off_outlined, label: 'Show last seen', desc: 'Display when you were last active'),
-    (id: 'showProfileViews', icon: Icons.people_outline, label: 'Show profile views', desc: "Share when you've visited someone's profile"),
+    (
+      id: 'showOnline',
+      icon: Icons.visibility_outlined,
+      label: 'Show online status',
+      desc: "Let others see when you're active",
+    ),
+    (
+      id: 'showLastSeen',
+      icon: Icons.visibility_off_outlined,
+      label: 'Show last seen',
+      desc: 'Display when you were last active',
+    ),
+    (
+      id: 'showProfileViews',
+      icon: Icons.people_outline,
+      label: 'Show profile views',
+      desc: "Share when you've visited someone's profile",
+    ),
   ];
 
   static const _visibilityOptions = [
@@ -472,7 +937,12 @@ class _PrivacySheetContent extends ConsumerWidget {
     _ => false,
   };
 
-  void _handleToggle(BuildContext context, WidgetRef ref, String id, bool current) {
+  void _handleToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+    bool current,
+  ) {
     final next = !current;
     final req = switch (id) {
       'showOnline' => UpdateSettingsRequestDto(showOnline: next),
@@ -487,18 +957,21 @@ class _PrivacySheetContent extends ConsumerWidget {
   }
 
   void _handleVisibility(BuildContext context, WidgetRef ref, String value) {
-    ref.read(userSettingsProvider.notifier).updateSettings(
-      UpdateSettingsRequestDto(profileVisibility: value),
-    );
+    ref
+        .read(userSettingsProvider.notifier)
+        .updateSettings(UpdateSettingsRequestDto(profileVisibility: value));
     _showSaved(context);
   }
 
   void _showSaved(BuildContext context) {
-    TanderToastOverlay.show(context, const TanderToastData(
-      message: 'Privacy setting updated.',
-      variant: TanderToastVariant.success,
-      duration: Duration(seconds: 2),
-    ));
+    TanderToastOverlay.show(
+      context,
+      const TanderToastData(
+        message: 'Privacy setting updated.',
+        variant: TanderToastVariant.success,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -532,8 +1005,14 @@ class _PrivacySheetContent extends ConsumerWidget {
                   if (i > 0) const Divider(height: 1, color: AppColors.border),
                   _SheetRadioRow(
                     label: _visibilityOptions[i].label,
-                    isSelected: settings.profileVisibility == _visibilityOptions[i].value,
-                    onTap: () => _handleVisibility(context, ref, _visibilityOptions[i].value),
+                    isSelected:
+                        settings.profileVisibility ==
+                        _visibilityOptions[i].value,
+                    onTap: () => _handleVisibility(
+                      context,
+                      ref,
+                      _visibilityOptions[i].value,
+                    ),
                   ),
                 ],
               ],
@@ -557,7 +1036,12 @@ class _PrivacySheetContent extends ConsumerWidget {
                     label: _privacyToggles[i].label,
                     description: _privacyToggles[i].desc,
                     isEnabled: _getToggle(settings, _privacyToggles[i].id),
-                    onToggle: () => _handleToggle(context, ref, _privacyToggles[i].id, _getToggle(settings, _privacyToggles[i].id)),
+                    onToggle: () => _handleToggle(
+                      context,
+                      ref,
+                      _privacyToggles[i].id,
+                      _getToggle(settings, _privacyToggles[i].id),
+                    ),
                   ),
                 ],
               ],
@@ -569,84 +1053,16 @@ class _PrivacySheetContent extends ConsumerWidget {
   }
 }
 
-class _SecuritySheetContent extends ConsumerWidget {
-  const _SecuritySheetContent();
-
-  void _toggleTwoFactor(BuildContext context, WidgetRef ref, bool current) {
-    final next = !current;
-    ref.read(userSettingsProvider.notifier).updateSettings(
-      UpdateSettingsRequestDto(twoFactorEnabled: next),
-    );
-    TanderToastOverlay.show(context, TanderToastData(
-      message: next ? 'Two-factor authentication enabled.' : 'Two-factor authentication disabled.',
-      variant: TanderToastVariant.success,
-      duration: const Duration(seconds: 2),
-    ));
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settingsAsync = ref.watch(userSettingsProvider);
-    final settings = settingsAsync.valueOrNull;
-
-    if (settings == null) {
-      return _SettingsLoadOrError(
-        hasError: settingsAsync.hasError,
-        onRetry: () => ref.invalidate(userSettingsProvider),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionLabel(label: 'Two-factor authentication'),
-          const SizedBox(height: AppSpacing.sm),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: AppRadius.borderLg,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: _SheetToggleRow(
-              icon: Icons.security,
-              label: 'Enable 2FA',
-              description: 'Add an extra layer of security',
-              isEnabled: settings.twoFactorEnabled,
-              onToggle: () => _toggleTwoFactor(context, ref, settings.twoFactorEnabled),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const SectionLabel(label: 'Data'),
-          const SizedBox(height: AppSpacing.sm),
-          ActionCard(
-            icon: Icons.file_download_outlined,
-            label: 'Export my data',
-            onTap: () {
-              TanderToastOverlay.show(
-                context,
-                const TanderToastData(
-                  message: 'Your data export will be emailed to you shortly.',
-                  variant: TanderToastVariant.info,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _DiscoverySheetContent extends ConsumerStatefulWidget {
   const _DiscoverySheetContent();
 
   @override
-  ConsumerState<_DiscoverySheetContent> createState() => _DiscoverySheetContentState();
+  ConsumerState<_DiscoverySheetContent> createState() =>
+      _DiscoverySheetContentState();
 }
 
-class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> {
+class _DiscoverySheetContentState
+    extends ConsumerState<_DiscoverySheetContent> {
   RangeValues? _ageRange;
   double? _distanceKm;
   Timer? _debounce;
@@ -666,11 +1082,14 @@ class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> 
   }
 
   void _showSaved() {
-    TanderToastOverlay.show(context, const TanderToastData(
-      message: 'Discovery preference saved.',
-      variant: TanderToastVariant.success,
-      duration: Duration(seconds: 2),
-    ));
+    TanderToastOverlay.show(
+      context,
+      const TanderToastData(
+        message: 'Discovery preference saved.',
+        variant: TanderToastVariant.success,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -691,7 +1110,9 @@ class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> 
     );
     _distanceKm ??= settings.discoveryMaxDistanceKm.toDouble().clamp(1, 500);
 
-    final distanceLabel = _distanceKm! >= 500 ? 'Anywhere' : '${_distanceKm!.round()} km';
+    final distanceLabel = _distanceKm! >= 500
+        ? 'Anywhere'
+        : '${_distanceKm!.round()} km';
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -713,25 +1134,38 @@ class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> 
                   children: [
                     Text('Age range', style: AppTypography.label),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: AppRadius.borderFull),
-                      child: Text('${_ageRange!.start.round()}–${_ageRange!.end.round()}',
-                          style: AppTypography.label.copyWith(color: AppColors.primary)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xxs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: AppRadius.borderFull,
+                      ),
+                      child: Text(
+                        '${_ageRange!.start.round()}–${_ageRange!.end.round()}',
+                        style: AppTypography.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 RangeSlider(
                   values: _ageRange!,
-                  min: 60, max: 100,
+                  min: 60,
+                  max: 100,
                   divisions: 40,
                   activeColor: AppColors.primary,
                   onChanged: (values) {
                     setState(() => _ageRange = values);
-                    _debouncedSave(UpdateSettingsRequestDto(
-                      discoveryMinAge: values.start.round(),
-                      discoveryMaxAge: values.end.round(),
-                    ));
+                    _debouncedSave(
+                      UpdateSettingsRequestDto(
+                        discoveryMinAge: values.start.round(),
+                        discoveryMaxAge: values.end.round(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -754,24 +1188,37 @@ class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> 
                   children: [
                     Text('Maximum distance', style: AppTypography.label),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: AppRadius.borderFull),
-                      child: Text(distanceLabel,
-                          style: AppTypography.label.copyWith(color: AppColors.primary)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xxs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: AppRadius.borderFull,
+                      ),
+                      child: Text(
+                        distanceLabel,
+                        style: AppTypography.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Slider(
                   value: _distanceKm!,
-                  min: 1, max: 500,
+                  min: 1,
+                  max: 500,
                   divisions: 99,
                   activeColor: AppColors.primary,
                   onChanged: (value) {
                     setState(() => _distanceKm = value);
-                    _debouncedSave(UpdateSettingsRequestDto(
-                      discoveryMaxDistanceKm: value.round(),
-                    ));
+                    _debouncedSave(
+                      UpdateSettingsRequestDto(
+                        discoveryMaxDistanceKm: value.round(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -794,9 +1241,13 @@ class _DiscoverySheetContentState extends ConsumerState<_DiscoverySheetContent> 
               description: "Your profile won't appear to new people",
               isEnabled: !settings.discoveryVisible,
               onToggle: () {
-                ref.read(userSettingsProvider.notifier).updateSettings(
-                  UpdateSettingsRequestDto(discoveryVisible: !settings.discoveryVisible),
-                );
+                ref
+                    .read(userSettingsProvider.notifier)
+                    .updateSettings(
+                      UpdateSettingsRequestDto(
+                        discoveryVisible: !settings.discoveryVisible,
+                      ),
+                    );
                 _showSaved();
               },
             ),
@@ -843,7 +1294,9 @@ class _SheetToggleRow extends StatelessWidget {
       onTap: onToggle,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        constraints: const BoxConstraints(minHeight: AppSpacing.touchComfortable),
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.touchComfortable,
+        ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
@@ -851,7 +1304,8 @@ class _SheetToggleRow extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 40, height: 40,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [AppColors.primary, AppColors.primaryHover],
@@ -867,7 +1321,12 @@ class _SheetToggleRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label, style: AppTypography.label),
-                  Text(description, style: AppTypography.bodySm.copyWith(color: AppColors.textMuted)),
+                  Text(
+                    description,
+                    style: AppTypography.bodySm.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -897,21 +1356,40 @@ class _SheetRadioRow extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        constraints: const BoxConstraints(minHeight: AppSpacing.touchComfortable),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.touchComfortable,
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         color: isSelected ? AppColors.subtle : null,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: AppTypography.label.copyWith(
-              color: isSelected ? AppColors.primary : AppColors.textStrong,
-            )),
+            Text(
+              label,
+              style: AppTypography.label.copyWith(
+                color: isSelected ? AppColors.primary : AppColors.textStrong,
+              ),
+            ),
             if (isSelected)
               Container(
-                width: 20, height: 20,
-                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
                 alignment: Alignment.center,
-                child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.card, shape: BoxShape.circle)),
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.card,
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ),
           ],
         ),
@@ -935,11 +1413,18 @@ class _SettingsLoadOrError extends StatelessWidget {
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, color: AppColors.danger, size: 32),
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.danger,
+                    size: 32,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   Text("Couldn't load settings.", style: AppTypography.label),
                   const SizedBox(height: AppSpacing.sm),
-                  TextButton(onPressed: onRetry, child: const Text('Try again')),
+                  TextButton(
+                    onPressed: onRetry,
+                    child: const Text('Try again'),
+                  ),
                 ],
               )
             : const CircularProgressIndicator(),

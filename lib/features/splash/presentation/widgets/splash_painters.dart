@@ -89,23 +89,70 @@ class SplashConstellationPainter extends CustomPainter {
   ];
 
   static const _nodeColors = <int>[
-    0xFFFFF6EE, 0xFFE0F2FE, 0xFFFEF3C7,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFF07040, 0xFFF07040, 0xFFF07040, 0xFFF07040, 0xFFF07040,
-    0xFF0F9D94, 0xFF0F9D94, 0xFF0F9D94, 0xFF0F9D94, 0xFF0F9D94,
+    0xFFFFF6EE,
+    0xFFE0F2FE,
+    0xFFFEF3C7,
+    0xFFFFFFFF,
+    0xFFFFFFFF,
+    0xFFFFFFFF,
+    0xFFFFFFFF,
+    0xFFFFFFFF,
+    0xFFFFFFFF,
+    0xFFF07040,
+    0xFFF07040,
+    0xFFF07040,
+    0xFFF07040,
+    0xFFF07040,
+    0xFF0F9D94,
+    0xFF0F9D94,
+    0xFF0F9D94,
+    0xFF0F9D94,
+    0xFF0F9D94,
   ];
 
   static const _nodeDelays = <int>[
-    0, 200, 400, 600, 800, 300, 500, 700, 900,
-    150, 450, 750, 1050, 1350,
-    150, 450, 750, 1050, 1350,
+    0,
+    200,
+    400,
+    600,
+    800,
+    300,
+    500,
+    700,
+    900,
+    150,
+    450,
+    750,
+    1050,
+    1350,
+    150,
+    450,
+    750,
+    1050,
+    1350,
   ];
 
   static const _edges = <List<int>>[
-    [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [0, 8],
-    [1, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 2],
-    [1, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 2],
+    [0, 1],
+    [0, 2],
+    [0, 3],
+    [0, 4],
+    [0, 5],
+    [0, 6],
+    [0, 7],
+    [0, 8],
+    [1, 9],
+    [9, 10],
+    [10, 11],
+    [11, 12],
+    [12, 13],
+    [13, 2],
+    [1, 14],
+    [14, 15],
+    [15, 16],
+    [16, 17],
+    [17, 18],
+    [18, 2],
   ];
 
   /// Core stars with diffraction spikes: hub (0), left anchor (11), right (16).
@@ -212,8 +259,8 @@ class SplashConstellationPainter extends CustomPainter {
         from[1] + (to[1] - from[1]) * phase,
       );
 
-      final fade = (phase / 0.1).clamp(0.0, 1.0) *
-          ((1.0 - phase) / 0.1).clamp(0.0, 1.0);
+      final fade =
+          (phase / 0.1).clamp(0.0, 1.0) * ((1.0 - phase) / 0.1).clamp(0.0, 1.0);
       if (fade < 0.02) continue;
 
       canvas.drawCircle(
@@ -254,10 +301,14 @@ class SplashConstellationPainter extends CustomPainter {
           ..color = color.withValues(alpha: 0.45)
           ..strokeWidth = 0.5;
         canvas.drawLine(
-          Offset(cx - armLen, cy), Offset(cx + armLen, cy), spikePaint,
+          Offset(cx - armLen, cy),
+          Offset(cx + armLen, cy),
+          spikePaint,
         );
         canvas.drawLine(
-          Offset(cx, cy - armLen), Offset(cx, cy + armLen), spikePaint,
+          Offset(cx, cy - armLen),
+          Offset(cx, cy + armLen),
+          spikePaint,
         );
       }
 

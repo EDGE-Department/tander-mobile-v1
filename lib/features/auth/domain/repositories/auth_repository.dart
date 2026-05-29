@@ -77,13 +77,11 @@ abstract interface class AuthRepository {
   /// Fetches the minimum age requirement from the backend.
   Future<Result<int>> getMinimumAge();
 
-  /// Verifies ID pre-registration with selfie + ID photo.
+  /// Verifies ID pre-registration with the ID photo.
   ///
   /// Returns the auditId on success.
   Future<Result<String>> verifyIdPreRegister({
     required String idPhotoFrontPath,
-    String? selfiePath,
-    Map<String, dynamic>? livenessMetadata,
     Map<String, dynamic>? frontendOcrData,
     String? deviceFingerprint,
   });

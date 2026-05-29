@@ -27,7 +27,9 @@ class SafetyNoticeBarWidget extends StatelessWidget {
         children: <Widget>[
           // Left accent bar
           Positioned(
-            left: 0, top: 0, bottom: 0,
+            left: 0,
+            top: 0,
+            bottom: 0,
             child: Container(
               width: 4,
               decoration: const BoxDecoration(
@@ -53,7 +55,8 @@ class SafetyNoticeBarWidget extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Container(
-                      width: 32, height: 32,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
@@ -63,40 +66,63 @@ class SafetyNoticeBarWidget extends StatelessWidget {
                           ],
                         ),
                       ),
-                      child: const Icon(Icons.shield_outlined, size: 18, color: Color(0xFFA06415)),
+                      child: const Icon(
+                        Icons.shield_outlined,
+                        size: 18,
+                        color: Color(0xFFA06415),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     const Text(
                       'Safety Notice',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF7C2D12)),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF7C2D12),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
 
                 // Notice list
-                ...notices.map((notice) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Container(
-                          width: 7, height: 7,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(colors: <Color>[Color(0xFFF59E0B), Color(0xFFD97706)]),
+                ...notices.map(
+                  (notice) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: <Color>[
+                                  Color(0xFFF59E0B),
+                                  Color(0xFFD97706),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(notice, style: const TextStyle(fontSize: 14, color: Color(0xFF78350F), height: 1.55)),
-                      ),
-                    ],
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            notice,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF78350F),
+                              height: 1.55,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
           ),

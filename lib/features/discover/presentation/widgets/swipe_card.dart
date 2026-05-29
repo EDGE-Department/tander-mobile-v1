@@ -155,11 +155,11 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     if (progress < 0.25) {
       wiggleX = _wiggleAmplitude * (progress / 0.25);
     } else if (progress < 0.75) {
-      wiggleX = _wiggleAmplitude -
-          (2 * _wiggleAmplitude) * ((progress - 0.25) / 0.5);
+      wiggleX =
+          _wiggleAmplitude - (2 * _wiggleAmplitude) * ((progress - 0.25) / 0.5);
     } else {
-      wiggleX = -_wiggleAmplitude +
-          _wiggleAmplitude * ((progress - 0.75) / 0.25);
+      wiggleX =
+          -_wiggleAmplitude + _wiggleAmplitude * ((progress - 0.75) / 0.25);
     }
     setState(() => _dragX = wiggleX);
   }
@@ -180,9 +180,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
       stiffness: _snapBackStiffness,
       damping: _snapBackDamping,
     );
-    _snapController.animateWith(
-      SpringSimulation(spring, _dragX, 0, 0),
-    );
+    _snapController.animateWith(SpringSimulation(spring, _dragX, 0, 0));
   }
 
   // ── Fling off screen (web: exit width+300, ease [0.32,0,0.67,0] 380ms)
@@ -194,18 +192,18 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
 
     _snapController
         .animateTo(
-      targetX,
-      duration: const Duration(milliseconds: _flingDurationMs),
-      curve: const Cubic(0.32, 0, 0.67, 0),
-    )
+          targetX,
+          duration: const Duration(milliseconds: _flingDurationMs),
+          curve: const Cubic(0.32, 0, 0.67, 0),
+        )
         .then((_) {
-      if (!mounted) return;
-      if (isLike) {
-        widget.onLikeComplete();
-      } else {
-        widget.onPassComplete();
-      }
-    });
+          if (!mounted) return;
+          if (isLike) {
+            widget.onLikeComplete();
+          } else {
+            widget.onPassComplete();
+          }
+        });
   }
 
   // ── Gesture handlers ─────────────────────────────────────────────────
@@ -231,8 +229,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     _isDragging = false;
     final velocityX = details.velocity.pixelsPerSecond.dx;
 
-    if (_dragX > _swipeThresholdPx ||
-        velocityX > _velocityThresholdPxPerSec) {
+    if (_dragX > _swipeThresholdPx || velocityX > _velocityThresholdPxPerSec) {
       widget.onDragProgress(1);
       _flingOffScreen(isLike: true);
     } else if (_dragX < -_swipeThresholdPx ||
@@ -276,7 +273,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
       ),
       child: Transform(
         transform: Matrix4.identity()
-          ..translate(_dragX, _dragY)
+          ..translateByDouble(_dragX, _dragY, 0.0, 0.0)
           ..rotateZ(rotationRad),
         alignment: Alignment.center,
         child: GestureDetector(
@@ -342,9 +339,9 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     }
 
     return Image.network(
-                  _allPhotos[_photoIndex],
+      _allPhotos[_photoIndex],
       fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+      errorBuilder: (_, _, _) => Container(
         color: AppColors.subtle,
         alignment: Alignment.center,
         child: TanderAvatar(

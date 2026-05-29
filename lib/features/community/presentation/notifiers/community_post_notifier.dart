@@ -12,10 +12,10 @@ import 'package:tander_flutter_v3/features/community/presentation/states/communi
 
 // ─── Provider family (keyed by postId) ──────────────────────────────
 
-final communityPostNotifierProvider = NotifierProvider.family<
-    CommunityPostNotifier, CommunityPostState, String>(
-  CommunityPostNotifier.new,
-);
+final communityPostNotifierProvider =
+    NotifierProvider.family<CommunityPostNotifier, CommunityPostState, String>(
+      CommunityPostNotifier.new,
+    );
 
 // ─── Notifier ──────────────────────────────────────────────────────────
 
@@ -70,8 +70,9 @@ final class CommunityPostNotifier
   Future<void> loadMoreComments() async {
     final currentState = state;
     if (currentState is! CommunityPostLoaded) return;
-    if (currentState.isLoadingMoreComments ||
-        !currentState.hasMoreComments) return;
+    if (currentState.isLoadingMoreComments || !currentState.hasMoreComments) {
+      return;
+    }
 
     state = currentState.copyWith(isLoadingMoreComments: true);
 
@@ -83,10 +84,7 @@ final class CommunityPostNotifier
     commentsResult.when(
       success: (commentsPage) {
         state = currentState.copyWith(
-          comments: [
-            ...currentState.comments,
-            ...commentsPage.comments,
-          ],
+          comments: [...currentState.comments, ...commentsPage.comments],
           nextCommentsCursor: commentsPage.nextCursor,
           hasMoreComments: commentsPage.hasMore,
           isLoadingMoreComments: false,
@@ -181,9 +179,7 @@ final class CommunityPostNotifier
     final currentState = state;
     if (currentState is! CommunityPostLoaded) return;
 
-    final repliesResult = await _repository.fetchReplies(
-      commentId: commentId,
-    );
+    final repliesResult = await _repository.fetchReplies(commentId: commentId);
 
     repliesResult.when(
       success: (repliesPage) {
@@ -211,9 +207,7 @@ final class CommunityPostNotifier
     final currentState = state;
     if (currentState is! CommunityPostLoaded) return;
 
-    final deleteResult = await _repository.deleteComment(
-      commentId: commentId,
-    );
+    final deleteResult = await _repository.deleteComment(commentId: commentId);
 
     deleteResult.when(
       success: (_) {
@@ -262,8 +256,9 @@ final class CommunityPostNotifier
     final post = currentState.post;
     final updatedPost = post.copyWith(
       hasReacted: !post.hasReacted,
-      reactionCount:
-          post.hasReacted ? post.reactionCount - 1 : post.reactionCount + 1,
+      reactionCount: post.hasReacted
+          ? post.reactionCount - 1
+          : post.reactionCount + 1,
     );
 
     state = currentState.copyWith(post: updatedPost);

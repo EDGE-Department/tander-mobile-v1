@@ -17,11 +17,7 @@ const Duration _animationDuration = Duration(milliseconds: 220);
 const double _slideOffset = 16;
 
 class StaggerEntrance extends StatelessWidget {
-  const StaggerEntrance({
-    required this.index,
-    required this.child,
-    super.key,
-  });
+  const StaggerEntrance({required this.index, required this.child, super.key});
 
   /// Position in the list — determines the stagger delay.
   final int index;

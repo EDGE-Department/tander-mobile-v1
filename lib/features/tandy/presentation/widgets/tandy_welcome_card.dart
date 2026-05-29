@@ -43,10 +43,7 @@ class _TandyWelcomeCardState extends State<TandyWelcomeCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Container(
-            height: 3,
-            color: message.accentColor,
-          ),
+          Container(height: 3, color: message.accentColor),
           Padding(
             padding: const EdgeInsets.all(20),
             child: AnimatedSwitcher(

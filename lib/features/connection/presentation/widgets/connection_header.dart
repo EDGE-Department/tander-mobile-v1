@@ -173,8 +173,7 @@ class ConnectionHeader extends StatelessWidget {
           ),
         if (friendsCount > 0)
           TanderBadge(
-            label:
-                '$friendsCount ${friendsCount == 1 ? 'friend' : 'friends'}',
+            label: '$friendsCount ${friendsCount == 1 ? 'friend' : 'friends'}',
             variant: TanderBadgeVariant.secondary,
             icon: Icons.people,
           ),
@@ -210,29 +209,24 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        textScaler: TextScaler.noScaling,
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Container(
-          padding: const EdgeInsets.all(6), // p-1.5
-          decoration: BoxDecoration(
-            color: AppColors.subtle,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTab(ConnectionTab.incoming, 'Requests'),
-              const SizedBox(width: 2),
-              _buildTab(ConnectionTab.sent, 'Sent'),
-              const SizedBox(width: 2),
-              _buildTab(ConnectionTab.connected, 'Friends'),
-            ],
-          ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Container(
+        padding: const EdgeInsets.all(6), // p-1.5
+        decoration: BoxDecoration(
+          color: AppColors.subtle,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildTab(ConnectionTab.incoming, 'Requests'),
+            const SizedBox(width: 2),
+            _buildTab(ConnectionTab.sent, 'Sent'),
+            const SizedBox(width: 2),
+            _buildTab(ConnectionTab.connected, 'Friends'),
+          ],
         ),
       ),
     );
@@ -248,8 +242,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: const Cubic(0.22, 1.0, 0.36, 1.0),
-        constraints:
-            const BoxConstraints(minHeight: AppSpacing.touchMinimum),
+        constraints: const BoxConstraints(minHeight: AppSpacing.touchMinimum),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
           gradient: isActive ? _tabPillGradient : null,
@@ -302,7 +295,7 @@ class ConnectionSegmentedTabBar extends StatelessWidget {
       child: Text(
         '$count',
         style: AppTypography.caption.copyWith(
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w800,
           color: Colors.white,
         ),

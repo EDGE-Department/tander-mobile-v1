@@ -4,7 +4,7 @@ import 'package:tander_flutter_v3/features/auth/domain/repositories/auth_reposit
 /// Terminates the current authentication session.
 final class SignOutUseCase {
   const SignOutUseCase({required AuthRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   final AuthRepository _repository;
 

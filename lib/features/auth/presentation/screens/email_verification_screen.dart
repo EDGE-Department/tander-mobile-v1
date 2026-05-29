@@ -64,18 +64,15 @@ class _EmailVerificationScreenState
   void _startCooldown() {
     _countdownTimer?.cancel();
     _secondsLeft = _resendCooldownSeconds;
-    _countdownTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (!mounted) return;
-        setState(() {
-          _secondsLeft = (_secondsLeft - 1).clamp(0, _resendCooldownSeconds);
-        });
-        if (_secondsLeft == 0) {
-          _countdownTimer?.cancel();
-        }
-      },
-    );
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _secondsLeft = (_secondsLeft - 1).clamp(0, _resendCooldownSeconds);
+      });
+      if (_secondsLeft == 0) {
+        _countdownTimer?.cancel();
+      }
+    });
   }
 
   // -- Actions --------------------------------------------------------------
@@ -86,8 +83,9 @@ class _EmailVerificationScreenState
     setState(() => _isResending = true);
 
     final repository = ref.read(authRepositoryProvider);
-    final resendResult =
-        await repository.resendEmailVerification(email: _email);
+    final resendResult = await repository.resendEmailVerification(
+      email: _email,
+    );
 
     if (!mounted) return;
 
@@ -251,10 +249,7 @@ class _EmailVerificationScreenState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_hasResent)
-          _buildResentConfirmation()
-        else
-          _buildResendButton(),
+        if (_hasResent) _buildResentConfirmation() else _buildResendButton(),
         const SizedBox(height: AppSpacing.sm),
         TanderButton(
           label: 'Return to Sign In',

@@ -31,10 +31,12 @@ class TandyMessageThread extends StatelessWidget {
 
         final message = messages[index];
         final previousMessage = index > 0 ? messages[index - 1] : null;
-        final nextMessage =
-            index < messages.length - 1 ? messages[index + 1] : null;
+        final nextMessage = index < messages.length - 1
+            ? messages[index + 1]
+            : null;
 
-        final showDate = previousMessage == null ||
+        final showDate =
+            previousMessage == null ||
             !_isSameDay(previousMessage.sentAt, message.sentAt);
         final isGroupStart = previousMessage?.role != message.role;
         final isGroupEnd = nextMessage?.role != message.role;
@@ -87,7 +89,7 @@ class _DateSeparator extends StatelessWidget {
               child: Text(
                 _formatDateLabel(date),
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFFA09080),
                 ),
@@ -132,10 +134,7 @@ class _TypingBubble extends StatelessWidget {
               gradient: const LinearGradient(
                 colors: <Color>[Color(0xFFFFF8EF), Color(0xFFFFECD8)],
               ),
-              border: Border.all(
-                color: kTandyOrange.withAlpha(56),
-                width: 1.5,
-              ),
+              border: Border.all(color: kTandyOrange.withAlpha(56), width: 1.5),
             ),
             child: Center(
               child: Image.asset(
@@ -161,10 +160,7 @@ class _TypingBubble extends StatelessWidget {
                 bottomRight: Radius.circular(20),
                 bottomLeft: Radius.circular(6),
               ),
-              border: Border.all(
-                color: kTandyTeal.withAlpha(46),
-                width: 1.5,
-              ),
+              border: Border.all(color: kTandyTeal.withAlpha(46), width: 1.5),
             ),
             child: const _TypingDots(),
           ),
@@ -204,13 +200,15 @@ class _TypingDotsState extends State<_TypingDots>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (_, __) {
+      builder: (_, _) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (index) {
             final delay = index * 0.2;
-            final animationValue =
-                ((_controller.value - delay) % 1.0).clamp(0.0, 1.0);
+            final animationValue = ((_controller.value - delay) % 1.0).clamp(
+              0.0,
+              1.0,
+            );
             final scale = 1.0 + 0.3 * _bounceCurve(animationValue);
             final opacity = 0.25 + 0.55 * _bounceCurve(animationValue);
 

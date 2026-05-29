@@ -15,13 +15,15 @@ import 'package:tander_flutter_v3/features/connection/domain/repositories/connec
 
 // ── Datasource ──────────────────────────────────────────────────────
 
-final connectionRemoteDatasourceProvider =
-    Provider<ConnectionRemoteDatasource>((ref) {
-  return ConnectionRemoteDatasource(dioClient: ref.watch(dioClientProvider));
-});
+final connectionRemoteDatasourceProvider = Provider<ConnectionRemoteDatasource>(
+  (ref) {
+    return ConnectionRemoteDatasource(dioClient: ref.watch(dioClientProvider));
+  },
+);
 
-final connectionStompDatasourceProvider =
-    Provider<ConnectionStompDatasource>((ref) {
+final connectionStompDatasourceProvider = Provider<ConnectionStompDatasource>((
+  ref,
+) {
   return const ConnectionStompDatasource();
 });
 

@@ -30,19 +30,15 @@ class PostDetailContent extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: const BoxDecoration(
         color: AppColors.card,
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PostAuthorRow(
             post: post,
-            onTap: () => showProfileViewModal(
-              context,
-              userId: post.author.userId,
-            ),
+            onTap: () =>
+                showProfileViewModal(context, userId: post.author.userId),
           ),
           if (post.content.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -53,10 +49,7 @@ class PostDetailContent extends StatelessWidget {
             _InlinePhotoGrid(urls: post.mediaUrls),
           ],
           const SizedBox(height: AppSpacing.sm),
-          _PostActions(
-            post: post,
-            onToggleReaction: onToggleReaction,
-          ),
+          _PostActions(post: post, onToggleReaction: onToggleReaction),
         ],
       ),
     );
@@ -106,10 +99,7 @@ class _PostAuthorRow extends StatelessWidget {
 }
 
 class _PostActions extends StatelessWidget {
-  const _PostActions({
-    required this.post,
-    required this.onToggleReaction,
-  });
+  const _PostActions({required this.post, required this.onToggleReaction});
 
   final CommunityPostItem post;
   final VoidCallback onToggleReaction;
@@ -125,8 +115,7 @@ class _PostActions extends StatelessWidget {
               Icon(
                 post.hasReacted ? Icons.favorite : Icons.favorite_border,
                 size: 20,
-                color:
-                    post.hasReacted ? AppColors.danger : AppColors.textMuted,
+                color: post.hasReacted ? AppColors.danger : AppColors.textMuted,
               ),
               const SizedBox(width: AppSpacing.xxs + 2),
               Text(
@@ -214,9 +203,7 @@ class CommentsHeader extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
       ),
       child: Text(
         '$commentCount ${commentCount == 1 ? 'comment' : 'comments'}'
@@ -316,17 +303,26 @@ class CommentTile extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 2),
                               child: Row(
                                 children: [
-                                  Icon(Icons.reply, size: 10, color: threadColor.withValues(alpha: 0.6)),
+                                  Icon(
+                                    Icons.reply,
+                                    size: 10,
+                                    color: threadColor.withValues(alpha: 0.6),
+                                  ),
                                   const SizedBox(width: 3),
                                   Flexible(
                                     child: Text.rich(
                                       TextSpan(
-                                        style: AppTypography.caption.copyWith(fontSize: 10, color: AppColors.textMuted),
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.textMuted,
+                                        ),
                                         children: [
                                           const TextSpan(text: 'replying to '),
                                           TextSpan(
                                             text: parentAuthor,
-                                            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textBody),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.textBody,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -352,7 +348,14 @@ class CommentTile extends StatelessWidget {
                                 bottomRight: Radius.circular(16),
                               ),
                               border: isReply
-                                  ? Border(left: BorderSide(color: threadColor.withValues(alpha: 0.3), width: 2))
+                                  ? Border(
+                                      left: BorderSide(
+                                        color: threadColor.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                        width: 2,
+                                      ),
+                                    )
                                   : null,
                             ),
                             child: Column(
@@ -373,7 +376,7 @@ class CommentTile extends StatelessWidget {
                                     const SizedBox(width: 6),
                                     Text(
                                       formatRelativeTime(comment.createdAt),
-                                      style: AppTypography.caption.copyWith(fontSize: 10),
+                                      style: AppTypography.caption,
                                     ),
                                   ],
                                 ),
@@ -397,16 +400,23 @@ class CommentTile extends StatelessWidget {
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () => onReply(comment),
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 6,
+                                      horizontal: 2,
+                                    ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.reply, size: 13, color: AppColors.textMuted),
+                                        const Icon(
+                                          Icons.reply,
+                                          size: 13,
+                                          color: AppColors.textMuted,
+                                        ),
                                         const SizedBox(width: 4),
                                         Text(
                                           'Reply',
                                           style: AppTypography.caption.copyWith(
-                                            fontSize: 11,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.textMuted,
                                           ),
@@ -415,17 +425,21 @@ class CommentTile extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                if (currentUserId != null && comment.authorUserId == currentUserId) ...[
+                                if (currentUserId != null &&
+                                    comment.authorUserId == currentUserId) ...[
                                   const SizedBox(width: 12),
                                   GestureDetector(
                                     behavior: HitTestBehavior.opaque,
                                     onTap: onDelete,
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                        horizontal: 2,
+                                      ),
                                       child: Text(
                                         'Delete',
                                         style: AppTypography.caption.copyWith(
-                                          fontSize: 11,
+                                          fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.textMuted,
                                         ),
@@ -439,31 +453,42 @@ class CommentTile extends StatelessWidget {
                                     behavior: HitTestBehavior.opaque,
                                     onTap: onExpandReplies ?? onToggleExpand,
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                        horizontal: 2,
+                                      ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            isExpanded || expandedReplies.isNotEmpty
+                                            isExpanded ||
+                                                    expandedReplies.isNotEmpty
                                                 ? Icons.expand_less
                                                 : Icons.expand_more,
                                             size: 14,
-                                            color: isExpanded || expandedReplies.isNotEmpty
+                                            color:
+                                                isExpanded ||
+                                                    expandedReplies.isNotEmpty
                                                 ? AppColors.textMuted
                                                 : AppColors.primary,
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
-                                            isExpanded || expandedReplies.isNotEmpty
+                                            isExpanded ||
+                                                    expandedReplies.isNotEmpty
                                                 ? 'Hide replies'
                                                 : '${comment.replyCount} ${comment.replyCount == 1 ? 'reply' : 'replies'}',
-                                            style: AppTypography.caption.copyWith(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
-                                              color: isExpanded || expandedReplies.isNotEmpty
-                                                  ? AppColors.textMuted
-                                                  : AppColors.primary,
-                                            ),
+                                            style: AppTypography.caption
+                                                .copyWith(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color:
+                                                      isExpanded ||
+                                                          expandedReplies
+                                                              .isNotEmpty
+                                                      ? AppColors.textMuted
+                                                      : AppColors.primary,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -565,7 +590,7 @@ class _PostCommentInputState extends ConsumerState<PostCommentInput> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.reply, size: 14, color: AppColors.primary),
+                  const Icon(Icons.reply, size: 14, color: AppColors.primary),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -580,69 +605,88 @@ class _PostCommentInputState extends ConsumerState<PostCommentInput> {
                   ),
                   GestureDetector(
                     onTap: widget.onClearReply,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.close, size: 14, color: AppColors.textMuted),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.close,
+                        size: 14,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              maxLines: 3,
-              minLines: 1,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _handleSend(),
-              decoration: InputDecoration(
-                hintText: widget.replyTarget != null
-                    ? 'Reply to ${widget.replyTarget!.authorUsername}...'
-                    : 'Write a comment...',
-                hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
-                border: borderDecoration,
-                enabledBorder: borderDecoration,
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                ),
-                filled: true,
-                fillColor: AppColors.subtle,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.sm,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  maxLines: 3,
+                  minLines: 1,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _handleSend(),
+                  decoration: InputDecoration(
+                    hintText: widget.replyTarget != null
+                        ? 'Reply to ${widget.replyTarget!.authorUsername}...'
+                        : 'Write a comment...',
+                    hintStyle: AppTypography.body.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                    border: borderDecoration,
+                    enabledBorder: borderDecoration,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 1.5,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.subtle,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: AppSpacing.sm),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _controller,
+                builder: (context, textValue, _) {
+                  final bool canSend =
+                      textValue.text.trim().isNotEmpty && !widget.isSending;
+                  return GestureDetector(
+                    onTap: canSend ? _handleSend : null,
+                    child: Container(
+                      width: AppSpacing.touchComfortable,
+                      height: AppSpacing.touchComfortable,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: canSend
+                            ? const LinearGradient(
+                                colors: [
+                                  AppColors.secondary,
+                                  Color(0xFF0A7068),
+                                ],
+                              )
+                            : null,
+                        color: canSend ? null : AppColors.subtle,
+                      ),
+                      child: Icon(
+                        Icons.send_rounded,
+                        size: 20,
+                        color: canSend
+                            ? AppColors.textInverse
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(width: AppSpacing.sm),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _controller,
-            builder: (context, textValue, _) {
-              final bool canSend =
-                  textValue.text.trim().isNotEmpty && !widget.isSending;
-              return GestureDetector(
-                onTap: canSend ? _handleSend : null,
-                child: Container(
-                  width: AppSpacing.touchComfortable,
-                  height: AppSpacing.touchComfortable,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: canSend
-                        ? const LinearGradient(
-                            colors: [AppColors.secondary, Color(0xFF0A7068)])
-                        : null,
-                    color: canSend ? null : AppColors.subtle,
-                  ),
-                  child: Icon(Icons.send_rounded, size: 20,
-                    color: canSend ? AppColors.textInverse : AppColors.textMuted),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
         ],
       ),
     );

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
@@ -75,7 +73,12 @@ class TanderBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final maxHeight = screenHeight * maxHeightFraction;
-    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    // Include the keyboard inset so focusable content (e.g. the Security
+    // sheet's password form) lifts above the on-screen keyboard. Zero when
+    // no keyboard is shown, so toggle/slider sheets are unaffected.
+    final bottomPadding =
+        MediaQuery.paddingOf(context).bottom +
+        MediaQuery.viewInsetsOf(context).bottom;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
@@ -89,11 +92,7 @@ class TanderBottomSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showDragHandle) const _DragHandle(),
-          if (title != null)
-            _Header(
-              title: title!,
-              headerAction: headerAction,
-            ),
+          if (title != null) _Header(title: title!, headerAction: headerAction),
           Flexible(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
@@ -153,10 +152,7 @@ class _DragHandle extends StatelessWidget {
 
 /// Header row with close button, title, and optional trailing action.
 class _Header extends StatelessWidget {
-  const _Header({
-    required this.title,
-    this.headerAction,
-  });
+  const _Header({required this.title, this.headerAction});
 
   final String title;
   final Widget? headerAction;
@@ -171,9 +167,7 @@ class _Header extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.border),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [

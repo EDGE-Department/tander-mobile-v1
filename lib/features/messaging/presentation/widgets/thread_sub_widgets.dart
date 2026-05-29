@@ -106,8 +106,8 @@ class DateSeparatorWidget extends StatelessWidget {
     final label = dateOnly == today
         ? 'Today'
         : dateOnly == yesterday
-            ? 'Yesterday'
-            : '${_monthName(date.month)} ${date.day}, ${date.year}';
+        ? 'Yesterday'
+        : '${_monthName(date.month)} ${date.day}, ${date.year}';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -153,8 +153,14 @@ class _GradientLine extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: toRight
-              ? [Colors.transparent, const Color(0xFF927D66).withValues(alpha: 0.34)]
-              : [const Color(0xFF927D66).withValues(alpha: 0.34), Colors.transparent],
+              ? [
+                  Colors.transparent,
+                  const Color(0xFF927D66).withValues(alpha: 0.34),
+                ]
+              : [
+                  const Color(0xFF927D66).withValues(alpha: 0.34),
+                  Colors.transparent,
+                ],
         ),
       ),
     );
@@ -316,8 +322,18 @@ class ThreadSkeleton extends StatelessWidget {
 
 String _monthName(int month) {
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   return months[month - 1];
 }

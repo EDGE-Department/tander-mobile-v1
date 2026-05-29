@@ -76,8 +76,7 @@ class DailyPromptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final todayIndex =
-        DateTime.now().weekday % _dailyPrompts.length;
+    final todayIndex = DateTime.now().weekday % _dailyPrompts.length;
     final prompt = _dailyPrompts[todayIndex];
     final dayName = _dayNames[DateTime.now().weekday % 7];
 
@@ -160,7 +159,7 @@ class _PromptCard extends StatelessWidget {
                         dayName.toUpperCase(),
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.90),
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.2,
                         ),
@@ -249,7 +248,7 @@ class _QuickStartChips extends StatelessWidget {
       runSpacing: AppSpacing.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Text(
+        const Text(
           'or start with',
           style: TextStyle(
             fontSize: 12,

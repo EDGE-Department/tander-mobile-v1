@@ -81,15 +81,33 @@ class ResendTimerState extends State<ResendTimer> {
           style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
         ),
         if (_canResend)
-          GestureDetector(
+          Semantics(
+            button: true,
+            label: 'Resend code',
+            // Carry the tap action on this node and drop the descendant Text's
+            // duplicate label so a screen reader announces "Resend code" once.
+            excludeSemantics: true,
             onTap: widget.onResend,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
-              child: Text(
-                'Resend code',
-                style: AppTypography.bodySm.copyWith(
-                  color: AppColors.primaryAccessible,
-                  fontWeight: FontWeight.w700,
+            child: GestureDetector(
+              onTap: widget.onResend,
+              behavior: HitTestBehavior.opaque,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: AppSpacing.touchMinimum,
+                  minHeight: AppSpacing.touchMinimum,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                  child: Center(
+                    widthFactor: 1,
+                    child: Text(
+                      'Resend code',
+                      style: AppTypography.bodySm.copyWith(
+                        color: AppColors.primaryAccessible,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),

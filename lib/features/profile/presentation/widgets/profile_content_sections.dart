@@ -94,10 +94,7 @@ class ProfilePhotosSection extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               if (isTabletWidth) ...[
-                _GalleryCountPill(
-                  current: gallery.length,
-                  total: maxPhotos,
-                ),
+                _GalleryCountPill(current: gallery.length, total: maxPhotos),
                 const SizedBox(width: 12),
               ],
               _ManageButton(
@@ -137,14 +134,12 @@ class _GalleryCountPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
       ),
       child: Text(
         '$current/$total PHOTOS',
         style: AppTypography.caption.copyWith(
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.8,
           color: AppColors.primaryAccessible,

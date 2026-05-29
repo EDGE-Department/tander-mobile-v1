@@ -11,11 +11,7 @@ part 'community_contracts.g.dart';
 
 @JsonSerializable()
 class PostAuthorDto {
-  const PostAuthorDto({
-    required this.userId,
-    this.displayName,
-    this.photoUrl,
-  });
+  const PostAuthorDto({required this.userId, this.displayName, this.photoUrl});
 
   factory PostAuthorDto.fromJson(Map<String, Object?> json) =>
       _$PostAuthorDtoFromJson(json);

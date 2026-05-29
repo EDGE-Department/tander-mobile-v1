@@ -2,9 +2,11 @@ import 'package:dio/dio.dart';
 
 import 'package:tander_flutter_v3/core/config/env_config.dart';
 import 'package:tander_flutter_v3/core/network/interceptors/auth_interceptor.dart';
+import 'package:tander_flutter_v3/core/network/interceptors/device_id_interceptor.dart';
 import 'package:tander_flutter_v3/core/network/interceptors/logging_interceptor.dart';
 import 'package:tander_flutter_v3/core/network/interceptors/token_refresh_interceptor.dart';
 import 'package:tander_flutter_v3/core/network/network_exception_handler.dart';
+import 'package:tander_flutter_v3/core/services/device_id_service.dart';
 import 'package:tander_flutter_v3/core/storage/secure_storage.dart';
 
 const Duration _connectTimeout = Duration(seconds: 15);
@@ -23,13 +25,15 @@ const Duration _receiveTimeout = Duration(seconds: 15);
 final class DioClient {
   DioClient({
     required SecureStorage secureStorage,
+    required DeviceIdService deviceIdService,
     required OnSessionExpired onSessionExpired,
     OnTokenRefreshed? onTokenRefreshed,
   }) : _dio = _createDio(
-          secureStorage: secureStorage,
-          onSessionExpired: onSessionExpired,
-          onTokenRefreshed: onTokenRefreshed,
-        );
+         secureStorage: secureStorage,
+         deviceIdService: deviceIdService,
+         onSessionExpired: onSessionExpired,
+         onTokenRefreshed: onTokenRefreshed,
+       );
 
   /// Test-only constructor that accepts a pre-configured [Dio] instance.
   DioClient.withDio(Dio dio) : _dio = dio;
@@ -43,48 +47,45 @@ final class DioClient {
   Future<Response<TResponse>> get<TResponse>(
     String path, {
     Map<String, Object>? queryParameters,
-  }) =>
-      _execute(() => _dio.get<TResponse>(
-            path,
-            queryParameters: queryParameters,
-          ));
+    Map<String, String>? headers,
+  }) => _execute(
+    () => _dio.get<TResponse>(
+      path,
+      queryParameters: queryParameters,
+      options: headers != null ? Options(headers: headers) : null,
+    ),
+  );
 
   Future<Response<TResponse>> post<TResponse>(
     String path, {
     Object? data,
     Map<String, Object>? queryParameters,
+    Map<String, String>? headers,
     Duration? receiveTimeout,
-  }) =>
-      _execute(() => _dio.post<TResponse>(
-            path,
-            data: data,
-            queryParameters: queryParameters,
-            options: receiveTimeout != null
-                ? Options(receiveTimeout: receiveTimeout)
-                : null,
-          ));
+  }) => _execute(
+    () => _dio.post<TResponse>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: (headers != null || receiveTimeout != null)
+          ? Options(headers: headers, receiveTimeout: receiveTimeout)
+          : null,
+    ),
+  );
 
   Future<Response<TResponse>> put<TResponse>(
     String path, {
     Object? data,
     Map<String, Object>? queryParameters,
-  }) =>
-      _execute(() => _dio.put<TResponse>(
-            path,
-            data: data,
-            queryParameters: queryParameters,
-          ));
+  }) => _execute(
+    () =>
+        _dio.put<TResponse>(path, data: data, queryParameters: queryParameters),
+  );
 
-  Future<Response<TResponse>> patch<TResponse>(
-    String path, {
-    Object? data,
-  }) =>
+  Future<Response<TResponse>> patch<TResponse>(String path, {Object? data}) =>
       _execute(() => _dio.patch<TResponse>(path, data: data));
 
-  Future<Response<TResponse>> delete<TResponse>(
-    String path, {
-    Object? data,
-  }) =>
+  Future<Response<TResponse>> delete<TResponse>(String path, {Object? data}) =>
       _execute(() => _dio.delete<TResponse>(path, data: data));
 
   // ---------------------------------------------------------------------------
@@ -107,6 +108,7 @@ final class DioClient {
 
   static Dio _createDio({
     required SecureStorage secureStorage,
+    required DeviceIdService deviceIdService,
     required OnSessionExpired onSessionExpired,
     OnTokenRefreshed? onTokenRefreshed,
   }) {
@@ -119,10 +121,11 @@ final class DioClient {
       ),
     );
 
-    // Order matters: logging first (sees raw request), auth second (attaches
-    // token), token refresh last (handles 401 after auth has run).
+    // Order matters: logging first (sees raw request), device-id + auth next
+    // (attach headers), token refresh last (handles 401 after auth has run).
     dio.interceptors.addAll([
       LoggingInterceptor(),
+      DeviceIdInterceptor(deviceIdService: deviceIdService),
       AuthInterceptor(secureStorage: secureStorage),
       TokenRefreshInterceptor(
         dio: dio,

@@ -102,7 +102,9 @@ class TanderTopNavBar extends ConsumerWidget {
   }
 
   int _badgeFor(int index, NavBadgeCounts badges) {
-    if (navTabs[index].route == AppRoutes.messages) return badges.unreadMessageCount;
+    if (navTabs[index].route == AppRoutes.messages) {
+      return badges.unreadMessageCount;
+    }
     if (navTabs[index].route == AppRoutes.connection) {
       return badges.pendingConnectionCount;
     }

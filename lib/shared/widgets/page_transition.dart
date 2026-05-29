@@ -14,10 +14,7 @@ import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 /// PageTransition(child: MyScreenContent());
 /// ```
 class PageTransition extends StatelessWidget {
-  const PageTransition({
-    required this.child,
-    super.key,
-  });
+  const PageTransition({required this.child, super.key});
 
   /// The screen content to animate in.
   final Widget child;
@@ -26,10 +23,7 @@ class PageTransition extends StatelessWidget {
   Widget build(BuildContext context) {
     return child
         .animate()
-        .fadeIn(
-          duration: AppDurations.entrance,
-          curve: AppCurves.premiumEase,
-        )
+        .fadeIn(duration: AppDurations.entrance, curve: AppCurves.premiumEase)
         .slideY(
           begin: 0.02,
           end: 0,

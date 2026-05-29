@@ -24,8 +24,7 @@ class ConversationAvatarRing extends StatefulWidget {
   final bool isOnline;
 
   @override
-  State<ConversationAvatarRing> createState() =>
-      _ConversationAvatarRingState();
+  State<ConversationAvatarRing> createState() => _ConversationAvatarRingState();
 }
 
 class _ConversationAvatarRingState extends State<ConversationAvatarRing>
@@ -128,7 +127,10 @@ class _ConversationAvatarRingState extends State<ConversationAvatarRing>
 String _computeInitials(String name) {
   final trimmed = name.trim();
   if (trimmed.isEmpty) return '?';
-  final parts = trimmed.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+  final parts = trimmed
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList();
   if (parts.isEmpty) return '?';
   if (parts.length == 1) return parts[0][0].toUpperCase();
   return '${parts.first[0]}${parts.last[0]}'.toUpperCase();

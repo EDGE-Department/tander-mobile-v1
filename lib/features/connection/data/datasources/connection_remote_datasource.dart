@@ -12,7 +12,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 
 final class ConnectionRemoteDatasource {
   const ConnectionRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -145,8 +145,6 @@ final class ConnectionRemoteDatasource {
       context: {'connectionId': connectionId},
     );
 
-    await _dioClient.delete<void>(
-      ApiEndpoints.connectionUnmatch(connectionId),
-    );
+    await _dioClient.delete<void>(ApiEndpoints.connectionUnmatch(connectionId));
   }
 }

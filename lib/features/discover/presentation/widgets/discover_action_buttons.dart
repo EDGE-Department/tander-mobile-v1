@@ -142,11 +142,7 @@ class _CircleActionButton extends StatelessWidget {
                       ],
               ),
               alignment: Alignment.center,
-              child: Icon(
-                icon,
-                size: isPrimary ? 32 : 26,
-                color: iconColor,
-              ),
+              child: Icon(icon, size: isPrimary ? 32 : 26, color: iconColor),
             ),
           ),
         ),
@@ -188,8 +184,13 @@ class DiscoverGhostCard extends StatelessWidget {
           curve: Curves.easeOut,
           transformAlignment: Alignment.center,
           transform: Matrix4.identity()
-            ..scale(scale.clamp(0.0, 1.0))
-            ..translate(0.0, translateY),
+            ..scaleByDouble(
+              scale.clamp(0.0, 1.0),
+              scale.clamp(0.0, 1.0),
+              scale.clamp(0.0, 1.0),
+              1,
+            )
+            ..translateByDouble(0.0, translateY, 0.0, 0.0),
           child: Opacity(
             opacity: opacity.clamp(0.0, 1.0),
             child: Container(
@@ -251,8 +252,8 @@ class DiscoverProgressDots extends StatelessWidget {
               color: isCurrent
                   ? AppColors.primary
                   : isPast
-                      ? AppColors.primary.withValues(alpha: 0.30)
-                      : AppColors.border,
+                  ? AppColors.primary.withValues(alpha: 0.30)
+                  : AppColors.border,
             ),
           );
         }),

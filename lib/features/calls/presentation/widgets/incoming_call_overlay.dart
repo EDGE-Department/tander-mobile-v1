@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:just_audio/just_audio.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
@@ -45,13 +44,15 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
       duration: const Duration(milliseconds: 2200),
     )..repeat();
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.6).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.6,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
 
-    _pulseOpacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
-    );
+    _pulseOpacityAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
   }
 
   @override
@@ -131,7 +132,7 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
                   'Incoming ${isVideo ? 'Video' : 'Audio'} Call',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 2,
                   ),
@@ -223,10 +224,7 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
                   const SizedBox(height: 12),
                   Text(
                     callState.errorMessage!,
-                    style: TextStyle(
-                      color: Colors.red.shade400,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.red.shade400, fontSize: 12),
                   ),
                 ],
 
@@ -241,8 +239,9 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
                         onTap: () {
                           ref.read(callManagerProvider).declineCall();
                         },
-                        backgroundColor:
-                            const Color(0xFFDC2626).withValues(alpha: 0.2),
+                        backgroundColor: const Color(
+                          0xFFDC2626,
+                        ).withValues(alpha: 0.2),
                         iconColor: Colors.red.shade400,
                         textColor: Colors.red.shade400,
                         icon: Icons.phone_disabled,
@@ -259,30 +258,36 @@ class _IncomingCallOverlayState extends ConsumerState<IncomingCallOverlay>
                             ? null
                             : () {
                                 setState(() => _isAccepting = true);
-                                final callManager =
-                                    ref.read(callManagerProvider);
-                                callManager.acceptCall().then((_) {
-                                  if (mounted &&
-                                      callInfo.roomName.isNotEmpty) {
-                                    context
-                                        .push(AppRoutes.call(callInfo.roomName));
-                                  }
-                                }).catchError((_) {
-                                  if (mounted) {
-                                    setState(() => _isAccepting = false);
-                                  }
-                                });
+                                final callManager = ref.read(
+                                  callManagerProvider,
+                                );
+                                // Capture router + room before the async gap so
+                                // we never touch `context` after acceptCall()
+                                // completes (overlay may be disposed by then).
+                                final router = GoRouter.of(context);
+                                final roomName = callInfo.roomName;
+                                callManager
+                                    .acceptCall()
+                                    .then((_) {
+                                      if (mounted && roomName.isNotEmpty) {
+                                        router.push(AppRoutes.call(roomName));
+                                      }
+                                    })
+                                    .catchError((_) {
+                                      if (mounted) {
+                                        setState(() => _isAccepting = false);
+                                      }
+                                    });
                               },
                         backgroundColor: const Color(0xFF16A34A),
                         iconColor: Colors.white,
                         textColor: Colors.white,
-                        icon: isVideo
-                            ? Icons.videocam
-                            : Icons.phone,
+                        icon: isVideo ? Icons.videocam : Icons.phone,
                         label: _isAccepting ? 'Connecting...' : 'Accept',
                         boxShadow: BoxShadow(
-                          color:
-                              const Color(0xFF16A34A).withValues(alpha: 0.35),
+                          color: const Color(
+                            0xFF16A34A,
+                          ).withValues(alpha: 0.35),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),

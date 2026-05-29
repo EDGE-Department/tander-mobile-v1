@@ -128,8 +128,7 @@ class TanderToastOverlay extends StatefulWidget {
 
   /// Push a toast onto the overlay stack nearest to [context].
   static void show(BuildContext context, TanderToastData toast) {
-    final state =
-        context.findAncestorStateOfType<TanderToastOverlayState>();
+    final state = context.findAncestorStateOfType<TanderToastOverlayState>();
     if (state == null) {
       throw FlutterError(
         'TanderToastOverlay.show() called without a '
@@ -237,8 +236,9 @@ class _ToastStack extends StatelessWidget {
             : MediaQuery.sizeOf(context).width - 2 * AppSpacing.md,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment:
-              isTablet ? CrossAxisAlignment.end : CrossAxisAlignment.center,
+          crossAxisAlignment: isTablet
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.center,
           children: [
             for (final entry in entries)
               Padding(

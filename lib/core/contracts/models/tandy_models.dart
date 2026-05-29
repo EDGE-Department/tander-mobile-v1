@@ -23,9 +23,7 @@ export 'package:tander_flutter_v3/core/contracts/models/tandy_block_data_models.
 /// variant is handled at compile time.
 @immutable
 sealed class TandyStructuredBlock {
-  const TandyStructuredBlock({
-    required this.blockId,
-  });
+  const TandyStructuredBlock({required this.blockId});
 
   final String blockId;
 }
@@ -72,16 +70,12 @@ class SponsorCardBlock extends TandyStructuredBlock {
   final SponsorBlockData sponsorData;
 
   @override
-  String toString() =>
-      'SponsorCardBlock(id: $blockId, title: $title)';
+  String toString() => 'SponsorCardBlock(id: $blockId, title: $title)';
 }
 
 @immutable
 class SafetyNoticeBlock extends TandyStructuredBlock {
-  const SafetyNoticeBlock({
-    required super.blockId,
-    required this.notices,
-  });
+  const SafetyNoticeBlock({required super.blockId, required this.notices});
 
   final List<String> notices;
 
@@ -104,17 +98,13 @@ class QuickActionBlock extends TandyStructuredBlock {
   final String actionId;
 
   @override
-  String toString() =>
-      'QuickActionBlock(id: $blockId, action: $actionLabel)';
+  String toString() => 'QuickActionBlock(id: $blockId, action: $actionLabel)';
 }
 
 // ── Tandy Message ────────────────────────────────────────────
 
 /// Role of a message in a Tandy conversation.
-enum TandyMessageRole {
-  user,
-  assistant,
-}
+enum TandyMessageRole { user, assistant }
 
 @immutable
 class TandyMessage {
@@ -145,17 +135,17 @@ class TandyMessage {
   final int? rating;
 
   TandyMessage copyWithRating(int? newRating) => TandyMessage(
-        messageId: messageId,
-        role: role,
-        body: body,
-        structuredBlocks: structuredBlocks,
-        sentAt: sentAt,
-        isCardExpanded: isCardExpanded,
-        safetyNotices: safetyNotices,
-        detectedEmotion: detectedEmotion,
-        domain: domain,
-        rating: newRating,
-      );
+    messageId: messageId,
+    role: role,
+    body: body,
+    structuredBlocks: structuredBlocks,
+    sentAt: sentAt,
+    isCardExpanded: isCardExpanded,
+    safetyNotices: safetyNotices,
+    detectedEmotion: detectedEmotion,
+    domain: domain,
+    rating: newRating,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -168,7 +158,8 @@ class TandyMessage {
   int get hashCode => messageId.hashCode;
 
   @override
-  String toString() => 'TandyMessage('
+  String toString() =>
+      'TandyMessage('
       'id: $messageId, '
       'role: ${role.name})';
 }
@@ -200,7 +191,8 @@ class TandyThread {
   int get hashCode => conversationId.hashCode;
 
   @override
-  String toString() => 'TandyThread('
+  String toString() =>
+      'TandyThread('
       'id: $conversationId, '
       'messages: ${messages.length})';
 }
@@ -224,7 +216,8 @@ class TandySendResult {
   final String? redirectAction;
 
   @override
-  String toString() => 'TandySendResult('
+  String toString() =>
+      'TandySendResult('
       'hasSponsor: $hasSponsorAd, '
       'redirect: $redirectAction)';
 }
@@ -233,10 +226,7 @@ class TandySendResult {
 
 @immutable
 class TandyGreeting {
-  const TandyGreeting({
-    required this.greeting,
-    required this.suggestions,
-  });
+  const TandyGreeting({required this.greeting, required this.suggestions});
 
   final String greeting;
   final List<String> suggestions;

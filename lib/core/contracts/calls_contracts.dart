@@ -64,10 +64,7 @@ class CallTokenRequestDto {
 
 @JsonSerializable()
 class CallTokenResponseDto {
-  const CallTokenResponseDto({
-    required this.token,
-    required this.identity,
-  });
+  const CallTokenResponseDto({required this.token, required this.identity});
 
   factory CallTokenResponseDto.fromJson(Map<String, Object?> json) =>
       _$CallTokenResponseDtoFromJson(json);
@@ -128,18 +125,14 @@ class CallHistoryItemDto {
 
 @JsonSerializable()
 class IceServerDto {
-  const IceServerDto({
-    required this.urls,
-    this.username,
-    this.credential,
-  });
+  const IceServerDto({required this.urls, this.username, this.credential});
 
   factory IceServerDto.fromJson(Map<String, Object?> json) =>
       _$IceServerDtoFromJson(json);
 
-  /// Can be a single String or a List<String> from the backend.
+  /// Can be a single String or a `List<String>` from the backend.
   /// Stored as Object? because json_serializable cannot union String | List.
-  /// The mapper layer normalises this into List<String>.
+  /// The mapper layer normalises this into `List<String>`.
   @JsonKey(fromJson: _iceUrlsFromJson, toJson: _iceUrlsToJson)
   final Object urls;
 

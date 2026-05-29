@@ -7,8 +7,7 @@ import 'package:tander_flutter_v3/features/tandy/domain/repositories/tandy_repos
 
 // ─── Datasource ──────────────────────────────────────────────────────
 
-final tandyRemoteDatasourceProvider =
-    Provider<TandyRemoteDatasource>((ref) {
+final tandyRemoteDatasourceProvider = Provider<TandyRemoteDatasource>((ref) {
   return TandyRemoteDatasource(dioClient: ref.watch(dioClientProvider));
 });
 

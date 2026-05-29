@@ -42,19 +42,16 @@ class _TanderToastCardState extends State<TanderToastCard>
       duration: const Duration(milliseconds: 300),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
 
     _animationController.forward();
@@ -66,19 +63,16 @@ class _TanderToastCardState extends State<TanderToastCard>
     _autoDismissTimer = null;
 
     // Exit: slide right + fade out.
-    _slideAnimation = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(1, 0),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInCubic,
-    ));
+    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: const Offset(1, 0))
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInCubic,
+          ),
+        );
 
     _fadeAnimation = Tween<double>(begin: 1, end: 0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeIn,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
 
     _animationController
@@ -146,10 +140,7 @@ class _TanderToastCardState extends State<TanderToastCard>
 // ── Toast body (icon + text) ──────────────────────────────────────
 
 class _ToastBody extends StatelessWidget {
-  const _ToastBody({
-    required this.toastData,
-    required this.config,
-  });
+  const _ToastBody({required this.toastData, required this.config});
 
   final TanderToastData toastData;
   final ToastVariantConfig config;
@@ -223,10 +214,7 @@ class _DismissButton extends StatelessWidget {
 // ── Progress bar (auto-dismiss countdown) ─────────────────────────
 
 class _ProgressBar extends StatefulWidget {
-  const _ProgressBar({
-    required this.duration,
-    required this.color,
-  });
+  const _ProgressBar({required this.duration, required this.color});
 
   final Duration duration;
   final Color color;

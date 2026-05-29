@@ -36,7 +36,8 @@ final class CallManager {
   CallManager({required Ref ref}) : _ref = ref {
     _signalHandler = CallSignalHandler(
       ref: ref,
-      onProcessOffer: (roomName, sdp) => _setup.processRemoteOffer(roomName, sdp),
+      onProcessOffer: (roomName, sdp) =>
+          _setup.processRemoteOffer(roomName, sdp),
       onProcessAnswer: (sdp) => _setup.processRemoteAnswer(sdp),
       onTerminate: _terminateCall,
       onCleanup: _cleanup,
@@ -163,9 +164,11 @@ final class CallManager {
     // Phase 0 F6-fix: surface backend failures instead of silent swallow.
     // User wants to terminate locally regardless of backend reachability, so
     // keep optimistic UI cleanup, but log failures (no silent .catchError).
-    unawaited(datasource.declineCall(callInfo.roomName).catchError((Object err) {
-      debugPrint('[CallManager] declineCall failed: $err');
-    }));
+    unawaited(
+      datasource.declineCall(callInfo.roomName).catchError((Object err) {
+        debugPrint('[CallManager] declineCall failed: $err');
+      }),
+    );
 
     unawaited(_cleanup());
     notifier.endCall(CallEndReason.declined);
@@ -179,7 +182,8 @@ final class CallManager {
     if (currentState.callInfo == null) return;
 
     final callInfo = currentState.callInfo!;
-    final isCancellingOutgoing = currentState.status is CallRinging &&
+    final isCancellingOutgoing =
+        currentState.status is CallRinging &&
         callInfo.direction == CallDirection.outgoing;
 
     sendHangup(
@@ -191,13 +195,17 @@ final class CallManager {
     final datasource = _ref.read(callsRemoteDatasourceProvider);
     // Phase 0 F6-fix: surface backend failures instead of silent swallow.
     if (isCancellingOutgoing) {
-      unawaited(datasource.cancelCall(callInfo.roomName).catchError((Object err) {
-        debugPrint('[CallManager] cancelCall failed: $err');
-      }));
+      unawaited(
+        datasource.cancelCall(callInfo.roomName).catchError((Object err) {
+          debugPrint('[CallManager] cancelCall failed: $err');
+        }),
+      );
     } else {
-      unawaited(datasource.endCall(callInfo.roomName).catchError((Object err) {
-        debugPrint('[CallManager] endCall failed: $err');
-      }));
+      unawaited(
+        datasource.endCall(callInfo.roomName).catchError((Object err) {
+          debugPrint('[CallManager] endCall failed: $err');
+        }),
+      );
     }
 
     unawaited(_cleanup());
@@ -241,10 +249,18 @@ final class CallManager {
     callRefs.onRemoteStream = onRemote;
 
     if (callRefs.localStream != null) {
-      try { onLocal(callRefs.localStream!); } on Exception { /* detached */ }
+      try {
+        onLocal(callRefs.localStream!);
+      } on Exception {
+        /* detached */
+      }
     }
     if (callRefs.remoteStream != null) {
-      try { onRemote(callRefs.remoteStream!); } on Exception { /* detached */ }
+      try {
+        onRemote(callRefs.remoteStream!);
+      } on Exception {
+        /* detached */
+      }
     }
   }
 
@@ -252,10 +268,7 @@ final class CallManager {
   // Private helpers
   // -----------------------------------------------------------------------
 
-  void _sendCurrentMediaState({
-    bool? overrideMuted,
-    bool? overrideCameraOn,
-  }) {
+  void _sendCurrentMediaState({bool? overrideMuted, bool? overrideCameraOn}) {
     final callState = _ref.read(callNotifierProvider);
     if (callState.callInfo == null) return;
 
@@ -296,16 +309,13 @@ final class CallManager {
     final callRefs = getCallRefs();
     if (callRefs.durationTimer != null) return;
 
-    callRefs.durationTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        try {
-          _ref.read(callNotifierProvider.notifier).tickDuration();
-        } on Exception {
-          // Provider disposed
-        }
-      },
-    );
+    callRefs.durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      try {
+        _ref.read(callNotifierProvider.notifier).tickDuration();
+      } on Exception {
+        // Provider disposed
+      }
+    });
   }
 
   void _scheduleIdleReset() {

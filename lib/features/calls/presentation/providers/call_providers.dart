@@ -7,8 +7,7 @@ import 'package:tander_flutter_v3/features/calls/data/datasources/calls_remote_d
 // Datasources
 // ---------------------------------------------------------------------------
 
-final callsRemoteDatasourceProvider =
-    Provider<CallsRemoteDatasource>((ref) {
+final callsRemoteDatasourceProvider = Provider<CallsRemoteDatasource>((ref) {
   return CallsRemoteDatasource(dioClient: ref.watch(dioClientProvider));
 });
 

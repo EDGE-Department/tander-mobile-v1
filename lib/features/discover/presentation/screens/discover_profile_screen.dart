@@ -29,8 +29,7 @@ class DiscoverProfileScreen extends ConsumerStatefulWidget {
       _DiscoverProfileScreenState();
 }
 
-class _DiscoverProfileScreenState
-    extends ConsumerState<DiscoverProfileScreen> {
+class _DiscoverProfileScreenState extends ConsumerState<DiscoverProfileScreen> {
   final PageController _pageController = PageController();
   int _currentPhotoPage = 0;
   bool _isSending = false;
@@ -65,9 +64,7 @@ class _DiscoverProfileScreenState
 
   @override
   Widget build(BuildContext context) {
-    final profileAsync = ref.watch(
-      discoverProfileProvider(widget.userId),
-    );
+    final profileAsync = ref.watch(discoverProfileProvider(widget.userId));
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -85,7 +82,10 @@ class _DiscoverProfileScreenState
         padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
-            Expanded(flex: 3, child: SkeletonCard(variant: SkeletonVariant.fullCard)),
+            Expanded(
+              flex: 3,
+              child: SkeletonCard(variant: SkeletonVariant.fullCard),
+            ),
             SizedBox(height: AppSpacing.lg),
             SkeletonCard(variant: SkeletonVariant.title),
             SizedBox(height: AppSpacing.sm),
@@ -121,9 +121,10 @@ class _DiscoverProfileScreenState
 
   Widget _buildProfileContent(DiscoveryCandidate candidate) {
     final allPhotos = _allPhotos(candidate);
-    final displayLocation = [candidate.city, candidate.country]
-        .where((part) => part != null && part.isNotEmpty)
-        .join(', ');
+    final displayLocation = [
+      candidate.city,
+      candidate.country,
+    ].where((part) => part != null && part.isNotEmpty).join(', ');
 
     return Column(
       children: [
@@ -151,8 +152,7 @@ class _DiscoverProfileScreenState
                   children: [
                     _buildBadgeRow(candidate),
                     const SizedBox(height: AppSpacing.md),
-                    if (candidate.bio != null &&
-                        candidate.bio!.isNotEmpty) ...[
+                    if (candidate.bio != null && candidate.bio!.isNotEmpty) ...[
                       _buildSection(
                         label: 'About',
                         child: Text(
@@ -167,7 +167,11 @@ class _DiscoverProfileScreenState
                         label: 'Location',
                         child: Row(
                           children: [
-                            const Icon(Icons.location_on, size: 16, color: AppColors.primary),
+                            const Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(width: AppSpacing.xs),
                             Text(displayLocation, style: AppTypography.body),
                           ],
@@ -181,7 +185,9 @@ class _DiscoverProfileScreenState
                         child: Wrap(
                           spacing: AppSpacing.xs,
                           runSpacing: AppSpacing.xs,
-                          children: candidate.interests.map(_buildInterestChip).toList(),
+                          children: candidate.interests
+                              .map(_buildInterestChip)
+                              .toList(),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -208,9 +214,15 @@ class _DiscoverProfileScreenState
       runSpacing: AppSpacing.xs,
       children: [
         if (candidate.isOnline)
-          const TanderBadge(label: 'Online', variant: TanderBadgeVariant.success),
+          const TanderBadge(
+            label: 'Online',
+            variant: TanderBadgeVariant.success,
+          ),
         if (candidate.hasExistingConnection)
-          const TanderBadge(label: 'Connection requested', variant: TanderBadgeVariant.info),
+          const TanderBadge(
+            label: 'Connection requested',
+            variant: TanderBadgeVariant.info,
+          ),
       ],
     );
   }
@@ -222,7 +234,7 @@ class _DiscoverProfileScreenState
         Text(
           label.toUpperCase(),
           style: AppTypography.caption.copyWith(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.5,
             color: AppColors.textMuted,
@@ -236,13 +248,19 @@ class _DiscoverProfileScreenState
 
   Widget _buildInterestChip(String interest) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: AppRadius.borderFull,
         border: Border.all(color: AppColors.border),
       ),
-      child: Text(interest, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w500)),
+      child: Text(
+        interest,
+        style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w500),
+      ),
     );
   }
 
@@ -260,12 +278,15 @@ class _DiscoverProfileScreenState
         return ClipRRect(
           borderRadius: AppRadius.borderMd,
           child: Image.network(
-                  photos[index],
+            photos[index],
             fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: AppColors.subtle,
               alignment: Alignment.center,
-              child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+              child: const Icon(
+                Icons.broken_image_outlined,
+                color: AppColors.textMuted,
+              ),
             ),
           ),
         );
@@ -299,7 +320,11 @@ class _DiscoverProfileScreenState
                     border: Border.all(color: AppColors.border, width: 2),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.close, size: 24, color: AppColors.textMuted),
+                  child: const Icon(
+                    Icons.close,
+                    size: 24,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ),
             ),

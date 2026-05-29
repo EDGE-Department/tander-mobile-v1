@@ -12,7 +12,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 
 final class CommunityRemoteDatasource {
   const CommunityRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -30,8 +30,9 @@ final class CommunityRemoteDatasource {
       context: cursor != null ? {'cursor': cursor} : null,
     );
 
-    final Map<String, Object>? queryParameters =
-        cursor != null ? {'cursor': cursor} : null;
+    final Map<String, Object>? queryParameters = cursor != null
+        ? {'cursor': cursor}
+        : null;
 
     return _dioClient.get<Map<String, Object?>>(
       ApiEndpoints.communityFeed,
@@ -44,9 +45,7 @@ final class CommunityRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Fetches a single community post by [postId].
-  Future<Response<Map<String, Object?>>> fetchPost({
-    required String postId,
-  }) {
+  Future<Response<Map<String, Object?>>> fetchPost({required String postId}) {
     AppLogger.debug(
       'Fetching community post',
       operation: '$_tag.fetchPost',
@@ -114,9 +113,7 @@ final class CommunityRemoteDatasource {
   // -----------------------------------------------------------------------
 
   /// Deletes a community post by [postId].
-  Future<Response<Map<String, Object?>>> deletePost({
-    required String postId,
-  }) {
+  Future<Response<Map<String, Object?>>> deletePost({required String postId}) {
     AppLogger.debug(
       'Deleting community post',
       operation: '$_tag.deletePost',
@@ -143,8 +140,9 @@ final class CommunityRemoteDatasource {
       context: {'postId': postId},
     );
 
-    final Map<String, Object>? queryParameters =
-        cursor != null ? {'cursor': cursor} : null;
+    final Map<String, Object>? queryParameters = cursor != null
+        ? {'cursor': cursor}
+        : null;
 
     return _dioClient.get<Map<String, Object?>>(
       ApiEndpoints.postComments(postId),
@@ -161,14 +159,14 @@ final class CommunityRemoteDatasource {
     AppLogger.debug(
       'Creating comment',
       operation: '$_tag.createComment',
-      context: {'postId': postId, if (parentCommentId != null) 'parentCommentId': parentCommentId},
+      context: {'postId': postId, 'parentCommentId': ?parentCommentId},
     );
 
     return _dioClient.post<Map<String, Object?>>(
       ApiEndpoints.postComments(postId),
       data: <String, Object>{
         'content': content,
-        if (parentCommentId != null) 'parentCommentId': parentCommentId,
+        'parentCommentId': ?parentCommentId,
       },
     );
   }
@@ -184,8 +182,9 @@ final class CommunityRemoteDatasource {
       context: {'commentId': commentId},
     );
 
-    final Map<String, Object>? queryParameters =
-        cursor != null ? {'cursor': cursor} : null;
+    final Map<String, Object>? queryParameters = cursor != null
+        ? {'cursor': cursor}
+        : null;
 
     return _dioClient.get<Map<String, Object?>>(
       ApiEndpoints.commentReplies(commentId),

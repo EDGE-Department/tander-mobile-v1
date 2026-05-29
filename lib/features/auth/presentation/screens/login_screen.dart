@@ -131,10 +131,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _navigateToOnboardingPhase(RegistrationPhase phase) {
     final route = switch (phase) {
-      RegistrationPhase.pendingEmailVerification => AppRoutes.emailVerification,
       RegistrationPhase.pendingProfileSetup => AppRoutes.profileSetup,
       RegistrationPhase.pendingPhotoSetup => AppRoutes.photoSetup,
-      RegistrationPhase.pendingIdVerification => AppRoutes.profileSetup,
+      // pendingIdVerification is never emitted mid-onboarding in the current
+      // flow (ID is verified pre-registration), so route it to home as a safe
+      // default rather than back to profileSetup which would cause a loop.
+      // Matches _onboardingRouteForPhase in app/router/app_router.dart.
+      RegistrationPhase.pendingIdVerification => AppRoutes.home,
       RegistrationPhase.pendingNotificationPermission =>
         AppRoutes.notificationPermission,
       RegistrationPhase.complete => AppRoutes.home,
@@ -162,8 +165,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // over — otherwise the user sees both at once.
     final errorMessage = authState is AuthError
         ? (authState.exception.code == 'account-suspended'
-            ? null
-            : authState.exception.userMessage)
+              ? null
+              : authState.exception.userMessage)
         : null;
 
     final screenSize = MediaQuery.sizeOf(context);
@@ -359,10 +362,12 @@ class _TabletPortraitBrandPanel extends StatefulWidget {
   final SimulatedOnlineCount onlineCount;
 
   @override
-  State<_TabletPortraitBrandPanel> createState() => _TabletPortraitBrandPanelState();
+  State<_TabletPortraitBrandPanel> createState() =>
+      _TabletPortraitBrandPanelState();
 }
 
-class _TabletPortraitBrandPanelState extends State<_TabletPortraitBrandPanel> with SingleTickerProviderStateMixin {
+class _TabletPortraitBrandPanelState extends State<_TabletPortraitBrandPanel>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _constellationCtrl;
 
   @override
@@ -457,7 +462,9 @@ class _TabletPortraitBrandPanelState extends State<_TabletPortraitBrandPanel> wi
                 child: AnimatedBuilder(
                   animation: _constellationCtrl,
                   builder: (_, _) => CustomPaint(
-                    painter: SplashConstellationPainter(_constellationCtrl.value),
+                    painter: SplashConstellationPainter(
+                      _constellationCtrl.value,
+                    ),
                   ),
                 ),
               ),
@@ -520,7 +527,7 @@ class _TabletPortraitBrandPanelState extends State<_TabletPortraitBrandPanel> wi
                 padding: const EdgeInsets.only(top: 20, right: 20),
                 child: ValueListenableBuilder<int>(
                   valueListenable: widget.onlineCount,
-                  builder: (_, count, __) => OnlineCountBadge(count: count),
+                  builder: (_, count, _) => OnlineCountBadge(count: count),
                 ),
               ),
             ),
@@ -536,7 +543,7 @@ class _TabletPortraitBrandPanelState extends State<_TabletPortraitBrandPanel> wi
                   Text(
                     'MADE FOR FILIPINO SENIORS 60+',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.65),
                       letterSpacing: 2.8,
@@ -819,13 +826,17 @@ class _HeaderSection extends StatelessWidget {
             child: IgnorePointer(
               child: Center(
                 child: Transform.translate(
-                  offset: Offset(0, -(screenWidth * 0.26).clamp(82.0, 108.0) * 0.08),
+                  offset: Offset(
+                    0,
+                    -(screenWidth * 0.26).clamp(82.0, 108.0) * 0.08,
+                  ),
                   child: Text(
                     'Tander',
                     style: AppTypography.brandWordmark(
                       fontSize: (screenWidth * 0.26).clamp(82.0, 108.0),
                       color: Colors.white.withValues(alpha: 0.09),
-                      letterSpacing: -0.03 * (screenWidth * 0.26).clamp(82.0, 108.0),
+                      letterSpacing:
+                          -0.03 * (screenWidth * 0.26).clamp(82.0, 108.0),
                     ).copyWith(height: 1),
                   ),
                 ),
@@ -862,13 +873,16 @@ class _HeaderSection extends StatelessWidget {
                   children: [
                     // Logo
                     ClipOval(
-                      child: Image.asset(
-                        'assets/icons/tander_icon.png',
-                        width: 68,
-                        height: 68,
-                        semanticLabel: 'Tander logo',
-                      ),
-                    ).animate().fadeIn(duration: 650.ms, delay: 100.ms).scale(
+                          child: Image.asset(
+                            'assets/icons/tander_icon.png',
+                            width: 68,
+                            height: 68,
+                            semanticLabel: 'Tander logo',
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 650.ms, delay: 100.ms)
+                        .scale(
                           begin: const Offset(0.9, 0.9),
                           end: const Offset(1, 1),
                           curve: AppCurves.premiumEase,
@@ -877,30 +891,30 @@ class _HeaderSection extends StatelessWidget {
 
                     // Wordmark (web: staggered entrance, but here unified for performance)
                     Text(
-                      'Tander',
-                      style: AppTypography.brandWordmark(
-                        fontSize: wordmarkSize,
-                        color: Colors.white,
-                        letterSpacing: -0.03 * wordmarkSize,
-                      ).copyWith(
-                        height: 0.95,
-                        shadows: const [
-                          Shadow(
-                            offset: Offset(0, 4),
-                            blurRadius: 24,
-                            color: Color(0x38000000),
-                          ),
-                          Shadow(
-                            blurRadius: 50,
-                            color: Color(0x47FFA050),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(duration: 600.ms, delay: 200.ms).moveY(
-                          begin: 8,
-                          end: 0,
-                          curve: AppCurves.premiumEase,
-                        ),
+                          'Tander',
+                          style:
+                              AppTypography.brandWordmark(
+                                fontSize: wordmarkSize,
+                                color: Colors.white,
+                                letterSpacing: -0.03 * wordmarkSize,
+                              ).copyWith(
+                                height: 0.95,
+                                shadows: const [
+                                  Shadow(
+                                    offset: Offset(0, 4),
+                                    blurRadius: 24,
+                                    color: Color(0x38000000),
+                                  ),
+                                  Shadow(
+                                    blurRadius: 50,
+                                    color: Color(0x47FFA050),
+                                  ),
+                                ],
+                              ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 600.ms, delay: 200.ms)
+                        .moveY(begin: 8, end: 0, curve: AppCurves.premiumEase),
                   ],
                 ),
               ),
@@ -964,7 +978,7 @@ class _MobileFilipinoValuesMarqueeState
             final offset = -_controller.value * contentWidth;
             return Transform.translate(
               offset: Offset(offset, 0),
-              child: SizedBox(
+              child: const SizedBox(
                 width: contentWidth * 2,
                 child: Text(
                   '$_text     $_text     $_text     ',
@@ -990,8 +1004,7 @@ class _MobilePortraitHeaderScene extends StatefulWidget {
       _MobilePortraitHeaderSceneState();
 }
 
-class _MobilePortraitHeaderSceneState
-    extends State<_MobilePortraitHeaderScene>
+class _MobilePortraitHeaderSceneState extends State<_MobilePortraitHeaderScene>
     with SingleTickerProviderStateMixin {
   late final AnimationController _constellationCtrl;
 
@@ -1027,9 +1040,9 @@ class _MobilePortraitHeaderSceneState
               child: Container(
                 width: w * 0.58,
                 height: h * 0.72,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const RadialGradient(
+                  gradient: RadialGradient(
                     colors: [
                       Color(0x47FF9656), // rgba(255,150,86,0.28)
                       Color(0x1FDC6937), // rgba(220,105,55,0.12)
@@ -1047,9 +1060,9 @@ class _MobilePortraitHeaderSceneState
               child: Container(
                 width: w * 0.42,
                 height: h * 0.58,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const RadialGradient(
+                  gradient: RadialGradient(
                     colors: [
                       Color(0x2960D6BC), // rgba(96,214,188,0.16)
                       Color(0x0F1C927A), // rgba(28,146,122,0.06)
@@ -1145,119 +1158,6 @@ class _MobilePortraitHeaderSceneState
   }
 }
 
-class _ConstellationNode {
-  const _ConstellationNode(this.x, this.y, this.radius, this.color);
-
-  final double x;
-  final double y;
-  final double radius;
-  final Color color;
-}
-
-class _MobileConstellationPainter extends CustomPainter {
-  const _MobileConstellationPainter();
-
-  static const List<_ConstellationNode> _nodes = [
-    _ConstellationNode(0.12, 0.34, 2.2, Color(0xE6FFA05A)),
-    _ConstellationNode(0.25, 0.24, 1.7, Color(0xBFFFFFFF)),
-    _ConstellationNode(0.23, 0.58, 1.6, Color(0x8CFFFFFF)),
-    _ConstellationNode(0.39, 0.46, 2.1, Color(0xCCFFFFFF)),
-    _ConstellationNode(0.50, 0.50, 4.4, Color(0xFFFFFFFF)),
-    _ConstellationNode(0.61, 0.45, 2.1, Color(0xCCFFFFFF)),
-    _ConstellationNode(0.76, 0.24, 1.7, Color(0xD996E6DF)),
-    _ConstellationNode(0.85, 0.42, 2.3, Color(0xE678DCD7)),
-    _ConstellationNode(0.78, 0.62, 1.8, Color(0x8CFFFFFF)),
-    _ConstellationNode(0.50, 0.16, 1.7, Color(0xA6FFFFFF)),
-    _ConstellationNode(0.05, 0.20, 1.4, Color(0xB3FFB464)),
-    _ConstellationNode(0.95, 0.18, 1.4, Color(0xB396E6DF)),
-  ];
-
-  static const List<List<int>> _normalEdges = [
-    [0, 1],
-    [0, 3],
-    [2, 3],
-    [5, 6],
-    [5, 7],
-    [7, 8],
-    [9, 4],
-    [10, 0],
-    [11, 6],
-  ];
-
-  static const List<List<int>> _bridgeEdges = [
-    [3, 4],
-    [4, 5],
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.10)
-      ..strokeWidth = 0.75
-      ..style = PaintingStyle.stroke;
-
-    final bridgePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.36)
-      ..strokeWidth = 1.05
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2);
-
-    for (final edge in _normalEdges) {
-      final from = _resolve(size, _nodes[edge[0]]);
-      final to = _resolve(size, _nodes[edge[1]]);
-      canvas.drawLine(from, to, linePaint);
-    }
-
-    for (final edge in _bridgeEdges) {
-      final from = _resolve(size, _nodes[edge[0]]);
-      final to = _resolve(size, _nodes[edge[1]]);
-      canvas.drawLine(from, to, bridgePaint);
-    }
-
-    final hubGlowPaint = Paint()
-      ..color = const Color(0x66FFFFFF)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    final hubCenter = _resolve(size, _nodes[4]);
-    canvas.drawCircle(hubCenter, 18, hubGlowPaint);
-
-    for (final node in _nodes) {
-      final offset = _resolve(size, node);
-      final glowPaint = Paint()
-        ..color = node.color.withValues(alpha: 0.28)
-        ..maskFilter = MaskFilter.blur(
-          BlurStyle.normal,
-          node.radius >= 4 ? 8 : 3,
-        );
-      final fillPaint = Paint()..color = node.color;
-      canvas.drawCircle(offset, node.radius * 2.2, glowPaint);
-      canvas.drawCircle(offset, node.radius, fillPaint);
-    }
-  }
-
-  static Offset _resolve(Size size, _ConstellationNode node) {
-    const horizontalScale = 1.08;
-    const verticalScale = 0.90;
-    const horizontalInset = 0.08;
-    const verticalInset = 0.10;
-
-    final resolvedX = clampDouble(
-      0.5 + (node.x - 0.5) * horizontalScale,
-      horizontalInset,
-      1 - horizontalInset,
-    );
-    final resolvedY = clampDouble(
-      0.5 + (node.y - 0.5) * verticalScale,
-      verticalInset,
-      1 - verticalInset,
-    );
-
-    return Offset(size.width * resolvedX, size.height * resolvedY);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class _MobileSceneGrainPainter extends CustomPainter {
   const _MobileSceneGrainPainter();
 
@@ -1279,26 +1179,6 @@ class _MobileSceneGrainPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 48,
-        height: 4,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
-          ),
-          borderRadius: BorderRadius.circular(999),
-        ),
-      ),
-    );
-  }
 }
 
 class _ParchmentDotGridPainter extends CustomPainter {

@@ -50,15 +50,6 @@ Map<String, dynamic> _$LoginResponseDataDtoToJson(
   'profilePhotoUrl': instance.profilePhotoUrl,
 };
 
-LoginResponseDto _$LoginResponseDtoFromJson(Map<String, dynamic> json) =>
-    LoginResponseDto(
-      success: json['success'] as bool,
-      data: LoginResponseDataDto.fromJson(json['data'] as Map<String, dynamic>),
-    );
-
-Map<String, dynamic> _$LoginResponseDtoToJson(LoginResponseDto instance) =>
-    <String, dynamic>{'success': instance.success, 'data': instance.data};
-
 RegisterRequestDto _$RegisterRequestDtoFromJson(Map<String, dynamic> json) =>
     RegisterRequestDto(
       password: json['password'] as String,
@@ -120,26 +111,6 @@ RegisterResponseDto _$RegisterResponseDtoFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$RegisterResponseDtoToJson(
   RegisterResponseDto instance,
 ) => <String, dynamic>{'success': instance.success, 'data': instance.data};
-
-SendOtpRequestDto _$SendOtpRequestDtoFromJson(Map<String, dynamic> json) =>
-    SendOtpRequestDto(
-      contact: json['contact'] as String,
-      type: json['type'] as String,
-    );
-
-Map<String, dynamic> _$SendOtpRequestDtoToJson(SendOtpRequestDto instance) =>
-    <String, dynamic>{'contact': instance.contact, 'type': instance.type};
-
-VerifyRegistrationOtpRequestDto _$VerifyRegistrationOtpRequestDtoFromJson(
-  Map<String, dynamic> json,
-) => VerifyRegistrationOtpRequestDto(
-  contact: json['contact'] as String,
-  otp: json['otp'] as String,
-);
-
-Map<String, dynamic> _$VerifyRegistrationOtpRequestDtoToJson(
-  VerifyRegistrationOtpRequestDto instance,
-) => <String, dynamic>{'contact': instance.contact, 'otp': instance.otp};
 
 ForgotPasswordRequestDto _$ForgotPasswordRequestDtoFromJson(
   Map<String, dynamic> json,
@@ -230,28 +201,6 @@ ResendVerificationRequestDto _$ResendVerificationRequestDtoFromJson(
 Map<String, dynamic> _$ResendVerificationRequestDtoToJson(
   ResendVerificationRequestDto instance,
 ) => <String, dynamic>{'email': instance.email};
-
-IdVerificationRequestDto _$IdVerificationRequestDtoFromJson(
-  Map<String, dynamic> json,
-) => IdVerificationRequestDto(
-  idType: json['idType'] as String,
-  idNumber: json['idNumber'] as String,
-);
-
-Map<String, dynamic> _$IdVerificationRequestDtoToJson(
-  IdVerificationRequestDto instance,
-) => <String, dynamic>{
-  'idType': instance.idType,
-  'idNumber': instance.idNumber,
-};
-
-CheckAvailabilityResponseDto _$CheckAvailabilityResponseDtoFromJson(
-  Map<String, dynamic> json,
-) => CheckAvailabilityResponseDto(available: json['available'] as bool);
-
-Map<String, dynamic> _$CheckAvailabilityResponseDtoToJson(
-  CheckAvailabilityResponseDto instance,
-) => <String, dynamic>{'available': instance.available};
 
 ApiSuccessResponseDto _$ApiSuccessResponseDtoFromJson(
   Map<String, dynamic> json,

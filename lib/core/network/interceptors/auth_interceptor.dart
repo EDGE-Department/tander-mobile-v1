@@ -18,7 +18,7 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 /// new value so subsequent requests use the freshest token.
 final class AuthInterceptor extends Interceptor {
   AuthInterceptor({required SecureStorage secureStorage})
-      : _secureStorage = secureStorage;
+    : _secureStorage = secureStorage;
 
   final SecureStorage _secureStorage;
 
@@ -44,8 +44,7 @@ final class AuthInterceptor extends Interceptor {
     }
 
     // Stamp request start time so the logging interceptor can compute elapsed.
-    options.extra['_requestStartMs'] =
-        DateTime.now().millisecondsSinceEpoch;
+    options.extra['_requestStartMs'] = DateTime.now().millisecondsSinceEpoch;
 
     handler.next(options);
   }
@@ -79,9 +78,7 @@ final class AuthInterceptor extends Interceptor {
   /// Reads the `Jwt-Token` response header (case-insensitive thanks to Dio's
   /// internal normalisation), strips the `Bearer ` prefix, and persists the
   /// new access token.
-  Future<void> _extractAndStoreRotatedToken(
-    Response<Object?> response,
-  ) async {
+  Future<void> _extractAndStoreRotatedToken(Response<Object?> response) async {
     // Dio lower-cases header names, so `jwt-token` matches `Jwt-Token`.
     final rawJwtHeader = response.headers.value('jwt-token');
     if (rawJwtHeader == null || rawJwtHeader.isEmpty) return;

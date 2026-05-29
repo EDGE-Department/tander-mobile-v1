@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/shared/utils/photo_url.dart';
+import 'package:tander_flutter_v3/shared/widgets/photo_lightbox.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_badge.dart';
 
 class ProfileHero extends StatelessWidget {
@@ -51,10 +52,12 @@ class ProfileHero extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     // Scale avatar: 128px on small screens, up to 160px on larger screens
-    final avatarSize = screenWidth < 400 ? 120.0 : (screenWidth < 600 ? 128.0 : 160.0);
+    final avatarSize = screenWidth < 400
+        ? 120.0
+        : (screenWidth < 600 ? 128.0 : 160.0);
 
     // Constrain content width on very wide screens for readability
-    final maxContentWidth = 500.0;
+    const maxContentWidth = 500.0;
 
     return Stack(
       children: [
@@ -102,10 +105,10 @@ class ProfileHero extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 40, 16, 32),
           child: Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
+              constraints: const BoxConstraints(maxWidth: maxContentWidth),
               child: Column(
                 children: [
-                  _buildAvatar(avatarSize),
+                  _buildAvatar(context, avatarSize),
                   const SizedBox(height: 28),
                   _buildIdentity(),
                 ],
@@ -117,99 +120,109 @@ class ProfileHero extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(double size) {
+  Widget _buildAvatar(BuildContext context, double size) {
     final hasPhoto = gallery.isNotEmpty;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * 0.3),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primary,
-                AppColors.secondary,
-                Color(0xFFFB923C),
+    return GestureDetector(
+      onTap: hasPhoto
+          ? () =>
+                PhotoLightbox.show(context, photoUrls: gallery, initialIndex: 0)
+          : null,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(size * 0.3),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primary,
+                  AppColors.secondary,
+                  Color(0xFFFB923C),
+                ],
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x4DE67E22),
+                  blurRadius: 64,
+                  offset: Offset(0, 32),
+                  spreadRadius: -12,
+                ),
               ],
             ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x4DE67E22),
-                blurRadius: 64,
-                offset: Offset(0, 32),
-                spreadRadius: -12,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(5),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(size * 0.26),
-              border: Border.all(color: Colors.white, width: 4),
-              color: AppColors.subtle,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: hasPhoto
-                ? Image.network(
-                    resolvePhotoUrl(gallery[0]) ?? gallery[0],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    errorBuilder: (_, _, _) => _avatarFallback(),
-                  )
-                : _avatarFallback(),
-          ),
-        ),
-
-        if (isOnline)
-          Positioned(
-            bottom: -6,
-            right: -6,
+            padding: const EdgeInsets.all(5),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x33000000),
-                    blurRadius: 12,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(color: const Color(0xFFECFDF5)),
+                borderRadius: BorderRadius.circular(size * 0.26),
+                border: Border.all(color: Colors.white, width: 4),
+                color: AppColors.subtle,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFF22C55E),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'ACTIVE',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                      color: Color(0xFF16A34A),
-                    ),
-                  ),
-                ],
-              ),
+              clipBehavior: Clip.antiAlias,
+              child: hasPhoto
+                  ? Image.network(
+                      resolvePhotoUrl(gallery[0]) ?? gallery[0],
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (_, _, _) => _avatarFallback(),
+                    )
+                  : _avatarFallback(),
             ),
           ),
-      ],
+
+          if (isOnline)
+            Positioned(
+              bottom: -6,
+              right: -6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(color: const Color(0xFFECFDF5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF22C55E),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'ACTIVE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        color: Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -388,7 +401,7 @@ class _StatTile extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w900,
             letterSpacing: 2.0,
             color: AppColors.textMuted,

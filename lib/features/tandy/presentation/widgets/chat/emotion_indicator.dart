@@ -29,10 +29,7 @@ class EmotionIndicatorWidget extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            emotionStyle.emoji,
-            style: const TextStyle(fontSize: 16),
-          ),
+          Text(emotionStyle.emoji, style: const TextStyle(fontSize: 16)),
           const SizedBox(width: 6),
           Text(
             emotionStyle.label,

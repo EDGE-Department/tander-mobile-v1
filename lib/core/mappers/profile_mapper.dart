@@ -93,8 +93,14 @@ abstract final class ProfileMapper {
         if (decoded is List) {
           return decoded.whereType<String>().toList(growable: false);
         }
-      } on FormatException { /* fall through */ }
+      } on FormatException {
+        /* fall through */
+      }
     }
-    return trimmed.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    return trimmed
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
   }
 }

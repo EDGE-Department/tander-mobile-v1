@@ -75,9 +75,6 @@ class WarmCheckbox extends StatelessWidget {
   }
 
   Widget _buildLabel() {
-    return Text(
-      label!,
-      style: AppTypography.body,
-    );
+    return Text(label!, style: AppTypography.body);
   }
 }

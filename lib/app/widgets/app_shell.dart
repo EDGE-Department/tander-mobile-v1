@@ -2,35 +2,30 @@ import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_callkit_incoming/entities/entities.dart';
-import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:tander_flutter_v3/app/router/app_router.dart';
-import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/app/widgets/bottom_nav_bar.dart';
 import 'package:tander_flutter_v3/app/widgets/top_nav_bar.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/features/auth/data/datasources/notification_handler.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/push_providers.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_listener.dart';
-import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_notifier.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/states/call_state.dart';
 import 'package:tander_flutter_v3/features/calls/presentation/widgets/incoming_call_overlay.dart';
 import 'package:tander_flutter_v3/features/calls/services/call_push_bridge.dart';
-import 'package:tander_flutter_v3/features/calls/services/cold_start_acceptor.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
 /// Root scaffold for the authenticated app matching the web's layout:
 /// - **Phone** (width < 1024): bottom dock nav bar
 /// - **Tablet/Desktop** (width >= 1024): top header nav bar
 ///
-/// Also wires:
-/// - Push notification initialization
-/// - CallKit native event listening (accept/decline from notification)
-/// - Cold-start call consumption
+/// Also wires push-notification init + the foreground incoming-call push →
+/// native ring UI. CallKit accept/decline events are owned by
+/// [V2CallkitListener] (flutter_callkit_incoming delivers onEvent to a single
+/// effective listener), so this shell deliberately does NOT subscribe to them;
+/// cold-start accept is handled natively via MainActivity.pendingColdStartAccept.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({required this.child, super.key});
 
@@ -43,11 +38,6 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   bool _hasNavigatedToCall = false;
   bool _hasPushInitialized = false;
-  bool _hasCallKitInitialized = false;
-  StreamSubscription<CallEvent?>? _callKitEventSub;
-  /// Suppress spurious end/decline events fired by our own endCall()
-  /// when dismissing the native notification after accept.
-  bool _suppressNextCallKitEnd = false;
 
   @override
   void initState() {
@@ -57,18 +47,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         _hasPushInitialized = true;
         _initializePushNotifications();
       }
-      if (!_hasCallKitInitialized) {
-        _hasCallKitInitialized = true;
-        _initializeCallKit();
-        _consumeColdStartCall();
-      }
     });
-  }
-
-  @override
-  void dispose() {
-    _callKitEventSub?.cancel();
-    super.dispose();
   }
 
   // ---------------------------------------------------------------------------
@@ -83,7 +62,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       final pushService = ref.read(pushNotificationServiceProvider);
       await pushService.initialize();
 
-      debugPrint('[AppShell] Push service initialized, setting up notification routing...');
+      debugPrint(
+        '[AppShell] Push service initialized, setting up notification routing...',
+      );
 
       // Wire foreground notification routing with call push handling
       final router = ref.read(appRouterProvider);
@@ -108,45 +89,81 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// Shows native CallKit UI for ringtone (no bundled ringtone asset exists).
   /// The native UI is dismissed when call state leaves ringing (see the
   /// ref.listen block in build() which calls dismissNativeCallUI).
+  ///
+  /// Phase 5 v2 fields (real UUID callId, opaque accept/decline/dismiss
+  /// tokens) ride along through CallKit extras so V2CallkitListener can
+  /// route the answer event to /api/v2/calls/{callId}/accept-action.
   void _handleForegroundCallPush(RemoteMessage message) {
-    final roomId = message.data['roomId'] as String? ??
-        message.data['roomName'] as String? ??
+    final data = message.data;
+    final isV2 = data['acceptToken'] is String;
+
+    // v2 prefers `callId`; legacy uses `roomId`. Fall back across both.
+    final callId = data['callId'] as String?;
+    final roomId =
+        (data['roomId'] as String?) ??
+        (data['roomName'] as String?) ??
+        callId ??
         '';
-    final callerName = message.data['callerName'] as String? ??
-        message.data['displayName'] as String? ??
+    final callerName =
+        (data['callerName'] as String?) ??
+        (data['displayName'] as String?) ??
         'Unknown Caller';
-    final callType = message.data['callType'] as String? ?? 'audio';
-    final callerPhoto = message.data['callerPhoto'] as String? ??
-        message.data['profilePhoto'] as String?;
+    final callType = (data['callType'] as String?) ?? 'audio';
+    final callerPhoto =
+        (data['callerPhoto'] as String?) ??
+        (data['callerPhotoUrl'] as String?) ??
+        (data['profilePhoto'] as String?);
+    // v2 uses `callerUserId`; legacy uses `callerId`.
     final callerUserId =
-        (message.data['callerId'] ?? message.data['userId'] ?? '').toString();
+        (data['callerUserId'] ?? data['callerId'] ?? data['userId'] ?? '')
+            .toString();
 
     if (roomId.isEmpty) return;
 
     debugPrint(
-        '[AppShell] Foreground call push: room=$roomId caller=$callerName');
+      '[AppShell] Foreground call push (${isV2 ? "v2" : "legacy"}): '
+      'room=$roomId caller=$callerName callId=$callId',
+    );
 
-    // Show native call UI for ringtone + lock screen
-    unawaited(CallPushBridge.showNativeCallUI(
-      roomId: roomId,
-      callerName: callerName,
-      callType: callType,
-      callerPhoto: callerPhoto,
-    ));
+    // Show native call UI for ringtone + lock screen. Threads v2 fields
+    // into CallKit extras so V2CallkitListener.onAccept can read them.
+    unawaited(
+      CallPushBridge.showNativeCallUI(
+        roomId: roomId,
+        callerName: callerName,
+        callType: callType,
+        callerPhoto: callerPhoto,
+        callId: callId,
+        acceptToken: data['acceptToken'] as String?,
+        declineToken: data['declineToken'] as String?,
+        dismissToken: data['dismissToken'] as String?,
+        callerUserId: isV2 ? callerUserId : null,
+      ),
+    );
 
-    // Persist metadata for cold-start recovery
-    unawaited(CallPushBridge.persistCallMetadata(
-      roomId: roomId,
-      callerName: callerName,
-      callType: callType,
-      callerPhoto: callerPhoto,
-      callerUserId: callerUserId,
-    ));
+    // Persist metadata for cold-start recovery — v2 fields included so
+    // a future native fast-path can read them without booting Flutter.
+    unawaited(
+      CallPushBridge.persistCallMetadata(
+        roomId: roomId,
+        callerName: callerName,
+        callType: callType,
+        callerPhoto: callerPhoto,
+        callerUserId: callerUserId,
+        callId: callId,
+        twilioRoomSid: data['twilioRoomSid'] as String?,
+        acceptToken: data['acceptToken'] as String?,
+        declineToken: data['declineToken'] as String?,
+        dismissToken: data['dismissToken'] as String?,
+        expiresAt: data['expiresAt'] as String?,
+      ),
+    );
   }
 
   /// Handle call cancelled push while app is in foreground.
   void _handleCallCancelledPush(RemoteMessage message) {
-    final roomId = message.data['roomId'] as String? ??
+    final roomId =
+        message.data['roomId'] as String? ??
         message.data['roomName'] as String? ??
         '';
 
@@ -154,171 +171,6 @@ class _AppShellState extends ConsumerState<AppShell> {
       unawaited(CallPushBridge.dismissNativeCallUI(roomId));
     }
     unawaited(CallPushBridge.clearPersistedMetadata());
-  }
-
-  // ---------------------------------------------------------------------------
-  // CallKit native event handling
-  // ---------------------------------------------------------------------------
-
-  void _initializeCallKit() {
-    _callKitEventSub = FlutterCallkitIncoming.onEvent.listen(
-      _onCallKitEvent,
-      onError: (Object error) {
-        debugPrint('[AppShell] CallKit event stream error: $error');
-      },
-    );
-    debugPrint('[AppShell] CallKit event listener initialized');
-  }
-
-  void _onCallKitEvent(CallEvent? event) {
-    if (event == null) return;
-
-    final callId = _extractCallIdFromEvent(event);
-    debugPrint('[AppShell] CallKit event: ${event.event} callId=$callId');
-
-    // Suppress spurious end/decline events fired by our own endCall()
-    // when we dismiss the native notification after accepting.
-    if (_suppressNextCallKitEnd &&
-        (event.event == Event.actionCallDecline ||
-         event.event == Event.actionCallEnded)) {
-      _suppressNextCallKitEnd = false;
-      debugPrint('[AppShell] Suppressed CallKit end event after accept dismiss');
-      return;
-    }
-
-    switch (event.event) {
-      case Event.actionCallAccept:
-        _handleCallKitAccept(callId);
-
-      case Event.actionCallDecline:
-        _handleCallKitDecline(callId);
-
-      case Event.actionCallEnded:
-      case Event.actionCallTimeout:
-        _handleCallKitEnded(callId);
-
-      default:
-        break;
-    }
-  }
-
-  void _handleCallKitAccept(String? callId) {
-    if (callId == null) return;
-
-    // Immediately dismiss native CallKit UI + stop ringtone.
-    // On Android the notification persists until explicitly ended.
-    // Suppress the actionCallEnded event that endCall() fires.
-    _suppressNextCallKitEnd = true;
-    unawaited(FlutterCallkitIncoming.endCall(callId));
-    unawaited(CallPushBridge.clearPersistedMetadata());
-
-    final callState = ref.read(callNotifierProvider);
-
-    // If the in-app call state is already ringing (STOMP triggered),
-    // accept through the normal call manager flow
-    if (callState.isIncomingRinging) {
-      debugPrint('[AppShell] CallKit accept — using in-app call manager');
-      ref.read(callManagerProvider).acceptCall();
-      return;
-    }
-
-    // Otherwise, this is a background/killed accept — the call was set up
-    // via push notification. We need to reconstruct call state from persisted
-    // metadata and trigger the accept flow.
-    debugPrint('[AppShell] CallKit accept — reconstructing from metadata');
-    _acceptFromPushMetadata(callId);
-  }
-
-  Future<void> _acceptFromPushMetadata(String callId) async {
-    final metadata = await CallPushBridge.readPersistedMetadata();
-    if (metadata == null) {
-      debugPrint('[AppShell] No persisted metadata for CallKit accept');
-      return;
-    }
-
-    if (metadata.isStale) {
-      debugPrint('[AppShell] Stale call metadata — ignoring accept');
-      await CallPushBridge.clearPersistedMetadata();
-      return;
-    }
-
-    // Set up call state from push metadata
-    final notifier = ref.read(callNotifierProvider.notifier);
-    final callInfo = metadata.toCallInfo();
-
-    notifier.setCallInfo(callInfo);
-    notifier.setStatus(const CallRinging());
-
-    // Accept through the normal flow
-    unawaited(ref.read(callManagerProvider).acceptCall());
-    await CallPushBridge.clearPersistedMetadata();
-  }
-
-  void _handleCallKitDecline(String? callId) {
-    if (callId == null) return;
-
-    final callState = ref.read(callNotifierProvider);
-    if (callState.isIncomingRinging) {
-      ref.read(callManagerProvider).declineCall();
-    }
-
-    // Dismiss native UI and clean up
-    unawaited(CallPushBridge.dismissNativeCallUI(callId));
-    unawaited(CallPushBridge.clearPersistedMetadata());
-  }
-
-  void _handleCallKitEnded(String? callId) {
-    if (callId == null) return;
-
-    final callState = ref.read(callNotifierProvider);
-    if (callState.isIncomingRinging) {
-      final notifier = ref.read(callNotifierProvider.notifier);
-      notifier.endCall(CallEndReason.noAnswer);
-
-      // Reset to idle after display
-      Future<void>.delayed(const Duration(seconds: 3), () {
-        try {
-          ref.read(callNotifierProvider.notifier).resetToIdle();
-        } catch (_) {
-          // Provider may have been disposed
-        }
-      });
-    }
-
-    unawaited(CallPushBridge.clearPersistedMetadata());
-  }
-
-  /// Extract callId from CallKit event body.
-  String? _extractCallIdFromEvent(CallEvent event) {
-    final body = event.body;
-    if (body is Map) {
-      return body['id'] as String? ?? body['callId'] as String?;
-    }
-    return null;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Cold-start call consumption
-  // ---------------------------------------------------------------------------
-
-  void _consumeColdStartCall() {
-    if (!ColdStartAcceptor.hasPending) return;
-
-    final pending = ColdStartAcceptor.consumePending();
-    if (pending == null) return;
-
-    debugPrint('[AppShell] Consuming cold-start call: room=${pending.roomId}');
-
-    // Set call info + ringing state, then accept through the normal
-    // call manager flow which sets up WebRTC, STOMP signals, and media.
-    final notifier = ref.read(callNotifierProvider.notifier);
-    final callInfo = pending.toCallInfo();
-
-    notifier.setCallInfo(callInfo);
-    notifier.setStatus(const CallRinging());
-
-    // Accept through the normal flow (sets up WebRTC peer + signaling)
-    ref.read(callManagerProvider).acceptCall();
   }
 
   // ---------------------------------------------------------------------------
@@ -360,7 +212,8 @@ class _AppShellState extends ConsumerState<AppShell> {
       }
 
       // Navigate for outgoing calls when they start ringing
-      final wasIdle = previous.status is CallIdle || previous.status is CallInitiating;
+      final wasIdle =
+          previous.status is CallIdle || previous.status is CallInitiating;
       final isNowRinging = next.status is CallRinging;
       if (wasIdle &&
           isNowRinging &&
@@ -373,7 +226,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
       // Navigate back when call ends or resets to idle
       if (_hasNavigatedToCall &&
-          (next.status is CallIdle || next.status is CallEnded || next.status is CallFailed)) {
+          (next.status is CallIdle ||
+              next.status is CallEnded ||
+              next.status is CallFailed)) {
         _hasNavigatedToCall = false;
         // Small delay to show ended state before navigating back
         Future<void>.delayed(const Duration(seconds: 2), () {
@@ -387,7 +242,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final callState = ref.watch(callNotifierProvider);
     final bool showOverlay = callState.isIncomingRinging;
     // Hide nav bars during active calls (call screen is inside the shell)
-    final bool isInCall = callState.status is! CallIdle &&
+    final bool isInCall =
+        callState.status is! CallIdle &&
         callState.status is! CallEnded &&
         callState.callInfo != null;
     final bool isModalOpen = ref.watch(modalVisibleProvider);
@@ -420,8 +276,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       body: Stack(
         children: [
           widget.child,
-          if (showOverlay)
-            const Positioned.fill(child: IncomingCallOverlay()),
+          if (showOverlay) const Positioned.fill(child: IncomingCallOverlay()),
         ],
       ),
       bottomNavigationBar: hideNav ? null : const TanderBottomNavBar(),

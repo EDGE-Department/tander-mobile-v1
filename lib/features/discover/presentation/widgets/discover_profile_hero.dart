@@ -57,9 +57,9 @@ class DiscoverProfileHero extends StatelessWidget {
         onPageChanged: onPageChanged,
         itemBuilder: (context, index) {
           return Image.network(
-                  allPhotos[index],
+            allPhotos[index],
             fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: AppColors.subtle,
               alignment: Alignment.center,
               child: const Icon(

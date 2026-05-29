@@ -63,7 +63,8 @@ class DiscoverFiltersSheet extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<DiscoverFiltersSheet> createState() => _DiscoverFiltersSheetState();
+  ConsumerState<DiscoverFiltersSheet> createState() =>
+      _DiscoverFiltersSheetState();
 }
 
 class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
@@ -85,23 +86,27 @@ class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
   Future<void> _handleApply() async {
     // Save to user settings
     try {
-      await ref.read(userSettingsProvider.notifier).updateSettings(
-        UpdateSettingsRequestDto(
-          discoveryMinAge: _filterMinAge,
-          discoveryMaxAge: _filterMaxAge,
-          discoveryMaxDistanceKm: _filterMaxDistanceKm,
-        ),
-      );
+      await ref
+          .read(userSettingsProvider.notifier)
+          .updateSettings(
+            UpdateSettingsRequestDto(
+              discoveryMinAge: _filterMinAge,
+              discoveryMaxAge: _filterMaxAge,
+              discoveryMaxDistanceKm: _filterMaxDistanceKm,
+            ),
+          );
     } catch (_) {
       // Continue even if save fails — local filters still apply
     }
 
-    widget.onApply(DiscoveryFiltersDto(
-      minAge: _filterMinAge,
-      maxAge: _filterMaxAge,
-      maxDistanceKm: _filterMaxDistanceKm,
-      genderPreference: _filterGenderPreference,
-    ));
+    widget.onApply(
+      DiscoveryFiltersDto(
+        minAge: _filterMinAge,
+        maxAge: _filterMaxAge,
+        maxDistanceKm: _filterMaxDistanceKm,
+        genderPreference: _filterGenderPreference,
+      ),
+    );
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -240,7 +245,7 @@ class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Age range', '${_filterMinAge} \u2013 ${_filterMaxAge}'),
+          _sectionHeader('Age range', '$_filterMinAge \u2013 $_filterMaxAge'),
           const SizedBox(height: AppSpacing.md),
           _buildSlider(
             label: 'Minimum',
@@ -314,9 +319,12 @@ class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.xs),
               child: GestureDetector(
-                onTap: () => setState(() => _filterGenderPreference = option.value),
+                onTap: () =>
+                    setState(() => _filterGenderPreference = option.value),
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: AppSpacing.touchMinimum),
+                  constraints: const BoxConstraints(
+                    minHeight: AppSpacing.touchMinimum,
+                  ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md,
                     vertical: AppSpacing.sm,
@@ -334,12 +342,18 @@ class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
                       Text(
                         option.label,
                         style: AppTypography.body.copyWith(
-                          color: isSelected ? AppColors.primary : AppColors.textBody,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textBody,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       if (isSelected)
-                        const Icon(Icons.check, size: 18, color: AppColors.primary),
+                        const Icon(
+                          Icons.check,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
                     ],
                   ),
                 ),
@@ -353,14 +367,21 @@ class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
 
   Widget _buildApplyButton() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       child: GestureDetector(
         onTap: _handleApply,
         child: Container(
           width: double.infinity,
           constraints: const BoxConstraints(minHeight: 48),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFFF07020), Color(0xFFE67E22)]),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF07020), Color(0xFFE67E22)],
+            ),
             borderRadius: AppRadius.borderLg,
           ),
           alignment: Alignment.center,
@@ -389,7 +410,10 @@ class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
             letterSpacing: 1.5,
           ),
         ),
-        Text(displayValue, style: AppTypography.label.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          displayValue,
+          style: AppTypography.label.copyWith(fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }
@@ -407,8 +431,14 @@ class _DiscoverFiltersSheetState extends ConsumerState<DiscoverFiltersSheet> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: AppTypography.bodySm.copyWith(color: AppColors.textMuted)),
-            Text(displayValue, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+            ),
+            Text(
+              displayValue,
+              style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600),
+            ),
           ],
         ),
         _primarySlider(

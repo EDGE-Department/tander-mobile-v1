@@ -87,7 +87,7 @@ class UserBubble extends StatelessWidget {
               child: Text(
                 'You',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFFB8AFA6),
                 ),
@@ -139,10 +139,7 @@ class UserBubble extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8, top: 4),
               child: Text(
                 time,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFC0B8B0),
-                ),
+                style: const TextStyle(fontSize: 13, color: Color(0xFFC0B8B0)),
               ),
             ),
         ],
@@ -188,9 +185,7 @@ class TandyBubble extends StatelessWidget {
           if (message.detectedEmotion != null && isGroupStart)
             Padding(
               padding: const EdgeInsets.only(left: 50, bottom: 4),
-              child: EmotionIndicatorWidget(
-                emotion: message.detectedEmotion!,
-              ),
+              child: EmotionIndicatorWidget(emotion: message.detectedEmotion!),
             ),
 
           if (isGroupStart)
@@ -199,7 +194,7 @@ class TandyBubble extends StatelessWidget {
               child: Text(
                 'Tandy',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF0B8078),
                 ),
@@ -244,7 +239,8 @@ class TandyBubble extends StatelessWidget {
               Flexible(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.sizeOf(context).width *
+                    maxWidth:
+                        MediaQuery.sizeOf(context).width *
                         (hasBlocks ? 0.88 : 0.74),
                   ),
                   child: Column(
@@ -319,7 +315,7 @@ class TandyBubble extends StatelessWidget {
                   Text(
                     time,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       color: Color(0xFFC0B8B0),
                     ),
                   ),
@@ -366,7 +362,9 @@ class _RatingButtons extends ConsumerWidget {
           activeBg: const Color(0x24EF4444),
           activeBorder: const Color(0x73EF4444),
           onTap: () => _send(ref, isDown ? 0 : -1),
-          tooltip: isDown ? 'Remove thumbs down' : 'Mark Tandy reply as unhelpful',
+          tooltip: isDown
+              ? 'Remove thumbs down'
+              : 'Mark Tandy reply as unhelpful',
         ),
       ],
     );
@@ -374,10 +372,9 @@ class _RatingButtons extends ConsumerWidget {
 
   void _send(WidgetRef ref, int rating) {
     unawaited(
-      ref.read(tandyNotifierProvider.notifier).rateMessage(
-            messageId: message.messageId,
-            rating: rating,
-          ),
+      ref
+          .read(tandyNotifierProvider.notifier)
+          .rateMessage(messageId: message.messageId, rating: rating),
     );
   }
 }
@@ -424,4 +421,3 @@ class _RatingButton extends StatelessWidget {
     );
   }
 }
-

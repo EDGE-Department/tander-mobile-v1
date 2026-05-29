@@ -44,7 +44,8 @@ final class PaginatedCandidates {
   final bool isLastPage;
 
   @override
-  String toString() => 'PaginatedCandidates('
+  String toString() =>
+      'PaginatedCandidates('
       'count: ${candidates.length}, '
       'page: $currentPage/$totalPages)';
 }

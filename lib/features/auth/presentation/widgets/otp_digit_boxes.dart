@@ -104,7 +104,10 @@ class OtpDigitBoxesState extends State<OtpDigitBoxes> {
     final availableWidth = screenWidth - 64;
     const spacing = AppSpacing.xs;
     const totalSpacing = spacing * (otpLength - 1);
-    final boxWidth = ((availableWidth - totalSpacing) / otpLength).clamp(36.0, 48.0);
+    final boxWidth = ((availableWidth - totalSpacing) / otpLength).clamp(
+      36.0,
+      48.0,
+    );
     final boxHeight = (boxWidth * 1.15).clamp(44.0, 56.0);
 
     return AnimatedBuilder(
@@ -113,9 +116,23 @@ class OtpDigitBoxesState extends State<OtpDigitBoxes> {
         offset: Offset(widget.shakeAnimation.value, 0),
         child: child,
       ),
-      child: SizedBox(
-        height: boxHeight,
-        child: Stack(
+      // Announce the whole row as a single verification-code field. The value
+      // updates as digits fill so a screen reader speaks "n of 6 entered".
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) => Semantics(
+          textField: true,
+          label: 'Verification code, 6 digits',
+          value: '${_controller.text.length} of $otpLength entered',
+          child: child,
+        ),
+        child: SizedBox(
+          height: boxHeight,
+          // Drop the descendant semantics (the real edit field + each filled
+          // digit cell would otherwise emit their own nodes, fighting the
+          // single "n of 6 entered" announcement on the wrapper above).
+          child: ExcludeSemantics(
+          child: Stack(
           alignment: Alignment.center,
           children: [
             // Visual cells. Repaint on text and focus changes so the active
@@ -171,6 +188,8 @@ class OtpDigitBoxesState extends State<OtpDigitBoxes> {
               ),
             ),
           ],
+          ),
+          ),
         ),
       ),
     );

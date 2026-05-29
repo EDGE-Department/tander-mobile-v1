@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 
 /// Real-time availability status for email/phone text fields.
 enum AvailabilityStatus { idle, checking, available, taken }
@@ -14,28 +14,28 @@ class AvailabilitySuffixIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => switch (status) {
-        AvailabilityStatus.idle => const SizedBox.shrink(),
-        AvailabilityStatus.checking => const Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: _PulsingDotsLoader(),
-          ),
-        AvailabilityStatus.available => Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Icon(
-              PhosphorIconsRegular.checkCircle,
-              color: AppColors.secondary,
-              size: 24,
-            ),
-          ),
-        AvailabilityStatus.taken => const Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(
-              PhosphorIconsRegular.xCircle,
-              color: Color(0xFFEF4444),
-              size: 24,
-            ),
-          ),
-      };
+    AvailabilityStatus.idle => const SizedBox.shrink(),
+    AvailabilityStatus.checking => const Padding(
+      padding: EdgeInsets.only(right: 12),
+      child: _PulsingDotsLoader(),
+    ),
+    AvailabilityStatus.available => const Padding(
+      padding: EdgeInsets.only(right: 12),
+      child: Icon(
+        PhosphorIconsRegular.checkCircle,
+        color: AppColors.secondary,
+        size: 24,
+      ),
+    ),
+    AvailabilityStatus.taken => const Padding(
+      padding: EdgeInsets.only(right: 12),
+      child: Icon(
+        PhosphorIconsRegular.xCircle,
+        color: Color(0xFFEF4444),
+        size: 24,
+      ),
+    ),
+  };
 }
 
 /// Three dots that fade in sequence, giving a smooth "checking..." feel.
@@ -56,7 +56,9 @@ class _PulsingDotsLoaderState extends State<_PulsingDotsLoader>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..repeat();
+    );
+    // Driving is gated in build() on MediaQuery.disableAnimationsOf, which is
+    // unavailable here in initState.
   }
 
   @override
@@ -67,6 +69,15 @@ class _PulsingDotsLoaderState extends State<_PulsingDotsLoader>
 
   @override
   Widget build(BuildContext context) {
+    // Vestibular accessibility: when reduce-motion is on, show static
+    // full-opacity dots and stop driving the pulse.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (reduceMotion) {
+      if (_controller.isAnimating) _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+
     return SizedBox(
       width: 28,
       height: 20,
@@ -79,7 +90,9 @@ class _PulsingDotsLoaderState extends State<_PulsingDotsLoader>
             final delay = i * 0.25;
             final t = (_controller.value - delay) % 1.0;
             // Smooth bell-curve opacity: peak at 0.15, fade by 0.5
-            final opacity = t < 0.5
+            final opacity = reduceMotion
+                ? 1.0
+                : t < 0.5
                 ? (t * 2.0).clamp(0.0, 1.0) * 0.7 + 0.3
                 : ((1.0 - t) * 2.0).clamp(0.0, 1.0) * 0.7 + 0.3;
             return Padding(
@@ -89,7 +102,7 @@ class _PulsingDotsLoaderState extends State<_PulsingDotsLoader>
                 child: Container(
                   width: 6,
                   height: 6,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),

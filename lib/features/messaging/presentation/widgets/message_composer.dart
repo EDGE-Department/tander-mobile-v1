@@ -93,9 +93,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   /// Pick multiple images from gallery and add to pending queue.
   Future<void> _handlePickMultipleImages() async {
-    final pickedFiles = await _imagePicker.pickMultiImage(
-      imageQuality: 80,
-    );
+    final pickedFiles = await _imagePicker.pickMultiImage(imageQuality: 80);
     if (pickedFiles.isEmpty) return;
 
     setState(() {
@@ -136,7 +134,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     });
   }
 
-  Future<void> _showPermissionSettingsDialog(String title, String message) async {
+  Future<void> _showPermissionSettingsDialog(
+    String title,
+    String message,
+  ) async {
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -181,7 +182,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   Future<void> _handleRecordStart() async {
     final micStatus = await Permission.microphone.request();
     if (!micStatus.isGranted) {
-      if ((micStatus.isPermanentlyDenied || micStatus.isRestricted) && mounted) {
+      if ((micStatus.isPermanentlyDenied || micStatus.isRestricted) &&
+          mounted) {
         await _showPermissionSettingsDialog(
           'Microphone Access Required',
           'Microphone permission was denied. Please enable microphone access in Settings to send voice messages.',
@@ -194,7 +196,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final filePath =
         '${directory.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-    await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: filePath);
+    await _audioRecorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc),
+      path: filePath,
+    );
 
     setState(() {
       _isRecording = true;
@@ -245,9 +250,13 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   @override
   Widget build(BuildContext context) {
-    final threadState = ref.watch(messageThreadNotifierProvider(widget.conversationId));
-    final isSending = threadState is MessageThreadLoaded && threadState.isSending;
-    final isSendingMedia = threadState is MessageThreadLoaded && threadState.isSendingMedia;
+    final threadState = ref.watch(
+      messageThreadNotifierProvider(widget.conversationId),
+    );
+    final isSending =
+        threadState is MessageThreadLoaded && threadState.isSending;
+    final isSendingMedia =
+        threadState is MessageThreadLoaded && threadState.isSendingMedia;
     final hasText = _textController.text.trim().isNotEmpty;
     final canSend = hasText && !isSending && !_isRecording;
     final hasPendingPhotos = _pendingPhotos.isNotEmpty;
@@ -270,7 +279,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [Color(0x00F8F1E6), Color(0xFAF9F3EA), Color(0xFFF9F3EA)],
             ),
             border: Border(top: BorderSide(color: Color(0x99DDD3C2))),
@@ -280,16 +290,31 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
               color: const Color(0xFAFFFDFA),
               borderRadius: AppRadius.borderXl,
               border: Border.all(color: const Color(0xCCDDD3C2), width: 1.5),
-              boxShadow: [BoxShadow(color: const Color(0xFF764F21).withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF764F21).withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
             child: _isRecording
-                ? ComposerRecordingRow(recordingSeconds: _recordingSeconds, onCancel: _handleRecordCancel, onSend: _handleRecordSend)
+                ? ComposerRecordingRow(
+                    recordingSeconds: _recordingSeconds,
+                    onCancel: _handleRecordCancel,
+                    onSend: _handleRecordSend,
+                  )
                 : _ComposerInputRow(
-                    textController: _textController, focusNode: _focusNode,
-                    onTextChanged: _onTextChanged, onSend: _handleSend,
-                    onPickImage: _showPhotoSourceMenu, onRecordStart: _handleRecordStart,
-                    canSend: canSend, isSending: isSending, isSendingMedia: isSendingMedia,
+                    textController: _textController,
+                    focusNode: _focusNode,
+                    onTextChanged: _onTextChanged,
+                    onSend: _handleSend,
+                    onPickImage: _showPhotoSourceMenu,
+                    onRecordStart: _handleRecordStart,
+                    canSend: canSend,
+                    isSending: isSending,
+                    isSendingMedia: isSendingMedia,
                   ),
           ),
         ),
@@ -342,11 +367,16 @@ class _PendingPhotosStrip extends StatelessWidget {
               GestureDetector(
                 onTap: onSend,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     gradient: isSending
                         ? null
-                        : const LinearGradient(colors: [_orange, Color(0xFFC96D18)]),
+                        : const LinearGradient(
+                            colors: [_orange, Color(0xFFC96D18)],
+                          ),
                     color: isSending ? _orange.withValues(alpha: 0.3) : null,
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -356,13 +386,19 @@ class _PendingPhotosStrip extends StatelessWidget {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.send, size: 14, color: Colors.white),
+                            const Icon(
+                              Icons.send,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Send',
@@ -405,10 +441,7 @@ class _PendingPhotosStrip extends StatelessWidget {
 }
 
 class _PhotoThumbnail extends StatelessWidget {
-  const _PhotoThumbnail({
-    required this.file,
-    required this.onRemove,
-  });
+  const _PhotoThumbnail({required this.file, required this.onRemove});
 
   final XFile file;
   final VoidCallback onRemove;
@@ -486,12 +519,16 @@ class _AddMoreButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_photo_alternate_outlined, size: 22, color: _teal.withValues(alpha: 0.6)),
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 22,
+              color: _teal.withValues(alpha: 0.6),
+            ),
             const SizedBox(height: 2),
             Text(
               'Add',
               style: AppTypography.caption.copyWith(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: _teal.withValues(alpha: 0.6),
               ),
@@ -507,10 +544,15 @@ class _AddMoreButton extends StatelessWidget {
 
 class _ComposerInputRow extends StatelessWidget {
   const _ComposerInputRow({
-    required this.textController, required this.focusNode,
-    required this.onTextChanged, required this.onSend,
-    required this.onPickImage, required this.onRecordStart,
-    required this.canSend, required this.isSending, required this.isSendingMedia,
+    required this.textController,
+    required this.focusNode,
+    required this.onTextChanged,
+    required this.onSend,
+    required this.onPickImage,
+    required this.onRecordStart,
+    required this.canSend,
+    required this.isSending,
+    required this.isSendingMedia,
   });
 
   final TextEditingController textController;
@@ -531,9 +573,17 @@ class _ComposerInputRow extends StatelessWidget {
         GestureDetector(
           onTap: isSendingMedia ? null : onPickImage,
           child: Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: _teal.withValues(alpha: 0.08)),
-            child: Icon(Icons.image, size: 19, color: isSendingMedia ? _teal.withValues(alpha: 0.4) : _teal),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: _teal.withValues(alpha: 0.08),
+            ),
+            child: Icon(
+              Icons.image,
+              size: 19,
+              color: isSendingMedia ? _teal.withValues(alpha: 0.4) : _teal,
+            ),
           ),
         ),
         const SizedBox(width: 10),
@@ -541,13 +591,22 @@ class _ComposerInputRow extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 120),
             child: TextField(
-              controller: textController, focusNode: focusNode,
-              onChanged: onTextChanged, maxLines: null,
+              controller: textController,
+              focusNode: focusNode,
+              onChanged: onTextChanged,
+              maxLines: null,
               textInputAction: TextInputAction.newline,
-              style: AppTypography.body.copyWith(color: const Color(0xFF18110A), fontSize: 16, height: 1.6),
+              style: AppTypography.body.copyWith(
+                color: const Color(0xFF18110A),
+                fontSize: 16,
+                height: 1.6,
+              ),
               decoration: InputDecoration(
                 hintText: 'Write a message...',
-                hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted, fontSize: 16),
+                hintStyle: AppTypography.body.copyWith(
+                  color: AppColors.textMuted,
+                  fontSize: 16,
+                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 isDense: true,
@@ -556,7 +615,13 @@ class _ComposerInputRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        _TrailingButton(canSend: canSend, isSending: isSending, isSendingMedia: isSendingMedia, onSend: onSend, onRecordStart: onRecordStart),
+        _TrailingButton(
+          canSend: canSend,
+          isSending: isSending,
+          isSendingMedia: isSendingMedia,
+          onSend: onSend,
+          onRecordStart: onRecordStart,
+        ),
       ],
     );
   }
@@ -564,8 +629,10 @@ class _ComposerInputRow extends StatelessWidget {
 
 class _TrailingButton extends StatelessWidget {
   const _TrailingButton({
-    required this.canSend, required this.isSending,
-    required this.isSendingMedia, required this.onSend,
+    required this.canSend,
+    required this.isSending,
+    required this.isSendingMedia,
+    required this.onSend,
     required this.onRecordStart,
   });
 
@@ -582,16 +649,36 @@ class _TrailingButton extends StatelessWidget {
         onTap: onSend,
         gradient: const LinearGradient(colors: [_orange, Color(0xFFC96D18)]),
         icon: isSending
-            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
             : const Icon(Icons.send, size: 18, color: Colors.white),
       );
     }
 
     if (isSendingMedia) {
       return Container(
-        width: 44, height: 44,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: _teal.withValues(alpha: 0.08)),
-        child: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(_teal)))),
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: _teal.withValues(alpha: 0.08),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(_teal),
+            ),
+          ),
+        ),
       );
     }
 
@@ -606,10 +693,7 @@ class _TrailingButton extends StatelessWidget {
 // ─── Photo source bottom sheet ──────────────────────────────────────────────
 
 class _PhotoSourceSheet extends StatelessWidget {
-  const _PhotoSourceSheet({
-    required this.onGallery,
-    required this.onCamera,
-  });
+  const _PhotoSourceSheet({required this.onGallery, required this.onCamera});
 
   final VoidCallback onGallery;
   final VoidCallback onCamera;

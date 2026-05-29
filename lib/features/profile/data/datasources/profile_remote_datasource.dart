@@ -11,7 +11,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 /// can map DTOs to domain models and wrap errors in [Result].
 final class ProfileRemoteDatasource {
   const ProfileRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -23,10 +23,7 @@ final class ProfileRemoteDatasource {
 
   /// Fetches the authenticated user's profile from GET /user/me.
   Future<Response<Map<String, Object?>>> fetchMyProfile() {
-    AppLogger.debug(
-      'Fetching my profile',
-      operation: '$_tag.fetchMyProfile',
-    );
+    AppLogger.debug('Fetching my profile', operation: '$_tag.fetchMyProfile');
 
     return _dioClient.get<Map<String, Object?>>(ApiEndpoints.userMe);
   }
@@ -41,19 +38,14 @@ final class ProfileRemoteDatasource {
       context: {'userId': userId},
     );
 
-    return _dioClient.get<Map<String, Object?>>(
-      ApiEndpoints.userById(userId),
-    );
+    return _dioClient.get<Map<String, Object?>>(ApiEndpoints.userById(userId));
   }
 
   /// Updates the authenticated user's profile via PUT /user/profile.
   Future<Response<Map<String, Object?>>> updateProfile({
     required UpdateProfileRequestDto request,
   }) {
-    AppLogger.debug(
-      'Updating profile',
-      operation: '$_tag.updateProfile',
-    );
+    AppLogger.debug('Updating profile', operation: '$_tag.updateProfile');
 
     return _dioClient.put<Map<String, Object?>>(
       ApiEndpoints.updateProfile,
@@ -73,7 +65,10 @@ final class ProfileRemoteDatasource {
     );
 
     final formData = FormData.fromMap(<String, Object>{
-      'profilePhoto': await MultipartFile.fromFile(filePath, filename: 'profile-photo.jpg'),
+      'profilePhoto': await MultipartFile.fromFile(
+        filePath,
+        filename: 'profile-photo.jpg',
+      ),
     });
 
     await _dioClient.post<Map<String, Object?>>(
@@ -83,9 +78,7 @@ final class ProfileRemoteDatasource {
   }
 
   /// Uploads additional photos via POST /user/upload-additional-photos (multipart).
-  Future<void> uploadAdditionalPhotos({
-    required List<String> filePaths,
-  }) async {
+  Future<void> uploadAdditionalPhotos({required List<String> filePaths}) async {
     AppLogger.debug(
       'Uploading additional photos',
       operation: '$_tag.uploadAdditionalPhotos',
@@ -108,7 +101,10 @@ final class ProfileRemoteDatasource {
 
   /// Deletes the main profile photo via DELETE /user/delete-profile-photo.
   Future<void> deleteProfilePhoto() async {
-    AppLogger.debug('Deleting profile photo', operation: '$_tag.deleteProfilePhoto');
+    AppLogger.debug(
+      'Deleting profile photo',
+      operation: '$_tag.deleteProfilePhoto',
+    );
     await _dioClient.delete<Map<String, Object?>>(
       ApiEndpoints.deleteProfilePhoto,
     );
@@ -173,10 +169,7 @@ final class ProfileRemoteDatasource {
     required String oldPassword,
     required String newPassword,
   }) async {
-    AppLogger.debug(
-      'Changing password',
-      operation: '$_tag.changePassword',
-    );
+    AppLogger.debug('Changing password', operation: '$_tag.changePassword');
 
     await _dioClient.patch<Map<String, Object?>>(
       ApiEndpoints.changePassword,
@@ -187,13 +180,65 @@ final class ProfileRemoteDatasource {
     );
   }
 
-  /// Deletes the user's account via DELETE /user/delete-account.
-  Future<void> deleteAccount() async {
+  /// Requests account deletion via POST /privacy/account-deletion.
+  ///
+  /// Schedules a deletion with a 30-day grace window (server responds 202
+  /// with the created [DeletionResponse]).
+  Future<Response<Map<String, Object?>>> requestAccountDeletion({
+    String? reason,
+  }) {
     AppLogger.debug(
-      'Deleting account',
-      operation: '$_tag.deleteAccount',
+      'Requesting account deletion',
+      operation: '$_tag.requestAccountDeletion',
     );
 
-    await _dioClient.delete<Map<String, Object?>>(ApiEndpoints.deleteAccount);
+    return _dioClient.post<Map<String, Object?>>(
+      ApiEndpoints.requestAccountDeletion,
+      data: <String, Object?>{
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+      },
+    );
+  }
+
+  /// Cancels an in-grace account deletion via
+  /// POST /privacy/account-deletion/cancel.
+  Future<Response<Map<String, Object?>>> cancelAccountDeletion() {
+    AppLogger.debug(
+      'Cancelling account deletion',
+      operation: '$_tag.cancelAccountDeletion',
+    );
+
+    return _dioClient.post<Map<String, Object?>>(
+      ApiEndpoints.cancelAccountDeletion,
+    );
+  }
+
+  /// Reads the active deletion request via GET /privacy/account-deletion.
+  ///
+  /// The server returns 204 No Content when there is no active request.
+  Future<Response<Map<String, Object?>>> fetchAccountDeletionStatus() {
+    AppLogger.debug(
+      'Fetching account deletion status',
+      operation: '$_tag.fetchAccountDeletionStatus',
+    );
+
+    return _dioClient.get<Map<String, Object?>>(
+      ApiEndpoints.accountDeletionStatus,
+    );
+  }
+
+  /// Requests a data export via POST /privacy/export.
+  ///
+  /// The server responds 202 and prepares the export asynchronously (the
+  /// user is notified when it's ready).
+  Future<Response<Map<String, Object?>>> requestDataExport() {
+    AppLogger.debug(
+      'Requesting data export',
+      operation: '$_tag.requestDataExport',
+    );
+
+    return _dioClient.post<Map<String, Object?>>(
+      ApiEndpoints.requestDataExport,
+    );
   }
 }

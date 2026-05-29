@@ -10,7 +10,7 @@ import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 /// can map DTOs to domain models and wrap errors in [Result].
 final class MessagingRemoteDatasource {
   const MessagingRemoteDatasource({required DioClient dioClient})
-      : _dioClient = dioClient;
+    : _dioClient = dioClient;
 
   final DioClient _dioClient;
 
@@ -120,8 +120,11 @@ final class MessagingRemoteDatasource {
 
   /// Unsend a message (delete for everyone). Sender-only, 1-hour limit.
   Future<void> unsendMessage({required String messageId}) async {
-    AppLogger.debug('Unsending message', operation: '$_tag.unsendMessage',
-        context: {'messageId': messageId});
+    AppLogger.debug(
+      'Unsending message',
+      operation: '$_tag.unsendMessage',
+      context: {'messageId': messageId},
+    );
     await _dioClient.post<Map<String, Object?>>(
       '/chat/messages/$messageId/unsend',
     );
@@ -129,8 +132,11 @@ final class MessagingRemoteDatasource {
 
   /// Hide a message for the current user only (delete for me).
   Future<void> hideMessageForUser({required String messageId}) async {
-    AppLogger.debug('Hiding message for user', operation: '$_tag.hideMessageForUser',
-        context: {'messageId': messageId});
+    AppLogger.debug(
+      'Hiding message for user',
+      operation: '$_tag.hideMessageForUser',
+      context: {'messageId': messageId},
+    );
     await _dioClient.post<Map<String, Object?>>(
       '/chat/messages/$messageId/hide',
     );

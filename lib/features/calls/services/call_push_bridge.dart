@@ -35,6 +35,14 @@ String normalizeToUuid(String id) {
       '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
 }
 
+/// Key + TTL for the locally-handled call set. When the user answers /
+/// declines / a call ends, we record the callId here so a late incoming-call
+/// FCM push (~3s behind the instant WPS path) is suppressed instead of
+/// re-raising a stale "Incoming call" notification. Stored in
+/// SharedPreferences so the FCM background isolate sees it too.
+const _kHandledCallIdsKey = 'tander_handled_call_ids';
+const _handledTtlMs = 120 * 1000; // 2 min — ring window + late-push slack
+
 // ---------------------------------------------------------------------------
 // CallPushBridge — FCM data-only push → native call UI
 // ---------------------------------------------------------------------------
@@ -81,13 +89,37 @@ abstract final class CallPushBridge {
   ///
   /// Used by both background handler and foreground handler to display
   /// the native call screen (lock screen, notification shade).
+  ///
+  /// [callId] / [acceptToken] / [declineToken] / [dismissToken] / [callerUserId]
+  /// are Phase-5 v2 fields. When present they're forwarded via CallKit's
+  /// `extra` dict so the plugin's accept/decline event handlers can route
+  /// to `/api/v2/calls/{callId}/{accept,decline,dismiss}-action` instead
+  /// of the legacy /api/twilio/video/* path. Null for legacy pushes.
   static Future<void> showNativeCallUI({
     required String roomId,
     required String callerName,
     required String callType,
     String? callerPhoto,
+    String? callId,
+    String? acceptToken,
+    String? declineToken,
+    String? dismissToken,
+    String? callerUserId,
   }) async {
     final normalizedId = normalizeToUuid(roomId);
+
+    // Suppress stale incoming UI: if this call was already answered / declined
+    // / ended locally, a late FCM push (the WPS path is instant; FCM lags ~3s)
+    // must NOT re-raise the "Incoming call" notification. Dismiss anything that
+    // slipped through, then bail before showing.
+    if (callId != null && await _isCallHandled(callId)) {
+      debugPrint(
+        '[CallPushBridge] Suppressing incoming UI — '
+        'call $callId already handled',
+      );
+      await FlutterCallkitIncoming.endCall(normalizedId);
+      return;
+    }
 
     final params = CallKitParams(
       id: normalizedId,
@@ -101,6 +133,12 @@ abstract final class CallPushBridge {
       extra: <String, dynamic>{
         'callType': callType,
         'roomId': roomId,
+        'callId': ?callId,
+        'acceptToken': ?acceptToken,
+        'declineToken': ?declineToken,
+        'dismissToken': ?dismissToken,
+        'callerUserId': ?callerUserId,
+        'isV2': callId != null,
       },
       android: const AndroidParams(
         isCustomNotification: true,
@@ -124,8 +162,10 @@ abstract final class CallPushBridge {
     );
 
     await FlutterCallkitIncoming.showCallkitIncoming(params);
-    debugPrint('[CallPushBridge] Showed native call UI: room=$roomId '
-        'caller=$callerName type=$callType');
+    debugPrint(
+      '[CallPushBridge] Showed native call UI: room=$roomId '
+      'caller=$callerName type=$callType',
+    );
   }
 
   /// Dismiss native call UI by roomId.
@@ -141,7 +181,58 @@ abstract final class CallPushBridge {
     debugPrint('[CallPushBridge] Dismissed all native call UIs');
   }
 
+  /// Record a call as locally handled (answered / declined / ended) so a late
+  /// incoming-call FCM push for the same call is suppressed by
+  /// [showNativeCallUI] rather than re-raising the notification.
+  static Future<void> markCallHandled(String callId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final map = _readHandledMap(prefs);
+      map[callId] = DateTime.now().millisecondsSinceEpoch;
+      _pruneHandled(map);
+      await prefs.setString(_kHandledCallIdsKey, jsonEncode(map));
+      debugPrint('[CallPushBridge] Marked call handled: $callId');
+    } catch (e) {
+      debugPrint('[CallPushBridge] markCallHandled failed: $e');
+    }
+  }
+
+  static Future<bool> _isCallHandled(String callId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload(); // pick up writes from the main isolate
+      final map = _readHandledMap(prefs);
+      _pruneHandled(map);
+      return map.containsKey(callId);
+    } catch (e) {
+      debugPrint('[CallPushBridge] _isCallHandled failed: $e');
+      return false;
+    }
+  }
+
+  static Map<String, int> _readHandledMap(SharedPreferences prefs) {
+    final raw = prefs.getString(_kHandledCallIdsKey);
+    if (raw == null) return <String, int>{};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(k, (v as num).toInt()));
+    } catch (_) {
+      return <String, int>{};
+    }
+  }
+
+  static void _pruneHandled(Map<String, int> map) {
+    final cutoff = DateTime.now().millisecondsSinceEpoch - _handledTtlMs;
+    map.removeWhere((_, ts) => ts < cutoff);
+  }
+
   /// Persist call metadata to SharedPreferences for cold-start acceptance.
+  ///
+  /// Optional v2 fields ([callId] / [twilioRoomSid] / [acceptToken] /
+  /// [declineToken] / [dismissToken] / [expiresAt]) — null for legacy
+  /// payloads, present for Phase 5 v2 pushes. Persisted so a future
+  /// native-side fast-path can read them directly from SharedPreferences
+  /// without booting Flutter.
   static Future<void> persistCallMetadata({
     required String roomId,
     required String callerName,
@@ -149,6 +240,12 @@ abstract final class CallPushBridge {
     String? callerPhoto,
     required String callerUserId,
     String callerUsername = '',
+    String? callId,
+    String? twilioRoomSid,
+    String? acceptToken,
+    String? declineToken,
+    String? dismissToken,
+    String? expiresAt,
   }) async {
     try {
       final metadata = jsonEncode({
@@ -159,11 +256,20 @@ abstract final class CallPushBridge {
         'callerUserId': callerUserId,
         'callerUsername': callerUsername,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'callId': ?callId,
+        'twilioRoomSid': ?twilioRoomSid,
+        'acceptToken': ?acceptToken,
+        'declineToken': ?declineToken,
+        'dismissToken': ?dismissToken,
+        'expiresAt': ?expiresAt,
       });
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(kPendingCallMetadataKey, metadata);
-      debugPrint('[CallPushBridge] Persisted call metadata for $roomId');
+      debugPrint(
+        '[CallPushBridge] Persisted call metadata for $roomId'
+        '${callId != null ? " (v2 callId=$callId)" : ""}',
+      );
     } catch (error) {
       debugPrint('[CallPushBridge] Failed to persist metadata: $error');
     }
@@ -199,35 +305,59 @@ abstract final class CallPushBridge {
   // ---------------------------------------------------------------------------
 
   static Future<bool> _handleIncomingPush(Map<String, dynamic> data) async {
-    final roomId = _extractRoomId(data);
+    // v2 detection — IncomingCallPushListener writes `acceptToken` (opaque
+    // 43-char Base64URL) in every Phase 5 push payload. Legacy
+    // /api/twilio/video/room pushes don't.
+    final isV2 = data['acceptToken'] is String;
+
+    // Real UUID callId is preferred when present (v2 always sends it).
+    // Legacy uses session UUID for callId too but its key may be missing.
+    final callId = data['callId'] as String?;
+    final roomId = _extractRoomId(data) ?? callId;
     if (roomId == null) {
-      debugPrint('[CallPushBridge] Missing roomId in incoming call push');
+      debugPrint('[CallPushBridge] Missing room/call id in incoming call push');
       return false;
     }
 
-    final callerName = data['callerName'] as String? ??
+    final callerName =
+        data['callerName'] as String? ??
         data['displayName'] as String? ??
         'Unknown Caller';
     final callType = data['callType'] as String? ?? 'audio';
     final callerPhoto =
-        data['callerPhoto'] as String? ?? data['profilePhoto'] as String?;
+        data['callerPhoto'] as String? ??
+        data['callerPhotoUrl'] as String? ??
+        data['profilePhoto'] as String?;
+    // v2 uses `callerUserId`; legacy uses `callerId`.
     final callerUserId =
-        (data['callerId'] ?? data['userId'] ?? '').toString();
-    final callerUsername =
-        (data['callerUsername'] ?? data['username'] ?? '').toString();
+        (data['callerUserId'] ?? data['callerId'] ?? data['userId'] ?? '')
+            .toString();
+    final callerUsername = (data['callerUsername'] ?? data['username'] ?? '')
+        .toString();
 
-    debugPrint('[CallPushBridge] Incoming call push: room=$roomId '
-        'caller=$callerName type=$callType');
+    debugPrint(
+      '[CallPushBridge] Incoming call push (${isV2 ? "v2" : "legacy"}): '
+      'room=$roomId caller=$callerName type=$callType',
+    );
 
-    // Show native call UI
+    // Show native call UI — v2 fields (callId + opaque action tokens) ride
+    // along in CallKit extras so the plugin's accept/decline event handler
+    // can route to the v2 action-token endpoints without a Dart-side lookup.
     await showNativeCallUI(
       roomId: roomId,
       callerName: callerName,
       callType: callType,
       callerPhoto: callerPhoto,
+      callId: callId,
+      acceptToken: data['acceptToken'] as String?,
+      declineToken: data['declineToken'] as String?,
+      dismissToken: data['dismissToken'] as String?,
+      callerUserId: isV2 ? callerUserId : null,
     );
 
-    // Persist metadata for cold-start acceptance
+    // Persist metadata for cold-start acceptance. v2 fields preserved so
+    // future native fast-path (Stage 4 polish) can read the opaque tokens
+    // directly from SharedPreferences without going through Flutter first.
     await persistCallMetadata(
       roomId: roomId,
       callerName: callerName,
@@ -235,6 +365,12 @@ abstract final class CallPushBridge {
       callerPhoto: callerPhoto,
       callerUserId: callerUserId,
       callerUsername: callerUsername,
+      callId: callId,
+      twilioRoomSid: data['twilioRoomSid'] as String?,
+      acceptToken: data['acceptToken'] as String?,
+      declineToken: data['declineToken'] as String?,
+      dismissToken: data['dismissToken'] as String?,
+      expiresAt: data['expiresAt'] as String?,
     );
 
     return true;
@@ -248,7 +384,8 @@ abstract final class CallPushBridge {
     if (roomId == null) return false;
 
     debugPrint(
-        '[CallPushBridge] Terminal call push ($payloadType): room=$roomId');
+      '[CallPushBridge] Terminal call push ($payloadType): room=$roomId',
+    );
 
     // Dismiss the native call UI
     await dismissNativeCallUI(roomId);

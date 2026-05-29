@@ -17,8 +17,8 @@ final class ConnectionRepositoryImpl implements ConnectionRepository {
   const ConnectionRepositoryImpl({
     required ConnectionRemoteDatasource remoteDatasource,
     required String currentUserId,
-  })  : _remoteDatasource = remoteDatasource,
-        _currentUserId = currentUserId;
+  }) : _remoteDatasource = remoteDatasource,
+       _currentUserId = currentUserId;
 
   final ConnectionRemoteDatasource _remoteDatasource;
   final String _currentUserId;
@@ -30,8 +30,7 @@ final class ConnectionRepositoryImpl implements ConnectionRepository {
   // -----------------------------------------------------------------------
 
   @override
-  Future<Result<PaginatedResult<ConnectionSummary>>>
-      fetchIncomingRequests() {
+  Future<Result<PaginatedResult<ConnectionSummary>>> fetchIncomingRequests() {
     return _runSafe('fetchIncomingRequests', () async {
       final response = await _remoteDatasource.fetchIncomingRequests();
       final dtos = _parseMatchDtoList(response.data);

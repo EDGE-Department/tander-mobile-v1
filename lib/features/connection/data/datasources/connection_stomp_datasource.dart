@@ -28,12 +28,11 @@ final class ConnectionStompDatasource {
       context: {'destination': destination},
     );
 
-    return StompClientManager.instance.subscribe(
-      destination,
-      (Map<String, Object?> body) {
-        final kind = body['kind']?.toString() ?? 'refresh';
-        onEvent(kind);
-      },
-    );
+    return StompClientManager.instance.subscribe(destination, (
+      Map<String, Object?> body,
+    ) {
+      final kind = body['kind']?.toString() ?? 'refresh';
+      onEvent(kind);
+    });
   }
 }

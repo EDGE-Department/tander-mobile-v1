@@ -10,9 +10,6 @@ import 'package:tander_flutter_v3/features/auth/presentation/widgets/login_submi
 import 'package:tander_flutter_v3/shared/widgets/data_privacy_sheet.dart';
 import 'package:tander_flutter_v3/shared/widgets/terms_conditions_sheet.dart';
 
-/// Web: border-white/20 = rgba(255,255,255,0.20).
-const Color _cardBorderColor = Color(0x33FFFFFF);
-
 enum LoginFormCardLayout { mobile, tablet, desktop }
 
 /// Shared white login card mirrored from the web surface.

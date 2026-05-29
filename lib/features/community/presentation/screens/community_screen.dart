@@ -5,8 +5,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:tander_flutter_v3/core/contracts/models/community_models.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
@@ -16,7 +16,6 @@ import 'package:tander_flutter_v3/features/community/presentation/widgets/create
 import 'package:tander_flutter_v3/features/community/presentation/widgets/daily_prompt_card.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/post_card.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
-import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/shared/widgets/empty_state.dart';
 import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 import 'package:tander_flutter_v3/shared/widgets/skeleton_card.dart';
@@ -307,7 +306,7 @@ void _showEditPostAsSheet(
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: 'Update your post...',
-                  hintStyle: TextStyle(color: AppColors.textDisabled),
+                  hintStyle: const TextStyle(color: AppColors.textDisabled),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: const BorderSide(color: AppColors.border),
@@ -350,7 +349,7 @@ void _showEditPostAsSheet(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.photo_outlined,
                     size: 20,
                     color: AppColors.primary,
@@ -358,7 +357,7 @@ void _showEditPostAsSheet(
                   const SizedBox(width: 6),
                   Text(
                     'Photos (${post.mediaUrls.length}/4)',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
@@ -409,7 +408,10 @@ void _showEditPostAsDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
         ),
         FilledButton(
           onPressed: () async {
@@ -451,7 +453,10 @@ void _showDeleteConfirmation(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
         ),
         FilledButton(
           onPressed: () async {
@@ -557,30 +562,25 @@ class _NewPostButton extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.noScaling),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add, color: AppColors.textInverse, size: 18),
-                  SizedBox(width: AppSpacing.xxs),
-                  Text(
-                    'New post',
-                    style: TextStyle(
-                      color: AppColors.textInverse,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, color: AppColors.textInverse, size: 18),
+                SizedBox(width: AppSpacing.xxs),
+                Text(
+                  'New post',
+                  style: TextStyle(
+                    color: AppColors.textInverse,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

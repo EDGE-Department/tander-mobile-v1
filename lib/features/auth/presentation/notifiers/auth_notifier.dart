@@ -11,8 +11,9 @@ import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.d
 // Provider
 // ---------------------------------------------------------------------------
 
-final authNotifierProvider =
-    NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authNotifierProvider = NotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);
 
 // ---------------------------------------------------------------------------
 // Notifier
@@ -62,10 +63,7 @@ final class AuthNotifier extends Notifier<AuthState> {
   ///
   /// Transitions to [AuthAuthenticated] or [AuthOnboarding] on success,
   /// [AuthError] on failure.
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     state = const AuthLoading();
 
     final signInResult = await _repository.signIn(
@@ -116,20 +114,16 @@ final class AuthNotifier extends Notifier<AuthState> {
   // ID Pre-registration verification
   // -------------------------------------------------------------------------
 
-  /// Verifies ID pre-registration with selfie + ID photo.
+  /// Verifies ID pre-registration with the ID photo.
   ///
   /// Returns the auditId on success.
   /// Throws an exception on failure with error details.
   Future<String?> verifyIdPreRegister({
     required String idPhotoFrontPath,
-    String? selfiePath,
-    Map<String, dynamic>? livenessMetadata,
     Map<String, dynamic>? frontendOcrData,
   }) async {
     final verifyResult = await _repository.verifyIdPreRegister(
       idPhotoFrontPath: idPhotoFrontPath,
-      selfiePath: selfiePath,
-      livenessMetadata: livenessMetadata,
       frontendOcrData: frontendOcrData,
     );
 

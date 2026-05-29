@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 
 /// Full-screen bottom sheet with Terms & Conditions content.
 ///
@@ -190,16 +190,19 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.secondary, AppColors.secondaryHover],
         ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Row(
         children: [
-          const PhosphorIcon(PhosphorIconsDuotone.fileText,
-              color: Colors.white, size: 24),
+          const PhosphorIcon(
+            PhosphorIconsDuotone.fileText,
+            color: Colors.white,
+            size: 24,
+          ),
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
@@ -275,7 +278,7 @@ class _AcknowledgementBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
       ),
-      child: Text(
+      child: const Text(
         'By creating an account or using the Tander App, you acknowledge that you have read, '
         'understood, and agreed to these Terms and Conditions.',
         style: TextStyle(

@@ -31,12 +31,17 @@ class BirthDatePickerField extends StatelessWidget {
     required this.selectedDate,
     this.onPicked,
     this.locked = false,
+    this.onHelpTapped,
     super.key,
   });
 
   final DateTime? selectedDate;
   final ValueChanged<DateTime>? onPicked;
   final bool locked;
+
+  /// Optional tap handler for a help icon rendered next to the
+  /// "Date of Birth" label. When null the icon is omitted.
+  final VoidCallback? onHelpTapped;
 
   Future<void> _pickDate(BuildContext context) async {
     final now = DateTime.now();
@@ -77,26 +82,65 @@ class BirthDatePickerField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Date of Birth', style: AppTypography.label),
+        Row(
+          children: [
+            Text('Date of Birth', style: AppTypography.label),
+            if (onHelpTapped != null) ...[
+              const SizedBox(width: 4),
+              Semantics(
+                label: 'About date of birth',
+                button: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onHelpTapped,
+                  // 44x44 hit area (WCAG 2.2) wrapping the smaller visible icon.
+                  child: SizedBox(
+                    width: AppSpacing.touchMinimum,
+                    height: AppSpacing.touchMinimum,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(7), // 18 + 14 = 32 visible circle
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.textMuted.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.help_outline_rounded,
+                          size: 18,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         const SizedBox(height: AppSpacing.xs),
         GestureDetector(
           onTap: locked ? null : () => _pickDate(context),
           child: Container(
-            constraints:
-                const BoxConstraints(minHeight: AppSpacing.touchComfortable),
+            constraints: const BoxConstraints(
+              minHeight: AppSpacing.touchComfortable,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             decoration: BoxDecoration(
-              color: locked
-                  ? AppColors.subtle
-                  : AppColors.card,
+              color: locked ? AppColors.subtle : AppColors.card,
               borderRadius: AppRadius.borderSm,
               border: Border.all(color: AppColors.border),
             ),
             alignment: Alignment.centerLeft,
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 20, color: AppColors.textMuted),
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  size: 20,
+                  color: AppColors.textMuted,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
@@ -139,8 +183,9 @@ class GenderDropdownField extends StatelessWidget {
         Text('Gender', style: AppTypography.label),
         const SizedBox(height: AppSpacing.xs),
         Container(
-          constraints:
-              const BoxConstraints(minHeight: AppSpacing.touchComfortable),
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.touchComfortable,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.card,
@@ -152,22 +197,34 @@ class GenderDropdownField extends StatelessWidget {
               value: selectedGender,
               hint: Text(
                 'Select gender',
-                style:
-                    AppTypography.body.copyWith(color: AppColors.textMuted),
+                style: AppTypography.body.copyWith(color: AppColors.textMuted),
               ),
               isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textMuted),
-              style:
-                  AppTypography.body.copyWith(color: AppColors.textStrong),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textMuted,
+              ),
+              style: AppTypography.body.copyWith(color: AppColors.textStrong),
               dropdownColor: AppColors.card,
               borderRadius: AppRadius.borderSm,
               items: genderOptions
-                  .map((gender) => DropdownMenuItem<String>(
-                      value: gender, child: Text(gender)))
+                  .map(
+                    (gender) => DropdownMenuItem<String>(
+                      value: gender,
+                      child: Text(gender),
+                    ),
+                  )
                   .toList(),
               onChanged: onChanged,
             ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.xxs),
+          child: Text(
+            'Helps us personalize your experience (optional)',
+            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
           ),
         ),
       ],
@@ -197,9 +254,10 @@ class BioTextField extends StatelessWidget {
         Row(
           children: [
             Text('Bio ', style: AppTypography.label),
-            Text('(optional)',
-                style: AppTypography.caption
-                    .copyWith(color: AppColors.textMuted)),
+            Text(
+              '(optional)',
+              style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -226,6 +284,14 @@ class BioTextField extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.xxs),
+          child: Text(
+            'Tell others a bit about yourself (optional)',
+            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+          ),
         ),
       ],
     );

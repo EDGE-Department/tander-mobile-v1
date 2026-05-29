@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 import 'package:tander_flutter_v3/core/contracts/models/messaging_models.dart';
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/calls/domain/call_types.dart';
-import 'package:tander_flutter_v3/features/calls/presentation/notifiers/call_manager.dart';
+import 'package:tander_flutter_v3/features/calls/services/twilio_native_bridge.dart';
+import 'package:tander_flutter_v3/features/calls/v2/v2_active_call_state.dart';
+import 'package:tander_flutter_v3/features/calls/v2/v2_call_preflight.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/conversations_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/message_thread_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/providers/messaging_providers.dart';
@@ -15,7 +19,8 @@ import 'package:tander_flutter_v3/features/messaging/presentation/states/message
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/message_composer.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/thread_sub_widgets.dart';
-import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_content.dart';
+import 'package:tander_flutter_v3/shared/widgets/profile_view_modal.dart';
 
 const Color _teal = AppColors.secondary;
 
@@ -82,14 +87,76 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   ) async {
     if (conversation == null) return;
     final participant = conversation.participant;
-    final callManager = ref.read(callManagerProvider);
-    await callManager.initiateCall(
-      targetUserId: participant.userId,
-      targetUsername: participant.username,
-      targetPhotoUrl: participant.profilePhotoUrl,
-      callType: callType,
-    );
-    // Navigation handled by AppShell's call state listener
+    final isVideo = callType == CallType.video;
+    final typeStr = isVideo ? 'VIDEO' : 'AUDIO';
+
+    // v2 (Twilio) outgoing path — same flow as the v2 accept/debug screens.
+    // The legacy callManager.initiateCall used the v1 WebRTC/STOMP system,
+    // which the web no longer listens to, so mobile→web never rang.
+    final datasource = ref.read(callsV2RemoteDatasourceProvider);
+    final activeNotifier = ref.read(v2ActiveCallProvider.notifier);
+
+    // Auto-end any existing call, then proceed (no modal).
+    await resolveV2CallConflict(datasource: datasource);
+
+    // Mic (+ camera for video) permission must be granted before connecting.
+    final mic = await Permission.microphone.request();
+    if (!mic.isGranted) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission denied')),
+        );
+      }
+      return;
+    }
+    if (isVideo) {
+      final cam = await Permission.camera.request();
+      if (!cam.isGranted) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Camera permission denied')),
+          );
+        }
+        return;
+      }
+    }
+
+    try {
+      final response = await datasource.startCall(
+        calleeUserId: participant.userId,
+        callType: typeStr,
+      );
+      // Surface the active-call overlay (video auto-maximizes; audio shows
+      // the island bubble). Then connect Twilio.
+      activeNotifier.start(
+        callId: response.callId,
+        roomName: response.roomName,
+        peerName: participant.username,
+        callType: typeStr,
+        peerPhotoUrl: participant.profilePhotoUrl,
+      );
+      await TwilioNativeBridge.instance.connect(
+        roomName: response.roomName,
+        twilioToken: response.twilioToken,
+        isAudioOnly: !isVideo,
+        peerName: participant.username,
+      );
+    } on Object catch (e) {
+      AppLogger.warning(
+        'startCall failed: $e',
+        operation: 'MessageThreadScreen._initiateCall',
+      );
+      activeNotifier.clear();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Couldn't start the call. They may be on another call.",
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -247,8 +314,11 @@ class _ThreadHeader extends StatelessWidget {
           Expanded(
             child: GestureDetector(
               onTap: participantUserId != null
-                  ? () =>
-                        context.push(AppRoutes.userProfile(participantUserId!))
+                  ? () => showProfileViewModal(
+                      context,
+                      userId: participantUserId!,
+                      relationship: ProfileRelationship.connected,
+                    )
                   : null,
               child: Row(
                 children: [
@@ -402,53 +472,53 @@ class _ThreadBody extends StatelessWidget {
             : RefreshIndicator.adaptive(
                 onRefresh: onRefresh,
                 child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
-                itemCount: messages.length + (isPartnerTyping ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == messages.length && isPartnerTyping) {
-                    return TypingBubbleWidget(
-                      participantName: participantName,
-                      participantPhotoUrl: participantPhotoUrl,
-                    );
-                  }
-
-                  final message = messages[index];
-                  final previousMessage = index > 0
-                      ? messages[index - 1]
-                      : null;
-                  final nextMessage = index < messages.length - 1
-                      ? messages[index + 1]
-                      : null;
-
-                  final isGroupStart =
-                      previousMessage == null ||
-                      previousMessage.senderUserId != message.senderUserId;
-                  final isGroupEnd =
-                      nextMessage == null ||
-                      nextMessage.senderUserId != message.senderUserId;
-                  final showDate =
-                      previousMessage == null ||
-                      isDifferentDay(previousMessage.sentAt, message.sentAt);
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (showDate) DateSeparatorWidget(date: message.sentAt),
-                      MessageBubbleWidget(
-                        message: message,
-                        isMine: message.senderUserId == currentUserId,
-                        isGroupStart: isGroupStart,
-                        isGroupEnd: isGroupEnd,
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
+                  itemCount: messages.length + (isPartnerTyping ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == messages.length && isPartnerTyping) {
+                      return TypingBubbleWidget(
                         participantName: participantName,
                         participantPhotoUrl: participantPhotoUrl,
-                        onUnsend: onUnsend,
-                        onHide: onHide,
-                      ),
-                    ],
-                  );
-                },
-              ),
+                      );
+                    }
+
+                    final message = messages[index];
+                    final previousMessage = index > 0
+                        ? messages[index - 1]
+                        : null;
+                    final nextMessage = index < messages.length - 1
+                        ? messages[index + 1]
+                        : null;
+
+                    final isGroupStart =
+                        previousMessage == null ||
+                        previousMessage.senderUserId != message.senderUserId;
+                    final isGroupEnd =
+                        nextMessage == null ||
+                        nextMessage.senderUserId != message.senderUserId;
+                    final showDate =
+                        previousMessage == null ||
+                        isDifferentDay(previousMessage.sentAt, message.sentAt);
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (showDate) DateSeparatorWidget(date: message.sentAt),
+                        MessageBubbleWidget(
+                          message: message,
+                          isMine: message.senderUserId == currentUserId,
+                          isGroupStart: isGroupStart,
+                          isGroupEnd: isGroupEnd,
+                          participantName: participantName,
+                          participantPhotoUrl: participantPhotoUrl,
+                          onUnsend: onUnsend,
+                          onHide: onHide,
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
     };
   }

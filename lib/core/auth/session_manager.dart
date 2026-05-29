@@ -13,7 +13,6 @@ import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 /// Drives the onboarding flow — each phase represents a gate the user must
 /// pass through before reaching the main app experience.
 enum RegistrationPhase {
-  pendingEmailVerification,
   pendingProfileSetup,
   pendingPhotoSetup,
   pendingIdVerification,
@@ -26,8 +25,11 @@ enum RegistrationPhase {
   /// Throws [ArgumentError] if the string does not match any known phase.
   static RegistrationPhase fromBackendString(String backendValue) {
     return switch (backendValue) {
+      // The live backend has no email-verification gate (OTP is verified
+      // before account creation), so the first real onboarding gate is profile
+      // setup. Legacy email-verification strings map here defensively.
       'PENDING_EMAIL_VERIFICATION' ||
-      'email_pending' => RegistrationPhase.pendingEmailVerification,
+      'email_pending' ||
       'PENDING_PROFILE_SETUP' ||
       'otp_verified' ||
       'otp_pending' ||
@@ -40,8 +42,22 @@ enum RegistrationPhase {
       'PENDING_NOTIFICATION_PERMISSION' =>
         RegistrationPhase.pendingNotificationPermission,
       'COMPLETE' || 'verified' || 'VERIFIED' => RegistrationPhase.complete,
-      _ => RegistrationPhase.complete,
+      _ => _unrecognisedPhase(backendValue),
     };
+  }
+
+  /// Logs an unrecognised backend phase string (drift visibility) and returns
+  /// the conservative default.
+  ///
+  // NOTE: Unknown phase logs a warning (drift visibility) but still defaults
+  // to .complete. Changing this default to a fail-closed phase risks trapping
+  // legitimately-complete users on a backend rename. See registration review.
+  static RegistrationPhase _unrecognisedPhase(String backendValue) {
+    AppLogger.warning(
+      'Unrecognised registration phase "$backendValue" — defaulting to complete',
+      operation: 'RegistrationPhase.fromBackendString',
+    );
+    return RegistrationPhase.complete;
   }
 }
 

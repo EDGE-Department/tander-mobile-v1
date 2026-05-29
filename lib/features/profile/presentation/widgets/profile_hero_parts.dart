@@ -83,7 +83,7 @@ class HeroCompletionPill extends StatelessWidget {
             Text(
               'Complete',
               style: AppTypography.caption.copyWith(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textInverse,
               ),
@@ -101,7 +101,7 @@ class HeroCompletionPill extends StatelessWidget {
       child: Text(
         '$completionPercent% complete',
         style: AppTypography.caption.copyWith(
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: AppColors.textInverse,
         ),
@@ -169,9 +169,9 @@ class HeroAvatar extends StatelessWidget {
             child: ClipOval(
               child: hasImage
                   ? Image.network(
-                  gallery.first,
+                      gallery.first,
                       fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) =>
+                      errorBuilder: (_, _, _) =>
                           _InitialsFallback(displayName: displayName),
                     )
                   : _InitialsFallback(displayName: displayName),
@@ -234,8 +234,8 @@ class _InitialsFallback extends StatelessWidget {
     final initials = parts.isEmpty
         ? '?'
         : parts.length == 1
-            ? parts[0][0].toUpperCase()
-            : '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+        ? parts[0][0].toUpperCase()
+        : '${parts.first[0]}${parts.last[0]}'.toUpperCase();
 
     return Container(
       decoration: const BoxDecoration(
@@ -274,11 +274,13 @@ class HeroIdentityText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alignment =
-        isTablet ? CrossAxisAlignment.start : CrossAxisAlignment.center;
+    final alignment = isTablet
+        ? CrossAxisAlignment.start
+        : CrossAxisAlignment.center;
     final textAlign = isTablet ? TextAlign.start : TextAlign.center;
-    final rowAlignment =
-        isTablet ? MainAxisAlignment.start : MainAxisAlignment.center;
+    final rowAlignment = isTablet
+        ? MainAxisAlignment.start
+        : MainAxisAlignment.center;
 
     return Column(
       crossAxisAlignment: alignment,
@@ -300,8 +302,7 @@ class HeroIdentityText extends StatelessWidget {
             Text(
               isOnline ? 'Online' : 'Offline',
               style: AppTypography.caption.copyWith(
-                color:
-                    isOnline ? AppColors.success : AppColors.textDisabled,
+                color: isOnline ? AppColors.success : AppColors.textDisabled,
                 fontWeight: FontWeight.w500,
               ),
             ),

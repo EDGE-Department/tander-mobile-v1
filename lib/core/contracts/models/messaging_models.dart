@@ -9,19 +9,10 @@ import 'package:flutter/foundation.dart';
 // ── Message Types ────────────────────────────────────────────
 
 /// Delivery lifecycle of a single message.
-enum MessageDeliveryState {
-  sending,
-  sent,
-  delivered,
-  read,
-  failed,
-}
+enum MessageDeliveryState { sending, sent, delivered, read, failed }
 
 /// Kind of media attached to a message.
-enum MessageMediaType {
-  image,
-  voice,
-}
+enum MessageMediaType { image, voice }
 
 // ── Supporting Models ────────────────────────────────────────
 
@@ -146,7 +137,8 @@ class ConversationItem {
   int get hashCode => conversationId.hashCode;
 
   @override
-  String toString() => 'ConversationItem('
+  String toString() =>
+      'ConversationItem('
       'id: $conversationId, '
       'unread: $unreadCount)';
 }
@@ -202,7 +194,8 @@ class MessageItem {
   int get hashCode => messageId.hashCode;
 
   @override
-  String toString() => 'MessageItem('
+  String toString() =>
+      'MessageItem('
       'id: $messageId, '
       'sender: $senderUsername, '
       'state: ${deliveryState.name})';

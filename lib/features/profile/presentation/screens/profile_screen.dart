@@ -120,9 +120,7 @@ class _ProfileBackground extends StatelessWidget {
     return Stack(
       children: [
         // Cream base — matches web `bg-[#FFFBF5]`.
-        const Positioned.fill(
-          child: ColoredBox(color: Color(0xFFFFFBF5)),
-        ),
+        const Positioned.fill(child: ColoredBox(color: Color(0xFFFFFBF5))),
         // Top warm glow — web `bg-gradient-to-b from-orange-100/30 to-transparent`.
         const Positioned(
           top: 0,
@@ -280,10 +278,7 @@ void _showFullScreenSheet(BuildContext context, Widget child) {
           begin: const Offset(0, 1),
           end: Offset.zero,
         ).animate(curved),
-        child: FadeTransition(
-          opacity: curved,
-          child: child,
-        ),
+        child: FadeTransition(opacity: curved, child: child),
       );
     },
   );

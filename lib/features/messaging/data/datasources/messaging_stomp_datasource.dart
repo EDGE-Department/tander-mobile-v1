@@ -32,26 +32,25 @@ final class MessagingStompDatasource {
       context: {'destination': destination},
     );
 
-    return StompClientManager.instance.subscribe(
-      destination,
-      (Map<String, Object?> body) {
-        final message = MessagingMapper.mapStompPayload(
-          body,
-          conversationId: conversationId,
-          roomId: roomId,
-        );
-        if (message != null) {
-          onMessage(message);
-        }
-      },
-    );
+    return StompClientManager.instance.subscribe(destination, (
+      Map<String, Object?> body,
+    ) {
+      final message = MessagingMapper.mapStompPayload(
+        body,
+        conversationId: conversationId,
+        roomId: roomId,
+      );
+      if (message != null) {
+        onMessage(message);
+      }
+    });
   }
 
   /// Subscribe to typing indicators in [conversationId].
   StompUnsubscribeCallback subscribeToTyping(
     String conversationId, {
     required void Function({required bool isTyping, required String usrId})
-        onTyping,
+    onTyping,
   }) {
     final destination = '/topic/conversation.$conversationId/typing';
     AppLogger.debug(
@@ -60,16 +59,15 @@ final class MessagingStompDatasource {
       context: {'destination': destination},
     );
 
-    return StompClientManager.instance.subscribe(
-      destination,
-      (Map<String, Object?> body) {
-        final rawUserId = body['userId'];
-        final usrId = rawUserId?.toString() ?? '';
+    return StompClientManager.instance.subscribe(destination, (
+      Map<String, Object?> body,
+    ) {
+      final rawUserId = body['userId'];
+      final usrId = rawUserId?.toString() ?? '';
 
-        final isTyping = body['isTyping'] == true;
-        onTyping(isTyping: isTyping, usrId: usrId);
-      },
-    );
+      final isTyping = body['isTyping'] == true;
+      onTyping(isTyping: isTyping, usrId: usrId);
+    });
   }
 
   /// Subscribe to delivery receipts in a conversation.
@@ -84,16 +82,15 @@ final class MessagingStompDatasource {
       context: {'destination': destination},
     );
 
-    return StompClientManager.instance.subscribe(
-      destination,
-      (Map<String, Object?> body) {
-        final rawMessageId = body['messageId'];
-        final messageId = rawMessageId?.toString();
-        if (messageId != null && messageId.isNotEmpty) {
-          onDelivered(messageId);
-        }
-      },
-    );
+    return StompClientManager.instance.subscribe(destination, (
+      Map<String, Object?> body,
+    ) {
+      final rawMessageId = body['messageId'];
+      final messageId = rawMessageId?.toString();
+      if (messageId != null && messageId.isNotEmpty) {
+        onDelivered(messageId);
+      }
+    });
   }
 
   /// Subscribe to read receipts in a conversation.
@@ -108,15 +105,14 @@ final class MessagingStompDatasource {
       context: {'destination': destination},
     );
 
-    return StompClientManager.instance.subscribe(
-      destination,
-      (Map<String, Object?> body) {
-        final readBy = body['readBy'] ?? body['userId'];
-        if (readBy != null) {
-          onRead(readByUserId: readBy.toString());
-        }
-      },
-    );
+    return StompClientManager.instance.subscribe(destination, (
+      Map<String, Object?> body,
+    ) {
+      final readBy = body['readBy'] ?? body['userId'];
+      if (readBy != null) {
+        onRead(readByUserId: readBy.toString());
+      }
+    });
   }
 
   // -----------------------------------------------------------------------
@@ -136,20 +132,16 @@ final class MessagingStompDatasource {
     required String messageId,
     required String conversationId,
   }) {
-    StompClientManager.instance.send(
-      '/app/chat.delivered',
-      <String, Object?>{
-        'messageId': messageId,
-        'conversationId': conversationId,
-      },
-    );
+    StompClientManager.instance.send('/app/chat.delivered', <String, Object?>{
+      'messageId': messageId,
+      'conversationId': conversationId,
+    });
   }
 
   /// Sends a read receipt for a [conversationId].
   void sendReadReceipt({required String conversationId}) {
-    StompClientManager.instance.send(
-      '/app/chat.read',
-      <String, Object?>{'conversationId': conversationId},
-    );
+    StompClientManager.instance.send('/app/chat.read', <String, Object?>{
+      'conversationId': conversationId,
+    });
   }
 }

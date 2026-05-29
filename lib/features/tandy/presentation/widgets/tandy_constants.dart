@@ -204,7 +204,7 @@ const List<DailyMessage> kDailyMessages = <DailyMessage>[
   DailyMessage(
     id: 'worth',
     text:
-        "Your feelings are valid — every single one of them. Talking about them is the bravest thing you can do.",
+        'Your feelings are valid — every single one of them. Talking about them is the bravest thing you can do.',
     accentColor: kTandyPurple,
   ),
 ];

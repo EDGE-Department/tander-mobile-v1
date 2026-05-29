@@ -2,12 +2,7 @@ import 'package:tander_flutter_v3/core/contracts/models/tandy_models.dart';
 import 'package:tander_flutter_v3/core/errors/app_exception.dart';
 
 /// Active wellness panel overlay type.
-enum TandyActivePanel {
-  breathe,
-  meditate,
-  support,
-  psychiatrist,
-}
+enum TandyActivePanel { breathe, meditate, support, psychiatrist }
 
 /// Sealed state hierarchy for the Tandy AI screen.
 sealed class TandyState {
@@ -69,7 +64,8 @@ final class TandyLoaded extends TandyState {
       isSending: isSending ?? this.isSending,
       sendError: sendError != null ? sendError() : this.sendError,
       activePanel: activePanel != null ? activePanel() : this.activePanel,
-      suggestBreathingPanel: suggestBreathingPanel ?? this.suggestBreathingPanel,
+      suggestBreathingPanel:
+          suggestBreathingPanel ?? this.suggestBreathingPanel,
     );
   }
 }

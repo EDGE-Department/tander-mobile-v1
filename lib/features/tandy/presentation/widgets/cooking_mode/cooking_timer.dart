@@ -45,8 +45,12 @@ class _CookingTimerWidgetState extends State<CookingTimerWidget> {
       _targetSeconds = _remainingSeconds;
       setState(() => _isRunning = true);
       _timer = Timer.periodic(const Duration(milliseconds: 250), (_) {
-        final elapsedSeconds = (DateTime.now().millisecondsSinceEpoch - _startTimestamp!) ~/ 1000;
-        final nextValue = (_targetSeconds - elapsedSeconds).clamp(0, _targetSeconds);
+        final elapsedSeconds =
+            (DateTime.now().millisecondsSinceEpoch - _startTimestamp!) ~/ 1000;
+        final nextValue = (_targetSeconds - elapsedSeconds).clamp(
+          0,
+          _targetSeconds,
+        );
         setState(() {
           _remainingSeconds = nextValue;
           if (_remainingSeconds <= 0) {
@@ -103,7 +107,9 @@ class _CookingTimerWidgetState extends State<CookingTimerWidget> {
               fontWeight: FontWeight.w800,
               color: isZero
                   ? const Color(0xFFC4BBB0)
-                  : (_isRunning ? const Color(0xFF9A3412) : AppColors.textStrong),
+                  : (_isRunning
+                        ? const Color(0xFF9A3412)
+                        : AppColors.textStrong),
               fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
               letterSpacing: 2,
             ),
@@ -116,7 +122,8 @@ class _CookingTimerWidgetState extends State<CookingTimerWidget> {
             children: <Widget>[
               // Play/Pause with progress ring
               SizedBox(
-                width: 72, height: 72,
+                width: 72,
+                height: 72,
                 child: Stack(
                   alignment: Alignment.center,
                   children: <Widget>[
@@ -126,24 +133,31 @@ class _CookingTimerWidgetState extends State<CookingTimerWidget> {
                       painter: _RingPainter(
                         progress: progressFraction,
                         trackColor: const Color(0xFFF0EDE7),
-                        progressColor: isZero ? const Color(0xFFE0D9CE) : kTandyOrange,
+                        progressColor: isZero
+                            ? const Color(0xFFE0D9CE)
+                            : kTandyOrange,
                         strokeWidth: 4,
                       ),
                     ),
                     // Button
                     SizedBox(
-                      width: 58, height: 58,
+                      width: 58,
+                      height: 58,
                       child: FilledButton(
                         onPressed: isZero ? null : _togglePlayPause,
                         style: FilledButton.styleFrom(
-                          backgroundColor: isZero ? const Color(0xFFE8E3DA) : kTandyOrange,
+                          backgroundColor: isZero
+                              ? const Color(0xFFE8E3DA)
+                              : kTandyOrange,
                           shape: const CircleBorder(),
                           padding: EdgeInsets.zero,
                         ),
                         child: Icon(
                           _isRunning ? Icons.pause : Icons.play_arrow,
                           size: 20,
-                          color: isZero ? const Color(0xFFC4BBB0) : Colors.white,
+                          color: isZero
+                              ? const Color(0xFFC4BBB0)
+                              : Colors.white,
                         ),
                       ),
                     ),
@@ -158,7 +172,9 @@ class _CookingTimerWidgetState extends State<CookingTimerWidget> {
                 icon: const Icon(Icons.refresh, size: 18),
                 style: IconButton.styleFrom(
                   fixedSize: const Size(48, 48),
-                  shape: const CircleBorder(side: BorderSide(color: AppColors.borderLight)),
+                  shape: const CircleBorder(
+                    side: BorderSide(color: AppColors.borderLight),
+                  ),
                   backgroundColor: const Color(0xFFFEFCF9),
                 ),
               ),
@@ -169,17 +185,31 @@ class _CookingTimerWidgetState extends State<CookingTimerWidget> {
           // Quick-add chips
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: <int>[1, 5, 10].map((minutes) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: ActionChip(
-                label: Text('+$minutes min', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF9A3412))),
-                onPressed: () => _addMinutes(minutes),
-                backgroundColor: const Color(0xFFFEF0E0),
-                side: BorderSide(color: kTandyOrange.withAlpha(38)),
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              ),
-            )).toList(),
+            children: <int>[1, 5, 10]
+                .map(
+                  (minutes) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: ActionChip(
+                      label: Text(
+                        '+$minutes min',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF9A3412),
+                        ),
+                      ),
+                      onPressed: () => _addMinutes(minutes),
+                      backgroundColor: const Color(0xFFFEF0E0),
+                      side: BorderSide(color: kTandyOrange.withAlpha(38)),
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),

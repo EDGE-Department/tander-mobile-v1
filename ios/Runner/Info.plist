@@ -69,7 +69,7 @@
 
 	<!-- ── Permission usage descriptions ─────────────────────────────── -->
 	<key>NSCameraUsageDescription</key>
-	<string>Tander needs camera access to scan your ID for verification, detect your face for liveness checks, and enable video calls.</string>
+	<string>Tander needs camera access to scan your ID for verification and to make video calls.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Tander needs microphone access to make audio and video calls, and to record voice messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -77,11 +77,7 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Tander needs permission to save photos to your library.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Tander uses your local network to establish peer-to-peer connections for calls.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Tander needs your location to show you nearby matches and enable location-based features.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Tander needs your location to show you nearby matches even when the app is in the background.</string>
+	<string>Tander uses your local network to help connect your voice and video calls.</string>
 
 	<!-- ── Background modes ───────────────────────────────────────────── -->
 	<key>UIBackgroundModes</key>

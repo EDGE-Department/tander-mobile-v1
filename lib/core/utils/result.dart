@@ -7,23 +7,22 @@ sealed class Result<TValue> {
   bool get isFailure => this is Failure<TValue>;
 
   TValue? get valueOrNull => switch (this) {
-        Success(:final value) => value,
-        Failure() => null,
-      };
+    Success(:final value) => value,
+    Failure() => null,
+  };
 
   AppException? get exceptionOrNull => switch (this) {
-        Success() => null,
-        Failure(:final exception) => exception,
-      };
+    Success() => null,
+    Failure(:final exception) => exception,
+  };
 
   TOutput when<TOutput>({
     required TOutput Function(TValue value) success,
     required TOutput Function(AppException exception) failure,
-  }) =>
-      switch (this) {
-        Success(:final value) => success(value),
-        Failure(:final exception) => failure(exception),
-      };
+  }) => switch (this) {
+    Success(:final value) => success(value),
+    Failure(:final exception) => failure(exception),
+  };
 
   Result<TOutput> map<TOutput>(TOutput Function(TValue value) transform) =>
       switch (this) {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../data/registration_method.dart';
+import 'package:tander_flutter_v3/features/auth/data/registration_method.dart';
 
 /// Login button gradient matching web: from-[#E67E22] to-[#D35400]
 const LinearGradient _toggleGradient = LinearGradient(
@@ -39,7 +39,9 @@ class _MethodSelectorState extends State<MethodSelector>
     _shimmerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
-    )..repeat();
+    );
+    // Driving is gated in build() on MediaQuery.disableAnimationsOf, which is
+    // unavailable here in initState.
   }
 
   @override
@@ -51,6 +53,14 @@ class _MethodSelectorState extends State<MethodSelector>
   @override
   Widget build(BuildContext context) {
     final isPhone = widget.selected == RegistrationMethod.phone;
+    // Vestibular accessibility: when reduce-motion is on, render the static
+    // (non-shimmering) slider and stop driving the continuous shimmer.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (reduceMotion) {
+      if (_shimmerController.isAnimating) _shimmerController.stop();
+    } else if (!_shimmerController.isAnimating) {
+      _shimmerController.repeat();
+    }
 
     return Container(
       height: 56,
@@ -69,8 +79,9 @@ class _MethodSelectorState extends State<MethodSelector>
               AnimatedAlign(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
-                alignment:
-                    isPhone ? Alignment.centerLeft : Alignment.centerRight,
+                alignment: isPhone
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
                 child: Container(
                   width: tabWidth,
                   height: 48,
@@ -91,26 +102,31 @@ class _MethodSelectorState extends State<MethodSelector>
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: AnimatedBuilder(
-                      animation: _shimmerController,
-                      builder: (_, __) {
-                        final translateX = (_shimmerController.value * 3.0 - 1.0);
-                        return Transform.translate(
-                          offset: Offset(translateX * tabWidth, 0),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Color(0x00FFFFFF),
-                                  Color(0x30FFFFFF),
-                                  Color(0x00FFFFFF),
-                                ],
-                              ),
-                            ),
+                    // Reduce-motion: omit the moving white-sweep highlight and
+                    // show the plain (static) slider.
+                    child: reduceMotion
+                        ? const SizedBox.expand()
+                        : AnimatedBuilder(
+                            animation: _shimmerController,
+                            builder: (_, _) {
+                              final translateX =
+                                  (_shimmerController.value * 3.0 - 1.0);
+                              return Transform.translate(
+                                offset: Offset(translateX * tabWidth, 0),
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Color(0x00FFFFFF),
+                                        Color(0x30FFFFFF),
+                                        Color(0x00FFFFFF),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ),
               ),

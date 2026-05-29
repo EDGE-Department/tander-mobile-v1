@@ -144,9 +144,11 @@ final class AuthRepositoryImpl implements AuthRepository {
       final username = bodyData is Map<String, Object?>
           ? bodyData['username'] as String? ?? ''
           : '';
+      // Backend always returns PENDING_PROFILE_SETUP on successful register
+      // (OTP/ID are pre-verified); default to it if the field is ever absent.
       final registrationPhase = bodyData is Map<String, Object?>
-          ? bodyData['registrationPhase'] as String? ?? 'email_pending'
-          : 'email_pending';
+          ? bodyData['registrationPhase'] as String? ?? 'PENDING_PROFILE_SETUP'
+          : 'PENDING_PROFILE_SETUP';
 
       // Access token is optional — backend may not issue one at registration.
       final rawJwtHeader = registerResponse.headers.value('jwt-token');
@@ -429,8 +431,6 @@ final class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<String>> verifyIdPreRegister({
     required String idPhotoFrontPath,
-    String? selfiePath,
-    Map<String, dynamic>? livenessMetadata,
     Map<String, dynamic>? frontendOcrData,
     String? deviceFingerprint,
   }) {
@@ -439,8 +439,6 @@ final class AuthRepositoryImpl implements AuthRepository {
       try {
         response = await _remoteDatasource.verifyIdPreRegister(
           idPhotoFrontPath: idPhotoFrontPath,
-          selfiePath: selfiePath,
-          livenessMetadata: livenessMetadata,
           frontendOcrData: frontendOcrData,
           deviceFingerprint: deviceFingerprint,
         );

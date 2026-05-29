@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/constants/routes.dart';
-import '../widgets/verification/responsive_layout.dart';
-import '../widgets/verification/primary_action_button.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verification/primary_action_button.dart';
+import 'package:tander_flutter_v3/shared/constants/routes.dart';
+import 'package:tander_flutter_v3/shared/utils/launch_support_email.dart';
 
 enum VerificationResultState {
   success,
@@ -12,8 +14,6 @@ enum VerificationResultState {
   ageRequirementNotMet,
   fraudDetected,
   rateLimited,
-  livenessCheckFailed,
-  livenessWeakEvidence,
   idBlocked,
   idInCooldown,
 }
@@ -21,18 +21,28 @@ enum VerificationResultState {
 class VerificationResultScreen extends StatefulWidget {
   final VerificationResultState state;
   final Duration? cooldownDuration;
+  // Pass-through nuance fields used only by the duplicateIdDetected switch arm.
+  // emailHint is the masked email surfaced by the backend duplicate-ID response;
+  // existingAccountState is the literal backend enum ('PROFILE_INCOMPLETE' /
+  // 'PROFILE_COMPLETE') used to swap copy and the primary-button label.
+  final String? emailHint;
+  final String? existingAccountState;
 
   const VerificationResultScreen({
-    Key? key,
+    super.key,
     required this.state,
     this.cooldownDuration,
-  }) : super(key: key);
+    this.emailHint,
+    this.existingAccountState,
+  });
 
   @override
-  State<VerificationResultScreen> createState() => _VerificationResultScreenState();
+  State<VerificationResultScreen> createState() =>
+      _VerificationResultScreenState();
 }
 
-class _VerificationResultScreenState extends State<VerificationResultScreen> with SingleTickerProviderStateMixin {
+class _VerificationResultScreenState extends State<VerificationResultScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   Timer? _timer;
@@ -51,7 +61,8 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
     );
     _animController.forward();
 
-    if (widget.state == VerificationResultState.rateLimited || widget.state == VerificationResultState.idInCooldown) {
+    if (widget.state == VerificationResultState.rateLimited ||
+        widget.state == VerificationResultState.idInCooldown) {
       _remainingTime = widget.cooldownDuration ?? const Duration(minutes: 5);
       _startTimer();
     }
@@ -78,51 +89,58 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
 
   @override
   Widget build(BuildContext context) {
+    final isSmall = MediaQuery.sizeOf(context).height < 700;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: ResponsiveLayout(
-          mobileSmall: (context, constraints) => _buildContent(isSmall: true, isLandscape: false),
-          mobileNormal: (context, constraints) => _buildContent(isSmall: false, isLandscape: false),
-          tabletPortrait: (context, constraints) => Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: _buildContent(isSmall: false, isLandscape: false),
-            ),
+      backgroundColor: const Color(0xFF20BF68),
+      // Terminal screen (success or failure) — no step header, just the
+      // gradient backdrop + parchment, matching the absence-of-step idiom.
+      body: AuthStepScaffoldBody(
+        parchment: AuthStepParchment(
+          scrollable: false,
+          contentPadding: EdgeInsets.fromLTRB(
+            isSmall ? 16 : 24,
+            8,
+            isSmall ? 16 : 24,
+            16,
           ),
-          tabletLandscape: (context, constraints) => _buildContent(isSmall: false, isLandscape: true),
+          child: _buildContent(isSmall: isSmall),
         ),
       ),
     );
   }
 
-  Widget _buildContent({required bool isSmall, required bool isLandscape}) {
+  Widget _buildContent({required bool isSmall}) {
     final uiData = _getUIData(widget.state);
-    
+
+    // Respect reduce-motion: skip the elastic bounce and show the icon at
+    // full scale immediately (same idiom as StepBadgeEntry / _triggerErrorShake).
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    final iconBadge = Container(
+      padding: EdgeInsets.all(isSmall ? 24 : 32),
+      decoration: BoxDecoration(
+        color: uiData.color.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        uiData.icon,
+        size: isSmall ? 64 : 80,
+        color: uiData.color,
+      ),
+    );
+
     final content = Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        ScaleTransition(
-          scale: _scaleAnimation,
-          child: Container(
-            padding: EdgeInsets.all(isSmall ? 24 : 32),
-            decoration: BoxDecoration(
-              color: uiData.color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              uiData.icon,
-              size: isSmall ? 64 : (isLandscape ? 100 : 80),
-              color: uiData.color,
-            ),
-          ),
-        ),
+        reduceMotion
+            ? iconBadge
+            : ScaleTransition(scale: _scaleAnimation, child: iconBadge),
         SizedBox(height: isSmall ? 24 : 40),
         Text(
           uiData.title,
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: isSmall ? 24 : (isLandscape ? 36 : 30),
+            fontSize: isSmall ? 24 : 30,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
             color: Colors.black87,
@@ -135,12 +153,17 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
             uiData.description,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: isSmall ? 15 : (isLandscape ? 18 : 16),
+              fontSize: isSmall ? 15 : 16,
               color: Colors.black54,
               height: 1.4,
             ),
           ),
         ),
+        if (widget.state == VerificationResultState.duplicateIdDetected &&
+            widget.emailHint != null) ...[
+          const SizedBox(height: 16),
+          _buildEmailHintChip(widget.emailHint!),
+        ],
         if (_remainingTime.inSeconds > 0) ...[
           const SizedBox(height: 24),
           _buildTimerWidget(isSmall),
@@ -148,57 +171,61 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
       ],
     );
 
-    if (isLandscape) {
-      return Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(40.0),
-              child: content,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(child: SingleChildScrollView(child: content)),
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(60.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildActions(uiData, isSmall: false),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+            _buildActions(uiData, isSmall: isSmall),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Padding(
-      padding: EdgeInsets.all(isSmall ? 16.0 : 24.0),
-      child: Column(
+  Widget _buildEmailHintChip(String maskedEmail) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF7EE),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Center(
-              child: SingleChildScrollView(
-                child: content,
-              ),
+          Icon(Icons.email_outlined, size: 18, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Text(
+            maskedEmail,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+              fontFamily: 'monospace',
+              letterSpacing: 0.5,
             ),
           ),
-          _buildActions(uiData, isSmall: isSmall),
         ],
       ),
     );
   }
 
   Widget _buildTimerWidget(bool isSmall) {
-    String minutes = (_remainingTime.inSeconds ~/ 60).toString().padLeft(2, '0');
-    String seconds = (_remainingTime.inSeconds % 60).toString().padLeft(2, '0');
-    
+    final String minutes = (_remainingTime.inSeconds ~/ 60).toString().padLeft(
+      2,
+      '0',
+    );
+    final String seconds = (_remainingTime.inSeconds % 60).toString().padLeft(
+      2,
+      '0',
+    );
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE86035).withOpacity(0.1),
+        color: const Color(0xFFE86035).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -220,33 +247,36 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
   }
 
   Widget _buildActions(_ResultUIData uiData, {required bool isSmall}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PrimaryActionButton(
-          label: uiData.primaryButtonText,
-          color: uiData.color,
-          onPressed: () => _handlePrimaryAction(),
-        ),
-        if (uiData.secondaryButtonText != null) ...[
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () => _handleSecondaryAction(),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              minimumSize: const Size(double.infinity, 56),
-            ),
-            child: Text(
-              uiData.secondaryButtonText!,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+    return SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PrimaryActionButton(
+            label: uiData.primaryButtonText,
+            color: uiData.color,
+            onPressed: () => _handlePrimaryAction(),
+          ),
+          if (uiData.secondaryButtonText != null) ...[
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => _handleSecondaryAction(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                minimumSize: const Size(double.infinity, 56),
+              ),
+              child: Text(
+                uiData.secondaryButtonText!,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
               ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -257,8 +287,6 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
         context.go(AppRoutes.signUp);
         break;
       case VerificationResultState.faceMismatch:
-      case VerificationResultState.livenessCheckFailed:
-      case VerificationResultState.livenessWeakEvidence:
       case VerificationResultState.rateLimited:
       case VerificationResultState.idInCooldown:
         // Retry - go back to verification flow
@@ -277,13 +305,26 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
   void _handleSecondaryAction() {
     switch (widget.state) {
       case VerificationResultState.duplicateIdDetected:
-      case VerificationResultState.ageRequirementNotMet:
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Entry is pushReplacement from ID Scanner — no back-stack to popUntil.
+        // Mirror the deleted modal's "Contact Support" affordance: surface the
+        // support email then land on login.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Contact us at support@tander.app'),
+            backgroundColor: const Color(0xFF5BBFB3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        context.go(AppRoutes.login);
         break;
       case VerificationResultState.faceMismatch:
-      case VerificationResultState.livenessCheckFailed:
-        // TODO: Navigate to support/contact screen
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        launchSupportEmail(
+          context,
+          subject: 'ID verification issue',
+        );
         break;
       default:
         Navigator.of(context).pop();
@@ -300,24 +341,34 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
       case VerificationResultState.success:
         return _ResultUIData(
           title: 'You\'re Verified!',
-          description: 'Thank you for keeping our community safe. You now have full access to all features.',
+          description:
+              'Thank you for keeping our community safe. You now have full access to all features.',
           icon: Icons.verified_rounded,
           color: teal,
           primaryButtonText: 'Continue',
         );
       case VerificationResultState.duplicateIdDetected:
+        final isIncompleteProfile =
+            widget.existingAccountState == 'PROFILE_INCOMPLETE';
         return _ResultUIData(
-          title: 'ID Already Registered',
-          description: 'This ID has already been used to verify an account. For security, each ID can only be used once.',
-          icon: Icons.file_copy_outlined,
+          title: isIncompleteProfile
+              ? 'Finish Your Registration'
+              : 'ID Already Registered',
+          description: isIncompleteProfile
+              ? "You already have an account but haven't finished your profile yet. Log in to continue setting it up."
+              : 'This ID has already been used to create an account. If this is your ID, please log in to your existing account.',
+          icon: Icons.person_search_rounded,
           color: orange,
-          primaryButtonText: 'Contact Support',
-          secondaryButtonText: 'Back to Login',
+          primaryButtonText: isIncompleteProfile
+              ? 'Log in to continue'
+              : 'Go to Login',
+          secondaryButtonText: 'Contact Support',
         );
       case VerificationResultState.faceMismatch:
         return _ResultUIData(
           title: 'Face Doesn\'t Match',
-          description: 'We couldn\'t match your selfie with the photo on your ID. Make sure you\'re in a well-lit area and looking directly at the camera.',
+          description:
+              'We couldn\'t match your selfie with the photo on your ID. Make sure you\'re in a well-lit area and looking directly at the camera.',
           icon: Icons.face_retouching_off,
           color: orange,
           primaryButtonText: 'Try Again',
@@ -326,16 +377,19 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
       case VerificationResultState.ageRequirementNotMet:
         return _ResultUIData(
           title: 'Age Requirement',
-          description: 'We\'re sorry, but you must be at least 60 years old to join this community.',
+          description:
+              'We\'re sorry, but you must be at least 60 years old to join this community.',
           icon: Icons.cake_outlined,
           color: grey,
-          primaryButtonText: 'Learn More',
-          secondaryButtonText: 'Back to Start',
+          // Both actions led to login; 'Learn More' was misleading (there is no
+          // destination to learn more). Collapse to a single clear exit.
+          primaryButtonText: 'Back to Sign In',
         );
       case VerificationResultState.fraudDetected:
         return _ResultUIData(
           title: 'Verification Unsuccessful',
-          description: 'We couldn\'t verify your identity automatically. Please reach out to our team for a manual review.',
+          description:
+              'We couldn\'t verify your identity automatically. Please reach out to our team for a manual review.',
           icon: Icons.gpp_bad_outlined,
           color: orange,
           primaryButtonText: 'Contact Support',
@@ -343,32 +397,17 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
       case VerificationResultState.rateLimited:
         return _ResultUIData(
           title: 'Too Many Attempts',
-          description: 'You\'ve reached the maximum number of verification attempts. Please wait a moment before trying again.',
+          description:
+              'You\'ve reached the maximum number of verification attempts. Please wait a moment before trying again.',
           icon: Icons.hourglass_bottom_rounded,
-          color: orange,
-          primaryButtonText: 'Try Again',
-        );
-      case VerificationResultState.livenessCheckFailed:
-        return _ResultUIData(
-          title: 'Liveness Check Failed',
-          description: 'We couldn\'t verify that there is a live person holding the device. Please hold steady and try again.',
-          icon: Icons.person_off_outlined,
-          color: orange,
-          primaryButtonText: 'Try Again',
-          secondaryButtonText: 'Cancel',
-        );
-      case VerificationResultState.livenessWeakEvidence:
-        return _ResultUIData(
-          title: 'Better Lighting Needed',
-          description: 'The image was too blurry or dark. Find a well-lit spot and keep the device steady.',
-          icon: Icons.light_mode_outlined,
           color: orange,
           primaryButtonText: 'Try Again',
         );
       case VerificationResultState.idBlocked:
         return _ResultUIData(
           title: 'ID Cannot Be Used',
-          description: 'This ID has been restricted from our platform. If you think this is a mistake, please contact support.',
+          description:
+              'This ID has been restricted from our platform. If you think this is a mistake, please contact support.',
           icon: Icons.block_outlined,
           color: grey,
           primaryButtonText: 'Contact Support',
@@ -376,7 +415,8 @@ class _VerificationResultScreenState extends State<VerificationResultScreen> wit
       case VerificationResultState.idInCooldown:
         return _ResultUIData(
           title: 'Please Wait',
-          description: 'This ID was recently used in a failed attempt. Please wait before trying again.',
+          description:
+              'This ID was recently used in a failed attempt. Please wait before trying again.',
           icon: Icons.timer_outlined,
           color: orange,
           primaryButtonText: 'Try Again',

@@ -98,9 +98,9 @@ class SentCard extends StatelessWidget {
       top: 8,
       child: Builder(
         builder: (context) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.noScaling,
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.noScaling),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
@@ -116,7 +116,7 @@ class SentCard extends StatelessWidget {
                 Text(
                   'PENDING',
                   style: AppTypography.caption.copyWith(
-                    fontSize: 9,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.6,
                     color: Colors.white,
@@ -159,17 +159,13 @@ class SentCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 8,
-                    color: Colors.white70,
-                  ),
+                  const Icon(Icons.location_on, size: 8, color: Colors.white70),
                   const SizedBox(width: 2),
                   Expanded(
                     child: Text(
                       connection.otherCity!,
                       style: AppTypography.caption.copyWith(
-                        fontSize: 10,
+                        fontSize: 12,
                         color: Colors.white70,
                       ),
                       maxLines: 1,
@@ -249,11 +245,7 @@ class FriendRow extends StatelessWidget {
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _buildThumbnail(),
-            _buildInfo(),
-            _buildActions(),
-          ],
+          children: [_buildThumbnail(), _buildInfo(), _buildActions()],
         ),
       ),
     );
@@ -311,7 +303,7 @@ class FriendRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 'Connected ${formatConnectionTimeAgo(connection.createdAt)}',
-                style: AppTypography.caption.copyWith(fontSize: 11),
+                style: AppTypography.caption,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -328,7 +320,7 @@ class FriendRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         connection.otherCity!,
-                        style: AppTypography.caption.copyWith(fontSize: 11),
+                        style: AppTypography.caption,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -402,8 +394,9 @@ class _CircleAction extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor ?? color,
             shape: BoxShape.circle,
-            border:
-                borderColor != null ? Border.all(color: borderColor!) : null,
+            border: borderColor != null
+                ? Border.all(color: borderColor!)
+                : null,
             boxShadow: backgroundColor == null ? AppShadows.warmXs : null,
           ),
           child: Center(
@@ -418,4 +411,3 @@ class _CircleAction extends StatelessWidget {
     );
   }
 }
-

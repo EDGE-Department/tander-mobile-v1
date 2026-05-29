@@ -359,7 +359,7 @@ class _TabChip extends StatelessWidget {
                 child: Text(
                   badgeCount > 99 ? '99+' : '$badgeCount',
                   style: AppTypography.caption.copyWith(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: isActive ? Colors.white : _orange,
                   ),

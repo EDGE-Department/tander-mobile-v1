@@ -20,13 +20,13 @@ enum TanderAvatarSize {
 
   /// Online-indicator dot diameter for this avatar size.
   double get onlineDotSize => switch (this) {
-        TanderAvatarSize.xs => 6.0,
-        TanderAvatarSize.sm => 7.0,
-        TanderAvatarSize.md => 9.0,
-        TanderAvatarSize.lg => 10.0,
-        TanderAvatarSize.xl => 12.0,
-        TanderAvatarSize.xxl => 14.0,
-      };
+    TanderAvatarSize.xs => 6.0,
+    TanderAvatarSize.sm => 7.0,
+    TanderAvatarSize.md => 9.0,
+    TanderAvatarSize.lg => 10.0,
+    TanderAvatarSize.xl => 12.0,
+    TanderAvatarSize.xxl => 14.0,
+  };
 
   /// Font size for fallback initials, scaled to the avatar diameter.
   double get initialsFontSize => diameter * 0.36;
@@ -85,9 +85,7 @@ class TanderAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.borderLight, width: 2),
       ),
-      child: ClipOval(
-        child: hasImage ? _networkImage() : _initialsFallback(),
-      ),
+      child: ClipOval(child: hasImage ? _networkImage() : _initialsFallback()),
     );
   }
 
@@ -141,8 +139,11 @@ class TanderAvatar extends StatelessWidget {
       return '?';
     }
 
-    final List<String> nameParts =
-        displayName!.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+    final List<String> nameParts = displayName!
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
 
     if (nameParts.isEmpty) return '?';
     if (nameParts.length == 1) return nameParts[0][0].toUpperCase();
@@ -155,10 +156,7 @@ class TanderAvatar extends StatelessWidget {
 ///
 /// Uses a repeating scale animation to draw attention.
 class _PulsingOnlineDot extends StatefulWidget {
-  const _PulsingOnlineDot({
-    required this.dotSize,
-    required this.borderWidth,
-  });
+  const _PulsingOnlineDot({required this.dotSize, required this.borderWidth});
 
   final double dotSize;
   final double borderWidth;
@@ -180,9 +178,10 @@ class _PulsingOnlineDotState extends State<_PulsingOnlineDot>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.3,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -196,10 +195,7 @@ class _PulsingOnlineDotState extends State<_PulsingOnlineDot>
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (_, Widget? child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        );
+        return Transform.scale(scale: _scaleAnimation.value, child: child);
       },
       child: Container(
         width: widget.dotSize,
@@ -207,10 +203,7 @@ class _PulsingOnlineDotState extends State<_PulsingOnlineDot>
         decoration: BoxDecoration(
           color: AppColors.success,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: AppColors.card,
-            width: widget.borderWidth,
-          ),
+          border: Border.all(color: AppColors.card, width: widget.borderWidth),
         ),
       ),
     );

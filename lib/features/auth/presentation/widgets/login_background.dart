@@ -526,7 +526,7 @@ class _OnlineCountBadgeState extends State<OnlineCountBadge>
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: isLight ? AppColors.primaryAccessible : Colors.white,
               height: 1.2,

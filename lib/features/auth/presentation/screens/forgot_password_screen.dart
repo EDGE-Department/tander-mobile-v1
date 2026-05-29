@@ -271,9 +271,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFFBF8),
-          ),
+          decoration: const BoxDecoration(color: Color(0xFFFFFBF8)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -290,7 +288,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                  child: _isCodeSent ? _buildSuccessContent() : _buildScrollableFormContent(),
+                  child: _isCodeSent
+                      ? _buildSuccessContent()
+                      : _buildScrollableFormContent(),
                 ),
               ),
               // Sticky button at bottom
@@ -468,7 +468,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         Text(
           'Ligtas at madali \u00B7 Safe and easy',
           style: AppTypography.caption.copyWith(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             fontStyle: FontStyle.italic,
             letterSpacing: 0.3,
@@ -683,7 +683,7 @@ class _ForgotTabletBrandPanel extends StatelessWidget {
                   Text(
                     'MADE FOR FILIPINO SENIORS 60+',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.65),
                       letterSpacing: 2.8,
@@ -763,22 +763,6 @@ class _ForgotTabletFormPanel extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Mobile parchment sheet ─────────────────────────────────────────────────
-
-class _ForgotMobileParchmentSheet extends StatelessWidget {
-  const _ForgotMobileParchmentSheet({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: child,
     );
   }
 }
@@ -879,26 +863,6 @@ class _LandscapeDecor extends StatelessWidget {
   }
 }
 
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 48,
-        height: 4,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF7849), Color(0xFF0D9488)],
-          ),
-          borderRadius: BorderRadius.circular(999),
-        ),
-      ),
-    );
-  }
-}
-
 class _ParchmentDotGridPainter extends CustomPainter {
   const _ParchmentDotGridPainter({this.spacing = 26});
 
@@ -977,10 +941,7 @@ class _WaveSeamPainter extends CustomPainter {
 
 /// Orange gradient submit button with shimmer animation.
 class _SubmitButton extends StatefulWidget {
-  const _SubmitButton({
-    required this.isLoading,
-    required this.onPressed,
-  });
+  const _SubmitButton({required this.isLoading, required this.onPressed});
 
   final bool isLoading;
   final VoidCallback onPressed;
@@ -1041,9 +1002,8 @@ class _SubmitButtonState extends State<_SubmitButton>
                   borderRadius: BorderRadius.circular(20),
                   child: AnimatedBuilder(
                     animation: _shimmerController,
-                    builder: (_, __) {
-                      final translateX =
-                          (_shimmerController.value * 3.0 - 1.0);
+                    builder: (_, _) {
+                      final translateX = (_shimmerController.value * 3.0 - 1.0);
                       return FractionallySizedBox(
                         widthFactor: 1.0,
                         child: Transform.translate(
@@ -1077,8 +1037,9 @@ class _SubmitButtonState extends State<_SubmitButton>
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1170,7 +1131,7 @@ class _SuccessButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (!isPrimary)
-              Icon(
+              const Icon(
                 Icons.arrow_back_rounded,
                 size: 20,
                 color: AppColors.textMuted,

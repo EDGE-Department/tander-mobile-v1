@@ -80,11 +80,10 @@ final class CallListener {
       final roomName = activeCall['roomName'] as String? ?? '';
       if (roomName.isEmpty) return;
 
-      final callerName =
-          activeCall['callerName'] as String? ?? 'Unknown';
+      final callerName = activeCall['callerName'] as String? ?? 'Unknown';
       final callerPhoto = activeCall['callerPhoto'] as String?;
-      final rawCallType =
-          (activeCall['callType'] as String? ?? 'audio').toUpperCase();
+      final rawCallType = (activeCall['callType'] as String? ?? 'audio')
+          .toUpperCase();
       final callType = CallType.fromBackend(rawCallType);
       final callerId = (activeCall['callerId'] ?? '').toString();
       final callerUsername =
@@ -113,9 +112,9 @@ final class CallListener {
         final state = _ref.read(callNotifierProvider);
         if (state.status is CallRinging &&
             state.callInfo?.roomName == roomName) {
-          _ref.read(callNotifierProvider.notifier).endCall(
-                CallEndReason.noAnswer,
-              );
+          _ref
+              .read(callNotifierProvider.notifier)
+              .endCall(CallEndReason.noAnswer);
           Future<void>.delayed(CallTimeouts.endedDisplay, () {
             try {
               _ref.read(callNotifierProvider.notifier).resetToIdle();
@@ -176,14 +175,25 @@ final class CallListener {
         _handleCallAnswered(roomName, currentState, notifier);
 
       case CallDeclinedEvent(:final roomName):
-        _handleDismissEvent(roomName, currentState, notifier, CallEndReason.declined);
+        _handleDismissEvent(
+          roomName,
+          currentState,
+          notifier,
+          CallEndReason.declined,
+        );
 
       case CallCancelledEvent(:final roomName):
-        _handleDismissEvent(roomName, currentState, notifier, CallEndReason.cancelled);
+        _handleDismissEvent(
+          roomName,
+          currentState,
+          notifier,
+          CallEndReason.cancelled,
+        );
 
       case CallAnsweredElsewhereEvent(:final roomName):
         // Ignore if WE are the one who answered (our own accept triggers this)
-        if ((currentState.status is CallConnecting || currentState.status is CallConnected) &&
+        if ((currentState.status is CallConnecting ||
+                currentState.status is CallConnected) &&
             currentState.callInfo?.direction == CallDirection.incoming &&
             currentState.callInfo?.roomName == roomName) {
           AppLogger.debug(
@@ -193,24 +203,35 @@ final class CallListener {
           break;
         }
         _handleDismissEvent(
-          roomName, currentState, notifier, CallEndReason.answeredElsewhere,
+          roomName,
+          currentState,
+          notifier,
+          CallEndReason.answeredElsewhere,
         );
 
       case CallDeclinedElsewhereEvent(:final roomName):
         _handleDismissEvent(
-          roomName, currentState, notifier, CallEndReason.declinedElsewhere,
+          roomName,
+          currentState,
+          notifier,
+          CallEndReason.declinedElsewhere,
         );
 
       case CallEndedEvent(:final roomName):
-        _handleDismissEvent(roomName, currentState, notifier, CallEndReason.hangup);
+        _handleDismissEvent(
+          roomName,
+          currentState,
+          notifier,
+          CallEndReason.hangup,
+        );
 
       // Room-level signals are handled by CallManager, not the listener
       case OfferEvent() ||
-           AnswerEvent() ||
-           IceCandidateEvent() ||
-           HangupEvent() ||
-           BusyEvent() ||
-           MediaStateEvent():
+          AnswerEvent() ||
+          IceCandidateEvent() ||
+          HangupEvent() ||
+          BusyEvent() ||
+          MediaStateEvent():
         break;
     }
   }
@@ -247,8 +268,9 @@ final class CallListener {
     if (callerId == userId) return;
 
     // Normalize backend callType ("voice"/"video") to CallType
-    final normalizedCallType =
-        CallType.fromBackend(payload.callType ?? 'AUDIO');
+    final normalizedCallType = CallType.fromBackend(
+      payload.callType ?? 'AUDIO',
+    );
 
     final callInfo = CallInfo(
       callId: payload.callId ?? payload.roomName,
@@ -266,20 +288,18 @@ final class CallListener {
     // Early-subscribe to room signals so the SDP offer AND ICE candidates
     // are buffered before the user taps Accept.
     _earlySignalUnsub?.call();
-    _earlySignalUnsub = subscribeToRoomSignals(
-      payload.roomName,
-      userId,
-      (signalEvent) {
-        if (signalEvent is OfferEvent) {
-          setPendingOfferBuffer(
-            BufferedOffer(roomName: signalEvent.roomName, sdp: signalEvent.sdp),
-          );
-        } else if (signalEvent is IceCandidateEvent) {
-          // Buffer ICE candidates so they can be flushed after accept
-          getCallRefs().pendingIceCandidates.add(signalEvent.candidate);
-        }
-      },
-    );
+    _earlySignalUnsub = subscribeToRoomSignals(payload.roomName, userId, (
+      signalEvent,
+    ) {
+      if (signalEvent is OfferEvent) {
+        setPendingOfferBuffer(
+          BufferedOffer(roomName: signalEvent.roomName, sdp: signalEvent.sdp),
+        );
+      } else if (signalEvent is IceCandidateEvent) {
+        // Buffer ICE candidates so they can be flushed after accept
+        getCallRefs().pendingIceCandidates.add(signalEvent.candidate);
+      }
+    });
 
     // Send ring acknowledgment
     sendRingAck(payload.roomName, callerId);
@@ -290,7 +310,9 @@ final class CallListener {
       final freshState = _ref.read(callNotifierProvider);
       if (freshState.status is CallRinging &&
           freshState.callInfo?.roomName == payload.roomName) {
-        _ref.read(callNotifierProvider.notifier).endCall(CallEndReason.noAnswer);
+        _ref
+            .read(callNotifierProvider.notifier)
+            .endCall(CallEndReason.noAnswer);
         _scheduleIdleReset();
       }
       _ringingTimeout = null;

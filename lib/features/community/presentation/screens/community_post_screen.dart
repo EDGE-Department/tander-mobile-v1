@@ -5,11 +5,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
-import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/features/community/presentation/notifiers/community_post_notifier.dart';
 import 'package:tander_flutter_v3/features/community/presentation/states/community_post_state.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/post_detail_parts.dart';
@@ -41,9 +40,7 @@ class _CommunityPostScreenState extends ConsumerState<CommunityPostScreen> {
         child: Column(
           children: [
             _PostHeader(onBack: () => context.pop()),
-            Expanded(
-              child: _buildBody(context, ref, postState),
-            ),
+            Expanded(child: _buildBody(context, ref, postState)),
           ],
         ),
       ),
@@ -58,8 +55,8 @@ class _CommunityPostScreenState extends ConsumerState<CommunityPostScreen> {
     return switch (postState) {
       CommunityPostLoading() => const _LoadingPlaceholder(),
       CommunityPostError(:final exception) => _ErrorPlaceholder(
-          message: exception.userMessage,
-        ),
+        message: exception.userMessage,
+      ),
       CommunityPostLoaded(
         :final post,
         :final comments,
@@ -68,89 +65,112 @@ class _CommunityPostScreenState extends ConsumerState<CommunityPostScreen> {
         :final expandedReplies,
         :final isSendingComment,
       ) =>
-        Builder(builder: (context) {
-        final currentUserId = ref.read(sessionManagerLateProvider)?.session?.userId.toString();
-        return Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                itemCount: comments.length + 2,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return PostDetailContent(
-                      post: post,
-                      onToggleReaction: () {
-                        ref
-                            .read(
-                              communityPostNotifierProvider(widget.postId).notifier,
-                            )
-                            .toggleReaction();
-                      },
-                    );
-                  }
-
-                  if (index == 1) {
-                    return CommentsHeader(commentCount: comments.length);
-                  }
-
-                  final commentIndex = index - 2;
-
-                  if (commentIndex >= comments.length) {
-                    if (isLoadingMoreComments) {
-                      return const Padding(
-                        padding: EdgeInsets.all(AppSpacing.lg),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }
-
-                  final comment = comments[commentIndex];
-                  return CommentTile(
-                    comment: comment,
-                    depth: 0,
-                    onReply: (target) {
-                      ref
-                          .read(communityPostNotifierProvider(widget.postId).notifier)
-                          .setReplyTarget(target);
-                    },
-                    expandedReplies: expandedReplies[comment.commentId] ?? const [],
-                    onExpandReplies: comment.replyCount > 0
-                        ? () {
+        Builder(
+          builder: (context) {
+            final currentUserId = ref
+                .read(sessionManagerLateProvider)
+                ?.session
+                ?.userId
+                .toString();
+            return Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    itemCount: comments.length + 2,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return PostDetailContent(
+                          post: post,
+                          onToggleReaction: () {
                             ref
-                                .read(communityPostNotifierProvider(widget.postId).notifier)
-                                .loadReplies(commentId: comment.commentId);
-                          }
-                        : null,
-                    currentUserId: currentUserId,
-                    onDelete: () {
-                      ref
-                          .read(communityPostNotifierProvider(widget.postId).notifier)
-                          .deleteCommentById(commentId: comment.commentId);
+                                .read(
+                                  communityPostNotifierProvider(
+                                    widget.postId,
+                                  ).notifier,
+                                )
+                                .toggleReaction();
+                          },
+                        );
+                      }
+
+                      if (index == 1) {
+                        return CommentsHeader(commentCount: comments.length);
+                      }
+
+                      final commentIndex = index - 2;
+
+                      if (commentIndex >= comments.length) {
+                        if (isLoadingMoreComments) {
+                          return const Padding(
+                            padding: EdgeInsets.all(AppSpacing.lg),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }
+
+                      final comment = comments[commentIndex];
+                      return CommentTile(
+                        comment: comment,
+                        depth: 0,
+                        onReply: (target) {
+                          ref
+                              .read(
+                                communityPostNotifierProvider(
+                                  widget.postId,
+                                ).notifier,
+                              )
+                              .setReplyTarget(target);
+                        },
+                        expandedReplies:
+                            expandedReplies[comment.commentId] ?? const [],
+                        onExpandReplies: comment.replyCount > 0
+                            ? () {
+                                ref
+                                    .read(
+                                      communityPostNotifierProvider(
+                                        widget.postId,
+                                      ).notifier,
+                                    )
+                                    .loadReplies(commentId: comment.commentId);
+                              }
+                            : null,
+                        currentUserId: currentUserId,
+                        onDelete: () {
+                          ref
+                              .read(
+                                communityPostNotifierProvider(
+                                  widget.postId,
+                                ).notifier,
+                              )
+                              .deleteCommentById(commentId: comment.commentId);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
-            ),
-            PostCommentInput(
-              postId: widget.postId,
-              isSending: isSendingComment,
-              replyTarget: replyTarget,
-              onClearReply: () {
-                ref
-                    .read(communityPostNotifierProvider(widget.postId).notifier)
-                    .clearReplyTarget();
-              },
-            ),
-          ],
-        );
-        }),
+                  ),
+                ),
+                PostCommentInput(
+                  postId: widget.postId,
+                  isSending: isSendingComment,
+                  replyTarget: replyTarget,
+                  onClearReply: () {
+                    ref
+                        .read(
+                          communityPostNotifierProvider(widget.postId).notifier,
+                        )
+                        .clearReplyTarget();
+                  },
+                ),
+              ],
+            );
+          },
+        ),
     };
   }
 }
@@ -171,9 +191,7 @@ class _PostHeader extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         color: AppColors.card,
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -234,9 +252,7 @@ class _ErrorPlaceholder extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Text(
               message,
-              style: AppTypography.body.copyWith(
-                color: AppColors.textMuted,
-              ),
+              style: AppTypography.body.copyWith(color: AppColors.textMuted),
               textAlign: TextAlign.center,
             ),
           ],

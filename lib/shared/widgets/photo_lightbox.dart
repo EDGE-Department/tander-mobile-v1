@@ -39,10 +39,8 @@ class PhotoLightbox extends StatefulWidget {
       PageRouteBuilder<void>(
         opaque: false,
         barrierColor: Colors.black87,
-        pageBuilder: (_, _, _) => PhotoLightbox(
-          photoUrls: photoUrls,
-          initialIndex: initialIndex,
-        ),
+        pageBuilder: (_, _, _) =>
+            PhotoLightbox(photoUrls: photoUrls, initialIndex: initialIndex),
         transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -138,7 +136,7 @@ class _PhotoLightboxState extends State<PhotoLightbox> {
               child: CircularProgressIndicator(
                 value: progress.expectedTotalBytes != null
                     ? progress.cumulativeBytesLoaded /
-                        progress.expectedTotalBytes!
+                          progress.expectedTotalBytes!
                     : null,
                 valueColor: const AlwaysStoppedAnimation<Color>(
                   AppColors.textInverse,
@@ -168,10 +166,7 @@ class _PhotoLightboxState extends State<PhotoLightbox> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (_hasMultiplePhotos)
-            _buildCounter()
-          else
-            const SizedBox.shrink(),
+          if (_hasMultiplePhotos) _buildCounter() else const SizedBox.shrink(),
           _buildCloseButton(),
         ],
       ),

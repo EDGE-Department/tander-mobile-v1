@@ -43,8 +43,7 @@ class WarmSwitch extends StatelessWidget {
         child: AnimatedAlign(
           duration: AppDurations.fast,
           curve: AppCurves.spring,
-          alignment:
-              isEnabled ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: isEnabled ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
             width: _thumbSize,
             height: _thumbSize,

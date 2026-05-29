@@ -65,10 +65,7 @@ class TandyMessageDto {
 
 @JsonSerializable()
 class QuickActionDto {
-  const QuickActionDto({
-    required this.text,
-    required this.action,
-  });
+  const QuickActionDto({required this.text, required this.action});
 
   factory QuickActionDto.fromJson(Map<String, Object?> json) =>
       _$QuickActionDtoFromJson(json);
@@ -151,8 +148,7 @@ class TandySendMessageResponseDto {
   final GuideDto? guide;
   final List<String> safetyNotices;
 
-  Map<String, Object?> toJson() =>
-      _$TandySendMessageResponseDtoToJson(this);
+  Map<String, Object?> toJson() => _$TandySendMessageResponseDtoToJson(this);
 }
 
 // ---------------------------------------------------------------------------
@@ -161,10 +157,7 @@ class TandySendMessageResponseDto {
 
 @JsonSerializable()
 class SendTandyMessageRequestDto {
-  const SendTandyMessageRequestDto({
-    required this.message,
-    this.language,
-  });
+  const SendTandyMessageRequestDto({required this.message, this.language});
 
   factory SendTandyMessageRequestDto.fromJson(Map<String, Object?> json) =>
       _$SendTandyMessageRequestDtoFromJson(json);
@@ -172,8 +165,7 @@ class SendTandyMessageRequestDto {
   final String message;
   final String? language;
 
-  Map<String, Object?> toJson() =>
-      _$SendTandyMessageRequestDtoToJson(this);
+  Map<String, Object?> toJson() => _$SendTandyMessageRequestDtoToJson(this);
 }
 
 @JsonSerializable()
@@ -185,6 +177,5 @@ class SetTandyLanguageRequestDto {
 
   final String language;
 
-  Map<String, Object?> toJson() =>
-      _$SetTandyLanguageRequestDtoToJson(this);
+  Map<String, Object?> toJson() => _$SetTandyLanguageRequestDtoToJson(this);
 }

@@ -27,10 +27,10 @@ final class TokenRefreshInterceptor extends Interceptor {
     required SecureStorage secureStorage,
     required OnSessionExpired onSessionExpired,
     OnTokenRefreshed? onTokenRefreshed,
-  })  : _dio = dio,
-        _secureStorage = secureStorage,
-        _onSessionExpired = onSessionExpired,
-        _onTokenRefreshed = onTokenRefreshed;
+  }) : _dio = dio,
+       _secureStorage = secureStorage,
+       _onSessionExpired = onSessionExpired,
+       _onTokenRefreshed = onTokenRefreshed;
 
   final Dio _dio;
   final SecureStorage _secureStorage;
@@ -90,27 +90,62 @@ final class TokenRefreshInterceptor extends Interceptor {
       _replayPendingRequests(newAccessToken);
       await _retryRequest(failedOptions, newAccessToken, handler);
     } on Object catch (refreshError, stackTrace) {
-      AppLogger.error(
-        'Token refresh failed — clearing session',
-        operation: 'TokenRefreshInterceptor',
-        error: refreshError,
-        stackTrace: stackTrace,
-      );
-
       _rejectPendingRequests(refreshError);
-      await _clearSessionAndNotify();
 
-      handler.reject(
-        DioException(
-          requestOptions: failedOptions,
+      if (_isDefinitiveAuthRejection(refreshError)) {
+        // The refresh token itself was rejected (401/403). The session is
+        // genuinely dead — clear it and route to login.
+        AppLogger.error(
+          'Refresh token rejected (auth) — clearing session',
+          operation: 'TokenRefreshInterceptor',
           error: refreshError,
-          message: 'Session expired. Please sign in again.',
-          type: DioExceptionType.unknown,
-        ),
-      );
+          stackTrace: stackTrace,
+        );
+        await _clearSessionAndNotify();
+        handler.reject(
+          DioException(
+            requestOptions: failedOptions,
+            error: refreshError,
+            message: 'Session expired. Please sign in again.',
+            type: DioExceptionType.unknown,
+          ),
+        );
+      } else {
+        // Transient failure — network/DNS/timeout, 5xx, or a malformed
+        // response. Do NOT clear the session: a momentary network blip must
+        // not log the user out. If the session really is revoked server-side,
+        // the NEXT request's refresh will get a definitive 401 and clear then.
+        // Fail just this request with a network-flavored error so the caller
+        // can show "check your connection" + retry, not "sign in again".
+        AppLogger.warning(
+          'Token refresh failed transiently — keeping session intact',
+          operation: 'TokenRefreshInterceptor',
+          context: {'error': refreshError.toString()},
+        );
+        handler.reject(
+          DioException(
+            requestOptions: failedOptions,
+            error: refreshError,
+            message: 'Network problem reaching the server. Please try again.',
+            type: DioExceptionType.connectionError,
+          ),
+        );
+      }
     } finally {
       _isRefreshing = false;
     }
+  }
+
+  /// True only when the refresh endpoint gave a definitive auth rejection
+  /// (HTTP 401/403 → the refresh token is dead). Network errors, timeouts,
+  /// 5xx, other 4xx, and malformed-response [StateError]s are all transient
+  /// and must NOT clear the session.
+  bool _isDefinitiveAuthRejection(Object error) {
+    if (error is DioException && error.type == DioExceptionType.badResponse) {
+      final code = error.response?.statusCode;
+      return code == 401 || code == 403;
+    }
+    return false;
   }
 
   /// Calls `POST /auth/refresh-token` with the stored refresh token.
@@ -195,26 +230,28 @@ final class TokenRefreshInterceptor extends Interceptor {
       _PendingRequest(options: options, tokenCompleter: completer),
     );
 
-    completer.future.then((newToken) async {
-      options
-        ..headers['Authorization'] = 'Bearer $newToken'
-        ..extra['_hasRetried'] = true;
+    completer.future
+        .then((newToken) async {
+          options
+            ..headers['Authorization'] = 'Bearer $newToken'
+            ..extra['_hasRetried'] = true;
 
-      try {
-        final response = await _dio.fetch<Object?>(options);
-        handler.resolve(response);
-      } on DioException catch (retryError) {
-        handler.reject(retryError);
-      }
-    }).catchError((Object error) {
-      handler.reject(
-        DioException(
-          requestOptions: options,
-          error: error,
-          type: DioExceptionType.unknown,
-        ),
-      );
-    });
+          try {
+            final response = await _dio.fetch<Object?>(options);
+            handler.resolve(response);
+          } on DioException catch (retryError) {
+            handler.reject(retryError);
+          }
+        })
+        .catchError((Object error) {
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              error: error,
+              type: DioExceptionType.unknown,
+            ),
+          );
+        });
   }
 
   void _replayPendingRequests(String newToken) {
@@ -252,10 +289,7 @@ final class TokenRefreshInterceptor extends Interceptor {
 // ---------------------------------------------------------------------------
 
 final class _PendingRequest {
-  const _PendingRequest({
-    required this.options,
-    required this.tokenCompleter,
-  });
+  const _PendingRequest({required this.options, required this.tokenCompleter});
 
   final RequestOptions options;
   final Completer<String> tokenCompleter;

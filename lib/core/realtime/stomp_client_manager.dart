@@ -6,7 +6,13 @@ import 'package:tander_flutter_v3/core/config/env_config.dart';
 import 'package:tander_flutter_v3/core/storage/secure_storage.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 
-enum StompConnectionState { disconnected, connecting, connected, reconnecting, error }
+enum StompConnectionState {
+  disconnected,
+  connecting,
+  connected,
+  reconnecting,
+  error,
+}
 
 /// Callback invoked when a STOMP message arrives, with the parsed JSON body.
 typedef StompMessageHandler = void Function(Map<String, Object?> body);
@@ -141,7 +147,10 @@ final class StompClientManager {
     _subscriptions.clear();
     _reconnectAttempts = 0;
     _setConnectionState(StompConnectionState.disconnected);
-    AppLogger.info('Disconnected and cleared all subscriptions', operation: _tag);
+    AppLogger.info(
+      'Disconnected and cleared all subscriptions',
+      operation: _tag,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -155,7 +164,10 @@ final class StompClientManager {
     String destination,
     StompMessageHandler handler,
   ) {
-    final entry = _SubscriptionEntry(destination: destination, handler: handler);
+    final entry = _SubscriptionEntry(
+      destination: destination,
+      handler: handler,
+    );
     _subscriptions.add(entry);
 
     // If already connected, subscribe immediately.
@@ -183,10 +195,7 @@ final class StompClientManager {
       return;
     }
 
-    _client!.send(
-      destination: destination,
-      body: jsonEncode(body),
-    );
+    _client!.send(destination: destination, body: jsonEncode(body));
   }
 
   // ---------------------------------------------------------------------------
@@ -210,7 +219,8 @@ final class StompClientManager {
 
     // Patch the connect headers with the fresh token so the next CONNECT frame
     // authenticates with the latest credential.
-    _client?.config.stompConnectHeaders?['Authorization'] = 'Bearer $freshToken';
+    _client?.config.stompConnectHeaders?['Authorization'] =
+        'Bearer $freshToken';
 
     AppLogger.debug(
       'Refreshed auth header before connect attempt '
@@ -239,7 +249,10 @@ final class StompClientManager {
   void _onDisconnected(StompFrame frame) {
     _stopHeartbeat();
     _setConnectionState(StompConnectionState.disconnected);
-    AppLogger.info('STOMP disconnected (DISCONNECT frame received)', operation: _tag);
+    AppLogger.info(
+      'STOMP disconnected (DISCONNECT frame received)',
+      operation: _tag,
+    );
   }
 
   void _onWebSocketDone() {
@@ -380,10 +393,7 @@ final class StompClientManager {
     if (_connectionState == newState) return;
 
     _connectionState = newState;
-    AppLogger.info(
-      'Connection state → ${newState.name}',
-      operation: _tag,
-    );
+    AppLogger.info('Connection state → ${newState.name}', operation: _tag);
 
     for (final listener in List.of(_stateListeners)) {
       listener(newState);

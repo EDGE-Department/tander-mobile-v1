@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 
 /// Animated step progress dots for the registration flow.
 ///

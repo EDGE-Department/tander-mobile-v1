@@ -22,17 +22,17 @@ enum ProfileTone { primary, secondary, warm }
 
 /// Resolves the background color for [tone].
 Color toneBackground(ProfileTone tone) => switch (tone) {
-      ProfileTone.primary => AppColors.primaryLight,
-      ProfileTone.secondary => AppColors.secondaryLight,
-      ProfileTone.warm => const Color(0xFFFFF4E8),
-    };
+  ProfileTone.primary => AppColors.primaryLight,
+  ProfileTone.secondary => AppColors.secondaryLight,
+  ProfileTone.warm => const Color(0xFFFFF4E8),
+};
 
 /// Resolves the foreground (text/icon) color for [tone].
 Color toneForeground(ProfileTone tone) => switch (tone) {
-      ProfileTone.primary => AppColors.primaryAccessible,
-      ProfileTone.secondary => AppColors.secondary,
-      ProfileTone.warm => const Color(0xFF956021),
-    };
+  ProfileTone.primary => AppColors.primaryAccessible,
+  ProfileTone.secondary => AppColors.secondary,
+  ProfileTone.warm => const Color(0xFF956021),
+};
 
 // ── Action card ──────────────────────────────────────────────────────────
 
@@ -81,9 +81,17 @@ class ActionCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Text(label, style: AppTypography.label, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  label,
+                  style: AppTypography.label,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
+              const Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),
@@ -111,7 +119,10 @@ class MetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(color: toneBackground(tone), borderRadius: AppRadius.borderLg),
+      decoration: BoxDecoration(
+        color: toneBackground(tone),
+        borderRadius: AppRadius.borderLg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -119,7 +130,10 @@ class MetricTile extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: AppTypography.caption.copyWith(
-              fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.4, color: AppColors.textMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+              color: AppColors.textMuted,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -164,7 +178,10 @@ class CompletionTip extends StatelessWidget {
         borderRadius: AppRadius.borderLg,
         child: Container(
           constraints: const BoxConstraints(minHeight: AppSpacing.touchMinimum),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.border),
             borderRadius: AppRadius.borderLg,
@@ -183,16 +200,31 @@ class CompletionTip extends StatelessWidget {
                 child: Text(
                   boost,
                   style: AppTypography.caption.copyWith(
-                    fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textInverse,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textInverse,
                   ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(child: Text(label, style: AppTypography.label, overflow: TextOverflow.ellipsis)),
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTypography.label,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               const SizedBox(width: AppSpacing.xs),
-              Text(actionLabel, style: AppTypography.label.copyWith(color: AppColors.primary)),
+              Text(
+                actionLabel,
+                style: AppTypography.label.copyWith(color: AppColors.primary),
+              ),
               const SizedBox(width: AppSpacing.xxs),
-              const Icon(Icons.chevron_right, size: 12, color: AppColors.primary),
+              const Icon(
+                Icons.chevron_right,
+                size: 12,
+                color: AppColors.primary,
+              ),
             ],
           ),
         ),
@@ -272,7 +304,10 @@ class SectionCard extends StatelessWidget {
               Container(
                 width: 4,
                 height: 16,
-                decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppRadius.borderFull),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: AppRadius.borderFull,
+                ),
               ),
               const SizedBox(width: AppSpacing.xs),
               Expanded(child: Text(title, style: AppTypography.h3)),
@@ -282,9 +317,18 @@ class SectionCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(actionLabel!, style: AppTypography.label.copyWith(color: AppColors.primary)),
+                      Text(
+                        actionLabel!,
+                        style: AppTypography.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                       const SizedBox(width: 2),
-                      const Icon(Icons.chevron_right, size: 14, color: AppColors.primary),
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
                     ],
                   ),
                 ),
@@ -324,16 +368,28 @@ class FactRow extends StatelessWidget {
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(color: toneBackground(tone), borderRadius: AppRadius.borderMd),
+            decoration: BoxDecoration(
+              color: toneBackground(tone),
+              borderRadius: AppRadius.borderMd,
+            ),
             alignment: Alignment.center,
             child: Icon(icon, size: 16, color: toneForeground(tone)),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: Text(label, style: AppTypography.bodySm.copyWith(color: AppColors.textMuted), overflow: TextOverflow.ellipsis),
+            child: Text(
+              label,
+              style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Flexible(
-            child: Text(value, style: AppTypography.label, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end),
+            child: Text(
+              value,
+              style: AppTypography.label,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+            ),
           ),
         ],
       ),
@@ -360,24 +416,45 @@ class EmptyPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(color: AppColors.subtle, borderRadius: AppRadius.borderLg),
+      decoration: BoxDecoration(
+        color: AppColors.subtle,
+        borderRadius: AppRadius.borderLg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(text, style: AppTypography.bodySm.copyWith(color: AppColors.textMuted)),
+          Text(
+            text,
+            style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+          ),
           const SizedBox(height: AppSpacing.md),
           GestureDetector(
             onTap: onAction,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-              decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: AppRadius.borderFull),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: AppRadius.borderFull,
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(actionLabel, style: AppTypography.label.copyWith(color: AppColors.primaryAccessible)),
+                  Text(
+                    actionLabel,
+                    style: AppTypography.label.copyWith(
+                      color: AppColors.primaryAccessible,
+                    ),
+                  ),
                   const SizedBox(width: AppSpacing.xxs),
-                  const Icon(Icons.chevron_right, size: 14, color: AppColors.primaryAccessible),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 14,
+                    color: AppColors.primaryAccessible,
+                  ),
                 ],
               ),
             ),

@@ -56,36 +56,69 @@ class TandySidebar extends StatelessWidget {
                   alignment: Alignment.bottomRight,
                   children: <Widget>[
                     Container(
-                      width: 76, height: 76,
+                      width: 76,
+                      height: 76,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
                           colors: <Color>[Colors.white, Color(0xFFFFF6E8)],
                         ),
-                        border: Border.all(color: kTandyOrange.withAlpha(51), width: 2),
-                        boxShadow: <BoxShadow>[BoxShadow(color: kTandyOrange.withAlpha(41), blurRadius: 24, offset: const Offset(0, 8))],
+                        border: Border.all(
+                          color: kTandyOrange.withAlpha(51),
+                          width: 2,
+                        ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: kTandyOrange.withAlpha(41),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: ClipOval(
                         child: Padding(
                           padding: const EdgeInsets.all(10),
-                          child: Image.asset('assets/icons/tandy_icon.png', fit: BoxFit.contain),
+                          child: Image.asset(
+                            'assets/icons/tandy_icon.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
                     Container(
-                      width: 14, height: 14,
+                      width: 14,
+                      height: 14,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppColors.success,
-                        border: Border.all(color: const Color(0xFFFEF2E0), width: 2.5),
+                        border: Border.all(
+                          color: const Color(0xFFFEF2E0),
+                          width: 2.5,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                const Text('Tandy', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Color(0xFF7C3910), letterSpacing: -0.6)),
+                const Text(
+                  'Tandy',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                    color: Color(0xFF7C3910),
+                    letterSpacing: -0.6,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                const Text('YOUR WELLNESS COMPANION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFB87840), letterSpacing: 1.6)),
+                const Text(
+                  'YOUR WELLNESS COMPANION',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFB87840),
+                    letterSpacing: 1.6,
+                  ),
+                ),
               ],
             ),
           ),
@@ -96,22 +129,60 @@ class TandySidebar extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               children: <Widget>[
                 // Chat CTA
-                _SidebarChatButton(messageCount: messageCount, onTap: onChatTap),
+                _SidebarChatButton(
+                  messageCount: messageCount,
+                  onTap: onChatTap,
+                ),
                 const SizedBox(height: 12),
                 // Wellness header
                 Row(
                   children: <Widget>[
-                    Container(width: 20, height: 2, decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), gradient: LinearGradient(colors: <Color>[kTandyTeal, kTandyTeal.withAlpha(77)]))),
+                    Container(
+                      width: 20,
+                      height: 2,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(2),
+                        gradient: LinearGradient(
+                          colors: <Color>[kTandyTeal, kTandyTeal.withAlpha(77)],
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    const Text('WELLNESS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 2.5, color: Color(0xFF9A9080))),
+                    const Text(
+                      'WELLNESS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2.5,
+                        color: Color(0xFF9A9080),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                _SidebarFeature(icon: Icons.spa, label: 'Breathe', sub: 'Calm your mind \u00B7 4 min', color: kTandyTeal, onTap: onBreatheTap),
+                _SidebarFeature(
+                  icon: Icons.spa,
+                  label: 'Breathe',
+                  sub: 'Calm your mind \u00B7 4 min',
+                  color: kTandyTeal,
+                  onTap: onBreatheTap,
+                ),
                 const SizedBox(height: 6),
-                _SidebarFeature(icon: Icons.self_improvement, label: 'Meditate', sub: 'Find stillness \u00B7 5-10 min', color: kTandyPurple, onTap: onMeditateTap),
+                _SidebarFeature(
+                  icon: Icons.self_improvement,
+                  label: 'Meditate',
+                  sub: 'Find stillness \u00B7 5-10 min',
+                  color: kTandyPurple,
+                  onTap: onMeditateTap,
+                ),
                 const SizedBox(height: 6),
-                _SidebarFeature(icon: Icons.person_outline, label: 'Support', sub: 'Mental health help', color: kTandyBlue, onTap: onSupportTap),
+                _SidebarFeature(
+                  icon: Icons.person_outline,
+                  label: 'Support',
+                  sub: 'Mental health help',
+                  color: kTandyBlue,
+                  onTap: onSupportTap,
+                ),
               ],
             ),
           ),
@@ -127,7 +198,10 @@ class TandySidebar extends StatelessWidget {
               children: <Widget>[
                 // Status badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     color: kTandyTeal.withAlpha(12),
@@ -135,10 +209,36 @@ class TandySidebar extends StatelessWidget {
                   ),
                   child: Row(
                     children: <Widget>[
-                      Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: kTandyTeal, boxShadow: <BoxShadow>[BoxShadow(color: kTandyTeal.withAlpha(144), blurRadius: 8)])),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: kTandyTeal,
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: kTandyTeal.withAlpha(144),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(statusLabel, style: const TextStyle(fontSize: 12.5, color: Color(0xFF0B7D73), fontWeight: FontWeight.w600))),
-                      const Icon(Icons.auto_awesome, size: 14, color: kTandyTeal),
+                      Expanded(
+                        child: Text(
+                          statusLabel,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF0B7D73),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.auto_awesome,
+                        size: 14,
+                        color: kTandyTeal,
+                      ),
                     ],
                   ),
                 ),
@@ -149,12 +249,20 @@ class TandySidebar extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onClearTap,
                     icon: const Icon(Icons.delete_outline, size: 12),
-                    label: const Text('Clear conversation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    label: const Text(
+                      'Clear conversation',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFB0A090),
                       side: const BorderSide(color: Color(0xFFEDE8E0)),
                       padding: const EdgeInsets.symmetric(vertical: 9),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -185,13 +293,21 @@ class _SidebarChatButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: kTandyOrange.withAlpha(77), width: 2),
-            gradient: const LinearGradient(colors: <Color>[Color(0xFFFFF5E8), Color(0xFFFEF0E0)]),
+            gradient: const LinearGradient(
+              colors: <Color>[Color(0xFFFFF5E8), Color(0xFFFEF0E0)],
+            ),
           ),
           child: Row(
             children: <Widget>[
               Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: const LinearGradient(colors: <Color>[Color(0xFFF9BB3C), kTandyOrange])),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    colors: <Color>[Color(0xFFF9BB3C), kTandyOrange],
+                  ),
+                ),
                 child: const Icon(Icons.near_me, size: 17, color: Colors.white),
               ),
               const SizedBox(width: 12),
@@ -199,16 +315,39 @@ class _SidebarChatButton extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Chat', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF7C3910))),
-                    Text('Talk with Tandy now', style: TextStyle(fontSize: 12, color: Color(0xFFB87840))),
+                    Text(
+                      'Chat',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF7C3910),
+                      ),
+                    ),
+                    Text(
+                      'Talk with Tandy now',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFB87840)),
+                    ),
                   ],
                 ),
               ),
               if (messageCount > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), color: kTandyOrange),
-                  child: Text('$messageCount', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: kTandyOrange,
+                  ),
+                  child: Text(
+                    '$messageCount',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -219,7 +358,13 @@ class _SidebarChatButton extends StatelessWidget {
 }
 
 class _SidebarFeature extends StatelessWidget {
-  const _SidebarFeature({required this.icon, required this.label, required this.sub, required this.color, required this.onTap});
+  const _SidebarFeature({
+    required this.icon,
+    required this.label,
+    required this.sub,
+    required this.color,
+    required this.onTap,
+  });
   final IconData icon;
   final String label;
   final String sub;
@@ -243,8 +388,12 @@ class _SidebarFeature extends StatelessWidget {
           child: Row(
             children: <Widget>[
               Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: color),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: color,
+                ),
                 child: Icon(icon, size: 17, color: Colors.white),
               ),
               const SizedBox(width: 12),
@@ -252,8 +401,22 @@ class _SidebarFeature extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(label, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Color(0xFF1F2937))),
-                    Text(sub, style: const TextStyle(fontSize: 11.5, color: Color(0xFF8C8070)), overflow: TextOverflow.ellipsis),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    Text(
+                      sub,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF8C8070),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),

@@ -16,13 +16,14 @@ abstract final class AppRoutes {
   static const String signUp = '/sign-up';
   static const String readyToVerify = '/ready-to-verify';
   static const String idScanner = '/id-scanner';
-  static const String rateLimit = '/rate-limit';
-  static const String duplicateId = '/duplicate-id';
 
   // ── Onboarding (auth required, incomplete profile) ──────────────────
   static const String profileSetup = '/profile-setup';
   static const String photoSetup = '/photo-setup';
   static const String notificationPermission = '/notification-permission';
+
+  // ── Post-onboarding celebration (auth required; non-gating) ─────────
+  static const String welcome = '/welcome';
 
   // ── App shell (authenticated, profile complete) ─────────────────────
   static const String home = '/';
@@ -40,8 +41,11 @@ abstract final class AppRoutes {
 
   static String call(String roomName) => '/call?room=$roomName';
 
-  static String discoverProfile(String userId) =>
-      '/discover/profile/$userId';
+  /// Phase 5 debug-only test screen for v2 calls. Not user-facing —
+  /// accessed via a hidden gesture on the profile screen.
+  static const String debugV2Call = '/debug/v2-call';
+
+  static String discoverProfile(String userId) => '/discover/profile/$userId';
 
   static const String discoverFilters = '/discover/filters';
 
@@ -55,7 +59,6 @@ abstract final class AppRoutes {
   static const String profileSettingsNotifications =
       '/profile/settings/notifications';
   static const String profileSettingsPrivacy = '/profile/settings/privacy';
-  static const String profileSettingsSecurity = '/profile/settings/security';
   static const String profileSettingsDiscovery = '/profile/settings/discovery';
 
   static String userProfile(String userId) => '/user/$userId';

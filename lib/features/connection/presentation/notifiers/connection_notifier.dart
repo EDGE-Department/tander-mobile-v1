@@ -22,8 +22,8 @@ import 'package:tander_flutter_v3/features/discover/presentation/notifiers/disco
 
 final connectionNotifierProvider =
     NotifierProvider<ConnectionNotifier, ConnectionState>(
-  ConnectionNotifier.new,
-);
+      ConnectionNotifier.new,
+    );
 
 // ── Notifier ────────────────────────────────────────────────────────────
 
@@ -124,7 +124,8 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     final connectedResult = results.$3;
 
     // If any of the three fails, surface the first error.
-    final firstFailure = incomingResult.exceptionOrNull ??
+    final firstFailure =
+        incomingResult.exceptionOrNull ??
         sentResult.exceptionOrNull ??
         connectedResult.exceptionOrNull;
 
@@ -164,8 +165,7 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     _mutatingConnectionId = connectionId;
     _removeFromIncoming(connectionId);
 
-    final acceptResult =
-        await _repository.acceptRequest(matchId: connectionId);
+    final acceptResult = await _repository.acceptRequest(matchId: connectionId);
 
     _mutatingConnectionId = null;
 
@@ -191,8 +191,9 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     _mutatingConnectionId = connectionId;
     _removeFromIncoming(connectionId);
 
-    final declineResult =
-        await _repository.declineRequest(matchId: connectionId);
+    final declineResult = await _repository.declineRequest(
+      matchId: connectionId,
+    );
 
     _mutatingConnectionId = null;
 
@@ -216,8 +217,7 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     _mutatingConnectionId = connectionId;
     _removeFromSent(connectionId);
 
-    final cancelResult =
-        await _repository.cancelRequest(matchId: connectionId);
+    final cancelResult = await _repository.cancelRequest(matchId: connectionId);
 
     _mutatingConnectionId = null;
 
@@ -241,8 +241,9 @@ final class ConnectionNotifier extends Notifier<ConnectionState> {
     _mutatingConnectionId = connectionId;
     _removeFromFriends(connectionId);
 
-    final removeResult =
-        await _repository.removeConnection(matchId: connectionId);
+    final removeResult = await _repository.removeConnection(
+      matchId: connectionId,
+    );
 
     _mutatingConnectionId = null;
 

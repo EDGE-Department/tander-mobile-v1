@@ -58,8 +58,7 @@ final class CommunityPostLoaded extends CommunityPostState {
       isLoadingMoreComments:
           isLoadingMoreComments ?? this.isLoadingMoreComments,
       isSendingComment: isSendingComment ?? this.isSendingComment,
-      replyTarget:
-          clearReplyTarget ? null : (replyTarget ?? this.replyTarget),
+      replyTarget: clearReplyTarget ? null : (replyTarget ?? this.replyTarget),
       expandedReplies: expandedReplies ?? this.expandedReplies,
     );
   }

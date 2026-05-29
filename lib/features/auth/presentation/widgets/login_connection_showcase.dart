@@ -15,11 +15,7 @@ class ConnectionShowcase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Column(
-      children: [
-        _ConnectionCard(),
-        SizedBox(height: 16),
-        _TestimonialCard(),
-      ],
+      children: [_ConnectionCard(), SizedBox(height: 16), _TestimonialCard()],
     );
   }
 }
@@ -47,25 +43,34 @@ const _profiles = <_ProfileData>[
   _ProfileData('Perla', 65, 'Cavite', [Color(0xF2F0648C), Color(0xF2C83C64)]),
   // Green: rgba(60,200,100,0.95) -> rgba(30,160,70,0.95)
   _ProfileData('Domingo', 69, 'Taguig', [Color(0xF23CC864), Color(0xF21EA046)]),
-  _ProfileData('Celia', 63, 'Paranaque', [Color(0xFFEAB308), Color(0xFFFACC15)]),
-  _ProfileData('Vicente', 72, 'Batangas', [Color(0xFF06B6D4), Color(0xFF22D3EE)]),
+  _ProfileData('Celia', 63, 'Paranaque', [
+    Color(0xFFEAB308),
+    Color(0xFFFACC15),
+  ]),
+  _ProfileData('Vicente', 72, 'Batangas', [
+    Color(0xFF06B6D4),
+    Color(0xFF22D3EE),
+  ]),
 ];
 
 const _testimonials = <({String quote, String author, String location})>[
   (
-    quote: 'I found a true companion here. We share meals, stories, '
+    quote:
+        'I found a true companion here. We share meals, stories, '
         'and morning walks every day.',
     author: 'Maricel C.',
     location: 'Quezon City',
   ),
   (
-    quote: 'Tander gave me a second chance at friendship. '
+    quote:
+        'Tander gave me a second chance at friendship. '
         'I feel young again at 71.',
     author: 'Ernesto V.',
     location: 'Manila',
   ),
   (
-    quote: 'My children were happy when I joined. '
+    quote:
+        'My children were happy when I joined. '
         'Now I have lunch dates every week!',
     author: 'Perla R.',
     location: 'Cavite',
@@ -107,7 +112,8 @@ class _ConnectionCardState extends State<_ConnectionCard>
 
   void _pickRandomPair() {
     _leftIndex = _random.nextInt(_profiles.length);
-    _rightIndex = (_leftIndex + 1 + _random.nextInt(_profiles.length - 1)) %
+    _rightIndex =
+        (_leftIndex + 1 + _random.nextInt(_profiles.length - 1)) %
         _profiles.length;
   }
 
@@ -163,7 +169,7 @@ class _ConnectionCardState extends State<_ConnectionCard>
               Text(
                 _isConnected ? '\u2713 connected' : 'matching...',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: _isConnected
                       ? const Color(0xFF34D399)
@@ -183,7 +189,7 @@ class _ConnectionCardState extends State<_ConnectionCard>
         Text(
           'NEW CONNECTION',
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 2.2,
             color: Colors.white.withValues(alpha: 0.60),
@@ -193,7 +199,7 @@ class _ConnectionCardState extends State<_ConnectionCard>
         Text(
           'just now',
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.white.withValues(alpha: 0.55),
           ),
@@ -205,9 +211,7 @@ class _ConnectionCardState extends State<_ConnectionCard>
   Widget _buildAvatarRow() {
     return Row(
       children: [
-        Expanded(
-          child: _ProfileAvatar(profile: _profiles[_leftIndex]),
-        ),
+        Expanded(child: _ProfileAvatar(profile: _profiles[_leftIndex])),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: AnimatedSwitcher(
@@ -227,9 +231,7 @@ class _ConnectionCardState extends State<_ConnectionCard>
                   ),
           ),
         ),
-        Expanded(
-          child: _ProfileAvatar(profile: _profiles[_rightIndex]),
-        ),
+        Expanded(child: _ProfileAvatar(profile: _profiles[_rightIndex])),
       ],
     );
   }
@@ -262,7 +264,7 @@ class _ProfileAvatar extends StatelessWidget {
         Text(
           '${profile.name}, ${profile.age}',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             color: Colors.white.withValues(alpha: 0.80),
           ),
@@ -270,7 +272,7 @@ class _ProfileAvatar extends StatelessWidget {
         Text(
           profile.city,
           style: TextStyle(
-            fontSize: 9,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.white.withValues(alpha: 0.45),
           ),
@@ -283,10 +285,7 @@ class _ProfileAvatar extends StatelessWidget {
 // ── Shimmer Progress Bar ────────────────────────────────────────────
 
 class _ShimmerProgressBar extends StatelessWidget {
-  const _ShimmerProgressBar({
-    required this.progress,
-    required this.isComplete,
-  });
+  const _ShimmerProgressBar({required this.progress, required this.isComplete});
   final double progress;
   final bool isComplete;
 
@@ -334,15 +333,12 @@ class _TestimonialCardState extends State<_TestimonialCard> {
   @override
   void initState() {
     super.initState();
-    _rotationTimer = Timer.periodic(
-      const Duration(milliseconds: 7600),
-      (_) {
-        if (!mounted) return;
-        setState(() {
-          _currentIndex = (_currentIndex + 1) % _testimonials.length;
-        });
-      },
-    );
+    _rotationTimer = Timer.periodic(const Duration(milliseconds: 7600), (_) {
+      if (!mounted) return;
+      setState(() {
+        _currentIndex = (_currentIndex + 1) % _testimonials.length;
+      });
+    });
   }
 
   @override
@@ -361,7 +357,11 @@ class _TestimonialCardState extends State<_TestimonialCard> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
         boxShadow: const [
-          BoxShadow(color: Color(0x14000000), blurRadius: 20, offset: Offset(0, 8)),
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
         ],
       ),
       clipBehavior: Clip.hardEdge,
@@ -372,10 +372,7 @@ class _TestimonialCardState extends State<_TestimonialCard> {
         layoutBuilder: (currentChild, previousChildren) {
           return Stack(
             alignment: Alignment.topLeft,
-            children: [
-              ...previousChildren,
-              if (currentChild != null) currentChild,
-            ],
+            children: [...previousChildren, ?currentChild],
           );
         },
         transitionBuilder: (child, animation) {
@@ -433,7 +430,7 @@ class _TestimonialContent extends StatelessWidget {
                   Text(
                     '${testimonial.author} \u00B7 ${testimonial.location}',
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF374151),
                     ),
@@ -443,7 +440,7 @@ class _TestimonialContent extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Member since 2024',
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
                   ),
                 ],
               ),

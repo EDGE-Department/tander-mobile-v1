@@ -13,10 +13,7 @@ part 'auth_contracts.g.dart';
 
 @JsonSerializable()
 class LoginRequestDto {
-  const LoginRequestDto({
-    required this.identifier,
-    required this.password,
-  });
+  const LoginRequestDto({required this.identifier, required this.password});
 
   factory LoginRequestDto.fromJson(Map<String, Object?> json) =>
       _$LoginRequestDtoFromJson(json);
@@ -61,22 +58,6 @@ class LoginResponseDataDto {
   Map<String, Object?> toJson() => _$LoginResponseDataDtoToJson(this);
 }
 
-@JsonSerializable()
-class LoginResponseDto {
-  const LoginResponseDto({
-    required this.success,
-    required this.data,
-  });
-
-  factory LoginResponseDto.fromJson(Map<String, Object?> json) =>
-      _$LoginResponseDtoFromJson(json);
-
-  final bool success;
-  final LoginResponseDataDto data;
-
-  Map<String, Object?> toJson() => _$LoginResponseDtoToJson(this);
-}
-
 // ---------------------------------------------------------------------------
 // Register
 // ---------------------------------------------------------------------------
@@ -97,9 +78,9 @@ class RegisterRequestDto {
     this.consentDataPrivacy,
     this.consentVersion,
   }) : assert(
-          email != null || phone != null,
-          'Either email or phone must be provided',
-        );
+         email != null || phone != null,
+         'Either email or phone must be provided',
+       );
 
   factory RegisterRequestDto.fromJson(Map<String, Object?> json) =>
       _$RegisterRequestDtoFromJson(json);
@@ -142,10 +123,7 @@ class RegisterResponseDataDto {
 
 @JsonSerializable()
 class RegisterResponseDto {
-  const RegisterResponseDto({
-    required this.success,
-    required this.data,
-  });
+  const RegisterResponseDto({required this.success, required this.data});
 
   factory RegisterResponseDto.fromJson(Map<String, Object?> json) =>
       _$RegisterResponseDtoFromJson(json);
@@ -154,47 +132,6 @@ class RegisterResponseDto {
   final RegisterResponseDataDto data;
 
   Map<String, Object?> toJson() => _$RegisterResponseDtoToJson(this);
-}
-
-// ---------------------------------------------------------------------------
-// OTP
-// ---------------------------------------------------------------------------
-
-@JsonSerializable()
-class SendOtpRequestDto {
-  const SendOtpRequestDto({
-    required this.contact,
-    required this.type,
-  });
-
-  factory SendOtpRequestDto.fromJson(Map<String, Object?> json) =>
-      _$SendOtpRequestDtoFromJson(json);
-
-  final String contact;
-
-  /// 'EMAIL' or 'PHONE'
-  final String type;
-
-  Map<String, Object?> toJson() => _$SendOtpRequestDtoToJson(this);
-}
-
-@JsonSerializable()
-class VerifyRegistrationOtpRequestDto {
-  const VerifyRegistrationOtpRequestDto({
-    required this.contact,
-    required this.otp,
-  });
-
-  factory VerifyRegistrationOtpRequestDto.fromJson(
-    Map<String, Object?> json,
-  ) =>
-      _$VerifyRegistrationOtpRequestDtoFromJson(json);
-
-  final String contact;
-  final String otp;
-
-  Map<String, Object?> toJson() =>
-      _$VerifyRegistrationOtpRequestDtoToJson(this);
 }
 
 // ---------------------------------------------------------------------------
@@ -238,16 +175,13 @@ class VerifyResetOtpRequestDto {
 class VerifyResetOtpResponseDataDto {
   const VerifyResetOtpResponseDataDto({required this.resetToken});
 
-  factory VerifyResetOtpResponseDataDto.fromJson(
-    Map<String, Object?> json,
-  ) =>
+  factory VerifyResetOtpResponseDataDto.fromJson(Map<String, Object?> json) =>
       _$VerifyResetOtpResponseDataDtoFromJson(json);
 
   /// One-time UUID token, valid for 5 minutes.
   final String resetToken;
 
-  Map<String, Object?> toJson() =>
-      _$VerifyResetOtpResponseDataDtoToJson(this);
+  Map<String, Object?> toJson() => _$VerifyResetOtpResponseDataDtoToJson(this);
 }
 
 @JsonSerializable()
@@ -315,46 +249,12 @@ class ResendVerificationRequestDto {
 
   final String email;
 
-  Map<String, Object?> toJson() =>
-      _$ResendVerificationRequestDtoToJson(this);
-}
-
-// ---------------------------------------------------------------------------
-// ID verification
-// ---------------------------------------------------------------------------
-
-@JsonSerializable()
-class IdVerificationRequestDto {
-  const IdVerificationRequestDto({
-    required this.idType,
-    required this.idNumber,
-  });
-
-  factory IdVerificationRequestDto.fromJson(Map<String, Object?> json) =>
-      _$IdVerificationRequestDtoFromJson(json);
-
-  final String idType;
-  final String idNumber;
-
-  Map<String, Object?> toJson() => _$IdVerificationRequestDtoToJson(this);
+  Map<String, Object?> toJson() => _$ResendVerificationRequestDtoToJson(this);
 }
 
 // ---------------------------------------------------------------------------
 // Generic responses
 // ---------------------------------------------------------------------------
-
-@JsonSerializable()
-class CheckAvailabilityResponseDto {
-  const CheckAvailabilityResponseDto({required this.available});
-
-  factory CheckAvailabilityResponseDto.fromJson(Map<String, Object?> json) =>
-      _$CheckAvailabilityResponseDtoFromJson(json);
-
-  final bool available;
-
-  Map<String, Object?> toJson() =>
-      _$CheckAvailabilityResponseDtoToJson(this);
-}
 
 @JsonSerializable()
 class ApiSuccessResponseDto {

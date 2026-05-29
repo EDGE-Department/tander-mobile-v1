@@ -89,11 +89,7 @@ class EmptyState extends StatelessWidget {
   }
 
   Widget _buildTitle() {
-    return Text(
-      title,
-      style: AppTypography.h3,
-      textAlign: TextAlign.center,
-    );
+    return Text(title, style: AppTypography.h3, textAlign: TextAlign.center);
   }
 
   Widget _buildDescription() {

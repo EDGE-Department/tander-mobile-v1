@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 
 /// Blocking dialog when user tries to register without agreeing to
 /// Terms & Conditions and Data Privacy Policy.
@@ -54,7 +54,7 @@ class AgreementRequiredDialog extends StatelessWidget {
                     Container(
                       width: iconSize,
                       height: iconSize,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: [
@@ -161,8 +161,11 @@ class AgreementRequiredDialog extends StatelessWidget {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  PhosphorIcon(PhosphorIconsDuotone.info,
-                      size: 14, color: Color(0xFF6B7280)),
+                  PhosphorIcon(
+                    PhosphorIconsDuotone.info,
+                    size: 14,
+                    color: Color(0xFF6B7280),
+                  ),
                   SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -253,8 +256,11 @@ class _AgreeButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(PhosphorIconsBold.check,
-                        size: 18, color: Colors.white),
+                    Icon(
+                      PhosphorIconsBold.check,
+                      size: 18,
+                      color: Colors.white,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'I Agree to Both',

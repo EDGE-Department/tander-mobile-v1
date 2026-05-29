@@ -12,8 +12,9 @@ import 'package:tander_flutter_v3/features/auth/data/datasources/push_notificati
 ///
 /// Call `ref.read(pushNotificationServiceProvider).initialize()` after the
 /// user authenticates to register the FCM token with the backend.
-final pushNotificationServiceProvider =
-    Provider<PushNotificationService>((ref) {
+final pushNotificationServiceProvider = Provider<PushNotificationService>((
+  ref,
+) {
   return PushNotificationService(
     dioClient: ref.watch(dioClientProvider),
     sharedPreferences: ref.watch(sharedPreferencesProvider),

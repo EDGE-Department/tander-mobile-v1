@@ -3,6 +3,7 @@
 ///
 /// CRITICAL: [targetUserId] MUST be sent as [int] in all STOMP payloads.
 /// The backend parses it as Integer; sending a String will silently fail.
+library;
 
 // ---------------------------------------------------------------------------
 // Call status — sealed for exhaustive switching
@@ -126,10 +127,7 @@ final class CallInfo {
 // ---------------------------------------------------------------------------
 
 final class MediaState {
-  const MediaState({
-    this.isMuted = false,
-    this.isCameraOn = true,
-  });
+  const MediaState({this.isMuted = false, this.isCameraOn = true});
 
   final bool isMuted;
   final bool isCameraOn;
@@ -147,10 +145,7 @@ final class MediaState {
 // ---------------------------------------------------------------------------
 
 final class RemoteMediaState {
-  const RemoteMediaState({
-    this.isAudioMuted = false,
-    this.isVideoOff = false,
-  });
+  const RemoteMediaState({this.isAudioMuted = false, this.isVideoOff = false});
 
   final bool isAudioMuted;
   final bool isVideoOff;
@@ -181,13 +176,9 @@ final class CallRoomResponse {
 }
 
 final class IceServerDto {
-  const IceServerDto({
-    required this.urls,
-    this.username,
-    this.credential,
-  });
+  const IceServerDto({required this.urls, this.username, this.credential});
 
-  /// Backend may send a single String or a List<String>.
+  /// Backend may send a single String or a `List<String>`.
   final List<String> urls;
   final String? username;
   final String? credential;

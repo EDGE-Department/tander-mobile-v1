@@ -15,10 +15,7 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 
 class DiscoverEmptyState extends StatelessWidget {
-  const DiscoverEmptyState({
-    required this.onOpenFilters,
-    super.key,
-  });
+  const DiscoverEmptyState({required this.onOpenFilters, super.key});
 
   final VoidCallback onOpenFilters;
 
@@ -144,10 +141,7 @@ class DiscoverEmptyState extends StatelessWidget {
       child: GestureDetector(
         onTap: onOpenFilters,
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 28,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFFF07020), Color(0xFFE67E22)],
@@ -161,25 +155,20 @@ class DiscoverEmptyState extends StatelessWidget {
               ),
             ],
           ),
-          child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.noScaling,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.tune, size: 18, color: AppColors.textInverse),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
-                  'Adjust filters',
-                  style: AppTypography.label.copyWith(
-                    color: AppColors.textInverse,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.tune, size: 18, color: AppColors.textInverse),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                'Adjust filters',
+                style: AppTypography.label.copyWith(
+                  color: AppColors.textInverse,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -245,10 +234,7 @@ class _PulsingCircleState extends State<_PulsingCircle>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Opacity(
-          opacity: 0.6 + 0.4 * _controller.value,
-          child: child,
-        );
+        return Opacity(opacity: 0.6 + 0.4 * _controller.value, child: child);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -283,27 +269,22 @@ class _SecondaryPill extends StatelessWidget {
       label: label,
       child: GestureDetector(
         onTap: onTap,
-        child: MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.noScaling,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 40),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 10,
           ),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 40),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: AppRadius.borderFull,
-              border: Border.all(color: borderColor),
-            ),
-            child: Text(
-              label,
-              style: AppTypography.bodySm.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-              ),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: AppRadius.borderFull,
+            border: Border.all(color: borderColor),
+          ),
+          child: Text(
+            label,
+            style: AppTypography.bodySm.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

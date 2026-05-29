@@ -18,19 +18,22 @@ final class CallSignalHandler {
     required Ref ref,
     required Future<void> Function(String roomName, String sdp) onProcessOffer,
     required Future<void> Function(String sdp) onProcessAnswer,
-    required void Function(String reason, CallEndReason endReason,
-            [String? errorMessage])
-        onTerminate,
+    required void Function(
+      String reason,
+      CallEndReason endReason, [
+      String? errorMessage,
+    ])
+    onTerminate,
     required Future<void> Function() onCleanup,
     required void Function() onScheduleIdleReset,
     required void Function() onStartDurationTimer,
-  })  : _ref = ref,
-        _onProcessOffer = onProcessOffer,
-        _onProcessAnswer = onProcessAnswer,
-        _onTerminate = onTerminate,
-        _onCleanup = onCleanup,
-        _onScheduleIdleReset = onScheduleIdleReset,
-        _onStartDurationTimer = onStartDurationTimer;
+  }) : _ref = ref,
+       _onProcessOffer = onProcessOffer,
+       _onProcessAnswer = onProcessAnswer,
+       _onTerminate = onTerminate,
+       _onCleanup = onCleanup,
+       _onScheduleIdleReset = onScheduleIdleReset,
+       _onStartDurationTimer = onStartDurationTimer;
 
   final Ref _ref;
   final Future<void> Function(String roomName, String sdp) _onProcessOffer;
@@ -48,8 +51,7 @@ final class CallSignalHandler {
     switch (event) {
       case OfferEvent(:final roomName, :final sdp):
         if (callRefs.peer == null || !callRefs.peer!.isAlive) {
-          callRefs.pendingOffer =
-              BufferedOffer(roomName: roomName, sdp: sdp);
+          callRefs.pendingOffer = BufferedOffer(roomName: roomName, sdp: sdp);
           return;
         }
         unawaited(_onProcessOffer(roomName, sdp));
@@ -99,15 +101,20 @@ final class CallSignalHandler {
           final freshStatus = _ref.read(callNotifierProvider).status;
           if (freshStatus is CallConnecting) {
             _onTerminate(
-                'timeout', CallEndReason.timeout, 'Connection timed out');
+              'timeout',
+              CallEndReason.timeout,
+              'Connection timed out',
+            );
           }
         });
 
       case MediaStateEvent(:final audioMuted, :final videoOff):
-        notifier.setRemoteMedia(RemoteMediaState(
-          isAudioMuted: audioMuted ?? false,
-          isVideoOff: videoOff ?? false,
-        ));
+        notifier.setRemoteMedia(
+          RemoteMediaState(
+            isAudioMuted: audioMuted ?? false,
+            isVideoOff: videoOff ?? false,
+          ),
+        );
 
       case CallDeclinedEvent():
         unawaited(_onCleanup());
@@ -125,7 +132,7 @@ final class CallSignalHandler {
 
     switch (iceState) {
       case RTCIceConnectionState.RTCIceConnectionStateConnected ||
-           RTCIceConnectionState.RTCIceConnectionStateCompleted:
+          RTCIceConnectionState.RTCIceConnectionStateCompleted:
         clearCallTimers();
         notifier.setStatus(const CallConnected());
         _onStartDurationTimer();
@@ -152,9 +159,9 @@ final class CallSignalHandler {
         _onScheduleIdleReset();
 
       case RTCIceConnectionState.RTCIceConnectionStateNew ||
-           RTCIceConnectionState.RTCIceConnectionStateChecking ||
-           RTCIceConnectionState.RTCIceConnectionStateClosed ||
-           RTCIceConnectionState.RTCIceConnectionStateCount:
+          RTCIceConnectionState.RTCIceConnectionStateChecking ||
+          RTCIceConnectionState.RTCIceConnectionStateClosed ||
+          RTCIceConnectionState.RTCIceConnectionStateCount:
         break;
     }
   }

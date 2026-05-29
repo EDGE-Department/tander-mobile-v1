@@ -33,6 +33,11 @@ target 'Runner' do
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
+  # Twilio Programmable Video — iOS media layer for v2 calls (parity with the
+  # Android `com.twilio:video-android:7.10.4` dependency). 5.x supports the
+  # iOS 13 deployment target. See TwilioVideoBridge.swift.
+  pod 'TwilioVideo', '~> 5.11'
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -51,8 +56,6 @@ post_install do |installer|
         'PERMISSION_PHOTOS=1',
         'PERMISSION_PHOTOS_ADD_ONLY=1',
         'PERMISSION_NOTIFICATIONS=1',
-        'PERMISSION_LOCATION=1',
-        'PERMISSION_LOCATION_ALWAYS=1',
       ]
     end
   end

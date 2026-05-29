@@ -7,8 +7,9 @@ import 'package:tander_flutter_v3/features/discover/domain/repositories/discover
 
 // ─── Datasource ──────────────────────────────────────────────────────
 
-final discoverRemoteDatasourceProvider =
-    Provider<DiscoverRemoteDatasource>((ref) {
+final discoverRemoteDatasourceProvider = Provider<DiscoverRemoteDatasource>((
+  ref,
+) {
   return DiscoverRemoteDatasource(dioClient: ref.watch(dioClientProvider));
 });
 

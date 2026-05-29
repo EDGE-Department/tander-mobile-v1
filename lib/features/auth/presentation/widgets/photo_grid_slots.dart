@@ -13,19 +13,28 @@ import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 // ---------------------------------------------------------------------------
 
 /// Immutable snapshot of one photo slot in the upload grid.
+///
+/// [id] is a stable, monotonically-increasing identity assigned at add-time.
+/// Upload write-back and removal MUST match on [id] (not positional index),
+/// because removing an earlier slot contracts the list and shifts indices —
+/// which previously stranded a slot mid-upload or wrote the result to the
+/// wrong slot.
 class PhotoSlot {
   const PhotoSlot({
+    required this.id,
     required this.file,
     required this.isUploaded,
     required this.isUploading,
   });
 
+  final int id;
   final File file;
   final bool isUploaded;
   final bool isUploading;
 
   PhotoSlot copyWith({bool? isUploaded, bool? isUploading}) {
     return PhotoSlot(
+      id: id,
       file: file,
       isUploaded: isUploaded ?? this.isUploaded,
       isUploading: isUploading ?? this.isUploading,
@@ -53,7 +62,7 @@ class FilledPhotoSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    final Widget slotStack = ClipRRect(
       borderRadius: AppRadius.borderLg,
       child: Stack(
         fit: StackFit.expand,
@@ -66,18 +75,34 @@ class FilledPhotoSlot extends StatelessWidget {
         ],
       ),
     );
+
+    // While uploading, the overlay carries its own live "Uploading photo"
+    // announcement. Once settled, label the slot as added so screen-reader
+    // users know what each tile holds (the main/profile photo is called out).
+    if (slot.isUploading) {
+      return slotStack;
+    }
+    return Semantics(
+      image: true,
+      label: _isMain ? 'Main photo added' : 'Photo added',
+      child: slotStack,
+    );
   }
 
   Widget _buildUploadingOverlay() {
-    return Container(
-      color: AppColors.overlay,
-      child: const Center(
-        child: SizedBox(
-          width: 28,
-          height: 28,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.textInverse),
+    return Semantics(
+      label: 'Uploading photo',
+      liveRegion: true,
+      child: Container(
+        color: AppColors.overlay,
+        child: const Center(
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.textInverse),
+            ),
           ),
         ),
       ),
@@ -111,7 +136,7 @@ class FilledPhotoSlot extends StatelessWidget {
               style: AppTypography.caption.copyWith(
                 color: AppColors.textInverse,
                 fontWeight: FontWeight.w700,
-                fontSize: 11,
+                fontSize: 13,
               ),
             ),
           ],
@@ -127,7 +152,7 @@ class FilledPhotoSlot extends StatelessWidget {
       child: Container(
         width: 24,
         height: 24,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.success,
           shape: BoxShape.circle,
           boxShadow: AppShadows.warmXs,
@@ -142,22 +167,38 @@ class FilledPhotoSlot extends StatelessWidget {
   }
 
   Widget _buildRemoveButton() {
+    // The visible affordance is a 32px circle, but the HIT AREA must be >=44px
+    // (WCAG 2.2 / elder-friendly). We center the 32px circle inside a 44px
+    // opaque gesture region. The 6px centering inset is offset by positioning
+    // the region 2px from the edge so the visible circle keeps its original
+    // ~8px corner inset.
     return Positioned(
-      top: AppSpacing.xs,
-      right: AppSpacing.xs,
-      child: GestureDetector(
-        onTap: onRemove,
-        child: Container(
-          width: AppSpacing.xl,
-          height: AppSpacing.xl,
-          decoration: const BoxDecoration(
-            color: AppColors.overlay,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.close_rounded,
-            size: 16,
-            color: AppColors.textInverse,
+      top: 2,
+      right: 2,
+      child: Semantics(
+        button: true,
+        label: 'Remove photo',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onRemove,
+          child: SizedBox(
+            width: AppSpacing.touchMinimum,
+            height: AppSpacing.touchMinimum,
+            child: Center(
+              child: Container(
+                width: AppSpacing.xl,
+                height: AppSpacing.xl,
+                decoration: const BoxDecoration(
+                  color: AppColors.overlay,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: AppColors.textInverse,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -170,56 +211,56 @@ class FilledPhotoSlot extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class EmptyPhotoSlot extends StatelessWidget {
-  const EmptyPhotoSlot({
-    required this.isFirst,
-    required this.onTap,
-    super.key,
-  });
+  const EmptyPhotoSlot({required this.isFirst, required this.onTap, super.key});
 
   final bool isFirst;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isFirst ? AppColors.primaryLight : AppColors.subtle,
-          borderRadius: AppRadius.borderLg,
-          border: Border.all(
-            color: isFirst
-                ? AppColors.primary.withValues(alpha: 0.5)
-                : AppColors.border,
-            width: 1.5,
-            strokeAlign: BorderSide.strokeAlignInside,
+    return Semantics(
+      button: true,
+      label: isFirst ? 'Add main photo' : 'Add photo',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isFirst ? AppColors.primaryLight : AppColors.subtle,
+            borderRadius: AppRadius.borderLg,
+            border: Border.all(
+              color: isFirst
+                  ? AppColors.primary.withValues(alpha: 0.5)
+                  : AppColors.border,
+              width: 1.5,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isFirst ? AppColors.primary : AppColors.border,
-                borderRadius: AppRadius.borderMd,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isFirst ? AppColors.primary : AppColors.border,
+                  borderRadius: AppRadius.borderMd,
+                ),
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 24,
+                  color: isFirst ? AppColors.textInverse : AppColors.textMuted,
+                ),
               ),
-              child: Icon(
-                Icons.add_rounded,
-                size: 24,
-                color: isFirst ? AppColors.textInverse : AppColors.textMuted,
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                isFirst ? 'Main photo' : 'Add Photo',
+                style: AppTypography.caption.copyWith(
+                  color: isFirst ? AppColors.primary : AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              isFirst ? 'Main photo' : 'Add Photo',
-              style: AppTypography.caption.copyWith(
-                color: isFirst ? AppColors.primary : AppColors.textMuted,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -11,11 +11,10 @@ import 'package:tander_flutter_v3/features/community/domain/repositories/communi
 
 // ─── Datasource ─────────────────────────────────────────────────────────
 
-final communityRemoteDatasourceProvider =
-    Provider<CommunityRemoteDatasource>((ref) {
-  return CommunityRemoteDatasource(
-    dioClient: ref.watch(dioClientProvider),
-  );
+final communityRemoteDatasourceProvider = Provider<CommunityRemoteDatasource>((
+  ref,
+) {
+  return CommunityRemoteDatasource(dioClient: ref.watch(dioClientProvider));
 });
 
 // ─── Repository ─────────────────────────────────────────────────────────

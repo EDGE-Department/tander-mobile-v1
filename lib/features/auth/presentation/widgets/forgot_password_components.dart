@@ -28,32 +28,36 @@ class BackToSignInPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: parchmentBg,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: primaryBorderSubtle),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.arrow_back,
-              size: 15,
-              color: AppColors.textMuted,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              'Back to sign in',
-              style: AppTypography.bodySm.copyWith(
-                fontWeight: FontWeight.w600,
+    return Semantics(
+      label: 'Back to sign in',
+      button: true,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: parchmentBg,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: primaryBorderSubtle),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.arrow_back,
+                size: 15,
                 color: AppColors.textMuted,
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                'Back to sign in',
+                style: AppTypography.bodySm.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -68,34 +72,27 @@ class ForgotPasswordBrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: const Color(0x38E67E22)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.lock,
-              size: 12,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0x38E67E22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.lock, size: 12, color: AppColors.primaryAccessible),
+          const SizedBox(width: 6),
+          Text(
+            'Secure Recovery',
+            style: AppTypography.caption.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
               color: AppColors.primaryAccessible,
             ),
-            const SizedBox(width: 6),
-            Text(
-              'Secure Recovery',
-              style: AppTypography.caption.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primaryAccessible,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -213,7 +210,7 @@ class _StepNode extends StatelessWidget {
             child: Text(
               '$number',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: isActive ? AppColors.primary : AppColors.textDisabled,
               ),
@@ -224,7 +221,7 @@ class _StepNode extends StatelessWidget {
         Text(
           StepIndicator._labels[number - 1],
           style: TextStyle(
-            fontSize: 9,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.72,
             color: isActive ? AppColors.primary : AppColors.textDisabled,
@@ -250,32 +247,29 @@ class MethodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: parchmentBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: primaryBorderSubtle, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            _MethodTab(
-              label: 'Email',
-              icon: Icons.email_outlined,
-              isActive: selectedMethod == IdentifierMethod.email,
-              onTap: () => onMethodChanged(IdentifierMethod.email),
-            ),
-            const SizedBox(width: 4),
-            _MethodTab(
-              label: 'Phone Number',
-              icon: Icons.phone,
-              isActive: selectedMethod == IdentifierMethod.phone,
-              onTap: () => onMethodChanged(IdentifierMethod.phone),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: parchmentBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: primaryBorderSubtle, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          _MethodTab(
+            label: 'Email',
+            icon: Icons.email_outlined,
+            isActive: selectedMethod == IdentifierMethod.email,
+            onTap: () => onMethodChanged(IdentifierMethod.email),
+          ),
+          const SizedBox(width: 4),
+          _MethodTab(
+            label: 'Phone Number',
+            icon: Icons.phone,
+            isActive: selectedMethod == IdentifierMethod.phone,
+            onTap: () => onMethodChanged(IdentifierMethod.phone),
+          ),
+        ],
       ),
     );
   }

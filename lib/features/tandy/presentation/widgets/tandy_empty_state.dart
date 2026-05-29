@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_constants.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_mood_checkin.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_quick_actions.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_welcome_card.dart';
@@ -63,7 +62,8 @@ class TandyEmptyState extends StatelessWidget {
                 const SizedBox(height: 20),
                 TandyMoodCheckin(onMoodSelect: onMoodSelect!),
               ],
-              if (onBreathingTap != null && onMeditationTap != null) ...<Widget>[
+              if (onBreathingTap != null &&
+                  onMeditationTap != null) ...<Widget>[
                 const SizedBox(height: 20),
                 TandyQuickActions(
                   onBreathingTap: onBreathingTap!,

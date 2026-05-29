@@ -82,12 +82,8 @@ class TanderConfirmDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: AppColors.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.borderXl,
-      ),
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-      ),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.borderXl),
+      insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -98,9 +94,7 @@ class TanderConfirmDialog extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               message,
-              style: AppTypography.body.copyWith(
-                color: AppColors.textMuted,
-              ),
+              style: AppTypography.body.copyWith(color: AppColors.textMuted),
             ),
             const SizedBox(height: AppSpacing.lg),
             _ActionButtons(

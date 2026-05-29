@@ -43,8 +43,10 @@ class PhotoGrid extends StatelessWidget {
     final featuredPhoto = gallery.first;
     final railPhotos = gallery.skip(1).take(2).toList(growable: false);
     final extraPhotos = gallery.skip(3).toList(growable: false);
-    final int remainingSlots =
-        (maxPhotoCount - gallery.length).clamp(0, maxPhotoCount) as int;
+    final int remainingSlots = (maxPhotoCount - gallery.length).clamp(
+      0,
+      maxPhotoCount,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -219,7 +221,7 @@ class _GalleryTile extends StatelessWidget {
                   Image.network(
                     resolvePhotoUrl(url) ?? url,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       color: AppColors.subtle,
                       alignment: Alignment.center,
                       child: const Icon(

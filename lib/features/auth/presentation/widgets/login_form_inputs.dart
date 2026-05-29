@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
-import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 
@@ -210,8 +209,8 @@ class LoginPasswordField extends StatelessWidget {
                 vertical: 16,
               ),
               constraints: const BoxConstraints(minHeight: 56),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 24, right: 12),
+              prefixIcon: const Padding(
+                padding: EdgeInsets.only(left: 24, right: 12),
                 child: Icon(
                   PhosphorIconsDuotone.lockSimple,
                   size: 24,
@@ -257,70 +256,6 @@ class LoginPasswordField extends StatelessWidget {
       return 'Please enter your password';
     }
     return null;
-  }
-}
-
-// ── Remember me checkbox ────────────────────────────────────────────
-
-/// Animated checkbox with spring checkmark matching the web's
-/// remember-me toggle. Orange fill when checked, bordered when not.
-class LoginRememberMeCheckbox extends StatelessWidget {
-  const LoginRememberMeCheckbox({
-    required this.isChecked,
-    required this.onToggle,
-    super.key,
-  });
-
-  final bool isChecked;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onToggle,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        // web: px-0.5
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Row(
-          children: [
-            // web: w-[18px] h-[18px] rounded-[4px] border-[1.5px]
-            AnimatedContainer(
-              duration: AppDurations.fast,
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                color: isChecked ? AppColors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color: isChecked
-                      ? AppColors.primary
-                      : const Color(0x40B47832), // rgba(180,120,50,0.25)
-                  width: 1.5,
-                ),
-              ),
-              child: isChecked
-                  ? const Center(
-                      child: Icon(Icons.check, size: 12, color: Colors.white),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 10), // web: gap-2.5
-            Flexible(
-              child: Text(
-                '',
-                style: AppTypography.body.copyWith(
-                  fontSize: 13.5, // web: text-[13.5px]
-                  color: AppColors.textBody,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

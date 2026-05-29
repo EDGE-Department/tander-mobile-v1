@@ -103,7 +103,7 @@ class SectionLabel extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: AppTypography.caption.copyWith(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
               color: AppColors.textMuted,
