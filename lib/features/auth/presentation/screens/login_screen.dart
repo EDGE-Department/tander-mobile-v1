@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tander_flutter_v3/core/auth/session_manager.dart';
 import 'package:tander_flutter_v3/core/theme/app_curves.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
+import 'package:tander_flutter_v3/core/utils/device_utils.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/account_suspended_dialog.dart';
@@ -174,8 +175,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final headerHeight = screenSize.height * 0.22;
 
     final isLandscapeLayout = screenSize.width >= 1024;
+    // Narrow tablets (shortestSide > 600dp, e.g. Galaxy Tab S9 FE at ~753dp
+    // wide in portrait) sit just under the raw 768dp cutoff and would fall
+    // through to the phone layout. Add DeviceUtils.isTablet so they get the
+    // proper two-panel tablet login that fills the screen — consistent with
+    // wider tablets and the app's shortestSide-based tablet detection.
     final isTabletPortraitLayout =
-        screenSize.width >= 768 && screenSize.width < 1024;
+        !isLandscapeLayout &&
+        (screenSize.width >= 768 || DeviceUtils.isTablet(context));
     final formCardLayout = isLandscapeLayout
         ? LoginFormCardLayout.desktop
         : isTabletPortraitLayout
@@ -249,6 +256,12 @@ class _PhonePortraitLayout extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
+        // Expand so the gradient + content fill the full viewport. Without this
+        // the only non-positioned child (the scroll view) shrink-wraps to its
+        // content height, collapsing the Stack and leaving the dark window
+        // background exposed as a black band below the form (seen on tall
+        // tablets, e.g. Galaxy Tab S9 FE).
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: IgnorePointer(
