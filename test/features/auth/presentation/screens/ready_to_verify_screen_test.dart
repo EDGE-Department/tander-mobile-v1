@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/ready_to_verify_screen.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_safety_panel.dart';
 
 void main() {
   testWidgets('renders single-column at 320x568 without overflow', (tester) async {
@@ -19,6 +20,16 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const MaterialApp(home: ReadyToVerifyScreen()));
     expect(tester.takeException(), isNull);
+    expect(find.text('Start Verification'), findsOneWidget);
+  });
+
+  testWidgets('renders landscape two-pane at 1280x800 without overflow', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const MaterialApp(home: ReadyToVerifyScreen()));
+    expect(tester.takeException(), isNull);
+    expect(find.byType(VerifySafetyPanel), findsOneWidget);
     expect(find.text('Start Verification'), findsOneWidget);
   });
 }

@@ -53,7 +53,7 @@ class VerifySafetyPanel extends StatelessWidget {
     );
   }
 
-  Widget _trust(IconData icon, String title, String body) {
+  static Widget _trust(IconData icon, String title, String body) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
