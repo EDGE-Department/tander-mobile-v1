@@ -12,6 +12,8 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Start Verification'), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
+    // Phone layout stays lean — no safety content
+    expect(find.text('Trusted'), findsNothing);
   });
 
   testWidgets('renders tablet-portrait at 768x1024 without overflow', (tester) async {
@@ -21,6 +23,8 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: ReadyToVerifyScreen()));
     expect(tester.takeException(), isNull);
     expect(find.text('Start Verification'), findsOneWidget);
+    // Tablet-portrait now shows safety content
+    expect(find.text('Trusted'), findsOneWidget);
   });
 
   testWidgets('renders landscape two-pane at 1280x800 without overflow', (tester) async {

@@ -4,6 +4,7 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/id_scanner_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_bottom_bar.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_hero.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_safety_content.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_safety_panel.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_steps_card.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_tips_card.dart';
@@ -52,10 +53,24 @@ class ReadyToVerifyScreen extends StatelessWidget {
       );
     }
 
+    // Tablet-portrait layout (768–1023 dp wide): wider content + safety content.
+    if (width >= 768) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        body: _SingleColumn(
+          maxWidth: 700,
+          extra: const VerifySafetyContent(),
+          onBack: () => _onBack(context),
+          onStart: () => _onStart(context),
+        ),
+      );
+    }
+
+    // Phone layout (< 768 dp wide): lean single column, no extra content.
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: _SingleColumn(
-        maxWidth: width >= 768 ? 560 : double.infinity,
+        maxWidth: double.infinity,
         onBack: () => _onBack(context),
         onStart: () => _onStart(context),
       ),
@@ -65,11 +80,15 @@ class ReadyToVerifyScreen extends StatelessWidget {
 
 class _SingleColumn extends StatelessWidget {
   const _SingleColumn({
-    required this.maxWidth, required this.onBack, required this.onStart,
+    required this.maxWidth,
+    required this.onBack,
+    required this.onStart,
+    this.extra,
   });
   final double maxWidth;
   final VoidCallback onBack;
   final VoidCallback onStart;
+  final Widget? extra;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +106,7 @@ class _SingleColumn extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Layout-correct overlap:
                     // • SizedBox is (heroHeight - overlapPx) tall — this is the
@@ -106,13 +126,17 @@ class _SingleColumn extends StatelessWidget {
                         child: VerifyHero(height: heroHeight, onBack: onBack),
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                       child: Column(
                         children: [
-                          VerifyStepsCard(),
-                          SizedBox(height: 12),
-                          VerifyTipsCard(),
+                          const VerifyStepsCard(),
+                          const SizedBox(height: 12),
+                          const VerifyTipsCard(),
+                          if (extra != null) ...[
+                            const SizedBox(height: 24),
+                            extra!,
+                          ],
                         ],
                       ),
                     ),
