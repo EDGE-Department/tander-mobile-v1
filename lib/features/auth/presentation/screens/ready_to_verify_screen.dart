@@ -1,236 +1,143 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/id_scanner_screen.dart';
-import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
-import 'package:tander_flutter_v3/features/auth/presentation/widgets/verification/primary_action_button.dart';
-import 'package:tander_flutter_v3/features/auth/presentation/widgets/verification/verification_step_card.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_bottom_bar.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_hero.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_safety_content.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_safety_panel.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_steps_card.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_tips_card.dart';
 
-/// Ready-to-verify step (unnumbered) — explains the ID-scan flow before
-/// launching the camera. Uses the canonical auth step scaffold so it matches
-/// the rest of the registration cycle.
+/// Ready-to-verify step — hero + overlapping steps card. Forked off the shared
+/// auth scaffold for a bespoke layout; route + nav are unchanged.
 class ReadyToVerifyScreen extends StatelessWidget {
   const ReadyToVerifyScreen({super.key});
 
+  void _onBack(BuildContext context) {
+    if (context.canPop()) context.pop();
+  }
+
+  void _onStart(BuildContext context) {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const IdScannerScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isSmall = MediaQuery.sizeOf(context).height < 700;
+    final width = MediaQuery.sizeOf(context).width;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF20BF68),
-      body: AuthStepScaffoldBody(
-        header: const AuthStepHeader(currentStep: null),
-        parchment: AuthStepParchment(
-          scrollable: false,
-          contentPadding: EdgeInsets.fromLTRB(
-            isSmall ? 16 : 24,
-            8,
-            isSmall ? 16 : 24,
-            16,
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeader(isSmall: isSmall),
-                          SizedBox(height: isSmall ? 24 : 32),
-                          _buildSteps(isSmall: isSmall),
-                          SizedBox(height: isSmall ? 8 : 12),
-                          _buildPhotoTips(isSmall: isSmall),
-                        ],
-                      ),
-                    ),
-                  ),
-                  _buildBottomBar(context, isSmall: isSmall),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader({required bool isSmall}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          Icons.verified_user_rounded,
-          size: isSmall ? 48 : 64,
-          color: const Color(0xFF5BBFB3),
-        ),
-        SizedBox(height: isSmall ? 16 : 24),
-        Text(
-          'Let\'s verify\nyour identity',
-          style: TextStyle(
-            fontSize: isSmall ? 28 : 36,
-            fontWeight: FontWeight.w900,
-            height: 1.1,
-            letterSpacing: -0.5,
-            color: Colors.black87,
-          ),
-        ),
-        SizedBox(height: isSmall ? 12 : 16),
-        Text(
-          'To keep our community safe, we need to make sure you\'re really you.',
-          style: TextStyle(
-            fontSize: isSmall ? 15 : 16,
-            color: Colors.black54,
-            height: 1.4,
-          ),
-        ),
-        SizedBox(height: isSmall ? 8 : 10),
-        Text(
-          'This step is required to finish setting up your account.',
-          style: TextStyle(
-            fontSize: isSmall ? 15 : 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textBody,
-            height: 1.4,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSteps({required bool isSmall}) {
-    return Column(
-      children: [
-        VerificationStepCard(
-          stepNumber: 1,
-          title: 'Scan your ID',
-          description: 'Take a clear photo of your government-issued ID card.',
-          icon: Icons.badge_outlined,
-          isSmallPhone: isSmall,
-        ),
-        VerificationStepCard(
-          stepNumber: 2,
-          title: 'Get approved',
-          description: 'Fast and secure verification process.',
-          icon: Icons.check_circle_outline,
-          isSmallPhone: isSmall,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPhotoTips({required bool isSmall}) {
-    const tips = [
-      'Find good lighting',
-      'Lay your ID flat on a dark surface',
-      'Avoid glare and shadows',
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(isSmall ? 14 : 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF5BBFB3).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.lightbulb_outline,
-                size: 20,
-                color: Color(0xFF3E9B90),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Tips for a clear photo',
-                style: TextStyle(
-                  fontSize: isSmall ? 15 : 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: isSmall ? 8 : 10),
-          for (final tip in tips)
-            Padding(
-              padding: EdgeInsets.only(bottom: isSmall ? 6 : 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 2),
-                    child: Icon(
-                      Icons.check_rounded,
-                      size: 18,
-                      color: Color(0xFF3E9B90),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      tip,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: AppColors.textBody,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomBar(BuildContext context, {required bool isSmall}) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsets.only(top: isSmall ? 8 : 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    // Tablet-landscape two-pane layout (>= 1024 dp wide).
+    if (width >= 1024) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        body: Row(
           children: [
-            const Row(
+            Expanded(
+              flex: 60,
+              child: _SingleColumn(
+                onBack: () => _onBack(context),
+                onStart: () => _onStart(context),
+              ),
+            ),
+            const Expanded(
+              flex: 40,
+              child: ColoredBox(
+                color: Color(0xFFF4F8F4),
+                child: VerifySafetyPanel(),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Tablet-portrait layout (768–1023 dp wide): wider content + safety content.
+    if (width >= 768) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        body: _SingleColumn(
+          extra: const VerifySafetyContent(),
+          onBack: () => _onBack(context),
+          onStart: () => _onStart(context),
+        ),
+      );
+    }
+
+    // Phone layout (< 768 dp wide): lean single column, no extra content.
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      body: _SingleColumn(
+        onBack: () => _onBack(context),
+        onStart: () => _onStart(context),
+      ),
+    );
+  }
+}
+
+class _SingleColumn extends StatelessWidget {
+  const _SingleColumn({
+    required this.onBack,
+    required this.onStart,
+    this.extra,
+  });
+  final VoidCallback onBack;
+  final VoidCallback onStart;
+  final Widget? extra;
+
+  @override
+  Widget build(BuildContext context) {
+    // heroHeight: SafeArea top inset (device notch) + 184px for content at
+    // 1.3× text scale with slack. This value must not be const — it reads the
+    // MediaQuery so it handles notched devices correctly.
+    final heroHeight = MediaQuery.paddingOf(context).top + 184.0;
+    const overlapPx = 24.0;
+
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(
-                  Icons.lock_outline,
-                  size: 20,
-                  color: AppColors.textMuted,
+                // Layout-correct overlap:
+                // • SizedBox is (heroHeight - overlapPx) tall — this is the
+                //   hero's contribution to the column's layout height.
+                // • OverflowBox forces the hero to paint at its full
+                //   heroHeight aligned to the top, so the bottom 24px bleeds
+                //   into the next child's space (not clipped by OverflowBox).
+                // • The steps card is the next Column child, so it paints ON
+                //   TOP of the hero at the seam — correct z-order.
+                // • No Transform.translate → no trailing dead space.
+                SizedBox(
+                  height: heroHeight - overlapPx,
+                  child: OverflowBox(
+                    minHeight: heroHeight,
+                    maxHeight: heroHeight,
+                    alignment: Alignment.topCenter,
+                    child: VerifyHero(height: heroHeight, onBack: onBack),
+                  ),
                 ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Your data is securely encrypted and never shared.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.4,
-                      color: AppColors.textMuted,
-                    ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  child: Column(
+                    children: [
+                      const VerifyStepsCard(),
+                      const SizedBox(height: 12),
+                      const VerifyTipsCard(),
+                      if (extra != null) ...[
+                        const SizedBox(height: 24),
+                        extra!,
+                      ],
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            PrimaryActionButton(
-              label: 'Start Verification',
-              icon: Icons.camera_alt_outlined,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const IdScannerScreen()),
-                );
-              },
-            ),
-          ],
+          ),
         ),
-      ),
+        VerifyBottomBar(onStart: onStart),
+      ],
     );
   }
 }

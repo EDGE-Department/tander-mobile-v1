@@ -191,21 +191,28 @@ class DiscoverGhostCard extends StatelessWidget {
               1,
             )
             ..translateByDouble(0.0, translateY, 0.0, 0.0),
-          child: Opacity(
-            opacity: opacity.clamp(0.0, 1.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.card,
-                borderRadius: BorderRadius.circular(AppRadius.xxl),
-                border: Border.all(color: AppColors.border),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x12000000),
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+          // Opacity is baked into the colors instead of wrapping the card in
+          // an Opacity widget. Opacity forces a save-layer, which Impeller
+          // (Vulkan) on Adreno 6xx mis-composites — contributing to the blank
+          // discover card. Alpha-on-color is visually identical and cheaper.
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.card.withValues(alpha: opacity.clamp(0.0, 1.0)),
+              borderRadius: BorderRadius.circular(AppRadius.xxl),
+              border: Border.all(
+                color: AppColors.border.withValues(
+                  alpha: opacity.clamp(0.0, 1.0),
+                ),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0x12000000).withValues(
+                    alpha: (0x12 / 255) * opacity.clamp(0.0, 1.0),
+                  ),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
           ),
         ),

@@ -6,8 +6,6 @@
 /// `swipe_card_overlay.dart`.
 library;
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
@@ -21,16 +19,12 @@ import 'package:tander_flutter_v3/shared/widgets/tander_avatar.dart';
 
 const double _swipeThresholdPx = 100;
 const double _velocityThresholdPxPerSec = 600;
-const double _maxRotationDeg = 18;
-const double _dragRange = 250;
 const double _stampAppearStart = 25;
 const double _stampAppearEnd = 120;
 const double _dragElastic = 0.18;
 
 const double _snapBackStiffness = 500;
 const double _snapBackDamping = 32;
-const double _entryStiffness = 380;
-const double _entryDamping = 28;
 
 const int _flingDurationMs = 380;
 const int _wiggleDurationMs = 850;
@@ -69,9 +63,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   int _photoIndex = 0;
 
   late AnimationController _snapController;
-  late AnimationController _entryController;
   late AnimationController _wiggleController;
-  late Animation<double> _entryScale;
 
   List<String> get _allPhotos {
     final mainPhoto = widget.candidate.profilePhotoUrl;
@@ -81,8 +73,6 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     ];
   }
 
-  double get _rotationDeg =>
-      (_dragX / _dragRange).clamp(-1.0, 1.0) * _maxRotationDeg;
 
   double get _likeStampOpacity =>
       ((_dragX - _stampAppearStart) / (_stampAppearEnd - _stampAppearStart))
@@ -96,7 +86,6 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initSnapController();
-    _initEntryController();
     _initWiggleController();
     _scheduleHintWiggle();
   }
@@ -106,22 +95,8 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
       ..addListener(_onSnapTick);
   }
 
-  void _initEntryController() {
-    _entryController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _entryScale = Tween<double>(begin: 0.94, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entryController,
-        curve: const _SpringCurve(
-          stiffness: _entryStiffness,
-          damping: _entryDamping,
-        ),
-      ),
-    );
-    _entryController.forward();
-  }
+
+
 
   void _initWiggleController() {
     _wiggleController = AnimationController(
@@ -133,7 +108,6 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   @override
   void dispose() {
     _snapController.dispose();
-    _entryController.dispose();
     _wiggleController.dispose();
     super.dispose();
   }
@@ -260,36 +234,35 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final rotationRad = _rotationDeg * math.pi / 180;
-
-    return AnimatedBuilder(
-      animation: _entryScale,
-      builder: (context, child) => Transform.scale(
-        scale: _entryScale.value,
-        child: Opacity(
-          opacity: _entryScale.value.clamp(0.0, 1.0),
-          child: child,
-        ),
-      ),
-      child: Transform(
-        transform: Matrix4.identity()
-          ..translateByDouble(_dragX, _dragY, 0.0, 0.0)
-          ..rotateZ(rotationRad),
-        alignment: Alignment.center,
-        child: GestureDetector(
-          onPanStart: _onPanStart,
-          onPanUpdate: _onPanUpdate,
-          onPanEnd: _onPanEnd,
-          onTapUp: _onCardTap,
-          child: _cardBody(),
-        ),
+    // Impeller (Vulkan) on Adreno 6xx cannot composite this large card subtree
+    // through an offscreen layer: any rotation/scale Transform, Opacity,
+    // RepaintBoundary or image filter renders the card completely blank. A pure
+    // *translation* Transform paints the child directly at an offset with NO
+    // offscreen layer, so it renders correctly. The swipe is therefore driven
+    // by translation only — the rotation tilt and entry scale are dropped on
+    // this path because they require an offscreen layer Impeller fails to
+    // rasterise. Drag, fling, snap-back, and the LIKE/NOPE stamps all work
+    // (they key off _dragX, not a compositing transform).
+    return Transform.translate(
+      offset: Offset(_dragX, _dragY),
+      child: GestureDetector(
+        onPanStart: _onPanStart,
+        onPanUpdate: _onPanUpdate,
+        onPanEnd: _onPanEnd,
+        onTapUp: _onCardTap,
+        child: _cardBody(),
       ),
     );
   }
 
   Widget _cardBody() {
-    return Container(
-      clipBehavior: Clip.antiAlias,
+    // Shadow on an outer DecoratedBox; rounded corners via an explicit
+    // ClipRRect. The previous Container(clipBehavior + decoration) emits a
+    // ClipPath (BoxDecoration.getClipPath), which Impeller (Vulkan) on Adreno
+    // 6xx fails to rasterise — leaving the whole card blank. ClipRRect uses the
+    // optimised rounded-rect clip (the same one Material uses for the profile
+    // modal, which renders correctly on this device).
+    return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.xxl),
         boxShadow: const [
@@ -300,22 +273,26 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
           ),
         ],
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildPhoto(),
-          SwipePhotoIndicators(
-            photoCount: _allPhotos.length,
-            activeIndex: _photoIndex,
-          ),
-          SwipeLikeStamp(opacity: _likeStampOpacity),
-          SwipeNopeStamp(opacity: _nopeStampOpacity),
-          const SwipeBottomGradient(),
-          SwipeProfileOverlay(
-            candidate: widget.candidate,
-            onViewProfile: widget.onViewProfile,
-          ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildPhoto(),
+            SwipePhotoIndicators(
+              photoCount: _allPhotos.length,
+              activeIndex: _photoIndex,
+            ),
+            SwipeLikeStamp(opacity: _likeStampOpacity),
+            SwipeNopeStamp(opacity: _nopeStampOpacity),
+            const SwipeBottomGradient(),
+            SwipeProfileOverlay(
+              candidate: widget.candidate,
+              onViewProfile: widget.onViewProfile,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -350,19 +327,5 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
         ),
       ),
     );
-  }
-}
-
-/// Custom curve that approximates a spring easing for the entry animation.
-class _SpringCurve extends Curve {
-  const _SpringCurve({required this.stiffness, required this.damping});
-  final double stiffness;
-  final double damping;
-
-  @override
-  double transformInternal(double progress) {
-    final omega = math.sqrt(stiffness);
-    final decay = math.exp(-damping * progress / (2 * omega));
-    return 1 - decay * (1 - progress);
   }
 }
