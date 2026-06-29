@@ -4,6 +4,7 @@ import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/screens/id_scanner_screen.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_bottom_bar.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_hero.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_safety_panel.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_steps_card.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/verify/verify_tips_card.dart';
 
@@ -24,7 +25,33 @@ class ReadyToVerifyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    // Task 6 wires the >=1024 two-pane branch.
+
+    // Tablet-landscape two-pane layout (>= 1024 dp wide).
+    if (width >= 1024) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        body: Row(
+          children: [
+            Expanded(
+              flex: 60,
+              child: _SingleColumn(
+                maxWidth: 560,
+                onBack: () => _onBack(context),
+                onStart: () => _onStart(context),
+              ),
+            ),
+            const Expanded(
+              flex: 40,
+              child: ColoredBox(
+                color: Color(0xFFF4F8F4),
+                child: VerifySafetyPanel(),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: _SingleColumn(
