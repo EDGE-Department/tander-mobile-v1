@@ -48,7 +48,7 @@ class VerifyHero extends StatelessWidget {
                           onTap: onBack,
                           radius: 28,
                           child: Container(
-                            width: 44, height: 44,
+                            width: 48, height: 48,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.24),
                               shape: BoxShape.circle,

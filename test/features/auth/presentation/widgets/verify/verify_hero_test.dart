@@ -9,6 +9,7 @@ void main() {
       home: Scaffold(body: VerifyHero(onBack: () => backTapped = true)),
     ));
     expect(find.text('Tander'), findsOneWidget);
+    expect(find.bySemanticsLabel('Tander logo'), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back_rounded));
     expect(backTapped, isTrue);
