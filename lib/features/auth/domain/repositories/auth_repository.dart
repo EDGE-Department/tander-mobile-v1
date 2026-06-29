@@ -75,7 +75,10 @@ abstract interface class AuthRepository {
   Future<Result<bool>> checkPhoneAvailability({required String phone});
 
   /// Fetches the minimum age requirement from the backend.
-  Future<Result<int>> getMinimumAge();
+  ///
+  /// Resolves to `null` when the minimum is unknown (fetch failed or the
+  /// response was unusable); callers fail open rather than guessing a default.
+  Future<Result<int?>> getMinimumAge();
 
   /// Verifies ID pre-registration with the ID photo.
   ///

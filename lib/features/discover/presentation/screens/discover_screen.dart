@@ -110,7 +110,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   title: 'Discover',
                   subtitle: remainingCount > 0
                       ? '$remainingCount people nearby'
-                      : 'Find your someone special',
+                      : 'Connect with fellow seniors who share your interests.',
                   action: DesktopFilterButton(onTap: _openFiltersSheet),
                 ),
                 Expanded(child: _buildDiscoverContent(discoverState)),
@@ -133,7 +133,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   colors: [Color(0xFF0A7068), Color(0xFF0F9D94)],
                 ),
                 title: 'Community',
-                subtitle: 'Stories from your neighbors',
+                subtitle: 'Stories from fellow seniors',
                 action: DesktopNewPostButton(onTap: _openCreatePostSheet),
               ),
               const Expanded(child: CommunityFeedPanel()),

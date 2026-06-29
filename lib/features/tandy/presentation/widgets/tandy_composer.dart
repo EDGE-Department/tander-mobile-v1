@@ -162,7 +162,9 @@ class _InputRow extends StatelessWidget {
                   decoration: const InputDecoration(
                     hintText: 'Message Tandy...',
                     hintStyle: TextStyle(
-                      color: Color(0xFFADA9A4),
+                      // Darkened from #ADA9A4 (2.18:1) to a warm grey meeting
+                      // WCAG ≥3:1 on the #F8F7F5 composer fill.
+                      color: Color(0xFF6E665C),
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
                     ),

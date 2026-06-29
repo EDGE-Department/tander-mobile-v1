@@ -25,10 +25,13 @@ const List<String> genderOptions = [
 // ---------------------------------------------------------------------------
 
 /// Elder-friendly tappable field that opens [showDatePicker] with a default
-/// year of ~1960 and restricts selection to age 18+.
+/// year of ~1960 and restricts selection to the [minimumAge] floor (sourced
+/// from the backend) so the picker cannot offer dates the eligibility gate
+/// would reject.
 class BirthDatePickerField extends StatelessWidget {
   const BirthDatePickerField({
     required this.selectedDate,
+    required this.minimumAge,
     this.onPicked,
     this.locked = false,
     this.onHelpTapped,
@@ -36,6 +39,12 @@ class BirthDatePickerField extends StatelessWidget {
   });
 
   final DateTime? selectedDate;
+
+  /// Minimum eligible age — drives the picker's upper bound so it cannot offer
+  /// dates the eligibility gate would reject. Sourced from the backend (see
+  /// `minimumAgeProvider`), not a hardcoded constant.
+  final int minimumAge;
+
   final ValueChanged<DateTime>? onPicked;
   final bool locked;
 
@@ -45,8 +54,14 @@ class BirthDatePickerField extends StatelessWidget {
 
   Future<void> _pickDate(BuildContext context) async {
     final now = DateTime.now();
-    final initialDate = selectedDate ?? DateTime(1960, 1, 1);
-    final lastDate = DateTime(now.year - 18, now.month, now.day);
+    final lastDate = DateTime(now.year - minimumAge, now.month, now.day);
+    // Clamp initialDate into [firstDate, lastDate]: a stale pre-fix draft DOB
+    // could post-date lastDate (which now floors at the minimum age), and
+    // showDatePicker asserts when initialDate is after lastDate.
+    final initialDate =
+        (selectedDate != null && !selectedDate!.isAfter(lastDate))
+        ? selectedDate!
+        : DateTime(1960, 1, 1);
 
     final picked = await showDatePicker(
       context: context,
@@ -99,7 +114,9 @@ class BirthDatePickerField extends StatelessWidget {
                     height: AppSpacing.touchMinimum,
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.all(7), // 18 + 14 = 32 visible circle
+                        padding: const EdgeInsets.all(
+                          7,
+                        ), // 18 + 14 = 32 visible circle
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(

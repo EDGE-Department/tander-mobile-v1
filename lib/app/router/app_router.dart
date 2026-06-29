@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tander_flutter_v3/app/router/router_listenable.dart';
@@ -98,18 +98,31 @@ String? _redirect(AuthState authState, String matchedLocation) {
   final isOnOnboardingRoute = _onboardingRoutes.contains(matchedLocation);
 
   return switch (authState) {
-    // Still loading -- stay where you are if on splash or a public route
+    // Still loading -- stay where you are if on splash or a public route.
+    // AuthError is folded in here, NOT treated as a logout. It arises from:
+    // (a) sign-in/register failures (e.g. bad credentials), which happen on
+    // public auth routes, so this arm returns null and the screen renders its
+    // inline error; and (b) a transient bootstrap / refresh-sync failure
+    // (network/5xx), which must NOT force-logout a valid session. On a
+    // protected/onboarding route this routes to splash, which re-bootstraps and
+    // self-recovers: a transient blip routes onward, while a genuinely
+    // expired/revoked session — whose tokens the refresh interceptor has already
+    // wiped — finds no tokens on re-bootstrap and resolves to AuthUnauthenticated
+    // -> login. So the fold stays authz-safe even though a revoked session
+    // currently transitions via AuthError rather than AuthUnauthenticated
+    // directly (onSessionExpiredProvider is still an unwired placeholder).
     AuthInitial() ||
-    AuthLoading() => (isOnSplash || isOnPublicRoute) ? null : AppRoutes.splash,
+    AuthLoading() ||
+    AuthError() => (isOnSplash || isOnPublicRoute) ? null : AppRoutes.splash,
 
     // Not authenticated -- go to login (unless already on public route)
-    AuthUnauthenticated() ||
-    AuthError() => isOnPublicRoute ? null : AppRoutes.login,
+    AuthUnauthenticated() => isOnPublicRoute ? null : AppRoutes.login,
 
     // Onboarding incomplete -- route to the correct step
     AuthOnboarding(:final phase) => _redirectForOnboarding(
       phase,
-      matchedLocation,
+      isOnSplash,
+      isOnPublicRoute,
       isOnOnboardingRoute,
     ),
 
@@ -121,13 +134,29 @@ String? _redirect(AuthState authState, String matchedLocation) {
   };
 }
 
+/// Test-only access to the pure redirect-decision function. The guard is
+/// otherwise private and driven by GoRouter; exposing it lets the
+/// loop-prevention + AuthError-not-logout semantics be unit-tested directly.
+@visibleForTesting
+String? redirectForTest(AuthState authState, String matchedLocation) =>
+    _redirect(authState, matchedLocation);
+
 String? _redirectForOnboarding(
   RegistrationPhase phase,
-  String matchedLocation,
+  bool isOnSplash,
+  bool isOnPublicRoute,
   bool isOnOnboardingRoute,
 ) {
   final targetRoute = _onboardingRouteForPhase(phase);
-  if (targetRoute == AppRoutes.home) return AppRoutes.home;
+  if (targetRoute == AppRoutes.home) {
+    // Home-mapped phases (pendingIdVerification / pendingNotificationPermission)
+    // let the user into the main app. Only pull them in from splash / a public
+    // auth route; otherwise leave them where they are. Returning AppRoutes.home
+    // here would loop, since `/` redirects to `/discover` while the auth state
+    // stays AuthOnboarding (re-triggering this redirect) until GoRouter bails to
+    // the 404 screen — so land on the real tab and return null once settled.
+    return (isOnSplash || isOnPublicRoute) ? AppRoutes.discover : null;
+  }
   return isOnOnboardingRoute ? null : targetRoute;
 }
 
@@ -200,10 +229,7 @@ final _routes = <RouteBase>[
   // Intentionally NOT in `_onboardingRoutes` — shown once via explicit
   // `context.go(AppRoutes.welcome)` from the notification-permission screen,
   // gated by a `has_seen_welcome_screen` flag in LocalStorage.
-  GoRoute(
-    path: AppRoutes.welcome,
-    builder: (_, _) => const WelcomeScreen(),
-  ),
+  GoRoute(path: AppRoutes.welcome, builder: (_, _) => const WelcomeScreen()),
 
   // -- Home redirect -- `/` lands on the default tab ------------------------
   GoRoute(path: AppRoutes.home, redirect: (_, _) => AppRoutes.discover),

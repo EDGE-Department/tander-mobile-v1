@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tander_flutter_v3/core/errors/app_exception.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/notifiers/tandy_notifier.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/states/tandy_state.dart';
@@ -22,6 +23,7 @@ import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_medi
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_message_thread.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_psychiatrist_panel.dart';
 import 'package:tander_flutter_v3/features/tandy/presentation/widgets/tandy_support_panel.dart';
+import 'package:tander_flutter_v3/shared/widgets/centered_max_width.dart';
 
 class TandyChatScreen extends ConsumerStatefulWidget {
   const TandyChatScreen({super.key});
@@ -105,68 +107,76 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
       backgroundColor: AppColors.canvas,
       body: Stack(
         children: <Widget>[
-          Column(
-            children: <Widget>[
-              // Header
-              TandyChatHeader(
-                onBack: () => context.pop(),
-                onClear: _handleClear,
-              ),
+          // Tablet: keep the chat in a centered reading column.
+          CenteredMaxWidth(
+            maxWidth: 760,
+            child: Column(
+              children: <Widget>[
+                // Header
+                TandyChatHeader(
+                  onBack: () => context.pop(),
+                  onClear: _handleClear,
+                ),
 
-              // Feature chips bar
-              TandyChatChipsBar(
-                onBreatheTap: () => _openPanel(TandyActivePanel.breathe),
-                onMeditateTap: () => _openPanel(TandyActivePanel.meditate),
-                onSupportTap: () => _openPanel(TandyActivePanel.support),
-              ),
+                // Feature chips bar
+                TandyChatChipsBar(
+                  onBreatheTap: () => _openPanel(TandyActivePanel.breathe),
+                  onMeditateTap: () => _openPanel(TandyActivePanel.meditate),
+                  onSupportTap: () => _openPanel(TandyActivePanel.support),
+                ),
 
-              // Messages
-              Expanded(
-                child: tandyState is TandyLoaded
-                    ? TandyMessageThread(
-                        messages: tandyState.messages,
-                        isSending: tandyState.isSending,
+                // Messages
+                Expanded(
+                  child: switch (tandyState) {
+                    TandyLoaded(:final messages, :final isSending) =>
+                      TandyMessageThread(
+                        messages: messages,
+                        isSending: isSending,
                         scrollController: _scrollController,
-                      )
-                    : const Center(
-                        child: CircularProgressIndicator(color: kTandyOrange),
                       ),
-              ),
-
-              // Error bar
-              if (tandyState is TandyLoaded && tandyState.sendError != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  color: AppColors.dangerLight,
-                  child: Text(
-                    tandyState.sendError!,
-                    style: const TextStyle(
-                      color: AppColors.danger,
-                      fontSize: 13,
+                    TandyError(:final exception) => _buildErrorState(exception),
+                    TandyLoading() => const Center(
+                      child: CircularProgressIndicator(color: kTandyOrange),
                     ),
-                    textAlign: TextAlign.center,
+                  },
+                ),
+
+                // Error bar
+                if (tandyState is TandyLoaded && tandyState.sendError != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    color: AppColors.dangerLight,
+                    child: Text(
+                      tandyState.sendError!,
+                      style: const TextStyle(
+                        color: AppColors.danger,
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
 
-              // Breathing suggestion chip
-              if (tandyState is TandyLoaded && tandyState.suggestBreathingPanel)
-                _buildBreathingSuggestion(),
+                // Breathing suggestion chip
+                if (tandyState is TandyLoaded &&
+                    tandyState.suggestBreathingPanel)
+                  _buildBreathingSuggestion(),
 
-              // Composer
-              if (tandyState is TandyLoaded)
-                TandyComposer(
-                  controller: _inputController,
-                  focusNode: _focusNode,
-                  isSending: tandyState.isSending,
-                  showSuggestions: false,
-                  suggestions: const <String>[],
-                  onSend: _handleSend,
-                  onSuggestionTap: (_) {},
-                ),
-            ],
+                // Composer
+                if (tandyState is TandyLoaded)
+                  TandyComposer(
+                    controller: _inputController,
+                    focusNode: _focusNode,
+                    isSending: tandyState.isSending,
+                    showSuggestions: false,
+                    suggestions: const <String>[],
+                    onSend: _handleSend,
+                    onSuggestionTap: (_) {},
+                  ),
+              ],
+            ),
           ),
 
           // Wellness panel overlay
@@ -235,6 +245,32 @@ class _TandyChatScreenState extends ConsumerState<TandyChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(AppException exception) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+            const SizedBox(height: 16),
+            Text(
+              exception.userMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textBody),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () =>
+                  ref.read(tandyNotifierProvider.notifier).loadConversation(),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }

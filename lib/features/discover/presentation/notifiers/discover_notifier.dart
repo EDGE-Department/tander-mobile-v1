@@ -33,6 +33,11 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
 
   DiscoveryFiltersDto? _activeFilters;
 
+  /// Guards against a rapid double-tap (or swipe-then-tap) firing a second
+  /// like/pass before the first has resolved. Without this, the second action
+  /// would read the already-advanced stack and act on an unseen candidate.
+  bool _actionInFlight = false;
+
   @override
   DiscoverState build() {
     _repository = ref.read(discoverRepositoryProvider);
@@ -133,63 +138,86 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
   // -----------------------------------------------------------------------
 
   /// Likes the current profile and advances the stack.
+  ///
+  /// The advance is optimistic so the swipe feels instant. If the network
+  /// call fails the candidate is re-queued to the front of the stack
+  /// (see [_requeueCandidate]) so the dismissed card reappears — the failure
+  /// stays visible and the connection request is never silently dropped.
   Future<void> likeCurrentProfile() async {
+    if (_actionInFlight) return;
+
     final currentState = state;
     if (currentState is! DiscoverLoaded) return;
 
     final candidate = currentState.currentCandidate;
     if (candidate == null) return;
 
+    _actionInFlight = true;
     _advanceStack(currentState);
 
-    // Fire-and-forget: send the request in the background.
-    final sendResult = await _repository.sendConnectionRequest(
-      targetUserId: candidate.userId,
-    );
+    try {
+      final sendResult = await _repository.sendConnectionRequest(
+        targetUserId: candidate.userId,
+      );
 
-    sendResult.when(
-      success: (_) {
-        AppLogger.debug('Liked profile ${candidate.userId}', operation: _tag);
-      },
-      failure: (exception) {
-        AppLogger.error(
-          'Failed to send connection request',
-          operation: _tag,
-          error: exception,
-        );
-      },
-    );
+      sendResult.when(
+        success: (_) {
+          AppLogger.debug('Liked profile ${candidate.userId}', operation: _tag);
+        },
+        failure: (exception) {
+          AppLogger.error(
+            'Failed to send connection request',
+            operation: _tag,
+            error: exception,
+          );
+          _requeueCandidate(candidate, fallbackPaging: currentState);
+        },
+      );
+    } finally {
+      _actionInFlight = false;
+    }
   }
 
   /// Passes on the current profile and advances the stack.
+  ///
+  /// Optimistic like [likeCurrentProfile]; a failed pass re-queues the
+  /// candidate so the action is never silently lost.
   Future<void> passCurrentProfile() async {
+    if (_actionInFlight) return;
+
     final currentState = state;
     if (currentState is! DiscoverLoaded) return;
 
     final candidate = currentState.currentCandidate;
     if (candidate == null) return;
 
+    _actionInFlight = true;
     _advanceStack(currentState);
 
-    final passResult = await _repository.passOnProfile(
-      targetUserId: candidate.userId,
-    );
+    try {
+      final passResult = await _repository.passOnProfile(
+        targetUserId: candidate.userId,
+      );
 
-    passResult.when(
-      success: (_) {
-        AppLogger.debug(
-          'Passed on profile ${candidate.userId}',
-          operation: _tag,
-        );
-      },
-      failure: (exception) {
-        AppLogger.error(
-          'Failed to pass on profile',
-          operation: _tag,
-          error: exception,
-        );
-      },
-    );
+      passResult.when(
+        success: (_) {
+          AppLogger.debug(
+            'Passed on profile ${candidate.userId}',
+            operation: _tag,
+          );
+        },
+        failure: (exception) {
+          AppLogger.error(
+            'Failed to pass on profile',
+            operation: _tag,
+            error: exception,
+          );
+          _requeueCandidate(candidate, fallbackPaging: currentState);
+        },
+      );
+    } finally {
+      _actionInFlight = false;
+    }
   }
 
   // -----------------------------------------------------------------------
@@ -208,6 +236,50 @@ final class DiscoverNotifier extends Notifier<DiscoverState> {
   // -----------------------------------------------------------------------
   // Private helpers
   // -----------------------------------------------------------------------
+
+  /// Re-inserts a candidate whose like/pass network call failed back into the
+  /// front of the stack so the action is not silently dropped and the user can
+  /// retry. Skips re-queueing if the candidate is already present (e.g. a
+  /// reload pulled it back in) to avoid duplicates.
+  ///
+  /// [fallbackPaging] carries the pagination metadata captured before the
+  /// optimistic advance — used to rebuild a [DiscoverLoaded] if the stack has
+  /// since collapsed to [DiscoverEmpty] (the failed card was the last one).
+  void _requeueCandidate(
+    DiscoveryCandidate candidate, {
+    required DiscoverLoaded fallbackPaging,
+  }) {
+    final latestState = state;
+
+    if (latestState is DiscoverLoaded) {
+      // Drop it back in front of the current top card so it reappears next.
+      final insertAt = latestState.currentIndex.clamp(
+        0,
+        latestState.profiles.length,
+      );
+      final alreadyQueued = latestState.profiles
+          .skip(insertAt)
+          .any((c) => c.userId == candidate.userId);
+      if (alreadyQueued) return;
+
+      final updatedProfiles = [...latestState.profiles]
+        ..insert(insertAt, candidate);
+      state = latestState.copyWith(profiles: updatedProfiles);
+      return;
+    }
+
+    if (latestState is DiscoverEmpty) {
+      // Stack emptied out; rebuild a single-card stack from the captured paging.
+      state = DiscoverLoaded(
+        profiles: [candidate],
+        currentIndex: 0,
+        currentPage: fallbackPaging.currentPage,
+        isLastPage: fallbackPaging.isLastPage,
+      );
+    }
+    // If we're loading or errored, a fresh fetch is already replacing the
+    // stack — re-queueing would fight that, so leave it alone.
+  }
 
   void _advanceStack(DiscoverLoaded currentState) {
     final nextIndex = currentState.currentIndex + 1;

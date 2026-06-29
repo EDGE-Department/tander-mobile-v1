@@ -55,6 +55,32 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 // ---------------------------------------------------------------------------
+// Verification config — minimum age (single source of truth)
+// ---------------------------------------------------------------------------
+
+/// Minimum eligible age, fetched once from `GET /auth/verification-config` so
+/// the client mirrors the backend's (dynamically configurable) value instead of
+/// a hardcoded constant. This prevents the client/server divergence that
+/// trapped users at profile setup when the backend min-age was below the
+/// client's hardcoded 60.
+///
+/// Resolves to `null` when the minimum is **unknown** — a failed fetch or an
+/// unusable body. `null` is deliberate: callers FAIL OPEN (skip the client age
+/// check) rather than substituting a restrictive default, because the backend's
+/// mandatory ID age-gate is the real enforcer and a client fallback would only
+/// re-trap eligible users. The repository call is `Result`-wrapped and never
+/// throws, so the future always completes (to the backend value or `null`).
+///
+/// Not autoDispose — the value is cached for the session. A boot-time fetch
+/// failure therefore pins this at `null` (fail open) until app restart; it does
+/// not re-fetch on its own. This is an accepted trade-off given the gate is
+/// UX-only and the backend remains the real enforcer.
+final minimumAgeProvider = FutureProvider<int?>((ref) async {
+  final result = await ref.watch(authRepositoryProvider).getMinimumAge();
+  return result.valueOrNull;
+});
+
+// ---------------------------------------------------------------------------
 // Use cases
 // ---------------------------------------------------------------------------
 

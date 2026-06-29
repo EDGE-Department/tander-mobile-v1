@@ -54,6 +54,14 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard> {
 
   RegistrationMethod _method = RegistrationMethod.phone;
 
+  // Email registration OTP is DISABLED in production: the backend's email OTP
+  // channel (SMTP / Twilio-Verify-email) is not configured there, so the email
+  // path 400s and strands the user on Sign Up. Keep registration phone-only
+  // until SPRING_MAIL_* is set in prod, then flip this to true to restore the
+  // Phone | Email selector. Non-const (final field) so the gated branch is not
+  // flagged as dead code.
+  final bool _emailOtpRegistrationEnabled = false;
+
   bool _agreedToTerms = false;
   bool _agreedToPrivacy = false;
   bool _isLoading = false;
@@ -465,20 +473,22 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              MethodSelector(
-                selected: _method,
-                onChanged: (method) {
-                  setState(() {
-                    _method = method;
-                    _contactError = null;
-                    _emailAvailability = AvailabilityStatus.idle;
-                    _phoneAvailability = AvailabilityStatus.idle;
-                    _contactCtrl.clear();
-                  });
-                },
-                enabled: !_isLoading,
-              ),
-              const SizedBox(height: 20),
+              if (_emailOtpRegistrationEnabled) ...[
+                MethodSelector(
+                  selected: _method,
+                  onChanged: (method) {
+                    setState(() {
+                      _method = method;
+                      _contactError = null;
+                      _emailAvailability = AvailabilityStatus.idle;
+                      _phoneAvailability = AvailabilityStatus.idle;
+                      _contactCtrl.clear();
+                    });
+                  },
+                  enabled: !_isLoading,
+                ),
+                const SizedBox(height: 20),
+              ],
               if (_method == RegistrationMethod.phone)
                 _buildTextField(
                   label: 'Mobile Number',
@@ -673,8 +683,7 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.fromLTRB(24, 32, 24, 12),
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 12),
                   child: _buildScrollableContent(),
                 ),
               ),
@@ -857,7 +866,6 @@ class _SignUpFormCardState extends ConsumerState<SignUpFormCard> {
       ),
     );
   }
-
 }
 
 // --- Trust Message ---

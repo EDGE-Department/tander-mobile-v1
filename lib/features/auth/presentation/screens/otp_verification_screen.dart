@@ -63,6 +63,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
   int _filledDigitCount = 0;
   int _consecutiveNonNetworkFailures = 0;
 
+  // Set ONLY when register() succeeded but the auto sign-in failed: holds the
+  // credentials so the error banner's Retry can re-attempt signIn() without
+  // re-verifying the (now spent) OTP. Cleared on a fresh verify and on success.
+  String? _retrySignInContact;
+  String? _retrySignInPassword;
+
   String _email = '';
   String _phone = '';
   bool _isRegistration = false;
@@ -184,10 +190,58 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
     _verifyOtp(_lastOtp!);
   }
 
+  /// Recovers the register-succeeded-but-signIn-failed case: re-runs signIn()
+  /// with the credentials stashed when the auto-login failed, WITHOUT
+  /// re-verifying the (spent) OTP or re-creating the (already-created) account.
+  Future<void> _retrySignIn() async {
+    final contact = _retrySignInContact;
+    final password = _retrySignInPassword;
+    if (contact == null || password == null) return;
+
+    setState(() {
+      _isVerifying = true;
+      _hasError = false;
+      _errorMessage = null;
+    });
+
+    await ref
+        .read(authNotifierProvider.notifier)
+        .signIn(email: contact, password: password);
+
+    if (!mounted) return;
+
+    final state = ref.read(authNotifierProvider);
+    if (state is AuthError) {
+      setState(() {
+        _isVerifying = false;
+        _hasError = true;
+        _errorMessage = state.exception.userMessage;
+        _consecutiveNonNetworkFailures++;
+        // Keep the retry credentials so the user can try again.
+      });
+      _triggerErrorShake();
+      return;
+    }
+
+    // signIn succeeded — the account already existed, so finish onboarding.
+    await ref.read(secureStorageProvider).clearPendingRegistration();
+    if (!mounted) return;
+    setState(() {
+      _isVerifying = false;
+      _isVerified = true;
+      _retrySignInContact = null;
+      _retrySignInPassword = null;
+    });
+  }
+
   Future<void> _handleRegistrationOtp(
     String otp,
     AuthRepository repository,
   ) async {
+    // A fresh verify attempt invalidates any prior signIn-retry credentials.
+    _retrySignInContact = null;
+    _retrySignInPassword = null;
+
     // Step 1: Verify OTP via Twilio
     final verifyResult = await repository.verifyRegistrationOtp(
       email: _email.isNotEmpty ? _email : null,
@@ -199,104 +253,132 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
 
     unawaited(
       verifyResult.when(
-      success: (isValid) async {
-        if (!isValid) {
+        success: (isValid) async {
+          if (!isValid) {
+            setState(() {
+              _isVerifying = false;
+              _hasError = true;
+              _errorMessage = 'Invalid verification code. Please try again.';
+              _consecutiveNonNetworkFailures++;
+            });
+            _triggerErrorShake();
+            return;
+          }
+
+          // Step 2: OTP verified — now create the account
+          final secureStorage = ref.read(secureStorageProvider);
+          final pending = await secureStorage.readPendingRegistration();
+
+          if (pending.password == null || pending.auditId == null) {
+            setState(() {
+              _isVerifying = false;
+              _hasError = true;
+              _errorMessage = 'Registration data expired. Please start over.';
+            });
+            return;
+          }
+
+          final email = (pending.email ?? _email).trim();
+          final phone = (pending.phone ?? _phone).trim();
+
+          await ref
+              .read(authNotifierProvider.notifier)
+              .register(
+                email: email.isNotEmpty ? email : null,
+                phone: phone.isNotEmpty ? phone : null,
+                password: pending.password!,
+                auditId: pending.auditId!,
+              );
+
+          if (!mounted) return;
+
+          final stateAfterRegister = ref.read(authNotifierProvider);
+          if (stateAfterRegister is AuthError) {
+            final ex = stateAfterRegister.exception;
+            // A 409 here means the account already exists (e.g. a prior attempt
+            // created it but its auto sign-in failed, or the user re-verified a
+            // fresh OTP after a partial success). Don't strand them on OTP with
+            // a confusing "already registered" error — route to login instead.
+            if (ex is ConflictException) {
+              if (mounted) {
+                TanderToastOverlay.show(
+                  context,
+                  const TanderToastData(
+                    message:
+                        'Your account already exists. Please sign in to continue.',
+                    variant: TanderToastVariant.info,
+                  ),
+                );
+                context.go(AppRoutes.login);
+              }
+              return;
+            }
+            setState(() {
+              _isVerifying = false;
+              _hasError = true;
+              _errorMessage = ex.userMessage;
+              _consecutiveNonNetworkFailures++;
+            });
+            _triggerErrorShake();
+            return;
+          }
+
+          // Auto-login to get JWT tokens (register doesn't issue them)
+          final contact = email.isNotEmpty ? email : phone;
+          await ref
+              .read(authNotifierProvider.notifier)
+              .signIn(email: contact, password: pending.password!);
+
+          if (!mounted) return;
+
+          final stateAfterSignIn = ref.read(authNotifierProvider);
+          if (stateAfterSignIn is AuthError) {
+            // register() ABOVE already created the account; only the automatic
+            // sign-in failed (e.g. a transient network/5xx). The OTP is spent, so
+            // do NOT clear pending — stash the credentials and let the banner's
+            // Retry re-run signIn() directly (no OTP re-verify, no re-register).
+            setState(() {
+              _isVerifying = false;
+              _hasError = true;
+              _errorMessage =
+                  "Your account was created, but signing in didn't finish. "
+                  'Please tap Retry.';
+              _consecutiveNonNetworkFailures++;
+              _retrySignInContact = contact;
+              _retrySignInPassword = pending.password;
+            });
+            _triggerErrorShake();
+            return;
+          }
+
+          // Clean up pending data
+          await secureStorage.clearPendingRegistration();
+          if (!mounted) return;
+
+          setState(() {
+            _isVerifying = false;
+            _isVerified = true;
+            _consecutiveNonNetworkFailures = 0;
+          });
+
+          // Router redirect will handle navigation to profile setup
+        },
+        failure: (exception) async {
+          if (exception is NetworkException) {
+            setState(() {
+              _isVerifying = false;
+              _offlineError = exception;
+            });
+            return;
+          }
           setState(() {
             _isVerifying = false;
             _hasError = true;
-            _errorMessage = 'Invalid verification code. Please try again.';
-            _consecutiveNonNetworkFailures++;
+            _errorMessage = exception.userMessage;
           });
-          _triggerErrorShake();
-          return;
-        }
-
-        // Step 2: OTP verified — now create the account
-        final secureStorage = ref.read(secureStorageProvider);
-        final pending = await secureStorage.readPendingRegistration();
-
-        if (pending.password == null || pending.auditId == null) {
-          setState(() {
-            _isVerifying = false;
-            _hasError = true;
-            _errorMessage = 'Registration data expired. Please start over.';
-          });
-          return;
-        }
-
-        final email = (pending.email ?? _email).trim();
-        final phone = (pending.phone ?? _phone).trim();
-
-        await ref
-            .read(authNotifierProvider.notifier)
-            .register(
-              email: email.isNotEmpty ? email : null,
-              phone: phone.isNotEmpty ? phone : null,
-              password: pending.password!,
-              auditId: pending.auditId!,
-            );
-
-        if (!mounted) return;
-
-        final stateAfterRegister = ref.read(authNotifierProvider);
-        if (stateAfterRegister is AuthError) {
-          setState(() {
-            _isVerifying = false;
-            _hasError = true;
-            _errorMessage = stateAfterRegister.exception.userMessage;
-            _consecutiveNonNetworkFailures++;
-          });
-          _triggerErrorShake();
-          return;
-        }
-
-        // Auto-login to get JWT tokens (register doesn't issue them)
-        final contact = email.isNotEmpty ? email : phone;
-        await ref
-            .read(authNotifierProvider.notifier)
-            .signIn(email: contact, password: pending.password!);
-
-        if (!mounted) return;
-
-        final stateAfterSignIn = ref.read(authNotifierProvider);
-        if (stateAfterSignIn is AuthError) {
-          setState(() {
-            _isVerifying = false;
-            _hasError = true;
-            _errorMessage = stateAfterSignIn.exception.userMessage;
-            _consecutiveNonNetworkFailures++;
-          });
-          _triggerErrorShake();
-          return;
-        }
-
-        // Clean up pending data
-        await secureStorage.clearPendingRegistration();
-
-        setState(() {
-          _isVerifying = false;
-          _isVerified = true;
-          _consecutiveNonNetworkFailures = 0;
-        });
-
-        // Router redirect will handle navigation to profile setup
-      },
-      failure: (exception) async {
-        if (exception is NetworkException) {
-          setState(() {
-            _isVerifying = false;
-            _offlineError = exception;
-          });
-          return;
-        }
-        setState(() {
-          _isVerifying = false;
-          _hasError = true;
-          _errorMessage = exception.userMessage;
-        });
-        unawaited(_shakeController.forward(from: 0));
-      },
-    ),
+          unawaited(_shakeController.forward(from: 0));
+        },
+      ),
     );
   }
 
@@ -322,6 +404,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
           _isResending = false;
           _hasError = false;
           _errorMessage = null;
+          // A fresh code resets any pending signIn-retry, re-opening OTP entry.
+          _retrySignInContact = null;
+          _retrySignInPassword = null;
         });
         _resendTimerKey.currentState?.restart();
         _otpBoxesKey.currentState?.clearAll();
@@ -476,7 +561,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: 0.18),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: const Icon(
                   Icons.arrow_back_rounded,
@@ -553,67 +640,77 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
                 // Orange accent bar at top
                 Container(
                   height: 6,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF07040), Color(0xFFE86035)],
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF07040), Color(0xFFE86035)],
+                    ),
+                    borderRadius: BorderRadius.only(
+                      topLeft: borderRadius.topLeft,
+                      topRight: borderRadius.topRight,
+                    ),
+                  ),
                 ),
-                borderRadius: BorderRadius.only(
-                  topLeft: borderRadius.topLeft,
-                  topRight: borderRadius.topRight,
-                ),
-              ),
-            ),
-            // Scrollable form content + sticky footer (Verify + Resend)
-            if (_isVerified)
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-                  child: _buildVerifiedState(),
-                ),
-              )
-            else ...[
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: _buildOtpForm(),
-                ),
-              ),
-              // Sticky Verify button
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Builder(
-                  builder: (context) {
-                    final isEnabled =
-                        _filledDigitCount >= otpLength && !_isVerifying;
-                    return TanderButton(
-                      label: 'Verify Code',
-                      onPressed: isEnabled
-                          ? () {
-                              HapticFeedback.lightImpact();
-                              _verifyOtp(
-                                _otpBoxesKey.currentState?.otpValue ?? '',
-                              );
-                            }
-                          : null,
-                      variant: TanderButtonVariant.primary,
-                      size: TanderButtonSize.normal,
-                      isLoading: _isVerifying,
-                      icon: Icons.check_rounded,
-                      iconPosition: IconPosition.trailing,
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                child: ResendTimer(
-                  key: _resendTimerKey,
-                  onResend: _resendCode,
-                  isResending: _isResending,
-                ),
-              ),
-            ],
+                // Scrollable form content + sticky footer (Verify + Resend)
+                if (_isVerified)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                      child: _buildVerifiedState(),
+                    ),
+                  )
+                else ...[
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: _buildOtpForm(),
+                    ),
+                  ),
+                  // Sticky Verify button
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Builder(
+                      builder: (context) {
+                        // When register() succeeded but auto sign-in failed, the
+                        // OTP is spent — the prominent button must RE-RUN signIn
+                        // (not re-verify the spent OTP, which would wipe the
+                        // stashed credentials and break the one-tap recovery).
+                        final inRetry = _retrySignInContact != null;
+                        final isEnabled = inRetry
+                            ? !_isVerifying
+                            : (_filledDigitCount >= otpLength && !_isVerifying);
+                        return TanderButton(
+                          label: inRetry ? 'Retry sign in' : 'Verify Code',
+                          onPressed: isEnabled
+                              ? () {
+                                  HapticFeedback.lightImpact();
+                                  if (inRetry) {
+                                    _retrySignIn();
+                                  } else {
+                                    _verifyOtp(
+                                      _otpBoxesKey.currentState?.otpValue ?? '',
+                                    );
+                                  }
+                                }
+                              : null,
+                          variant: TanderButtonVariant.primary,
+                          size: TanderButtonSize.normal,
+                          isLoading: _isVerifying,
+                          icon: Icons.check_rounded,
+                          iconPosition: IconPosition.trailing,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    child: ResendTimer(
+                      key: _resendTimerKey,
+                      onResend: _resendCode,
+                      isResending: _isResending,
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -654,7 +751,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
           onComplete: _verifyOtp,
           shakeAnimation: _shakeAnimation,
           hasError: _hasError,
-          isEnabled: !_isVerifying,
+          // Locked while a signIn-retry is pending: the OTP is spent, so editing
+          // a box would re-verify it and clear the retry credentials. Resend
+          // re-opens entry (it clears the retry state).
+          isEnabled: !_isVerifying && _retrySignInContact == null,
           onDigitCountChanged: (count) {
             setState(() => _filledDigitCount = count);
           },
@@ -756,10 +856,18 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen>
         children: [
           AuthErrorDisplay.banner(
             message: _errorMessage!,
-            onDismiss: () => setState(() {
-              _errorMessage = null;
-              _hasError = false;
-            }),
+            // The register-ok/signIn-failed banner is a REQUIRED action: Retry
+            // re-runs signIn() (not OTP verify), and it must NOT be dismissible
+            // or auto-dismiss into a stranded state. Every other error stays a
+            // normal dismissible notice.
+            autoDismiss: _retrySignInContact == null,
+            onRetry: _retrySignInContact != null ? _retrySignIn : null,
+            onDismiss: _retrySignInContact != null
+                ? null
+                : () => setState(() {
+                    _errorMessage = null;
+                    _hasError = false;
+                  }),
           ),
           if (_consecutiveNonNetworkFailures >= 3) ...[
             const SizedBox(height: 12),

@@ -239,7 +239,8 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         // for the current notifier contract, but keep a defensive fallback.
         _resetSubmitTimers();
         setState(() {
-          _error = "We couldn't verify your ID this time. Make sure your ID is clear and fully visible, then try again.";
+          _error =
+              "We couldn't verify your ID this time. Make sure your ID is clear and fully visible, then try again.";
           _isSubmitting = false;
           _consecutiveNonNetworkFailures++;
         });
@@ -332,7 +333,10 @@ class _IdScannerScreenState extends ConsumerState<IdScannerScreen> {
         if (errorStr.contains('face') && errorStr.contains('mismatch')) {
           resultState = VerificationResultState.faceMismatch;
         } else if (backendCode == 'id-age-not-met' ||
-            errorStr.contains('age')) {
+            // Word-boundary match so the fallback doesn't fire on 'image'
+            // (im-AGE) — a blurry/quality error must not masquerade as an
+            // age rejection. Stable backendCode is the primary signal.
+            RegExp(r'\bage\b').hasMatch(errorStr)) {
           resultState = VerificationResultState.ageRequirementNotMet;
         } else if (errorStr.contains('fraud')) {
           resultState = VerificationResultState.fraudDetected;

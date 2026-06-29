@@ -1,3 +1,19 @@
+# Twilio Programmable Video — JNI-referenced classes.
+# The native libs (libtwilio_video_android_so.so) resolve tvi.webrtc.* and
+# com.twilio.* classes by their literal names via FindClass() inside
+# JNI_OnLoad. R8 cannot see those native references, so without these keeps it
+# tree-shakes tvi.webrtc.WebRtcClassLoader out (and renames tvi.webrtc.EglBase
+# etc.). At runtime Twilio's JNI_OnLoad does FindClass("tvi/webrtc/
+# WebRtcClassLoader"), gets null, and RTC_CHECK-aborts (SIGABRT) the instant a
+# call starts. This was the "app crashes on every call" bug — release-only,
+# because R8 only runs for the release build. Keep is scoped to these two
+# packages only.
+-keep class com.twilio.** { *; }
+-keep class tvi.webrtc.** { *; }
+-dontwarn com.twilio.**
+-dontwarn tvi.webrtc.**
+-keepattributes InnerClasses
+
 # Flutter
 -keep class io.flutter.app.** { *; }
 -keep class io.flutter.plugin.** { *; }

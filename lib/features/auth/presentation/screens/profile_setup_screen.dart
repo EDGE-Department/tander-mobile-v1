@@ -15,6 +15,7 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/core/utils/result.dart';
+import 'package:tander_flutter_v3/features/auth/domain/age_eligibility.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_error_display.dart';
@@ -27,6 +28,7 @@ import 'package:tander_flutter_v3/features/auth/presentation/widgets/profile_for
 import 'package:tander_flutter_v3/shared/constants/api_endpoints.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
+import 'package:tander_flutter_v3/shared/widgets/tander_confirm_dialog.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_text_field.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
@@ -130,8 +132,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       final draft = jsonDecode(json) as Map<String, dynamic>;
       final savedAtStr = draft['savedAt'] as String?;
       final savedAt = savedAtStr == null ? null : DateTime.tryParse(savedAtStr);
-      if (savedAt == null ||
-          DateTime.now().difference(savedAt) > _draftTtl) {
+      if (savedAt == null || DateTime.now().difference(savedAt) > _draftTtl) {
         // Stale or invalid — discard
         await ref.read(localStorageProvider).remove(key);
         return;
@@ -175,7 +176,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       'bio': _bioController.text,
       'savedAt': DateTime.now().toIso8601String(),
     };
-    final hasContent = (draft['firstName'] as String).isNotEmpty ||
+    final hasContent =
+        (draft['firstName'] as String).isNotEmpty ||
         (draft['middleName'] as String).isNotEmpty ||
         (draft['lastName'] as String).isNotEmpty ||
         (draft['bio'] as String).isNotEmpty ||
@@ -256,7 +258,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       // Non-fatal — user can still fill manually
     } finally {
       if (mounted) {
-        final anyFilled = _firstNameController.text.isNotEmpty ||
+        final anyFilled =
+            _firstNameController.text.isNotEmpty ||
             _middleNameController.text.isNotEmpty ||
             _lastNameController.text.isNotEmpty ||
             _selectedBirthDate != null ||
@@ -302,42 +305,60 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     return null;
   }
 
-  bool get _isBirthDateValid {
-    if (_selectedBirthDate == null) return false;
-    final today = DateTime.now();
-    final age = today.year - _selectedBirthDate!.year;
-    final hasBirthdayPassed =
-        today.month > _selectedBirthDate!.month ||
-        (today.month == _selectedBirthDate!.month &&
-            today.day >= _selectedBirthDate!.day);
-    return (hasBirthdayPassed ? age : age - 1) >= 60;
-  }
-
   // -- Submit ---------------------------------------------------------------
 
   Future<void> _submitForm() async {
+    // Re-entrancy guard. _isSubmitting is flipped synchronously below — before
+    // any await — so a second tap during the manual-DOB age-config fetch bails
+    // here instead of firing a concurrent submit (double PUT + double navigate).
+    if (_isSubmitting) return;
     setState(() {
+      _isSubmitting = true;
       _apiErrorMessage = null;
       _offlineError = null;
     });
 
-    if (!_formKey.currentState!.validate()) return;
-
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _isSubmitting = false);
+      return;
+    }
     if (_selectedBirthDate == null) {
-      setState(() => _apiErrorMessage = 'Please select your date of birth.');
+      setState(() {
+        _isSubmitting = false;
+        _apiErrorMessage = 'Please select your date of birth.';
+      });
       return;
     }
-    if (!_isBirthDateValid) {
-      setState(
-        () => _apiErrorMessage =
-            "You need to be 60 or older to join Tander. Come back when you're eligible!",
-      );
-      return;
-    }
-
-    setState(() => _isSubmitting = true);
 
     try {
+      // Manual-DOB age gate. A locked DOB was prefilled from the verified ID,
+      // which already cleared the backend's mandatory ID age-gate, so it is not
+      // re-checked here. Manually-typed DOBs are gated against the backend's
+      // advertised minimum (minimumAgeProvider). When that minimum is unknown
+      // (config fetch failed → null), isBirthDateBelowMinimum FAILS OPEN: the
+      // backend ID gate is the real enforcer, so a restrictive client fallback
+      // would only re-trap eligible users — the original bug. The await lives
+      // inside the try so the finally always clears _isSubmitting even if it
+      // ever threw (today it cannot — the provider is Result-wrapped).
+      if (!_dobLocked) {
+        final minAge = await ref.read(minimumAgeProvider.future);
+        if (!mounted) return;
+        if (isBirthDateBelowMinimum(
+          birthDate: _selectedBirthDate!,
+          minimumAge: minAge,
+          asOf: DateTime.now(),
+        )) {
+          // Reachable only when minAge is non-null (the gate fails open and
+          // returns false for null), so the interpolated value is a real number.
+          setState(
+            () => _apiErrorMessage =
+                'You need to be $minAge or older to join Tander. '
+                "Come back when you're eligible!",
+          );
+          return;
+        }
+      }
+
       final dioClient = ref.read(dioClientProvider);
       final middleName = _middleNameController.text.trim();
       final requestDto = UpdateProfileRequestDto(
@@ -425,6 +446,25 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  /// Sign out from onboarding — the only navigation that escapes this screen.
+  /// While the phase is pendingProfileSetup, context.go(login) bounces straight
+  /// back here (see app_router.dart _redirectForOnboarding), so a real sign-out
+  /// (-> AuthUnauthenticated) is the sole exit. Non-destructive: the account
+  /// persists server-side and the local draft is saved, so a later sign-in
+  /// resumes this step.
+  Future<void> _confirmSignOut() async {
+    final didConfirm = await TanderConfirmDialog.show(
+      context: context,
+      title: 'Sign out?',
+      message:
+          'You can sign back in anytime to finish setting up your profile — '
+          'your progress is saved on this device.',
+      confirmLabel: 'Sign out',
+    );
+    if (didConfirm != true) return;
+    unawaited(ref.read(authNotifierProvider.notifier).signOut());
   }
 
   // -- Build ----------------------------------------------------------------
@@ -577,6 +617,48 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           ),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ),
+
+          // Sign-out escape — top-left, mirrors the step badge. Placed LAST in
+          // the Stack so it paints above the (non-interactive) brand content and
+          // is unambiguously tappable. This is the only way out of onboarding:
+          // context.go(login) bounces back here while the phase is
+          // pendingProfileSetup (app_router.dart _redirectForOnboarding).
+          Positioned(
+            top: 0,
+            left: 0,
+            child: SafeArea(
+              bottom: false,
+              right: false,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8, top: 8),
+                child: TextButton.icon(
+                  onPressed: _isSubmitting ? null : _confirmSignOut,
+                  icon: const Icon(
+                    Icons.logout_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    'Sign out',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.95),
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    minimumSize: const Size(0, AppSpacing.touchMinimum),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
               ),
             ),
@@ -754,6 +836,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               BirthDatePickerField(
                 selectedDate: _selectedBirthDate,
                 locked: _dobLocked,
+                // Fail open: floor at 18 (permissive) when the backend minimum
+                // is unknown/loading, so an eligible user can always pick their
+                // real birthday. A restrictive fallback would relocate the trap
+                // to the picker. (Picker is disabled anyway when _dobLocked.)
+                minimumAge: pickerAgeFloor(
+                  ref.watch(minimumAgeProvider).valueOrNull,
+                ),
                 onHelpTapped: () => DobHelpSheet.show(context),
                 onPicked: _dobLocked
                     ? null
@@ -823,4 +912,3 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 }
-

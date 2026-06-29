@@ -32,7 +32,7 @@ class DiscoverPanelHeader extends StatelessWidget {
   /// Panel title rendered as h2 bold, e.g. "Discover" or "Community".
   final String title;
 
-  /// Subtitle rendered as caption muted, e.g. "Find your someone special".
+  /// Subtitle rendered as caption muted, e.g. "Connect with fellow seniors who share your interests.".
   final String subtitle;
 
   /// Action widget on the right (filter button, new-post button, etc.).

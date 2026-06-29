@@ -137,12 +137,6 @@ final class AuthNotifier extends Notifier<AuthState> {
     return verifyResult.valueOrNull;
   }
 
-  /// Fetches the minimum age requirement from the backend.
-  Future<int> getMinimumAge() async {
-    final ageResult = await _repository.getMinimumAge();
-    return ageResult.valueOrNull ?? 60;
-  }
-
   // -------------------------------------------------------------------------
   // Sign out
   // -------------------------------------------------------------------------

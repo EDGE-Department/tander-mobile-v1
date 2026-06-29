@@ -122,11 +122,7 @@ class _VerificationResultScreenState extends State<VerificationResultScreen>
         color: uiData.color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(
-        uiData.icon,
-        size: isSmall ? 64 : 80,
-        color: uiData.color,
-      ),
+      child: Icon(uiData.icon, size: isSmall ? 64 : 80, color: uiData.color),
     );
 
     final content = Column(
@@ -280,7 +276,7 @@ class _VerificationResultScreenState extends State<VerificationResultScreen>
     );
   }
 
-  void _handlePrimaryAction() {
+  Future<void> _handlePrimaryAction() async {
     switch (widget.state) {
       case VerificationResultState.success:
         // ID verified! Go to sign-up to complete registration with contact/password
@@ -292,11 +288,18 @@ class _VerificationResultScreenState extends State<VerificationResultScreen>
         // Retry - go back to verification flow
         context.go(AppRoutes.readyToVerify);
         break;
-      case VerificationResultState.duplicateIdDetected:
       case VerificationResultState.fraudDetected:
       case VerificationResultState.idBlocked:
+        // The primary button reads "Contact Support" — actually open the
+        // support email (it previously just went to login, lying about its
+        // action). Await it so the no-mail-client clipboard-fallback toast can
+        // show before we navigate, then land on login.
+        await launchSupportEmail(context, subject: 'ID verification review');
+        if (mounted) context.go(AppRoutes.login);
+        break;
+      case VerificationResultState.duplicateIdDetected:
       case VerificationResultState.ageRequirementNotMet:
-        // Navigate back to login for blocked/fraud cases
+        // Navigate back to login for these terminal cases.
         context.go(AppRoutes.login);
         break;
     }
@@ -321,10 +324,7 @@ class _VerificationResultScreenState extends State<VerificationResultScreen>
         context.go(AppRoutes.login);
         break;
       case VerificationResultState.faceMismatch:
-        launchSupportEmail(
-          context,
-          subject: 'ID verification issue',
-        );
+        launchSupportEmail(context, subject: 'ID verification issue');
         break;
       default:
         Navigator.of(context).pop();

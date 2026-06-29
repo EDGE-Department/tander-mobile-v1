@@ -285,7 +285,7 @@ class MessagesWelcomePlaceholder extends StatelessWidget {
     _WelcomeTip(
       icon: Icons.lock,
       text:
-          'Your messages are private \u2014 only you and the recipient can read them',
+          'Your messages are private, only you and the recipient can read them',
     ),
   ];
 

@@ -400,22 +400,29 @@ class _RatingButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
+      // 30x30 visual, but a >=44dp hit area for accessibility.
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: 30,
-          height: 30,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isActive ? activeBg : const Color(0x99FFFFFF),
-            border: Border.all(
-              color: isActive ? activeBorder : kTandyTeal.withAlpha(46),
+        borderRadius: BorderRadius.circular(22),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isActive ? activeBg : const Color(0x99FFFFFF),
+                border: Border.all(
+                  color: isActive ? activeBorder : kTandyTeal.withAlpha(46),
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(icon, style: const TextStyle(fontSize: 14)),
             ),
-            borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(icon, style: const TextStyle(fontSize: 14)),
         ),
       ),
     );

@@ -1,10 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:tander_flutter_v3/core/errors/app_exception.dart';
 import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
@@ -13,13 +11,12 @@ import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
 import 'package:tander_flutter_v3/core/theme/app_typography.dart';
 import 'package:tander_flutter_v3/core/utils/app_logger.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_error_display.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_scene_decorations.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_success_confirmation.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/widgets/auth_trust_footer.dart';
 import 'package:tander_flutter_v3/shared/constants/routes.dart';
 import 'package:tander_flutter_v3/shared/widgets/tander_button.dart';
-import 'package:tander_flutter_v3/shared/widgets/tander_toast.dart';
 
 // ---------------------------------------------------------------------------
 // Notification features — matches web NOTIFICATION_FEATURES
@@ -78,7 +75,6 @@ class NotificationPermissionScreen extends ConsumerStatefulWidget {
 class _NotificationPermissionScreenState
     extends ConsumerState<NotificationPermissionScreen> {
   bool _isEnabling = false;
-  NetworkException? _offlineError;
 
   // -- Actions --------------------------------------------------------------
 
@@ -93,7 +89,10 @@ class _NotificationPermissionScreenState
         operation: 'NotificationPermissionScreen._enableNotifications',
       );
 
-      if ((status.isPermanentlyDenied || status.isRestricted || status.isDenied) && mounted) {
+      if ((status.isPermanentlyDenied ||
+              status.isRestricted ||
+              status.isDenied) &&
+          mounted) {
         setState(() => _isEnabling = false);
         final confirmed = await showDialog<bool>(
           context: context,
@@ -116,7 +115,8 @@ class _NotificationPermissionScreenState
         );
         if (confirmed == true) {
           await openAppSettings();
-          return;
+          // Fall through to _navigateToHome() below so the user is never
+          // stranded on this screen after returning from device Settings.
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -136,58 +136,28 @@ class _NotificationPermissionScreenState
   }
 
   Future<void> _navigateToHome() async {
-    if (mounted) setState(() => _offlineError = null);
-    try {
-      await ref.read(authNotifierProvider.notifier).refreshSession();
-    } on DioException catch (error, stackTrace) {
-      // Catch ordering policy — see network_exception_handler.dart.
-      if (error.response?.statusCode == 401) {
-        if (mounted) {
-          setState(() => _isEnabling = false);
-          TanderToastOverlay.show(
-            context,
-            const TanderToastData(
-              message: 'Session expired. Please sign in again.',
-              variant: TanderToastVariant.error,
-            ),
-          );
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (mounted) context.go(AppRoutes.login);
-        }
-        return;
-      }
-      AppLogger.error(
-        'Session refresh failed before home navigation',
-        operation: 'NotificationPermissionScreen._navigateToHome',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    } on NetworkException catch (error, stackTrace) {
-      AppLogger.error(
-        'Session refresh failed (offline)',
-        operation: 'NotificationPermissionScreen._navigateToHome',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (mounted) {
-        setState(() {
-          _isEnabling = false;
-          _offlineError = error;
-        });
-      }
+    await ref.read(authNotifierProvider.notifier).refreshSession();
+    if (!mounted) return;
+
+    // refreshSession() never throws — it sets AuthError on failure. On this
+    // onboarding route the redirect guard then sends the user to splash, which
+    // re-bootstraps and self-recovers (a transient blip routes onward; an
+    // expired/revoked session lands on login). So drive navigation only on
+    // success and let the guard own the failure path.
+    if (ref.read(authNotifierProvider) is AuthError) {
+      setState(() => _isEnabling = false);
       return;
     }
-    if (mounted) {
-      setState(() => _isEnabling = false);
-      // First-time post-onboarding users get the celebration screen;
-      // returning users (flag already set) go straight to the home tab.
-      final localStorage = ref.read(localStorageProvider);
-      final hasSeenWelcome =
-          localStorage.getBool('has_seen_welcome_screen').valueOrNull ?? false;
-      await AuthSuccessConfirmation.show(context, 'All set!');
-      if (!mounted) return;
-      context.go(hasSeenWelcome ? AppRoutes.home : AppRoutes.welcome);
-    }
+
+    setState(() => _isEnabling = false);
+    // First-time post-onboarding users get the celebration screen; returning
+    // users (flag already set) go straight to the home tab.
+    final localStorage = ref.read(localStorageProvider);
+    final hasSeenWelcome =
+        localStorage.getBool('has_seen_welcome_screen').valueOrNull ?? false;
+    await AuthSuccessConfirmation.show(context, 'All set!');
+    if (!mounted) return;
+    context.go(hasSeenWelcome ? AppRoutes.home : AppRoutes.welcome);
   }
 
   // -- Build ----------------------------------------------------------------
@@ -210,16 +180,6 @@ class _NotificationPermissionScreenState
                   const SizedBox(height: AppSpacing.lg),
                   _buildHeading(),
                   const SizedBox(height: AppSpacing.lg),
-                  if (_offlineError != null) ...[
-                    AuthErrorDisplay.banner(
-                      message: _offlineError!.userMessage,
-                      autoDismiss: false,
-                      onRetry: _navigateToHome,
-                      onDismiss: () =>
-                          setState(() => _offlineError = null),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
                   _buildFeatureList(),
                   const SizedBox(height: AppSpacing.xl),
                   _buildEnableButton(),

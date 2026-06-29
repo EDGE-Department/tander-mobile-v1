@@ -124,10 +124,11 @@ class _IncomingPanel extends ConsumerWidget {
     if (connections.isEmpty) {
       return RefreshableTabEmptyState(
         icon: Icons.favorite,
-        title: 'No requests yet',
+        title: 'No connection requests yet',
         description:
             'When someone wants to connect with you, their invitation '
-            'will appear here. Love finds its own timing.',
+            'will appear here. Start discovering fellow seniors with '
+            'shared interests.',
         onRefresh: onRefresh,
       );
     }

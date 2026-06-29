@@ -418,7 +418,7 @@ final class AuthRepositoryImpl implements AuthRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Result<int>> getMinimumAge() {
+  Future<Result<int?>> getMinimumAge() {
     return _runSafe('getMinimumAge', () async {
       return _remoteDatasource.getMinimumAge();
     });

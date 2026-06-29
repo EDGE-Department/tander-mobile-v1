@@ -76,7 +76,14 @@ class _GuideCardWidgetState extends State<GuideCardWidget> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Container(height: 4, color: accentColor),
-          if (_isCompleted)
+          if (_totalSteps == 0) ...<Widget>[
+            _Header(
+              title: widget.title,
+              category: widget.guideData.category,
+              color: accentColor,
+            ),
+            const _EmptyStepsView(),
+          ] else if (_isCompleted)
             _CompletionView(color: accentColor, onStartOver: _startOver)
           else ...<Widget>[
             _Header(
@@ -247,6 +254,21 @@ class _StepContent extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyStepsView extends StatelessWidget {
+  const _EmptyStepsView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 4, 16, 28),
+      child: Text(
+        'This guide is still being prepared. Please check back soon.',
+        style: TextStyle(fontSize: 15, color: Color(0xFF9B8F80), height: 1.5),
       ),
     );
   }

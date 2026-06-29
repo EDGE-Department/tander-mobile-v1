@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:tander_flutter_v3/app/router/app_router.dart';
+import 'package:tander_flutter_v3/app/widgets/nav_badge_provider.dart';
 import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/theme/app_theme.dart';
 import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
@@ -11,6 +11,13 @@ import 'package:tander_flutter_v3/features/auth/presentation/states/auth_state.d
 import 'package:tander_flutter_v3/features/calls/v2/v2_active_call_state.dart';
 import 'package:tander_flutter_v3/features/calls/v2/v2_incoming_call_overlay.dart';
 import 'package:tander_flutter_v3/features/calls/v2/v2_incoming_call_state.dart';
+import 'package:tander_flutter_v3/features/community/presentation/notifiers/community_feed_notifier.dart';
+import 'package:tander_flutter_v3/features/community/presentation/notifiers/community_post_notifier.dart';
+import 'package:tander_flutter_v3/features/connection/presentation/notifiers/connection_notifier.dart';
+import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
+import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/conversations_notifier.dart';
+import 'package:tander_flutter_v3/features/profile/presentation/notifiers/my_profile_notifier.dart';
+import 'package:tander_flutter_v3/features/tandy/presentation/notifiers/tandy_notifier.dart';
 
 /// Root application widget.
 ///
@@ -59,6 +66,24 @@ final class TanderApp extends ConsumerWidget {
         );
       } else if (next is AuthUnauthenticated || next is AuthError) {
         wps.disconnect();
+        if (next is AuthUnauthenticated) {
+          // Real logout / server-side session end: tear down per-user feature
+          // state so the previous user's conversations, connections, profile,
+          // discover stack, tandy chat and community feed can't leak into the
+          // next session on a shared device. These are non-autoDispose root
+          // providers; their screens have already unmounted via the login
+          // redirect, so invalidating here is safe (they rebuild fresh on the
+          // next login). A transient AuthError is NOT a user change, so it is
+          // intentionally excluded.
+          ref.invalidate(conversationsNotifierProvider);
+          ref.invalidate(navBadgeProvider);
+          ref.invalidate(connectionNotifierProvider);
+          ref.invalidate(discoverNotifierProvider);
+          ref.invalidate(myProfileNotifierProvider);
+          ref.invalidate(tandyNotifierProvider);
+          ref.invalidate(communityFeedNotifierProvider);
+          ref.invalidate(communityPostNotifierProvider);
+        }
       }
     });
 

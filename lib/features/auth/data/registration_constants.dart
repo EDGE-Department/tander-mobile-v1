@@ -20,11 +20,6 @@ class RegistrationConstants {
   /// Current consent document version. Update when terms/privacy policy change.
   static const String consentVersion = '1.0';
 
-  /// Fallback default — actual value fetched from backend at runtime
-  /// via `GET /auth/verification-config`.
-  /// Only used when the backend is unreachable or as an initial value.
-  static const int minimumAge = 60;
-
   /// Philippine country code for phone numbers.
   static const String phoneCountryCode = '+63';
 

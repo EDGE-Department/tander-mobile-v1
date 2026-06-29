@@ -162,7 +162,20 @@ final class TandyNotifier extends Notifier<TandyState> {
           AppException() => exception.userMessage,
         };
 
+        // Roll back the optimistic message so a failed send doesn't leave an
+        // orphaned bubble in the thread; the error bar (sendError) is the
+        // retry affordance.
+        final rolledBackThread = TandyThread(
+          conversationId: loadedState.thread.conversationId,
+          createdAt: loadedState.thread.createdAt,
+          language: loadedState.thread.language,
+          messages: loadedState.messages
+              .where((message) => !message.messageId.startsWith('opt-'))
+              .toList(),
+        );
+
         state = loadedState.copyWith(
+          thread: rolledBackThread,
           isSending: false,
           sendError: () => errorMessage,
         );

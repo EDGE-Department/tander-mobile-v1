@@ -318,7 +318,12 @@ final class AuthRemoteDatasource {
   }
 
   /// Fetches the minimum age requirement from the backend.
-  Future<int> getMinimumAge() async {
+  ///
+  /// Returns `null` when the response is missing or its shape is unusable
+  /// (null body, no `data` envelope, or a non-numeric `minimumAge`). `null`
+  /// means "unknown" — callers fail open rather than substituting a restrictive
+  /// default, which previously re-created the profile-setup age trap.
+  Future<int?> getMinimumAge() async {
     AppLogger.debug(
       'Fetching verification config',
       operation: 'AuthRemoteDatasource.getMinimumAge',
@@ -329,7 +334,7 @@ final class AuthRemoteDatasource {
     );
 
     final body = response.data;
-    if (body == null) return 60;
+    if (body == null) return null;
 
     final data = body['data'];
     if (data is Map<String, Object?>) {
@@ -338,7 +343,7 @@ final class AuthRemoteDatasource {
       if (minimumAge is num) return minimumAge.toInt();
     }
 
-    return 60;
+    return null;
   }
 
   /// Verifies ID pre-registration with the ID photo (multipart upload).

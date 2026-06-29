@@ -70,14 +70,12 @@ class DiscoverMobileHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   activeTab == DiscoverTab.discover
-                      ? 'Find your someone special'
-                      : 'Stories from your neighbors',
+                      ? 'Connect with fellow seniors who share your interests.'
+                      : 'Stories from fellow seniors',
                   style: AppTypography.bodySm.copyWith(
                     color: AppColors.textMuted,
                     fontWeight: FontWeight.w500,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
