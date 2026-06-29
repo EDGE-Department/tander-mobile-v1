@@ -46,6 +46,12 @@ class _SingleColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // heroHeight: SafeArea top inset (device notch) + 184px for content at
+    // 1.3× text scale with slack. This value must not be const — it reads the
+    // MediaQuery so it handles notched devices correctly.
+    final heroHeight = MediaQuery.paddingOf(context).top + 184.0;
+    const overlapPx = 24.0;
+
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
@@ -55,19 +61,32 @@ class _SingleColumn extends StatelessWidget {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    VerifyHero(onBack: onBack),
-                    // Overlap as a real layout offset: shift the lower group up.
-                    Transform.translate(
-                      offset: const Offset(0, -24),
-                      child: const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-                        child: Column(
-                          children: [
-                            VerifyStepsCard(),
-                            SizedBox(height: 12),
-                            VerifyTipsCard(),
-                          ],
-                        ),
+                    // Layout-correct overlap:
+                    // • SizedBox is (heroHeight - overlapPx) tall — this is the
+                    //   hero's contribution to the column's layout height.
+                    // • OverflowBox forces the hero to paint at its full
+                    //   heroHeight aligned to the top, so the bottom 24px bleeds
+                    //   into the next child's space (not clipped by OverflowBox).
+                    // • The steps card is the next Column child, so it paints ON
+                    //   TOP of the hero at the seam — correct z-order.
+                    // • No Transform.translate → no trailing dead space.
+                    SizedBox(
+                      height: heroHeight - overlapPx,
+                      child: OverflowBox(
+                        minHeight: heroHeight,
+                        maxHeight: heroHeight,
+                        alignment: Alignment.topCenter,
+                        child: VerifyHero(height: heroHeight, onBack: onBack),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                      child: Column(
+                        children: [
+                          VerifyStepsCard(),
+                          SizedBox(height: 12),
+                          VerifyTipsCard(),
+                        ],
                       ),
                     ),
                   ],
