@@ -17,7 +17,7 @@ const List<_DailyPrompt> _dailyPrompts = [
     icon: Icons.sentiment_satisfied_alt_rounded,
   ),
   _DailyPrompt(
-    question: 'Share a cherished memory from your hometown.',
+    question: 'Share a memory that made you smile.',
     icon: Icons.home_rounded,
   ),
   _DailyPrompt(
