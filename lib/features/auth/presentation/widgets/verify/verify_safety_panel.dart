@@ -9,7 +9,7 @@ class VerifySafetyPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SingleChildScrollView(
-      padding: EdgeInsets.all(40),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       child: VerifySafetyContent(),
     );
   }

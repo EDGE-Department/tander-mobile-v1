@@ -23,7 +23,7 @@ class VerifyHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: height,
-      margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         gradient: verifyHeroGradient,
         borderRadius: BorderRadius.circular(24),

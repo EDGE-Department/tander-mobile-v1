@@ -36,7 +36,6 @@ class ReadyToVerifyScreen extends StatelessWidget {
             Expanded(
               flex: 60,
               child: _SingleColumn(
-                maxWidth: 560,
                 onBack: () => _onBack(context),
                 onStart: () => _onStart(context),
               ),
@@ -58,7 +57,6 @@ class ReadyToVerifyScreen extends StatelessWidget {
       return Scaffold(
         backgroundColor: AppColors.canvas,
         body: _SingleColumn(
-          maxWidth: 700,
           extra: const VerifySafetyContent(),
           onBack: () => _onBack(context),
           onStart: () => _onStart(context),
@@ -70,7 +68,6 @@ class ReadyToVerifyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: _SingleColumn(
-        maxWidth: double.infinity,
         onBack: () => _onBack(context),
         onStart: () => _onStart(context),
       ),
@@ -80,12 +77,10 @@ class ReadyToVerifyScreen extends StatelessWidget {
 
 class _SingleColumn extends StatelessWidget {
   const _SingleColumn({
-    required this.maxWidth,
     required this.onBack,
     required this.onStart,
     this.extra,
   });
-  final double maxWidth;
   final VoidCallback onBack;
   final VoidCallback onStart;
   final Widget? extra;
@@ -98,56 +93,51 @@ class _SingleColumn extends StatelessWidget {
     final heroHeight = MediaQuery.paddingOf(context).top + 184.0;
     const overlapPx = 24.0;
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Layout-correct overlap:
-                    // • SizedBox is (heroHeight - overlapPx) tall — this is the
-                    //   hero's contribution to the column's layout height.
-                    // • OverflowBox forces the hero to paint at its full
-                    //   heroHeight aligned to the top, so the bottom 24px bleeds
-                    //   into the next child's space (not clipped by OverflowBox).
-                    // • The steps card is the next Column child, so it paints ON
-                    //   TOP of the hero at the seam — correct z-order.
-                    // • No Transform.translate → no trailing dead space.
-                    SizedBox(
-                      height: heroHeight - overlapPx,
-                      child: OverflowBox(
-                        minHeight: heroHeight,
-                        maxHeight: heroHeight,
-                        alignment: Alignment.topCenter,
-                        child: VerifyHero(height: heroHeight, onBack: onBack),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                      child: Column(
-                        children: [
-                          const VerifyStepsCard(),
-                          const SizedBox(height: 12),
-                          const VerifyTipsCard(),
-                          if (extra != null) ...[
-                            const SizedBox(height: 24),
-                            extra!,
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Layout-correct overlap:
+                // • SizedBox is (heroHeight - overlapPx) tall — this is the
+                //   hero's contribution to the column's layout height.
+                // • OverflowBox forces the hero to paint at its full
+                //   heroHeight aligned to the top, so the bottom 24px bleeds
+                //   into the next child's space (not clipped by OverflowBox).
+                // • The steps card is the next Column child, so it paints ON
+                //   TOP of the hero at the seam — correct z-order.
+                // • No Transform.translate → no trailing dead space.
+                SizedBox(
+                  height: heroHeight - overlapPx,
+                  child: OverflowBox(
+                    minHeight: heroHeight,
+                    maxHeight: heroHeight,
+                    alignment: Alignment.topCenter,
+                    child: VerifyHero(height: heroHeight, onBack: onBack),
+                  ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  child: Column(
+                    children: [
+                      const VerifyStepsCard(),
+                      const SizedBox(height: 12),
+                      const VerifyTipsCard(),
+                      if (extra != null) ...[
+                        const SizedBox(height: 24),
+                        extra!,
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-            VerifyBottomBar(onStart: onStart),
-          ],
+          ),
         ),
-      ),
+        VerifyBottomBar(onStart: onStart),
+      ],
     );
   }
 }
