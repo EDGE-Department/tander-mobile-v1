@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_radius.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
+import 'package:tander_flutter_v3/features/messaging/presentation/notifiers/conversations_notifier.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/screens/message_thread_screen.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/conversation_list_states.dart';
 import 'package:tander_flutter_v3/features/messaging/presentation/widgets/messages_sidebar_widgets.dart';
@@ -25,6 +26,15 @@ class MessagesScreen extends ConsumerStatefulWidget {
 
 class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   String? _activeConversationId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(conversationsNotifierProvider.notifier).loadConversations();
+    });
+  }
 
   void _selectConversation(String conversationId) {
     setState(() => _activeConversationId = conversationId);

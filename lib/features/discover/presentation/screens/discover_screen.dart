@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tander_flutter_v3/core/theme/app_colors.dart';
 import 'package:tander_flutter_v3/core/theme/app_spacing.dart';
+import 'package:tander_flutter_v3/features/community/presentation/notifiers/community_feed_notifier.dart';
 import 'package:tander_flutter_v3/features/community/presentation/widgets/create_post_sheet.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/notifiers/discover_notifier.dart';
 import 'package:tander_flutter_v3/features/discover/presentation/states/discover_state.dart';
@@ -40,6 +41,16 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   DiscoverTab _activeTab = DiscoverTab.discover;
   double _dragProgress = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(discoverNotifierProvider.notifier).loadProfiles();
+      ref.read(communityFeedNotifierProvider.notifier).refreshFeed();
+    });
+  }
 
   // ── Actions ─────────────────────────────────────────────────────────
 

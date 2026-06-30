@@ -42,6 +42,15 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   ConnectionTab _activeTab = ConnectionTab.incoming;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(connectionNotifierProvider.notifier).loadAll();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final connectionState = ref.watch(connectionNotifierProvider);
 
