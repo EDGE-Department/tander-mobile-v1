@@ -87,7 +87,8 @@ const double _kWidthFrac = 0.8; // pill width as a fraction of the screen width
 
 /// Single source of truth for the bar surface colour — shared by the capsule
 /// and the rail tint so the white-on-white merge is exact.
-const Color _kSurfaceColor = Color(0xFFFFF8F4);
+const Color _kSurfaceColor = Color(0xFFFFC794);
+const Color _kIconActiveColor = Color(0xFFFFE7C5);
 
 // ── Platform-adaptive haptics ────────────────────────────────────────────────
 // iOS uses UIImpactFeedbackGenerator (works in silent mode).
@@ -658,7 +659,7 @@ class _NavCellState extends State<_NavCell>
                     iconAsset,
                     height: iconHeight,
                     fit: BoxFit.contain,
-                    color: isActive ? _kSurfaceColor : null,
+                    color: isActive ? _kIconActiveColor : null,
                     colorBlendMode: isActive ? BlendMode.modulate : null,
                     excludeFromSemantics: true,
                   ),
