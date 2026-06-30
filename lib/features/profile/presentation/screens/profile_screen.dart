@@ -121,7 +121,7 @@ class _ProfileBackground extends StatelessWidget {
     return Stack(
       children: [
         // Cream base — matches web `bg-[#FFFBF5]`.
-        const Positioned.fill(child: ColoredBox(color: Color(0xFFFFFBF5))),
+        const Positioned.fill(child: ColoredBox(color: Color(0xFFEDE1D2))),
         // Top warm glow — web `bg-gradient-to-b from-orange-100/30 to-transparent`.
         const Positioned(
           top: 0,

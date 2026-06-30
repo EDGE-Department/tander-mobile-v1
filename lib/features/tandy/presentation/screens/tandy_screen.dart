@@ -122,7 +122,7 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: const Color(0xFFEDE1D2),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isTablet = constraints.maxWidth >= _kTabletBreakpoint;
