@@ -47,7 +47,11 @@ class _TandyScreenState extends ConsumerState<TandyScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(tandyNotifierProvider.notifier).loadConversation();
+      // Error-only refetch: recover from a stale load failure without blanking
+      // a healthy thread on every tab visit.
+      if (ref.read(tandyNotifierProvider) is TandyError) {
+        ref.read(tandyNotifierProvider.notifier).loadConversation();
+      }
     });
   }
 

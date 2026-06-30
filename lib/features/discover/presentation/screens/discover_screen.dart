@@ -47,7 +47,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(discoverNotifierProvider.notifier).loadProfiles();
+      // Error-only refetch for the swipe deck: recover from a stale load
+      // failure without wiping a healthy deck (losing the user's place) on
+      // every tab visit. Community feed keeps its data, so refresh it freely.
+      if (ref.read(discoverNotifierProvider) is DiscoverError) {
+        ref.read(discoverNotifierProvider.notifier).loadProfiles();
+      }
       ref.read(communityFeedNotifierProvider.notifier).refreshFeed();
     });
   }
