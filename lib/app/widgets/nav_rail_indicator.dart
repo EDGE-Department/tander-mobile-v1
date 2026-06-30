@@ -15,6 +15,7 @@ class NavRailIndicator extends StatelessWidget {
     required this.railWidth,
     required this.railHeight,
     required this.reduceMotion,
+    this.color = Colors.white,
     super.key,
   });
 
@@ -24,6 +25,10 @@ class NavRailIndicator extends StatelessWidget {
   final double railWidth;
   final double railHeight;
   final bool reduceMotion;
+
+  /// Tint applied to the rail (via `BlendMode.srcIn`) so the hump is the exact
+  /// same colour as the capsule surface — guaranteeing a seamless merge.
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +50,10 @@ class NavRailIndicator extends StatelessWidget {
         width: railWidth,
         height: railHeight,
         fit: BoxFit.fill,
+        // White filter: recolour the hump to the capsule surface colour while
+        // preserving its alpha shape, so the two whites merge with no seam.
+        color: color,
+        colorBlendMode: BlendMode.srcIn,
         excludeFromSemantics: true,
       ),
     );

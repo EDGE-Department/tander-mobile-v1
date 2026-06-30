@@ -70,6 +70,10 @@ const double _kRailOverlap = 5.0; // rail bottom tucked behind the capsule
 const double _kRailWidthFactor = 1.4; // rail width = factor * columnWidth
 const double _kCapsuleRadius = 32.0;
 
+/// Single source of truth for the bar surface colour — shared by the capsule
+/// and the rail tint so the white-on-white merge is exact.
+const Color _kSurfaceColor = Colors.white;
+
 // ── TanderBottomNavBar ──────────────────────────────────────────────────────
 
 /// Phone bottom dock: a white capsule + a 5-column segmented layout + a single
@@ -154,6 +158,7 @@ class BottomNavBarView extends StatelessWidget {
                   railWidth: railWidth,
                   railHeight: railHeight,
                   reduceMotion: reduceMotion,
+                  color: _kSurfaceColor,
                 ),
                 // 2. White capsule — ON TOP of the rail's 5px overlap seam.
                 Positioned(
@@ -163,7 +168,7 @@ class BottomNavBarView extends StatelessWidget {
                   height: _kCapsuleHeight,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: _kSurfaceColor,
                       borderRadius: BorderRadius.circular(_kCapsuleRadius),
                       boxShadow: const [
                         BoxShadow(
