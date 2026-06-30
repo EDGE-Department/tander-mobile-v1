@@ -2,6 +2,7 @@
 ///
 /// These are deliberately Flutter-free so they can be unit-tested in isolation
 /// and act as the single source of truth for the rail's guardrailed position.
+library;
 
 /// Left offset (in logical px, from the bar's left edge) for the rail
 /// indicator so it is centered on [index]'s column, clamped to stay fully
