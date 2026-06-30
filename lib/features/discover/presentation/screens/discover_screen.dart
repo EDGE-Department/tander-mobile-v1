@@ -90,7 +90,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final discoverState = ref.watch(discoverNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: const Color(0xFFEDE1D2),
       body: SafeArea(
         child: isDesktop
             ? _buildDesktopLayout(discoverState)

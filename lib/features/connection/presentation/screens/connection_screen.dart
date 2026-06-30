@@ -55,7 +55,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     final connectionState = ref.watch(connectionNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: const Color(0xFFEDE1D2),
       body: SafeArea(
         child: Column(
           children: [

@@ -33,9 +33,9 @@ class TandyComposer extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[
-            AppColors.canvas.withAlpha(0),
-            AppColors.canvas.withAlpha(245),
-            AppColors.canvas,
+            Color(0xFFEDE1D2).withAlpha(0),
+            Color(0xFFEDE1D2).withAlpha(245),
+            Color(0xFFEDE1D2),
           ],
         ),
         border: const Border(top: BorderSide(color: AppColors.borderLight)),
