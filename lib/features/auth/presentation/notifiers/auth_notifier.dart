@@ -24,7 +24,10 @@ final authNotifierProvider = NotifierProvider<AuthNotifier, AuthState>(
 /// Delegates all IO to [AuthRepository] and translates [Result] outcomes
 /// into the sealed [AuthState] hierarchy so the UI can do exhaustive switches.
 final class AuthNotifier extends Notifier<AuthState> {
-  late final AuthRepository _repository;
+  // `late`, not `late final`: Notifier.build() re-runs on invalidate/refresh
+  // (incl. config changes like font-scale); re-assigning a final field throws
+  // LateInitializationError.
+  late AuthRepository _repository;
 
   @override
   AuthState build() {

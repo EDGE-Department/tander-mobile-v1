@@ -20,7 +20,10 @@ final tandyNotifierProvider = NotifierProvider<TandyNotifier, TandyState>(
 /// Manages the Tandy conversation state: loading, sending messages
 /// (with optimistic appends), clearing, and wellness panel navigation.
 final class TandyNotifier extends Notifier<TandyState> {
-  late final TandyRepository _repository;
+  // `late`, not `late final`: Notifier.build() re-runs on invalidate/refresh
+  // (incl. config changes like font-scale); re-assigning a final field throws
+  // LateInitializationError.
+  late TandyRepository _repository;
 
   static const String _tag = 'TandyNotifier';
 

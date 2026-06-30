@@ -32,10 +32,13 @@ final messageThreadNotifierProvider = NotifierProvider.family
 /// Keyed by [conversationId]. Each thread screen gets its own instance.
 final class MessageThreadNotifier
     extends AutoDisposeFamilyNotifier<MessageThreadState, String> {
-  late final MessagingRepository _repository;
-  late final MessagingStompDatasource _stompDatasource;
-  late final String _currentUserId;
-  late final String _conversationId;
+  // `late`, not `late final`: Notifier.build() re-runs on invalidate/refresh
+  // (incl. config changes like font-scale); re-assigning a final field throws
+  // LateInitializationError.
+  late MessagingRepository _repository;
+  late MessagingStompDatasource _stompDatasource;
+  late String _currentUserId;
+  late String _conversationId;
   String _roomId = '';
 
   final List<StompUnsubscribeCallback> _stompTeardowns = [];

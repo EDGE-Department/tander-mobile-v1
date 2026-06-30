@@ -21,8 +21,11 @@ final conversationsNotifierProvider =
 
 /// Manages the conversations list, search, filtering, and periodic refresh.
 final class ConversationsNotifier extends Notifier<ConversationsState> {
-  late final MessagingRepository _repository;
-  late final String _currentUserId;
+  // `late`, not `late final`: Notifier.build() re-runs on invalidate/refresh
+  // (incl. config changes like font-scale); re-assigning a final field throws
+  // LateInitializationError.
+  late MessagingRepository _repository;
+  late String _currentUserId;
   Timer? _refreshTimer;
 
   static const String _tag = 'ConversationsNotifier';

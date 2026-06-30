@@ -19,7 +19,10 @@ final communityFeedNotifierProvider =
 // ─── Notifier ──────────────────────────────────────────────────────────
 
 final class CommunityFeedNotifier extends Notifier<CommunityFeedState> {
-  late final CommunityRepository _repository;
+  // `late`, not `late final`: Notifier.build() re-runs on invalidate/refresh
+  // (incl. config changes like font-scale); re-assigning a final field throws
+  // LateInitializationError.
+  late CommunityRepository _repository;
 
   static const String _tag = 'CommunityFeedNotifier';
 

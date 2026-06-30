@@ -23,7 +23,10 @@ final myProfileNotifierProvider =
 /// into the sealed [ProfileState] hierarchy so the UI can do exhaustive
 /// switches.
 final class MyProfileNotifier extends Notifier<ProfileState> {
-  late final ProfileRepository _repository;
+  // `late`, not `late final`: Notifier.build() re-runs on invalidate/refresh
+  // (incl. config changes like font-scale); re-assigning a final field throws
+  // LateInitializationError.
+  late ProfileRepository _repository;
 
   static const String _tag = 'MyProfileNotifier';
 
