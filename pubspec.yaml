@@ -96,6 +96,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/
+    - assets/icons/nav/
     - assets/images/
   fonts:
     - family: AppleChancery

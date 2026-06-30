@@ -267,158 +267,131 @@ class ConversationsListSkeleton extends StatelessWidget {
 
 // ---- Welcome placeholder (desktop: no conversation selected) -------------
 
-/// Shown on desktop when no conversation is selected.
-/// Includes the icon circle, heading, subtitle, and three tip cards
-/// matching the web `WelcomePlaceholder` exactly.
+/// Shown on desktop/landscape when no conversation is selected.
 class MessagesWelcomePlaceholder extends StatelessWidget {
   const MessagesWelcomePlaceholder({super.key});
 
-  static const _tips = [
-    _WelcomeTip(
-      icon: Icons.email,
-      text: 'Tap a name from the list to open the chat',
-    ),
-    _WelcomeTip(
-      icon: Icons.search,
-      text: 'Use the search bar to find someone quickly',
-    ),
-    _WelcomeTip(
-      icon: Icons.lock,
-      text:
-          'Your messages are private, only you and the recipient can read them',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF6EFE4),
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon circle
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    begin: Alignment(-0.5, -0.5),
-                    end: Alignment(0.5, 0.5),
-                    colors: [Color(0xFFFFF8EE), Color(0xFFFFF0DE)],
-                  ),
-                  border: Border.all(
-                    color: _orange.withValues(alpha: 0.09),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _orange.withValues(alpha: 0.07),
-                      blurRadius: 28,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.chat_bubble_outline,
-                  size: 32,
-                  color: _orange,
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _BubblesIllustration(),
+            const SizedBox(height: 24),
+            Text(
+              'Start a conversation',
+              style: AppTypography.h3.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                color: const Color(0xFF1F2937),
+                letterSpacing: -0.03 * 20,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 280),
+              child: Text(
+                'Select a chat to start messaging\nor send a new message.',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodySm.copyWith(
+                  color: const Color(0xFF7C7165),
+                  height: 1.65,
                 ),
               ),
-              const SizedBox(height: 20),
-              // Heading
-              Text(
-                'Choose a conversation',
-                style: AppTypography.h3.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
-                  color: const Color(0xFF1F2937),
-                  letterSpacing: -0.03 * 20,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Subtitle
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 300),
-                child: Text(
-                  'Select someone from the list to start chatting.',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySm.copyWith(
-                    color: const Color(0xFF7C7165),
-                    height: 1.7,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-              // Tip cards
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 340),
-                child: Column(
-                  children: [
-                    for (final tip in _tips) ...[
-                      _WelcomeTipCard(tip: tip),
-                      if (tip != _tips.last) const SizedBox(height: 8),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Data holder for a welcome tip row.
-class _WelcomeTip {
-  const _WelcomeTip({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-}
-
-/// A single tip card in the welcome placeholder.
-class _WelcomeTipCard extends StatelessWidget {
-  const _WelcomeTipCard({required this.tip});
-
-  final _WelcomeTip tip;
+/// Two overlapping speech bubbles — orange (front-left) + teal (back-right).
+class _BubblesIllustration extends StatelessWidget {
+  const _BubblesIllustration();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: AppRadius.borderMd,
-        color: Colors.white.withValues(alpha: 0.60),
-        border: Border.all(
-          color: const Color(0xFFDCD2C4).withValues(alpha: 0.60),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      width: 96,
+      height: 80,
+      child: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: Icon(tip.icon, size: 16, color: _orange),
+          // Teal bubble — back, shifted right and up
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Transform.rotate(
+              angle: 0.18,
+              child: Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: _teal,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomRight: const Radius.circular(4),
+                    bottomLeft: const Radius.circular(18),
+                  ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              tip.text,
-              style: AppTypography.bodySm.copyWith(
-                fontSize: 13,
-                color: const Color(0xFF5C5044),
-                height: 1.5,
-                fontWeight: FontWeight.w500,
+          // Orange bubble — front, shifted left and down
+          Positioned(
+            left: 0,
+            bottom: 0,
+            child: Transform.rotate(
+              angle: -0.12,
+              child: Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: _orange,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomRight: const Radius.circular(18),
+                    bottomLeft: const Radius.circular(4),
+                  ),
+                ),
+                child: const Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _Dot(),
+                      SizedBox(width: 5),
+                      _Dot(),
+                      SizedBox(width: 5),
+                      _Dot(),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  const _Dot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 6,
+      height: 6,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.9),
       ),
     );
   }

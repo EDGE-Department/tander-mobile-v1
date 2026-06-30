@@ -38,27 +38,18 @@ class MessagesSidebarContent extends ConsumerWidget {
       children: [
         _MessagesHeader(unreadCount: unreadCount),
         Expanded(
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xB8FFFCF7), Color(0x85FFF7EF)],
-              ),
+          child: switch (conversationsState) {
+            ConversationsLoading() => const ConversationsListSkeleton(),
+            ConversationsError() => ConversationsErrorView(
+              onRetry: () => ref
+                  .read(conversationsNotifierProvider.notifier)
+                  .loadConversations(),
             ),
-            child: switch (conversationsState) {
-              ConversationsLoading() => const ConversationsListSkeleton(),
-              ConversationsError() => ConversationsErrorView(
-                onRetry: () => ref
-                    .read(conversationsNotifierProvider.notifier)
-                    .loadConversations(),
-              ),
-              ConversationsLoaded() => _ConversationListView(
-                activeConversationId: activeConversationId,
-                onSelectConversation: onSelectConversation,
-              ),
-            },
-          ),
+            ConversationsLoaded() => _ConversationListView(
+              activeConversationId: activeConversationId,
+              onSelectConversation: onSelectConversation,
+            ),
+          },
         ),
       ],
     );
@@ -79,52 +70,28 @@ class _MessagesHeader extends ConsumerWidget {
         ? conversationsState.filterTab
         : ConversationFilterTab.all;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFAFFFDF9),
-        border: Border(bottom: BorderSide(color: Color(0xCCEDE8DE))),
-      ),
-      child: Stack(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _TitleRow(unreadCount: unreadCount),
-              const SizedBox(height: AppSpacing.sm),
-              _SearchBar(
-                onChanged: (query) => ref
-                    .read(conversationsNotifierProvider.notifier)
-                    .setSearchQuery(query),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _FilterTabs(
-                activeTab: activeTab,
-                unreadCount: unreadCount,
-                onTabChanged: (tab) => ref
-                    .read(conversationsNotifierProvider.notifier)
-                    .setFilterTab(tab),
-              ),
-            ],
+          _TitleRow(unreadCount: unreadCount),
+          const SizedBox(height: AppSpacing.sm),
+          _SearchBar(
+            onChanged: (query) => ref
+                .read(conversationsNotifierProvider.notifier)
+                .setSearchQuery(query),
           ),
-          // Gradient accent line at bottom (orange -> teal -> transparent)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              height: 1,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0x30E67E22),
-                    Color(0x180F9D94),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
+          const SizedBox(height: AppSpacing.sm),
+          _FilterTabs(
+            activeTab: activeTab,
+            unreadCount: unreadCount,
+            onTabChanged: (tab) => ref
+                .read(conversationsNotifierProvider.notifier)
+                .setFilterTab(tab),
           ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, thickness: 1, color: Color(0x18000000)),
         ],
       ),
     );
@@ -141,6 +108,7 @@ class _TitleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
@@ -186,29 +154,23 @@ class _TitleRow extends StatelessWidget {
             ],
           ),
         ),
-        if (unreadCount > 0)
-          Container(
-            constraints: const BoxConstraints(minWidth: 22),
-            height: 22,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+        // Compose button
+        GestureDetector(
+          onTap: () {},
+          child: Container(
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              borderRadius: AppRadius.borderFull,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [_orange, Color(0xFFC96D18)],
-              ),
+              color: _orange.withValues(alpha: 0.08),
+              borderRadius: AppRadius.borderMd,
             ),
-            alignment: Alignment.center,
-            child: Text(
-              unreadCount > 99 ? '99+' : '$unreadCount',
-              style: AppTypography.caption.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
+            child: Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: _orange,
             ),
           ),
+        ),
       ],
     );
   }

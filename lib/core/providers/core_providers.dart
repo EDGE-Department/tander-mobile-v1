@@ -46,10 +46,11 @@ final deviceIdServiceProvider = Provider<DeviceIdService>((ref) {
 // Session expired callback — placeholder until auth notifier is wired in Phase 3
 // ---------------------------------------------------------------------------
 
+// Overridden in main.dart with a ProviderContainer closure that calls
+// authNotifierProvider.notifier.forceUnauthenticated() — the circular import
+// between core_providers and auth_notifier is broken at the container level.
 final onSessionExpiredProvider = Provider<void Function()>((ref) {
-  return () {
-    // Phase 3 will override this with actual logout + navigate to login
-  };
+  return () {};
 });
 
 // ---------------------------------------------------------------------------
