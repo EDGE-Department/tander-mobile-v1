@@ -74,7 +74,7 @@ class _NavRailIndicatorState extends State<NavRailIndicator>
         width: widget.width,
         height: widget.height,
         fit: BoxFit.fill,
-        color: const Color(0xFFFFF8F4),
+        color: const Color(0xFFFFC794),
         colorBlendMode: BlendMode.srcIn,
         excludeFromSemantics: true,
       ),

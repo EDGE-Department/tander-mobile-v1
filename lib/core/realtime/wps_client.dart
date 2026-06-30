@@ -356,7 +356,13 @@ final class WpsClient with WidgetsBindingObserver {
   }
 
   bool _isUnauthorized(AppException e) {
-    // NetworkExceptionHandler maps Dio 401 → AuthException.
-    return e is AuthException;
+    // NetworkExceptionHandler maps Dio 401/403 → AuthException.
+    if (e is AuthException) return true;
+    // TokenRefreshInterceptor rejects with DioExceptionType.unknown when there
+    // is no refresh token — no HTTP response means NetworkExceptionHandler maps
+    // it to UnknownException. Treat any "Session expired" message as auth-dead
+    // so we stop retrying instead of hammering _clearSessionAndNotify forever.
+    if (e.message.contains('Session expired')) return true;
+    return false;
   }
 }
