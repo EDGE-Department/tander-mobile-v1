@@ -12,12 +12,24 @@ double railLeftForIndex({
   required int columnCount,
   required double barWidth,
   required double railWidth,
+  double margin = 0,
+  List<double>? centerFractions,
 }) {
-  final columnWidth = barWidth / columnCount;
-  final centerX = columnWidth * (index + 0.5);
+  // Columns live inside a [margin]-inset content area, so the rail and the
+  // icon row (which uses the same inset) always share column centres. When
+  // [centerFractions] is given, columns sit at those fractions of the content
+  // width instead of being evenly spaced.
+  final contentWidth = barWidth - 2 * margin;
+  final double centerX;
+  if (centerFractions != null) {
+    centerX = margin + centerFractions[index] * contentWidth;
+  } else {
+    centerX = margin + (contentWidth / columnCount) * (index + 0.5);
+  }
   final rawLeft = centerX - railWidth / 2;
-  final maxLeft = (barWidth - railWidth).clamp(0.0, double.infinity);
-  return rawLeft.clamp(0.0, maxLeft);
+  final lo = margin;
+  final hi = barWidth - railWidth - margin;
+  return rawLeft.clamp(lo, hi < lo ? lo : hi);
 }
 
 /// Index of the active tab for a GoRouter [location], matching either an

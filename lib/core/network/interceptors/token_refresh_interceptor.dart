@@ -136,14 +136,18 @@ final class TokenRefreshInterceptor extends Interceptor {
     }
   }
 
-  /// True only when the refresh endpoint gave a definitive auth rejection
-  /// (HTTP 401/403 → the refresh token is dead). Network errors, timeouts,
-  /// 5xx, other 4xx, and malformed-response [StateError]s are all transient
-  /// and must NOT clear the session.
+  /// True only when the session is unrecoverably dead.
+  /// Covers:
+  ///  - No refresh token in storage (never logged in / storage cleared)
+  ///  - Backend 400/401/403 on the refresh endpoint (expired/revoked token)
+  /// Network errors, timeouts, 5xx are transient and must NOT clear the session.
   bool _isDefinitiveAuthRejection(Object error) {
+    if (error is StateError && error.message == 'No refresh token available') {
+      return true;
+    }
     if (error is DioException && error.type == DioExceptionType.badResponse) {
       final code = error.response?.statusCode;
-      return code == 401 || code == 403;
+      return code == 400 || code == 401 || code == 403;
     }
     return false;
   }
@@ -163,29 +167,22 @@ final class TokenRefreshInterceptor extends Interceptor {
       operation: 'TokenRefreshInterceptor',
     );
 
-    final response = await _dio.post<Map<String, Object?>>(
+    await _dio.post<Map<String, Object?>>(
       '/auth/refresh-token',
       data: {'refreshToken': refreshToken},
     );
 
-    final responseBody = response.data;
-    if (responseBody == null) {
-      throw StateError('Empty response from refresh-token endpoint');
-    }
+    // The backend returns the new access token via the `Jwt-Token` response
+    // header, not the JSON body. AuthInterceptor (which runs before this code
+    // gets control back) already extracted it and wrote it to SecureStorage.
+    final stored = await _secureStorage.readAccessToken();
+    final newAccessToken = stored.valueOrNull;
 
-    final newAccessToken = responseBody['accessToken'];
-    final newRefreshToken = responseBody['refreshToken'];
-
-    if (newAccessToken is! String || newAccessToken.isEmpty) {
+    if (newAccessToken == null || newAccessToken.isEmpty) {
       throw StateError('Invalid access token in refresh response');
     }
 
-    await _secureStorage.saveAccessToken(newAccessToken);
     _onTokenRefreshed?.call(newAccessToken);
-
-    if (newRefreshToken is String && newRefreshToken.isNotEmpty) {
-      await _secureStorage.saveRefreshToken(newRefreshToken);
-    }
 
     AppLogger.info(
       'Token refresh succeeded — in-memory token synced',

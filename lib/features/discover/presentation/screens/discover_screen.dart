@@ -295,10 +295,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             onLike: notifier.likeCurrentProfile,
             onViewProfile: () => _openProfileModal(visibleStack.first.userId),
           ),
-          DiscoverProgressDots(
-            totalCount: loadedState.profiles.length,
-            currentIndex: loadedState.currentIndex,
-          ),
         ],
       ),
     );

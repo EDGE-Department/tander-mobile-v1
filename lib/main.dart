@@ -9,6 +9,7 @@ import 'package:tander_flutter_v3/app/app.dart';
 import 'package:tander_flutter_v3/core/providers/core_providers.dart';
 import 'package:tander_flutter_v3/core/utils/device_utils.dart';
 import 'package:tander_flutter_v3/features/auth/data/datasources/notification_handler.dart';
+import 'package:tander_flutter_v3/features/auth/presentation/notifiers/auth_notifier.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,11 +54,21 @@ Future<void> main() async {
   // synchronous provider override is ready for all downstream consumers.
   final sharedPreferences = await SharedPreferences.getInstance();
 
+  // `late` lets the closure capture `container` before it's assigned —
+  // safe because the callback only fires after container is fully constructed.
+  late final ProviderContainer container;
+  container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      onSessionExpiredProvider.overrideWithValue(() {
+        container.read(authNotifierProvider.notifier).forceUnauthenticated();
+      }),
+    ],
+  );
+
   runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-      ],
+    UncontrolledProviderScope(
+      container: container,
       child: const _OrientationAwareApp(),
     ),
   );

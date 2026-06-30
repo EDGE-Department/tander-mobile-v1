@@ -172,6 +172,7 @@ class _ConversationRowContent extends StatelessWidget {
                         lastMessage: conversation.lastMessage,
                         unreadCount: conversation.unreadCount,
                         hasUnread: hasUnread,
+                        isOnline: conversation.participant.isOnline,
                       ),
                     ],
                   ),
@@ -202,18 +203,6 @@ class _NameTimeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        if (participant.isOnline) ...[
-          Container(
-            width: 7,
-            height: 7,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.success,
-              boxShadow: [BoxShadow(color: Color(0x1F22C55E), spreadRadius: 3)],
-            ),
-          ),
-          const SizedBox(width: 7),
-        ],
         Expanded(
           child: Text(
             participant.username,
@@ -253,11 +242,13 @@ class _PreviewBadgeRow extends StatelessWidget {
     required this.lastMessage,
     required this.unreadCount,
     required this.hasUnread,
+    required this.isOnline,
   });
 
   final LastMessagePreview? lastMessage;
   final int unreadCount;
   final bool hasUnread;
+  final bool isOnline;
 
   String get _previewText {
     if (lastMessage == null) return 'Start the conversation';
@@ -324,6 +315,17 @@ class _PreviewBadgeRow extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 fontSize: 12,
               ),
+            ),
+          ),
+        ] else if (isOnline) ...[
+          const SizedBox(width: 8),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.success,
+              boxShadow: [BoxShadow(color: Color(0x2622C55E), spreadRadius: 2)],
             ),
           ),
         ],
