@@ -186,16 +186,19 @@ class _ConnectionCardState extends State<_ConnectionCard>
   Widget _buildHeader() {
     return Row(
       children: [
-        Text(
-          'NEW CONNECTION',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 2.2,
-            color: Colors.white.withValues(alpha: 0.60),
+        Expanded(
+          child: Text(
+            'NEW CONNECTION',
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 2.2,
+              color: Colors.white.withValues(alpha: 0.60),
+            ),
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 8),
         Text(
           'just now',
           style: TextStyle(

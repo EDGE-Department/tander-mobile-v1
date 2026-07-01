@@ -409,6 +409,7 @@ class _BottomNavBarViewState extends State<BottomNavBarView>
                                   _NavCell(
                                     descriptor: navTabs[i],
                                     isActive: i == activeIndex,
+                                    isDragHovered: _dragging && i == _dragHoverIndex,
                                     badge: widget.badgeFor(navTabs[i].id),
                                     activeLift: visibleAbove * 0.5,
                                     cellSize: cellSize,
@@ -442,38 +443,39 @@ class _BottomNavBarViewState extends State<BottomNavBarView>
                         ],
                       ),
                     ),
-                    // ── Drag handle (highest z-index, full row-1 strip) ──────
-                    // Invisible. Covers every column so the dome is easy to
-                    // grab from anywhere along row 1. Pan start teleports the
-                    // dome to the finger's column, then dragging moves it live.
+                    // ── Drag handle (highest z-index, full bar height) ────────
+                    // Covers the rail-anim strip AND the full capsule so the
+                    // user can start a drag from anywhere inside the pill.
+                    // translucent → pan gestures are captured here; taps fall
+                    // through to the icon cells below.
                     Positioned(
-                      top: (row1H - math.max(48.0, row1H)) / 2,
+                      top: 0,
                       left: 0,
                       right: 0,
-                      height: math.max(48.0, row1H),
+                      height: totalHeight,
                       child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
+                        behavior: HitTestBehavior.translucent,
                         onPanStart: (d) {
-                          // Snap dome to whichever column the finger starts on.
-                          final startLeft = (d.localPosition.dx - railMargin - cellSize / 2)
+                          final fingerX = d.localPosition.dx;
+                          final newLeft = (fingerX - cellSize / 2)
                               .clamp(railMargin, railMargin + cellSize * (navTabs.length - 1));
-                          final startIndex = ((d.localPosition.dx - railMargin) / cellSize)
-                              .floor()
+                          final startIndex = ((fingerX - railMargin) / cellSize)
+                              .round()
                               .clamp(0, navTabs.length - 1);
                           setState(() {
                             _dragging = true;
-                            _dragLeft = startLeft;
+                            _dragLeft = newLeft;
                             _dragHoverIndex = startIndex;
                           });
                           _liftCtrl.forward(from: 0);
                           _hapticLift();
                         },
                         onPanUpdate: (d) {
-                          final newLeft = (_dragLeft + d.delta.dx).clamp(
-                            railMargin,
-                            railMargin + cellSize * (navTabs.length - 1),
-                          );
-                          final hoverIndex = ((newLeft - railMargin) / cellSize)
+                          // Absolute position — no delta accumulation, no drift.
+                          final fingerX = d.localPosition.dx;
+                          final newLeft = (fingerX - cellSize / 2)
+                              .clamp(railMargin, railMargin + cellSize * (navTabs.length - 1));
+                          final hoverIndex = ((fingerX - railMargin) / cellSize)
                               .round()
                               .clamp(0, navTabs.length - 1);
                           if (hoverIndex != _dragHoverIndex) {
@@ -483,9 +485,7 @@ class _BottomNavBarViewState extends State<BottomNavBarView>
                           setState(() { _dragLeft = newLeft; });
                         },
                         onPanEnd: (_) {
-                          final snapped = ((_dragLeft - railMargin) / cellSize)
-                              .round()
-                              .clamp(0, navTabs.length - 1);
+                          final snapped = _dragHoverIndex.clamp(0, navTabs.length - 1);
                           setState(() => _dragging = false);
                           _liftCtrl.reverse();
                           _pillCtrl?.forward(from: 0);
@@ -518,10 +518,12 @@ class _NavCell extends StatefulWidget {
     required this.activeLift,
     required this.cellSize,
     required this.onTap,
+    this.isDragHovered = false,
   });
 
   final NavTabDescriptor descriptor;
   final bool isActive;
+  final bool isDragHovered;
   final int badge;
   final double activeLift;
   final double cellSize;
@@ -586,8 +588,11 @@ class _NavCellState extends State<_NavCell>
   @override
   void didUpdateWidget(_NavCell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Pop when this tab becomes the selected one.
+    // Pop on real selection.
     if (!oldWidget.isActive && widget.isActive) {
+      _pop.forward(from: 0);
+    // Pop on drag-hover entry (finger slides into this column).
+    } else if (!oldWidget.isDragHovered && widget.isDragHovered) {
       _pop.forward(from: 0);
     }
   }
@@ -601,10 +606,12 @@ class _NavCellState extends State<_NavCell>
   @override
   Widget build(BuildContext context) {
     final isActive = widget.isActive;
-    final iconAsset = isActive
+    // Visual state: real active OR drag-hovered. Never affects routing/semantics.
+    final isVisuallyActive = isActive || widget.isDragHovered;
+    final iconAsset = isVisuallyActive
         ? _kClickedIcons[widget.descriptor.id]!
         : _kIdleIcons[widget.descriptor.id]!;
-    final iconHeight = isActive
+    final iconHeight = isVisuallyActive
         ? widget.cellSize * 0.85
         : widget.cellSize * 0.60;
     final glow = _kGlowColors[widget.descriptor.id] ?? Colors.white;
@@ -626,15 +633,15 @@ class _NavCellState extends State<_NavCell>
         child: Center(
           // Active icon lifts up into the dome's centre.
           child: Transform.translate(
-            offset: Offset(0, isActive ? -widget.activeLift : 0),
+            offset: Offset(0, isVisuallyActive ? -widget.activeLift : 0),
             child: ScaleTransition(
               scale: _scale,
               child: Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
                 children: [
-                  // Glow halo — pulses out on select then settles.
-                  if (isActive)
+                  // Glow halo — pulses out on real select, stays steady on hover.
+                  if (isVisuallyActive)
                     AnimatedBuilder(
                       animation: _pop,
                       builder: (context, _) {
@@ -655,14 +662,27 @@ class _NavCellState extends State<_NavCell>
                         );
                       },
                     ),
-                  Image.asset(
-                    iconAsset,
-                    height: iconHeight,
-                    fit: BoxFit.contain,
-                    color: isActive ? _kIconActiveColor : null,
-                    colorBlendMode: isActive ? BlendMode.modulate : null,
-                    excludeFromSemantics: true,
-                  ),
+                  if (isVisuallyActive && widget.descriptor.id == 'messages')
+                    ClipOval(
+                      child: Image.asset(
+                        iconAsset,
+                        width: iconHeight,
+                        height: iconHeight,
+                        fit: BoxFit.cover,
+                        color: _kIconActiveColor,
+                        colorBlendMode: BlendMode.modulate,
+                        excludeFromSemantics: true,
+                      ),
+                    )
+                  else
+                    Image.asset(
+                      iconAsset,
+                      height: iconHeight,
+                      fit: BoxFit.contain,
+                      color: isVisuallyActive ? _kIconActiveColor : null,
+                      colorBlendMode: isVisuallyActive ? BlendMode.modulate : null,
+                      excludeFromSemantics: true,
+                    ),
                   if (widget.badge > 0)
                     Positioned(
                       top: -5,

@@ -438,7 +438,6 @@ class LoginLogoWordmarkRow extends StatelessWidget {
 
     return Row(
       mainAxisAlignment: alignment,
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // App icon — already a white circle with hearts
@@ -450,7 +449,13 @@ class LoginLogoWordmarkRow extends StatelessWidget {
           semanticLabel: 'Tander logo',
         ),
         SizedBox(width: effectiveWordmarkSize * 0.06),
-        LoginWordmarkGlowSweep(wordmarkSize: effectiveWordmarkSize),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: LoginWordmarkGlowSweep(wordmarkSize: effectiveWordmarkSize),
+          ),
+        ),
       ],
     );
   }
