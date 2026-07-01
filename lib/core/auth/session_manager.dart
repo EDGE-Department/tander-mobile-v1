@@ -300,7 +300,7 @@ final class SessionManager {
 
     // Persist the new refresh token from the response body.
     final bodyData = responseBody['data'];
-    if (bodyData is Map<String, Object?>) {
+    if (bodyData is Map) {
       final newRefreshToken = bodyData['refreshToken'];
       if (newRefreshToken is String && newRefreshToken.isNotEmpty) {
         await _secureStorage.saveRefreshToken(newRefreshToken);

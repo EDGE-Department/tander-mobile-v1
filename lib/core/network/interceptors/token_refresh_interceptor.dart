@@ -40,6 +40,10 @@ final class TokenRefreshInterceptor extends Interceptor {
   /// Guards concurrent refresh attempts — only one refresh flies at a time.
   bool _isRefreshing = false;
 
+  /// Prevents duplicate onSessionExpired callbacks when multiple requests fail
+  /// simultaneously after a session has already been cleared.
+  bool _sessionExpiredNotified = false;
+
   /// Queued request-retry completers waiting for the refresh to finish.
   final List<_PendingRequest> _pendingRequests = [];
 
@@ -167,7 +171,7 @@ final class TokenRefreshInterceptor extends Interceptor {
       operation: 'TokenRefreshInterceptor',
     );
 
-    await _dio.post<Map<String, Object?>>(
+    final refreshResponse = await _dio.post<Map<String, Object?>>(
       '/auth/refresh-token',
       data: {'refreshToken': refreshToken},
     );
@@ -177,6 +181,19 @@ final class TokenRefreshInterceptor extends Interceptor {
     // gets control back) already extracted it and wrote it to SecureStorage.
     final stored = await _secureStorage.readAccessToken();
     final newAccessToken = stored.valueOrNull;
+
+    // If the backend rotates refresh tokens, persist the new one so subsequent
+    // 401 retries don't get "No refresh token available" after the first refresh.
+    final responseBody = refreshResponse.data;
+    if (responseBody != null) {
+      final bodyData = responseBody['data'];
+      if (bodyData is Map) {
+        final newRefreshToken = bodyData['refreshToken'];
+        if (newRefreshToken is String && newRefreshToken.isNotEmpty) {
+          await _secureStorage.saveRefreshToken(newRefreshToken);
+        }
+      }
+    }
 
     if (newAccessToken == null || newAccessToken.isEmpty) {
       throw StateError('Invalid access token in refresh response');
@@ -271,7 +288,10 @@ final class TokenRefreshInterceptor extends Interceptor {
 
   Future<void> _clearSessionAndNotify() async {
     await _secureStorage.clearAllSecureData();
-    _onSessionExpired();
+    if (!_sessionExpiredNotified) {
+      _sessionExpiredNotified = true;
+      _onSessionExpired();
+    }
   }
 
   // ---------------------------------------------------------------------------
